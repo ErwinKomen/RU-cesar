@@ -1,4 +1,4 @@
-{% extends "app/layout.html" %}
+{% extends "browser/layout.html" %}
 
 {% block content %}
 
@@ -24,7 +24,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-md-offset-2 col-md-10">
-                        <input type="hidden" name="next" value="/" />
+                        <input type="hidden" name="next" value="{% url 'home' %}" />
                         <input type="submit" value="Log in" class="btn btn-default" />
                     </div>
                 </div>
@@ -45,6 +45,6 @@
 {% block scripts %}
 
     {% load staticfiles %}
-<script src="{% static 'app/scripts/jquery.validate.min.js' %}"></script>
+<script src="{% static 'browser/scripts/jquery.validate.min.js' %}"></script>
 
 {% endblock %}

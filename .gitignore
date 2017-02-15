@@ -243,3 +243,6 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/cesar/cesar/browser/migrations
+/cesar/cesar/browser/__pycache__
+/cesar/cesar/__pycache__

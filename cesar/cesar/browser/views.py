@@ -2,19 +2,21 @@
 Definition of views.
 """
 
-from django.shortcuts import render
-from django.http import HttpRequest
-from django.template import RequestContext
+from django.views.generic.detail import DetailView
+from django.views.generic import ListView
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpRequest, HttpResponse
 from datetime import datetime
+
 
 def home(request):
     """Renders the home page."""
     assert isinstance(request, HttpRequest)
     return render(
         request,
-        'app/index.html',
+        'browser/index.html',
         {
-            'title':'Home Page',
+            'title':'RU-Cesar',
             'year':datetime.now().year,
         }
     )
@@ -24,10 +26,10 @@ def contact(request):
     assert isinstance(request, HttpRequest)
     return render(
         request,
-        'app/contact.html',
+        'browser/contact.html',
         {
             'title':'Contact',
-            'message':'Your contact page.',
+            'message':'Erwin Komen (E.komen@Let.ru.nl)',
             'year':datetime.now().year,
         }
     )
@@ -37,10 +39,10 @@ def about(request):
     assert isinstance(request, HttpRequest)
     return render(
         request,
-        'app/about.html',
+        'browser/about.html',
         {
             'title':'About',
-            'message':'Your application description page.',
+            'message':'Radboud University CESAR utility.',
             'year':datetime.now().year,
         }
     )

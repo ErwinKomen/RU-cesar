@@ -6,24 +6,40 @@ from datetime import datetime
 from django.conf.urls import url
 import django.contrib.auth.views
 
-import app.forms
-import app.views
+# Import from the app 'browser'
+import cesar.browser.views
+from cesar.browser.views import *
+from cesar.browser.forms import *
 
 # Uncomment the next lines to enable the admin:
-# from django.conf.urls import include
-# from django.contrib import admin
-# admin.autodiscover()
+from django.conf.urls import include
+from django.contrib import admin
+
+# Other Django stuff
+from django.core import urlresolvers
+from django.shortcuts import redirect
+from django.core.urlresolvers import reverse, reverse_lazy
+from django.views.generic.base import RedirectView
+
+admin.autodiscover()
+
+
+# Set admin stie information
+admin.site.site_header = "Corpus Editor for Syntactically Annotated Resources"
+admin.site.site_title = "CESAR Admin"
 
 urlpatterns = [
     # Examples:
-    url(r'^$', app.views.home, name='home'),
-    url(r'^contact$', app.views.contact, name='contact'),
-    url(r'^about', app.views.about, name='about'),
+    url(r'^$', cesar.browser.views.home, name='home'),
+    url(r'^contact$', cesar.browser.views.contact, name='contact'),
+    url(r'^about', cesar.browser.views.about, name='about'),
+    url(r'^definitions$', RedirectView.as_view(url='/admin/'), name='definitions'),
+
     url(r'^login/$',
         django.contrib.auth.views.login,
         {
-            'template_name': 'app/login.html',
-            'authentication_form': app.forms.BootstrapAuthenticationForm,
+            'template_name': 'browser/login.html',
+            'authentication_form': cesar.browser.forms.BootstrapAuthenticationForm,
             'extra_context':
             {
                 'title': 'Log in',
@@ -34,13 +50,13 @@ urlpatterns = [
     url(r'^logout$',
         django.contrib.auth.views.logout,
         {
-            'next_page': '/',
+            'next_page': reverse_lazy('home'),
         },
         name='logout'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
-    # url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', include(admin.site.urls), name='admin_base'),
 ]
