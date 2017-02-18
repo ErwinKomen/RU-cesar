@@ -11,6 +11,9 @@ import cesar.browser.views
 from cesar.browser.views import *
 from cesar.browser.forms import *
 
+# Import from CESAR as a whole
+from cesar.settings import APP_PREFIX
+
 # Uncomment the next lines to enable the admin:
 from django.conf.urls import include
 from django.contrib import admin
@@ -28,12 +31,14 @@ admin.autodiscover()
 admin.site.site_header = "Corpus Editor for Syntactically Annotated Resources"
 admin.site.site_title = "CESAR Admin"
 
+pfx = APP_PREFIX
+
 urlpatterns = [
     # Examples:
     url(r'^$', cesar.browser.views.home, name='home'),
     url(r'^contact$', cesar.browser.views.contact, name='contact'),
     url(r'^about', cesar.browser.views.about, name='about'),
-    url(r'^definitions$', RedirectView.as_view(url='/admin/'), name='definitions'),
+    url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
 
     url(r'^login/$',
         django.contrib.auth.views.login,

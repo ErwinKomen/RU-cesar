@@ -21,6 +21,19 @@ if "RU-cesar\\writable" in WRITABLE_DIR:
     # Need another string
     WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../../writable/database/"))
 
+APP_PREFIX = "dd/"
+if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
+    APP_PREFIX = ""
+    admin.site.site_url = '/'
+elif "/var/www" in WRITABLE_DIR:
+    # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/crp
+    APP_PREFIX = "crp/"
+    admin.site.site_url = '/crp'
+else:
+    admin.site.site_url = '/dd'
+
+FORCE_SCRIPT_NAME = admin.site.site_url
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
@@ -31,7 +44,7 @@ SECRET_KEY = '379848c4-ce15-403e-a74a-f994d720554b'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
 
 
 # Application definition
@@ -128,5 +141,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+if ("/var/www" in WRITABLE_DIR):
+    STATIC_URL = "/" + APP_PREFIX + "static/"
 
 STATIC_ROOT = posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))

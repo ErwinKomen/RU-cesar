@@ -6,7 +6,9 @@ from django.views.generic.detail import DetailView
 from django.views.generic import ListView
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpRequest, HttpResponse
+from django.contrib import admin
 from datetime import datetime
+from cesar.settings import APP_PREFIX
 
 
 def home(request):
@@ -18,6 +20,8 @@ def home(request):
         {
             'title':'RU-Cesar',
             'year':datetime.now().year,
+            'pfx': APP_PREFIX,
+            'site_url': admin.site.site_url,
         }
     )
 
