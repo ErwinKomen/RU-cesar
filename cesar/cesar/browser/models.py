@@ -16,6 +16,7 @@ MAX_TEXT_LEN = 200
 CORPUS_LANGUAGE = "corpus.language"
 CORPUS_ETHNO = "corpus.ethnologue"
 CORPUS_STATUS = "corpus.status"
+CORPUS_FORMAT = "corpus.format"
 
 class FieldChoice(models.Model):
 
@@ -204,14 +205,33 @@ class Metavar(models.Model):
     """Meta variable definitions for a particular corpus"""
 
     # [1]
-    name = models.CharField("Name of this metavar set", max_length=MAX_TEXT_LEN)
+    name = models.CharField("Name of this meta variable", max_length=MAX_TEXT_LEN)
+
+
+class Download(models.Model):
+    """Download information for one corpus part in one format"""
+
+    # [1]
+    format = models.CharField("Format for this corpus (part)", choice_english=build_choice_list(CORPUS_FORMAT), max_length=5,
+                           help_text=get_help(CORPUS_FORMAT))
+    url = models.URLField("Link to download this corpus (part)")
 
 
 class Part(models.Model):
     """Makeup of one part of a corpus"""
 
     # [1]
-    name = models.CharField("Name of this corpus partt", max_length=MAX_TEXT_LEN)
+    name = models.CharField("Name of this corpus part", max_length=MAX_TEXT_LEN)
+    # [1]
+    dir = models.CharField("Sub directory where this corpus part resides", max_length=MAX_TEXT_LEN)
+    # [1]
+    descr = models.TextField("Full name and description of this corpus")
+    # [1]
+    url = models.URLField("Link to the (original) release of this corpus (part)")
+    # [1]
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
+    # [0-n]
+    download = models.ManyToManyField(Download, blank=True, null=True)
 
 
 class Corpus(models.Model):
@@ -226,7 +246,7 @@ class Corpus(models.Model):
     eth = models.CharField("Ethnologue 3-letter code of the text langauge", choice_english=build_choice_list(CORPUS_ETHNO), max_length=5,
                            help_text=get_help(CORPUS_ETHNO))
     # [1]
-    metavar = models.ForeignKey(Metavar, blank=False)
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
     # [1]
     status = models.CharField("The status (e.g. 'hidden')", choice_english=build_choice_list(CORPUS_STATUS), max_length=5,
                            help_text=get_help(CORPUS_STATUS))
