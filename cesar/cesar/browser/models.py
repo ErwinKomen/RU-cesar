@@ -201,11 +201,31 @@ def get_help(field):
     return help_text
 
 
+class Variable(models.Model):
+    """A (named) variable contains the link to the actual Xquery code"""
+
+    # [1]
+    name = models.CharField("Name of this variable", max_length=MAX_TEXT_LEN)
+
+
+class Tagset(models.Model):
+    """Links the name of a constituent with the POS names used in one corpus"""
+
+    # [1; c]
+    title = models.CharField("Name of this tagset variable", max_length=MAX_TEXT_LEN)
+
+
 class Metavar(models.Model):
     """Meta variable definitions for a particular corpus"""
 
     # [1]
     name = models.CharField("Name of this meta variable", max_length=MAX_TEXT_LEN)
+    # [1]
+    hidden = models.BooleanField("(Not sure what this is for)", default = False)
+    # [0-n]
+    variables = models.ManyToManyField(Variable, blank=False, null=False)
+    # [0-n]
+    tagset = models.ManyToManyField(Tagset, blank=False, null=False)
 
 
 class Download(models.Model):
@@ -223,9 +243,9 @@ class Part(models.Model):
     # [1]
     name = models.CharField("Name of this corpus part", max_length=MAX_TEXT_LEN)
     # [1]
-    dir = models.CharField("Sub directory where this corpus part resides", max_length=MAX_TEXT_LEN)
+    dir = models.CharField("Sub directory where this corpus part resides", max_length=MAX_TEXT_LEN, default="/")
     # [1]
-    descr = models.TextField("Full name and description of this corpus")
+    descr = models.TextField("Full name and description of this corpus", default="(Put your description here)")
     # [1]
     url = models.URLField("Link to the (original) release of this corpus (part)")
     # [1]
