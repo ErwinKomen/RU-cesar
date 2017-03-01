@@ -17,6 +17,9 @@ CORPUS_LANGUAGE = "corpus.language"
 CORPUS_ETHNO = "corpus.ethnologue"
 CORPUS_STATUS = "corpus.status"
 CORPUS_FORMAT = "corpus.format"
+VARIABLE_TYPE = "variable.type"
+VARIABLE_LOC = "variable.loc"
+LANGUAGE = "language"
 
 class FieldChoice(models.Model):
 
@@ -68,7 +71,7 @@ def build_choice_list(field, position=None, subcat=None):
 
             choice_list = sorted(choice_list,key=lambda x: x[1]);
     except:
-        print("Unexpected error:", sys.exc_info()[0])
+        print("Unexpected error [build_choice_list]:", sys.exc_info()[0])
         choice_list = [('0','-'),('1','N/A')];
 
     # Signbank returns: [('0','-'),('1','N/A')] + choice_list
@@ -201,57 +204,115 @@ def get_help(field):
     return help_text
 
 
+class Metavar(models.Model):
+    """Meta variable definitions for a particular corpus"""
+
+    # [1]
+    name = models.CharField("Name of this meta variable", max_length=MAX_TEXT_LEN, blank=False, null=False)
+    # [1]
+    hidden = models.BooleanField("This metavar is hidden (?)", default = False)
+
+    def __str__(self):
+        return self.name
+
+
+class VariableName(models.Model):
+    """One variable name that can be used by Variable specification"""
+
+    # [1; o] Each variable has a name (e.g: 'author', 'date', 'dateEarly')
+    #        But the name comes from a closed set of possibilities defined in FieldChoice
+    name = models.CharField("Name of this variable", max_length=MAX_TEXT_LEN, blank=False, null=False)
+    # [1; o] Description in plain text of this variable
+    descr = models.TextField("Description of this variable", blank=False, null=False)
+    # [1; f] Type of variable as available from a fixed set of possibilities
+    type = models.CharField("Type of this variable", choices=build_choice_list(VARIABLE_TYPE), max_length=5, help_text=get_help(VARIABLE_TYPE))
+
+    def __str__(self):
+        return self.name
+
+
 class Variable(models.Model):
     """A (named) variable contains the link to the actual Xquery code"""
 
-    # [1]
-    name = models.CharField("Name of this variable", max_length=MAX_TEXT_LEN)
+    # [1; c] Link to the variable name and description definition
+    name = models.ForeignKey(VariableName, blank=False, null=False)
+    # [1] Where should this variable be found in XML: header of cmdi file?
+    loc = models.CharField("Location", choices=build_choice_list(VARIABLE_LOC), max_length=5, help_text=get_help(VARIABLE_LOC), blank=False, null=False)
+    # [1; o] Xquery text to get to the value of this variable
+    value = models.TextField("Xquery definition", blank=False, null=False)
+    # [1] Each variable belongs to exactly one [Metavar]
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
+
+    def __str__(self):
+        return "{}_{}".format(self.name.name, self.metavar.name)
+
+
+class GroupingName(models.Model):
+    """One variable name that can be used by Grouping specification"""
+
+    # [1; o] Each grouping has a name (e.g: 'subtype', 'authorAlphabet')
+    #        But the name comes from a closed set of possibilities defined in FieldChoice
+    name = models.CharField("Name of this grouping", max_length=MAX_TEXT_LEN, blank=False, null=False)
+    # [1; o] Description in plain text of this grouping
+    descr = models.TextField("Description of this grouping", blank=False, null=False)
+
+    def __str__(self):
+        return self.name
+
+
+class Grouping(models.Model):
+    """A (named) variable contains the link to the actual Xquery code"""
+
+    # [1; c] Link to the variable name and description definition
+    name = models.ForeignKey(GroupingName, blank=False, null=False)
+    # [1; o] Xquery text to get to the value of this variable
+    value = models.TextField("Definition of this grouping in Xquery", blank=False, null=False)
+    # [1] Each variable belongs to exactly one [Metavar]
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
+
+    def __str__(self):
+        return "{}_{}".format(self.name.name, self.metavar.name)
+
+
+class Constituent(models.Model):
+    """One constituent that can be used by tagsets and other stuff"""
+
+    # [1; o] Each variable has a name (e.g: 'author', 'date', 'dateEarly')
+    #        But the name comes from a closed set of possibilities defined in FieldChoice
+    title = models.CharField("Name of the constituent", max_length=MAX_TEXT_LEN, blank=False, null=False, default="TITLE")
+    # [1]    Plain text description of what constituent(s) this tagset variable targets
+    eng = models.TextField("Constituent description (English)", blank=False, null=False, default="SPECIFY")
+
+    def __str__(self):
+        return self.title
+
+
+class ConstituentNameTrans(models.Model):
+    """Translation of a tagset name description into another language"""
+
+    # [1] Language
+    lng = models.CharField("Language", choices=build_choice_list(LANGUAGE), max_length=5, help_text=get_help(LANGUAGE))
+    # [1] Description
+    descr = models.TextField("Constituent description (in this language)", blank=False, null=False, default="SPECIFY")
+    # [1] Link to a [TagsetName]
+    constituent = models.ForeignKey(Constituent, blank=False, null=False)
+
+    def __str__(self):
+        return "{}_{}".format(self.constituent.title, self.lng)
 
 
 class Tagset(models.Model):
     """Links the name of a constituent with the POS names used in one corpus"""
 
     # [1; c]
-    title = models.CharField("Name of this tagset variable", max_length=MAX_TEXT_LEN)
-
-
-class Metavar(models.Model):
-    """Meta variable definitions for a particular corpus"""
-
-    # [1]
-    name = models.CharField("Name of this meta variable", max_length=MAX_TEXT_LEN)
-    # [1]
-    hidden = models.BooleanField("(Not sure what this is for)", default = False)
-    # [0-n]
-    variables = models.ManyToManyField(Variable, blank=False, null=False)
-    # [0-n]
-    tagset = models.ManyToManyField(Tagset, blank=False, null=False)
-
-
-class Download(models.Model):
-    """Download information for one corpus part in one format"""
-
-    # [1]
-    format = models.CharField("Format for this corpus (part)", choice_english=build_choice_list(CORPUS_FORMAT), max_length=5,
-                           help_text=get_help(CORPUS_FORMAT))
-    url = models.URLField("Link to download this corpus (part)")
-
-
-class Part(models.Model):
-    """Makeup of one part of a corpus"""
-
-    # [1]
-    name = models.CharField("Name of this corpus part", max_length=MAX_TEXT_LEN)
-    # [1]
-    dir = models.CharField("Sub directory where this corpus part resides", max_length=MAX_TEXT_LEN, default="/")
-    # [1]
-    descr = models.TextField("Full name and description of this corpus", default="(Put your description here)")
-    # [1]
-    url = models.URLField("Link to the (original) release of this corpus (part)")
-    # [1]
+    constituent = models.ForeignKey(Constituent, blank=False, null=False, default=0)
+    # [1; o]
+    definition = models.CharField("Xquery for the constituent", max_length=MAX_TEXT_LEN, blank=False, null=False)
+    # [1] Each tagset specification belongs to exactly one [Metavar]
     metavar = models.ForeignKey(Metavar, blank=False, null=False)
-    # [0-n]
-    download = models.ManyToManyField(Download, blank=True, null=True)
+
+    def __str__(self):
+        return "{}_{}".format(self.constituent.title, self.metavar.name)
 
 
 class Corpus(models.Model):
@@ -260,15 +321,49 @@ class Corpus(models.Model):
     # [1]
     name = models.CharField("Name of this corpus", max_length=MAX_TEXT_LEN)
     # [1]
-    lng = models.CharField("Language of the texts", choice_english=build_choice_list(CORPUS_LANGUAGE), max_length=5,
-                           help_text=get_help(CORPUS_LANGUAGE))
+    lng = models.CharField("Language of the texts", choices=build_choice_list(CORPUS_LANGUAGE), max_length=5, help_text=get_help(CORPUS_LANGUAGE))
     # [1]
-    eth = models.CharField("Ethnologue 3-letter code of the text langauge", choice_english=build_choice_list(CORPUS_ETHNO), max_length=5,
-                           help_text=get_help(CORPUS_ETHNO))
+    eth = models.CharField("Ethnologue 3-letter code of the text langauge", choices=build_choice_list(CORPUS_ETHNO), max_length=5, help_text=get_help(CORPUS_ETHNO))
     # [1]
     metavar = models.ForeignKey(Metavar, blank=False, null=False)
     # [1]
-    status = models.CharField("The status (e.g. 'hidden')", choice_english=build_choice_list(CORPUS_STATUS), max_length=5,
-                           help_text=get_help(CORPUS_STATUS))
-    # [1-n]
-    parts = models.ManyToManyField(Part, blank=False)
+    status = models.CharField("The status (e.g. 'hidden')", choices=build_choice_list(CORPUS_STATUS), max_length=5, help_text=get_help(CORPUS_STATUS))
+
+    def __str__(self):
+        return self.name
+
+
+class Part(models.Model):
+    """Makeup of one part of a corpus"""
+
+    # [1]
+    name = models.CharField("Name of this part", max_length=MAX_TEXT_LEN)
+    # [1]
+    dir = models.CharField("Sub directory of this part", max_length=MAX_TEXT_LEN, default="/")
+    # [1]
+    descr = models.TextField("Full name of this part", default="(Put your description here)")
+    # [1]
+    url = models.URLField("Link to the (original) release of this corpus (part)")
+    # [1]
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
+    # [1] Each 'Part' can only belong to one 'Corpus'
+    corpus = models.ForeignKey(Corpus, blank=False, null=False)
+
+    def __str__(self):
+        return self.name
+
+
+class Download(models.Model):
+    """Download information for one corpus part in one format"""
+
+    # [1]
+    format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
+    # [1; f] Actual URL to place on the internet
+    url = models.URLField("Link to download this corpus (part)")
+    # [1]    Link to the [Part] this download belongs to
+    part = models.ForeignKey(Part, blank=False, null=False)
+
+    def __str__(self):
+        return "{}_{}".format(self.part.name, choice_english(CORPUS_FORMAT, self.format))
+
+
