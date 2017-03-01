@@ -3,7 +3,9 @@ Definition of urls for cesar.
 """
 
 from datetime import datetime
-from django.conf.urls import url
+# Uncomment the next lines to enable the admin:
+from django.conf.urls import include, url
+from django.contrib import admin
 import django.contrib.auth.views
 
 # Import from the app 'browser'
@@ -13,10 +15,6 @@ from cesar.browser.forms import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
-
-# Uncomment the next lines to enable the admin:
-from django.conf.urls import include
-from django.contrib import admin
 
 # Other Django stuff
 from django.core import urlresolvers
