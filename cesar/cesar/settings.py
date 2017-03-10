@@ -144,4 +144,4 @@ STATIC_URL = '/static/'
 if ("/var/www" in WRITABLE_DIR):
     STATIC_URL = "/" + APP_PREFIX + "static/"
 
-STATIC_ROOT = posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))
+STATIC_ROOT = os.path.abspath(os.path.join("/", posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))))

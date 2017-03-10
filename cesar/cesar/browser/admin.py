@@ -31,6 +31,7 @@ class FieldChoiceAdmin(admin.ModelAdmin):
 
 class VariableInline(admin.TabularInline):
     model = Variable
+    form = VariableForm
     extra = 0
 
 
@@ -57,6 +58,7 @@ class VariableAdmin(admin.ModelAdmin):
 
 class GroupingInline(admin.TabularInline):
     model = Grouping
+    form = GroupingForm
     extra = 0
 
 
@@ -84,6 +86,8 @@ class GroupingAdmin(admin.ModelAdmin):
 class ConstituentNameTransInline(admin.TabularInline):
     model = ConstituentNameTrans
     form = ConstituentNameTransForm
+    verbose_name = "Constituent name translation"
+    verbose_name_plural = "Constituent name translations"
     extra = 0
 
 
