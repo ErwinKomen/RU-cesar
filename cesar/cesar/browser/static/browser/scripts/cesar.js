@@ -14,6 +14,7 @@
 // based on the type, action will be loaded
 
 var $ = django.jQuery.noConflict();
+var oSyncTimer = null;
 
 function type_change() {
   // Get the value of the selected [DCtype]
@@ -72,4 +73,99 @@ function tabinline_add_copy() {
         }
       }
     });
+}
+
+function sync_start(sSyncType) {
+  var oJson = {},
+      oData = {},
+      sUrl = "";
+
+  // Indicate that we are starting
+  $("#sync_progress_" + sSyncType).html("Repair is starting: " + sSyncType);
+  // Start looking only after some time
+  oJson = { 'status': 'started' };
+  oSyncTimer = window.setTimeout(function () { sync_progress(sSyncType, oJson); }, 1000);
+
+  // Make sure that at the end: we stop
+  oData = { 'type': sSyncType };
+  sUrl = $("#sync_start_" + sSyncType).attr('sync-start');
+  $.ajax({
+    "url": sUrl,
+    "dataType": "json",
+    "data": oData,
+    "cache": false,
+    "success": function () { sync_stop(sSyncType); }
+  })(jQuery);
+}
+
+function sync_progress(sSyncType) {
+  var oData = {},
+      sUrl = "";
+
+  oData = { 'type': sSyncType };
+  sUrl = $("#sync_start_" + sSyncType).attr('sync-progress');
+  $.ajax({
+    "url": sUrl,
+    "dataType": "json",
+    "data": oData,
+    "cache": false,
+    "success": function (json) {
+      sync_handle(sSyncType, json);
+    }
+  })(jQuery);
+}
+
+function sync_handle(sSyncType, json) {
+  // Action depends on the status in [json]
+  switch (json.status) {
+    case 'error':
+      // Show we are ready
+      $("#sync_progress_" + sSyncType).html("Error synchronizing: " + sSyncType);
+      $("#sync_details_" + sSyncType).html(sync_details(json));
+      // Stop the progress calling
+      window.clearInterval(oSyncTimer);
+      // Leave the routine, and don't return anymore
+      return;
+    case "done":
+      // Finish nicely
+      sync_stop(sSyncType, json);
+      return;
+    default:
+      // Default action is to show the status
+      $("#sync_progress_" + sSyncType).html(json.status);
+      $("#sync_details_" + sSyncType).html(sync_details(json));
+      oSyncTimer = window.setTimeout(function (json) { sync_progress(sSyncType); }, 1000);
+      break;
+  }
+}
+
+function sync_stop(sSyncType, json) {
+  var lHtml = [];
+
+  // Stop the progress calling
+  window.clearInterval(oSyncTimer);
+  // Show we are ready
+  $("#sync_progress_" + sSyncType).html("Finished synchronizing: " + sSyncType);
+
+}
+
+function sync_details(json) {
+  var lHtml = [],
+      oCount = {};
+
+  // Validate
+  if (json === undefined || !json.hasOwnProperty("count"))
+    return "";
+  // Get the counts
+  oCount = JSON.parse(json['count']);
+  // Create a reply
+  lHtml.push("<div><table><thead><tr><th></th><th></th></tr></thead><tbody>");
+  for (var property in oCount) {
+    if (oCount.hasOwnProperty(property)) {
+      lHtml.push("<tr><td>" + property + "</td><td>" + oCount[property] + "</td></tr>");
+    }
+  }
+  lHtml.push("</tbody></table></div>");
+  // Return as string
+  return lHtml.join("\n");
 }

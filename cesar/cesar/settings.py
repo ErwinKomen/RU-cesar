@@ -46,6 +46,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
 
+CRPP_HOME = 'http://corpus-studio-web.cttnww-meertens.surf-hosted.nl'
+
 
 # Application definition
 

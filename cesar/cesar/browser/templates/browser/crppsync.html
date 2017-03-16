@@ -1,0 +1,46 @@
+{% extends "browser/layout.html" %}
+
+{% block content %}
+
+
+<div class="container body-content">
+  <h3>Synchronisation from /crpp</h3>
+  <div class="row">
+    This kind of synchronisation reads the information in /crpp/serverinfo and attempts to 
+      update the existing models in the database with that information.
+  </div>
+
+  <div class="row">
+    <div>&nbsp;</div>
+  </div>
+
+  <div class="row">
+    <div>&nbsp;</div>
+  </div>
+
+  <div class="row">
+    <div>&nbsp;</div>
+  </div>
+
+{% if user.is_authenticated %}
+  <div class="row">
+    <div class="col-md-3">
+      <span><a id="sync_start_crpp" class="btn btn-primary" 
+          sync-start="{% url 'sync_start' %}?synctype=crpp" 
+          sync-progress="{% url 'sync_progress' %}?synctype=crpp" 
+          onclick="sync_start('crpp')">Synchronize /crpp</a>
+      </span>
+    </div>
+    <div id="sync_progress_crpp" class="col-md-9">
+      <!-- This is where the progress will be reported -->
+    </div>
+  </div>
+  <div id="sync_details_crpp" class="row"></div>
+{% else %}
+  <p>Since you are not logged in, no further processing of /crpp information is possible.</p>
+{% endif %}
+
+</div>
+
+
+{% endblock %}
