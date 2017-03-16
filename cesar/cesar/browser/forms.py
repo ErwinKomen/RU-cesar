@@ -41,6 +41,17 @@ class GroupingForm(forms.ModelForm):
           }
 
 
+class TagsetForm(forms.ModelForm):
+    """Definition of one tagset (part of a [metavar])"""
+
+    class Meta:
+        model = Tagset
+        fields = "__all__"
+        widgets={
+          'definition': forms.TextInput(attrs={'size': 100})
+          }
+
+
 class PartForm(forms.ModelForm):
     """Size the input boxes and textarea for the form"""
 

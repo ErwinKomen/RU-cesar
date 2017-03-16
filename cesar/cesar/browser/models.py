@@ -387,8 +387,8 @@ def sync_crpp_process(oCrppInfo):
                     instMvar = Metavar.get_item(sMvar)
                 # Only now can we create a corpus instance
                 instCrp = Corpus(name=oCrp['name'],
-                                 lng=choice_value(CORPUS_LANGUAGE, oVariable['lng']),
-                                 eth=choice_value(CORPUS_ETHNO, oVariable['eth']),
+                                 lng=choice_value(CORPUS_LANGUAGE, oCrp['lng']),
+                                 eth=choice_value(CORPUS_ETHNO, oCrp['eth']),
                                  metavar=instMvar,
                                  status=sStatus)
                 instCrp.save()
@@ -411,7 +411,8 @@ def sync_crpp_process(oCrppInfo):
                                         dir=oPart['dir'],
                                         descr=oPart['descr'],
                                         url=oPart['url'],
-                                        metavar=instMvar)
+                                        metavar=instMvar,
+                                        corpus=instCrp)
                         instPart.save()
                         oBack['part'] += 1
                         oStatus.set("part: "+str(oBack['part']), oBack)
@@ -654,8 +655,8 @@ class Corpus(models.Model):
     lng = models.CharField("Language of the texts", choices=build_choice_list(CORPUS_LANGUAGE), max_length=5, help_text=get_help(CORPUS_LANGUAGE))
     # [1]
     eth = models.CharField("Ethnologue 3-letter code of the text langauge", choices=build_choice_list(CORPUS_ETHNO), max_length=5, help_text=get_help(CORPUS_ETHNO))
-    # [1]
-    metavar = models.ForeignKey(Metavar, blank=False, null=False)
+    # [0-1]
+    metavar = models.ForeignKey(Metavar, blank=True, null=True)
     # [1]
     status = models.CharField("The status (e.g. 'hidden')", choices=build_choice_list(CORPUS_STATUS), max_length=5, help_text=get_help(CORPUS_STATUS))
 

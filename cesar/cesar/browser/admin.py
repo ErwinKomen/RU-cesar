@@ -114,6 +114,7 @@ class ConstituentAdmin(admin.ModelAdmin):
 
 class TagsetInline(admin.TabularInline):
     model = Tagset
+    form = TagsetForm
     extra = 0
 
 
