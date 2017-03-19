@@ -402,7 +402,7 @@ def sync_crpp_process(oCrppInfo):
                 instPart = Part.get_item(oPart['name'], instCrp)
                 if instPart == None:
                     # This part does not yet exist: add it
-                    sMvar = oCrp['metavar']
+                    sMvar = oPart['metavar']
                     if sMvar != "":
                         # Metavar is obligatory for a [Part]
                         instMvar = Metavar.get_item(sMvar)
@@ -416,19 +416,29 @@ def sync_crpp_process(oCrppInfo):
                         instPart.save()
                         oBack['part'] += 1
                         oStatus.set("part: "+str(oBack['part']), oBack)
-                        # Look for download information
-                        if oPart['psdx'] != "":
-                            # Add psdx download information
-                            instDown = Download(url=oPart['psdx'],
-                                                format=choice_value(CORPUS_FORMAT, 'psdx'),
-                                                part=instPart)
-                            instDown.save()
-                        if oPart['folia'] != "":
-                            # Add psdx download information
-                            instDown = Download(url=oPart['folia'],
-                                                format=choice_value(CORPUS_FORMAT, 'folia'),
-                                                part=instPart)
-                            instDown.save()
+                        # Sanity check
+                        if not 'psdx' in oPart:
+                            # Stop right here
+                            iStop = 1
+                        else:
+                            # Look for download information
+                            if oPart['psdx'] != "":
+                                # Add psdx download information
+                                instDown = Download(url=oPart['psdx'],
+                                                    format=choice_value(CORPUS_FORMAT, 'psdx'),
+                                                    part=instPart)
+                                instDown.save()
+                        # Sanity check
+                        if not 'folia' in oPart:
+                            # Stop right here
+                            iStop = 1
+                        else:
+                            if oPart['folia'] != "":
+                                # Add psdx download information
+                                instDown = Download(url=oPart['folia'],
+                                                    format=choice_value(CORPUS_FORMAT, 'folia'),
+                                                    part=instPart)
+                                instDown.save()
                     
 
         # We are done!
@@ -645,7 +655,6 @@ class Tagset(models.Model):
             return qs[0]
 
 
-
 class Corpus(models.Model):
     """Description of one XML text corpus"""
 
@@ -710,5 +719,31 @@ class Download(models.Model):
 
     def __str__(self):
         return "{}_{}".format(self.part.name, choice_english(CORPUS_FORMAT, self.format))
+
+
+class Text(models.Model):
+    """One text that belongs to a Part of a Corpus"""
+
+    # [1] - this is only the *last* part of the file name
+    fileName = models.CharField("Name of the text file", max_length=MAX_TEXT_LEN)
+    # [1] - every text must be [psdx] or [folia] or something
+    format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
+    # [1] - Every text must be part of a Part
+    part = models.ForeignKey(Part, blank=False, null=False)
+    # [0-1] - Every text may have a metadata file associated with it
+    metaFile = models.CharField("Name of the metadata file", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a title
+    title = models.CharField("Title of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    def get_item(sName):
+        qs = Text.objects.filter(fileName=sName)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
 
 

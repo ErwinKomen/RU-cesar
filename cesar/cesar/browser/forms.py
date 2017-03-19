@@ -76,3 +76,20 @@ class ConstituentNameTransForm(forms.ModelForm):
         widgets={'lng': forms.Select(attrs={'size': 1}),
                  'descr': forms.Textarea(attrs={'rows': 1})
             }
+
+
+class PartSearchForm(forms.ModelForm):
+
+    search = forms.CharField(label=_("Corpus name"))
+    sortOrder = forms.CharField(label=_("Sort Order"), initial="metavar")
+    part = forms.CharField(label=_("Corpus part"))
+    metavar = forms.CharField(label=_("Meta variable"))
+
+    class Meta:
+
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Part
+        fields = "__all__"    # ('gloss', 'optdialect')
+
+

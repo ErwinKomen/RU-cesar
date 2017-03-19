@@ -36,6 +36,9 @@
     </Compile>
     <Compile Include="cesar\browser\migrations\__init__.py" />
     <Compile Include="cesar\browser\models.py" />
+    <Compile Include="cesar\browser\services.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\browser\tests.py" />
     <Compile Include="cesar\browser\views.py" />
     <Compile Include="cesar\browser\__init__.py" />
@@ -83,12 +86,15 @@
     <Content Include="cesar\browser\static\browser\scripts\modernizr-2.6.2.js" />
     <Content Include="cesar\browser\static\browser\scripts\respond.js" />
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
+    <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\about.html" />
     <Content Include="cesar\browser\templates\browser\contact.html" />
     <Content Include="cesar\browser\templates\browser\index.html" />
     <Content Include="cesar\browser\templates\browser\layout.html" />
     <Content Include="cesar\browser\templates\browser\login.html" />
     <Content Include="cesar\browser\templates\browser\loginpartial.html" />
+    <Content Include="cesar\browser\templates\browser\pagination.html" />
+    <Content Include="cesar\browser\templates\browser\part_list.html" />
     <Content Include="cesar\browser\templates\browser\topnav.html" />
     <Content Include="cesar\templates\admin\base.html" />
     <Content Include="requirements.txt" />
