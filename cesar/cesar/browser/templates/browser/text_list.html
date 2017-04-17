@@ -16,6 +16,16 @@
 
     {% if object_list %}
       <h3>Corpus part overview</h3>
+      <div class="row">
+        <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
+        <div class="col-sm-8">
+        <span class="step-links">
+
+        {% include 'browser/pagination.html' %}
+
+        </span>
+        </div>
+      </div>
       <!-- The contents as a table -->
       <table class="table table-hover">
         <thead><tr><th class="hidden">id</th><th>Part</th><th>Corpus</th><th>Description</th></tr></thead>
@@ -23,30 +33,12 @@
         {% for item in part_list %}
           <tr class="part-item">
             <td class="hidden">{{item.id}}</td>
-            <td><span class="part-item-name"><a onclick="part_detail_toggle({{item.id}})">{{item.name}}</a></span></td>
+            <td><span class="part-item-name"><a href="{% url 'text_list' %}?part={{item.id}}">{{item.name}}</a></span></td>
             <td><span class="part-item-corp">{{item.corpus}}</span></td>
             <td>
                 <span class="part-item-desc">{{item.descr}}</span>
-                <span><a class="btn btn-success btn-xs" href="/{{app_prefix}}admin/browser/part/{{item.id}}/change/">Edit</a></span>
+                <span><a class="btn btn-primary" href="{% url 'part_edit' %}?part={{item.id}}">Edit</a></span>
               </td>
-          </tr>
-          <tr id="part_details_{{item.id}}" class="hidden">
-            <td colspan="3">
-              <table>
-                <tr><td>Part name:</td><td>{{item.name}}</td></tr>
-                <tr><td>Directory:</td><td>{{item.dir}}</td></tr>
-                <tr><td>Description:</td><td>{{item.descr}}</td></tr>
-                <tr><td>Corpus:</td><td><a href="/{{app_prefix}}admin/browser/corpus/{{item.corpus.id}}/change/">{{item.corpus.name}}</a></td></tr>
-                <tr><td>Release:</td><td>{{item.url}}</td></tr>
-                {% if item.downloads and item.downloads.count > 0 %}
-                  {% for down in item.downloads.all %}
-                  <tr><td><a href="{{down.url}}">{{down.get_format_display}}</a></td><td>{{down.count}}</td></tr>
-                  {% endfor %}
-                {% else %}
-                  <tr><td colspan="2"><i>(No format details provided)</i></td></tr>
-                {% endif %}
-              </table>
-            </td>
           </tr>
         {% endfor %}
         </tbody>
@@ -55,6 +47,13 @@
       <p>No corpus parts are available.</p>
     {% endif %}
 
+    <div class="pagination">
+      <span class="step-links">
+
+      {% include 'browser/pagination.html' %}
+
+      </span>
+    </div>
   </div>
 
 

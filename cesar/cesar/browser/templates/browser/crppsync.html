@@ -6,8 +6,8 @@
 <div class="container body-content">
   <h3>Synchronisation from /crpp</h3>
   <div class="row">
-    This kind of synchronisation reads the information in /crpp/serverinfo and attempts to 
-      update the existing models in the database with that information.
+      <p>This page contains several administrative synchronisation options.
+      All of the options contact the /crpp service to retrieve information from the corpus research processing service.</p>
   </div>
 
   <div class="row">
@@ -23,19 +23,84 @@
   </div>
 
 {% if user.is_authenticated %}
-  <div class="row">
-    <div class="col-md-3">
-      <span><a id="sync_start_crpp" class="btn btn-primary" 
-          sync-start="{% url 'sync_start' %}?synctype=crpp" 
-          sync-progress="{% url 'sync_progress' %}?synctype=crpp" 
-          onclick="sync_start('crpp')">Synchronize /crpp</a>
-      </span>
+  <!-- Synchronizing /serverinfo -->
+  <fieldset class="module aligned" style="border: 1px solid darkgray; padding-top: 15px;  padding-bottom: 15px;">
+    <div class="row">
+      <div class="col-md-4">
+        <h3 class="straight" style="margin-top: 0px; margin-left: 10px;">Corpus information</h3>
+          <p style="margin-top: 0px; margin-left: 10px;">Use the /crpp/serverinfo command to get information on the corpora stored in the CRPP, as well as the meta variables
+          used in them. The information stored in the server gets transferred to the Cesar application, and is then accessible from there.</p>
+      </div>
+      <div class="col-md-8">
+        <div class="row">&nbsp;</div>
+        <div class="row">&nbsp;</div>
+        <div class="row">
+          <div class="col-md-3">
+            <span><a id="sync_start_corpora" class="btn btn-primary btn-xs" 
+                sync-start="{% url 'sync_start' %}?synctype=corpora" 
+                sync-progress="{% url 'sync_progress' %}?synctype=corpora" 
+                onclick="sync_start('corpora')">Synchronize corpus information</a>
+            </span>
+          </div>
+          <div id="sync_progress_corpora" class="col-md-9">
+            <!-- This is where the progress will be reported -->
+          </div>
+        </div>
+        <div id="sync_details_corpora" class="row"></div>
+      </div>
     </div>
-    <div id="sync_progress_crpp" class="col-md-9">
-      <!-- This is where the progress will be reported -->
+  </fieldset>
+
+  <div class="row">&nbsp;</div>
+  <div class="row">&nbsp;</div>
+
+  <!-- Synchronizing /texts -->
+  <fieldset class="module aligned" style="border: 1px solid darkgray; padding-top: 15px;  padding-bottom: 15px;">
+    <div class="row">
+      <div class="col-md-4">
+        <h3 class="straight" style="margin-top: 0px; margin-left: 10px;">List of texts</h3>
+          <p style="margin-top: 0px; margin-left: 10px;">Use the /crpp/txtlist command on the selected combination of 'corpus part' and 'file format' 
+          in order to get or update the list of texts available for that combination. 
+          The information stored in the server gets transferred to the Cesar application, and is then accessible from there.</p>
+      </div>
+      <div class="col-md-8">
+        <form id="sync_form_texts" method="POST">
+          <div class="row">
+            <div class="input-group col-md-6">
+              <label class="input-group-addon" for="id_part">Corpus part:</label>
+              <select id="id_part" name="part">
+                {% for item in part_list %}
+                   <option value="{{item.id}}">{{item.name}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="input-group col-md-6">
+              <label class="input-group-addon" for="id_format">File format:</label>
+              <select id="id_format" name="format">
+                {% for item_key, item_val in format_list %}
+                   <option value="{{item_key}}">{{item_val}}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="row">&nbsp;</div>
+          <div class="row">
+            <div class="col-md-3">
+              <span><a id="sync_start_texts" class="btn btn-primary btn-xs" 
+                  sync-start="{% url 'sync_start' %}?synctype=texts" 
+                  sync-progress="{% url 'sync_progress' %}?synctype=texts" 
+                  onclick="sync_start('texts')">Synchronize the list of texts</a>
+              </span>
+            </div>
+            <div id="sync_progress_texts" class="col-md-9">
+              <!-- This is where the progress will be reported -->
+            </div>
+          </div>
+          <div id="sync_details_texts" class="row"></div>
+        </form>
+      </div>
     </div>
-  </div>
-  <div id="sync_details_crpp" class="row"></div>
+  </fieldset>
 {% else %}
   <p>Since you are not logged in, no further processing of /crpp information is possible.</p>
 {% endif %}

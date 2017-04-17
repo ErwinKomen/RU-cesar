@@ -78,21 +78,40 @@ function tabinline_add_copy() {
 function sync_start(sSyncType) {
   var oJson = {},
       oData = {},
+      i,
+      sParam = "",
+      arKV = [],
+      arParam = [],
       sUrl = "";
 
   // Indicate that we are starting
   $("#sync_progress_" + sSyncType).html("Repair is starting: " + sSyncType);
   // Start looking only after some time
   oJson = { 'status': 'started' };
-  oSyncTimer = window.setTimeout(function () { sync_progress(sSyncType, oJson); }, 1000);
+  oSyncTimer = window.setTimeout(function () { sync_progress(sSyncType, oJson); }, 3000);
 
   // Make sure that at the end: we stop
   oData = { 'type': sSyncType };
+  // More data may be needed for particular types
+  switch (sSyncType) {
+    case "texts":
+      // Retrieve the parameters from the <form> settings
+      sParam = $("#sync_form_" + sSyncType).serialize();
+      arParam = sParam.split("&");
+      for (i = 0; i < arParam.length; i++) {
+        arKV = arParam[i].split("=");
+        // Store the parameters into a JSON object
+        oData[arKV[0]] = arKV[1];
+      }
+      break;
+  }
+
+  // Define the URL
   sUrl = $("#sync_start_" + sSyncType).attr('sync-start');
   $.ajax({
     "url": sUrl,
     "dataType": "json",
-    "data": oData,
+    "data": oData,      // This sends the parameters in the data object
     "cache": false,
     "success": function () { sync_stop(sSyncType); }
   })(jQuery);
@@ -168,4 +187,21 @@ function sync_details(json) {
   lHtml.push("</tbody></table></div>");
   // Return as string
   return lHtml.join("\n");
+}
+
+function part_detail_toggle(iPk) {
+  var sId = "";
+
+  // validate
+  if (iPk === undefined) return;
+  // Get the name of the tag
+  sId = "#part_details_" + iPk.toString();
+  // Check if it is visible or not
+  if ($(sId).hasClass("hidden")) {
+    // Remove it
+    $(sId).removeClass("hidden");
+  } else {
+    // Add it
+    $(sId).addClass("hidden");
+  }
 }

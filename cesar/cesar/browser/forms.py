@@ -78,6 +78,18 @@ class ConstituentNameTransForm(forms.ModelForm):
             }
 
 
+class TextAdminForm(forms.ModelForm):
+    """Admin [Text] form"""
+
+    class Meta:
+        model = Text
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(TextAdminForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'format', CORPUS_FORMAT)
+
+
 class PartSearchForm(forms.ModelForm):
 
     search = forms.CharField(label=_("Corpus name"))
@@ -90,6 +102,21 @@ class PartSearchForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Part
+        fields = "__all__"    # ('gloss', 'optdialect')
+
+
+class TextSearchForm(forms.ModelForm):
+
+    # Additional fields
+    search = forms.CharField(label=_("Corpus name"))
+    sortOrder = forms.CharField(label=_("Sort Order"), initial="metavar")
+    part = forms.CharField(label=_("Corpus part"))
+
+    class Meta:
+
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Text
         fields = "__all__"    # ('gloss', 'optdialect')
 
 

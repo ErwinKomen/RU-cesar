@@ -4,7 +4,7 @@ The browser allows browsing through XML files that are part of a corpus.
 A corpus is in a particular language and according to a particular tagset.
 The information here mirrors (and extends) the information in the crp-info.json file.
 """
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from datetime import datetime
 import sys
@@ -233,8 +233,75 @@ class Status(models.Model):
         self.save()
 
 
-def sync_crpp_process(oCrppInfo):
-    """Update our own models with the information in [oCrppInfo]"""
+def process_textlist(oTxtlist, oReq):
+    """Update our own models with the information in [oCorpusInfo]"""
+
+    oBack = {}      # What we return
+
+    try:
+        # Retrieve the correct instance of the status object
+        oStatus = Status.objects.last()
+        oStatus.set("copying")
+
+        # Validate the [oTxtList] object
+        if oTxtlist == None or not 'paths' in oTxtlist or not 'count' in oTxtlist:
+            # We miss information
+            oStatus.status = "information is missing"
+            oStatus.save()
+            return oBack
+
+        # Initialise what we return
+        oBack = {'result': False, 'texts': 0, 
+                 'paths': oTxtlist['paths'],
+                 'total': oTxtlist['count']}
+
+        # Initialisations
+        part = Part.objects.filter(id=oReq['part']).first()
+        format = oReq['format']
+
+        # Walk all the different paths
+        for oPath in oTxtlist['txtlist']:
+            # Process this patth
+            sPath = oPath['path']
+            iPathCount = oPath['count']
+            arList = oPath['list']
+
+            # Keep the transactions together in a bulk edit
+            lstText = []
+            with transaction.atomic():
+                for oText in arList:
+                    # Validate
+                    if 'name' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
+                        try:
+                            oNew = Text(fileName=oText['name'], format=format,
+                                        part=part, title=oText['title'],
+                                        date=oText['date'], author=oText['author'],
+                                        genre=oText['genre'], subtype=oText['subtype'])
+                        except:
+                            oStatus.set("error")
+                            errHandle.DoError("process_textlist [new]", True)
+                            return oBack
+                    lstText.append(oNew)
+                oBack['texts'] += 1
+            # Save what we have so far
+            Text.objects.bulk_create(lstText)
+            oBack['paths'] += 1
+
+        # We are done!
+        oStatus.set("done", oBack)
+
+        # return positively
+        oBack['result'] = True
+        return oBack
+    except:
+        # oCsvImport['status'] = 'error'
+        oStatus.set("error")
+        errHandle.DoError("process_textlist", True)
+        return oBack
+
+
+def process_corpusinfo(oCorpusInfo):
+    """Update our own models with the information in [oCorpusInfo]"""
 
     oBack = {}      # What we return
 
@@ -249,7 +316,7 @@ def sync_crpp_process(oCrppInfo):
                  'tagset': 0, 'grouping': 0, 'part': 0}
 
         # Validate
-        if not 'indices' in oCrppInfo or not 'corpora' in oCrppInfo or not 'metavar' in oCrppInfo or not 'constituents' in oCrppInfo:
+        if not 'indices' in oCorpusInfo or not 'corpora' in oCorpusInfo or not 'metavar' in oCorpusInfo or not 'constituents' in oCorpusInfo:
             # We miss information
             oStatus.status = "information is missing"
             oStatus.save()
@@ -257,7 +324,7 @@ def sync_crpp_process(oCrppInfo):
 
         # Process the 'constituents' part - most basic and not dependant of other things
         oStatus.set("constituents", oBack)
-        lConstituents = oCrppInfo['constituents']
+        lConstituents = oCorpusInfo['constituents']
         for oCns in lConstituents:
             # Check if this item is defined
             instCns = Constituent.get_item(oCns['title'])
@@ -277,7 +344,7 @@ def sync_crpp_process(oCrppInfo):
 
         # Process the METAVAR information -- only depends on the constituent names
         oStatus.set("metavar ...", oBack)
-        lMetavar = oCrppInfo['metavar']
+        lMetavar = oCorpusInfo['metavar']
         for oMvar in lMetavar:
             # Get the name of the metavar
             sMvarName = oMvar['name']
@@ -369,7 +436,7 @@ def sync_crpp_process(oCrppInfo):
 
         # Process the 'corpora' part
         oStatus.set("corpora information", oBack)
-        lCorpora = oCrppInfo['corpora']
+        lCorpora = oCorpusInfo['corpora']
         for oCrp in lCorpora:
             # Check if this corpus exists already
             instCrp = Corpus.get_item(oCrp['name'])
@@ -450,7 +517,7 @@ def sync_crpp_process(oCrppInfo):
     except:
         # oCsvImport['status'] = 'error'
         oStatus.set("error")
-        errHandle.DoError("csv_to_fixture", True)
+        errHandle.DoError("process_corpusinfo", True)
         return oBack
 
 
@@ -711,11 +778,14 @@ class Download(models.Model):
     """Download information for one corpus part in one format"""
 
     # [1]
-    format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
-    # [1; f] Actual URL to place on the internet
-    url = models.URLField("Link to download this corpus (part)")
+    format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), 
+                              max_length=5, help_text=get_help(CORPUS_FORMAT))
+    # [0-1; f] Actual URL to place on the internet
+    url = models.URLField("Link to download this corpus (part)", blank=True, null=True)
+    # [1] Number of texts available in this format
+    count = models.CharField("Number of texts", max_length=10, default="unknown")
     # [1]    Link to the [Part] this download belongs to
-    part = models.ForeignKey(Part, blank=False, null=False)
+    part = models.ForeignKey(Part, blank=False, null=False, related_name="downloads")
 
     def __str__(self):
         return "{}_{}".format(self.part.name, choice_english(CORPUS_FORMAT, self.format))
@@ -734,9 +804,37 @@ class Text(models.Model):
     metaFile = models.CharField("Name of the metadata file", max_length=MAX_TEXT_LEN, blank=True, null=True)
     # [0-1] - Every text *MAY* have a title
     title = models.CharField("Title of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a date
+    date = models.CharField("Publication year of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have an author
+    author = models.CharField("Author(s) of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a genre
+    genre = models.CharField("Genre of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a subtype
+    subtype = models.CharField("Subtype of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        return self.fileName
+
+    def formatname(self):
+        return self.get_format_display()
+    formatname.short_description = "format"
+    def datename(self):
+        return self.date
+    datename.short_description = "date"
+    def genrename(self):
+        return self.genre
+    genrename.short_description = "genre"
+    def subtypename(self):
+        return self.subtype
+    subtypename.short_description = "subtype"
+
+    def admin_form_column_names(self):
+        # 'part','format', 'fileName','title', 'date', 'author', 'genre', 'subtype'
+        return ("%s %s %s %s %s %s %s %s" %
+            (self.part.name, self.get_format_display(),
+            self.fileName, self.title, self.date, self.author, self.genre, self.subtype)
+            )
 
     def get_item(sName):
         qs = Text.objects.filter(fileName=sName)
