@@ -156,7 +156,7 @@ class TextAdmin(admin.ModelAdmin):
 
     form = TextAdminForm
 
-    list_display = ['part','formatname', 'fileName','title', 'datename', 'author', 'genrename', 'subtypename']
+    list_display = ['part','formatname', 'fileName', 'lines','title', 'datename', 'author', 'genrename', 'subtypename']
     # list_display = ['admin_form_column_names',]
     search_fields = ['part','format', 'fileName','title', 'date', 'author', 'genre', 'subtype']
     list_filter = ['part', 'format', 'genre', 'subtype']

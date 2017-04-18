@@ -271,10 +271,10 @@ def process_textlist(oTxtlist, oReq):
             with transaction.atomic():
                 for oText in arList:
                     # Validate
-                    if 'name' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
+                    if 'name' in oText and 'size' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
                         try:
                             oNew = Text(fileName=oText['name'], format=format,
-                                        part=part, title=oText['title'],
+                                        part=part, title=oText['title'], lines=oText['size'],
                                         date=oText['date'], author=oText['author'],
                                         genre=oText['genre'], subtype=oText['subtype'])
                         except:
@@ -800,6 +800,8 @@ class Text(models.Model):
     format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
     # [1] - Every text must be part of a Part
     part = models.ForeignKey(Part, blank=False, null=False)
+    # [1] - EVery text must have a length in number of lines
+    lines = models.IntegerField("Number of lines", default=0)
     # [0-1] - Every text may have a metadata file associated with it
     metaFile = models.CharField("Name of the metadata file", max_length=MAX_TEXT_LEN, blank=True, null=True)
     # [0-1] - Every text *MAY* have a title
