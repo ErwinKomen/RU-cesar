@@ -7,6 +7,13 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
 from cesar.browser.models import *
 
+def init_choices(obj, sFieldName, sSet, maybe_empty=False):
+    if (obj.fields != None and sFieldName in obj.fields):
+        obj.fields[sFieldName].choices = build_choice_list(sSet, maybe_empty=maybe_empty)
+        obj.fields[sFieldName].help_text = get_help(sSet)
+
+
+
 class BootstrapAuthenticationForm(AuthenticationForm):
     """Authentication form which uses boostrap CSS."""
     username = forms.CharField(max_length=254,

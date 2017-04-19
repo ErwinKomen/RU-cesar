@@ -75,7 +75,7 @@ class FieldChoice(models.Model):
     class Meta:
         ordering = ['field','machine_value']
 
-def build_choice_list(field, position=None, subcat=None):
+def build_choice_list(field, position=None, subcat=None, maybe_empty=False):
     """Create a list of choice-tuples"""
 
     choice_list = [];
@@ -86,7 +86,10 @@ def build_choice_list(field, position=None, subcat=None):
         if FieldChoice.objects == None:
             # Take a default list
             choice_list = [('0','-'),('1','N/A')]
+            unique_list = [('0','-'),('1','N/A')]
         else:
+            if maybe_empty:
+                choice_list = [('0','-')]
             for choice in FieldChoice.objects.filter(field__iexact=field):
                 # Default
                 sEngName = ""
@@ -111,13 +114,12 @@ def build_choice_list(field, position=None, subcat=None):
 
             choice_list = sorted(choice_list,key=lambda x: x[1]);
     except:
-        print("Unexpected error [build_choice_list]:", sys.exc_info()[0])
+        print("Unexpected error:", sys.exc_info()[0])
         choice_list = [('0','-'),('1','N/A')];
 
     # Signbank returns: [('0','-'),('1','N/A')] + choice_list
     # We do not use defaults
     return choice_list;
-
 def choice_english(field, num):
     """Get the english name of the field with the indicated machine_number"""
 
