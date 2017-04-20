@@ -113,7 +113,7 @@ function sync_start(sSyncType) {
     "dataType": "json",
     "data": oData,      // This sends the parameters in the data object
     "cache": false,
-    "success": function () { sync_stop(sSyncType); }
+    "success": function (json) { sync_stop(sSyncType, json); }
   })(jQuery);
 }
 
@@ -135,6 +135,14 @@ function sync_progress(sSyncType) {
 }
 
 function sync_handle(sSyncType, json) {
+  var sStatus = "";
+
+  // Validate
+  if (json === undefined) {
+    sStatus = $("#sync_details_" + sSyncType).html();
+    $("#sync_details_" + sSyncType).html(sStatus + "(undefined status)");
+    return;
+  }
   // Action depends on the status in [json]
   switch (json.status) {
     case 'error':
@@ -164,7 +172,7 @@ function sync_stop(sSyncType, json) {
   // Stop the progress calling
   window.clearInterval(oSyncTimer);
   // Show we are ready
-  $("#sync_progress_" + sSyncType).html("Finished synchronizing: " + sSyncType);
+  $("#sync_progress_" + sSyncType).html("Finished synchronizing: " + sSyncType + "<br>" + JSON.stringify(json, null, 2));
 
 }
 
