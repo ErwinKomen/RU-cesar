@@ -388,7 +388,7 @@ class TextListView(ListView):
         qs = Text.objects.filter(*lstQ).distinct().select_related().order_by(
             Lower('part__corpus__name'),
             Lower('part__name'),
-            Lower('name'))
+            Lower('fileName'))
         self.qs = qs
 
         # Set the entry count
