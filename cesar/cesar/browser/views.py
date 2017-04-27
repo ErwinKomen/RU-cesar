@@ -20,7 +20,8 @@ import fnmatch
 
 # Global variables
 paginateSize = 10
-paginateEntries = 100
+paginateEntries = 20
+paginateTextLines = 30
 paginateValues = (1000, 500, 250, 100, 50, 40, 30, 20, 10, )
 
 
@@ -191,6 +192,23 @@ def adapt_search(val):
     val = '^' + fnmatch.translate(val) + '$'
     return val
 
+def get_text_lines(instText):
+    """Retrieve the lines for this text"""
+
+    # Find out which part this is
+    part = instText.part
+    # Get the necessary parameters: lng, ext, dir
+    sLng = part.corpus.get_lng_display()
+    sDir = part.dir
+    sName = instText.fileName
+    sFormat = instText.get_format_display()
+    # Now try to get the information
+    oBack = get_crpp_text(sLng, sDir, sFormat, sName)
+    # Prepare what we return
+    if oBack == None or oBack['status'] == 'error':
+        return None
+    else:
+        return oBack
 
 
 class PartDetailView(DetailView):
@@ -296,6 +314,45 @@ class PartListView(ListView):
         return qs
 
 
+class TextDetailView(DetailView):
+    """Show the SURFACE form of the text"""
+
+    model = Text
+    template_name = 'browser/text_view.html'
+    paginate_by = paginateTextLines
+    entrycount = 0
+    qs = None
+    lines = None
+    linecount = 0
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(TextDetailView, self).get_context_data(**kwargs)
+
+        # Get parameters for the search
+        initial = self.request.GET
+
+        # Add the lines of this text to the context
+        oLines = get_text_lines(self.object)
+        self.linecount = oLines['count']
+        context['line_list'] = oLines['line']
+
+        # Make sure the paginate-values are available
+        context['paginateValues'] = paginateValues
+
+        if 'paginate_by' in initial:
+            context['paginateSize'] = int(initial['paginate_by'])
+            self.paginate_by = int(initial['paginate_by'])
+        else:
+            context['paginateSize'] = self.paginate_by
+
+        # Set the prefix
+        context['app_prefix'] = APP_PREFIX
+
+        # Return what we have
+        return context
+
+
 class TextListView(ListView):
     """Provide a list of texts (in a part)"""
 
@@ -364,25 +421,25 @@ class TextListView(ListView):
         if 'search' in get and get['search'] != '':
             # Allow simple wildcard search of the Part Name
             val = adapt_search(get['search'])
-            lstQ.append(qs(fileName__iregex=val))
+            lstQ.append(Q(fileName__iregex=val))
 
         # Fine-tuning: search string is the corpus
         if 'corpus' in get and get['corpus'] != '':
             # Allow simple wildcard search
             val = adapt_search(get['corpus'])
-            lstQ.append(qs(part__corpus__name__iregex=val))
+            lstQ.append(Q(part__corpus__name__iregex=val))
 
         # Check for second search criterion: part
         if 'part' in get and get['part'] != '':
             # Allow simple wildcard search
             val = adapt_search(get['part'])
-            lstQ.append(qs(part__iregex=val))
+            lstQ.append(Q(part__iregex=val))
 
         # Additional fine-tuning: title
         if 'title' in get and get['title'] != '':
             # Allow simple wildcard search
             val = adapt_search(get['title'])
-            lstQ.append(qs(title__iregex=val))
+            lstQ.append(Q(title__iregex=val))
 
         # Make the query set available
         qs = Text.objects.filter(*lstQ).distinct().select_related().order_by(

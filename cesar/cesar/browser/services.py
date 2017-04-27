@@ -63,3 +63,39 @@ def get_crpp_texts(sLng, sPart, sFormat):
         oBack['code'] = r.status_code
     # REturn what we have
     return oBack
+
+def get_crpp_text(sLng, sPart, sFormat, sName):
+    """Get the one single text
+    
+    Example: /crpp/txt?{"userid":"erwin", "lng":"", "dir": "OE", "ext": "psdx", "name": "coadrian.o34"}
+    """
+
+    # Construct the object we pass along
+    oTxtReq = {'userid': "erwin",
+                'lng': sLng,
+                'ext': sFormat,
+                'name': sName}
+    # Possibly add 'dir'
+    if sPart != None and sPart != "":
+        oTxtReq['dir'] = sPart
+    # Set the correct URL
+    url = CRPP_HOME + '/crpp/txt?' + json.dumps(oTxtReq)
+    # Default reply
+    oBack = {}
+    # Get the data from the CRPP api
+    r = requests.get(url)
+    # Action depends on what we receive
+    if r.status_code == 200:
+        # Convert to JSON
+        reply = json.loads(r.text.replace("\t", " "))
+        # Get the [content] part (note: no final 's')
+        oContent = reply['content']
+        # Define the lists
+        oBack['count'] = oContent['count']
+        oBack['line'] = oContent['line']
+        oBack['status'] = 'ok'
+    else:
+        oBack['status'] = 'error'
+        oBack['code'] = r.status_code
+    # REturn what we have
+    return oBack

@@ -39,6 +39,7 @@ urlpatterns = [
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
     url(r'^text/list/$', cesar.browser.views.TextListView.as_view(), name='text_list'),
+    url(r'^text/view/(?P<pk>\d+)', TextDetailView.as_view(), name='part_view'),
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),

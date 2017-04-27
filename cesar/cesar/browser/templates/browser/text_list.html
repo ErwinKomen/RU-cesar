@@ -15,7 +15,8 @@
     </div>
 
     {% if object_list %}
-      <h3>Corpus part overview</h3>
+      <h3>Text overview</h3>
+      {% if is_paginated %}
       <div class="row">
         <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
         <div class="col-sm-8">
@@ -26,27 +27,31 @@
         </span>
         </div>
       </div>
+      {% endif %}
       <!-- The contents as a table -->
       <table class="table table-hover">
-        <thead><tr><th class="hidden">id</th><th>Part</th><th>Corpus</th><th>Description</th></tr></thead>
+        <thead><tr><th class="hidden">id</th><th>Part</th><th>File</th><th>Lines</th><th>Genre</th><th>Title</th></tr></thead>
         <tbody>
-        {% for item in part_list %}
+        {% for item in text_list %}
           <tr class="part-item">
             <td class="hidden">{{item.id}}</td>
-            <td><span class="part-item-name"><a href="{% url 'text_list' %}?part={{item.id}}">{{item.name}}</a></span></td>
-            <td><span class="part-item-corp">{{item.corpus}}</span></td>
+            <td><span class="part-item-name"><a href="{% url 'part_list' %}?part={{item.part.id}}">{{item.part.name}}</a></span></td>
+            <td><span class="part-item-corp"><a href="/{{app_prefix}}text/view/{{item.id}}">{{item.fileName}}</a></span></td>
+            <td><span class="part-item-corp">{{item.lines}}</span></td>
+            <td><span class="part-item-corp">{{item.genre}}</span></td>
             <td>
-                <span class="part-item-desc">{{item.descr}}</span>
-                <span><a class="btn btn-primary" href="{% url 'part_edit' %}?part={{item.id}}">Edit</a></span>
+                <span class="part-item-desc">{{item.title}}</span>
+                <span><a class="btn btn-warning btn-xs" href="/{{app_prefix}}part/view/{{item.part.id}}">Metadata</a></span>
               </td>
           </tr>
         {% endfor %}
         </tbody>
       </table>
     {% else %}
-      <p>No corpus parts are available.</p>
+      <p>No texts are available.</p>
     {% endif %}
 
+    {% if is_paginated %}
     <div class="pagination">
       <span class="step-links">
 
@@ -54,6 +59,7 @@
 
       </span>
     </div>
+    {% endif %}
   </div>
 
 
