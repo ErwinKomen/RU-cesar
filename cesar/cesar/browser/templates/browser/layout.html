@@ -6,6 +6,9 @@
     <title>{{ title }}</title>
     {% load staticfiles %}
     <link rel="stylesheet" type="text/css" href="{% static 'browser/content/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-base.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-form.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-widgets.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'browser/content/site.css' %}" />
     <script src="{% static 'browser/scripts/modernizr-2.6.2.js' %}"></script>
     <script src="{% static 'browser/scripts/jquery-1.10.2.js' %}"></script>
@@ -16,8 +19,9 @@
 
 <body>
     {% include 'browser/topnav.html' %}
-
+{% block breadcrumbs %}{% endblock %}
     <div class="container body-content">
+
 {% block content %}{% endblock %}
         <hr/>
         <footer>

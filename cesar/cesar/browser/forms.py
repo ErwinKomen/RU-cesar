@@ -5,6 +5,7 @@ Definition of forms.
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
+from django.forms.widgets import *
 from cesar.browser.models import *
 
 def init_choices(obj, sFieldName, sSet, maybe_empty=False):
@@ -95,6 +96,31 @@ class TextAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TextAdminForm, self).__init__(*args, **kwargs)
         init_choices(self, 'format', CORPUS_FORMAT)
+
+
+class TextForm(forms.ModelForm):
+    """My own [Text] form"""
+
+    class Meta:
+        model = Text
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(TextForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'format', CORPUS_FORMAT)
+        for field in self.fields:
+            wClass = 'vTextField' 
+            if isinstance(self.fields[field].widget, NumberInput):
+                wClass = 'vIntegerField'
+            elif isinstance(self.fields[field].widget, Select):
+                wClass = ''
+            elif isinstance(self.fields[field].widget, Textarea):
+                wClass = ''
+               
+            # Adapt the field type by adding a class
+            if wClass != '':
+                self.fields[field].widget.attrs.update({'class': wClass})
+
 
 
 class PartSearchForm(forms.ModelForm):

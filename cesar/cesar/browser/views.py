@@ -5,10 +5,11 @@ Definition of views.
 from django.views.generic.detail import DetailView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.http import JsonResponse
 from django.contrib import admin
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.db.models.functions import Lower
 from datetime import datetime
@@ -21,7 +22,7 @@ import fnmatch
 # Global variables
 paginateSize = 10
 paginateEntries = 20
-paginateTextLines = 30
+paginateSentences = 30
 paginateValues = (1000, 500, 250, 100, 50, 40, 30, 20, 10, )
 
 
@@ -314,28 +315,25 @@ class PartListView(ListView):
         return qs
 
 
-class TextDetailView(DetailView):
-    """Show the SURFACE form of the text"""
+class SentenceListView(ListView):
+    """Show the sentences in one particular text"""
 
-    model = Text
-    template_name = 'browser/text_view.html'
-    paginate_by = paginateTextLines
+    model = Sentence
+    template_name = 'browser/sentence_list.html'
+    paginate_by = paginateSentences
     entrycount = 0
     qs = None
+    line_list = None
     lines = None
     linecount = 0
+    text = None
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
-        context = super(TextDetailView, self).get_context_data(**kwargs)
+        context = super(SentenceListView, self).get_context_data(**kwargs)
 
         # Get parameters for the search
         initial = self.request.GET
-
-        # Add the lines of this text to the context
-        oLines = get_text_lines(self.object)
-        self.linecount = oLines['count']
-        context['line_list'] = oLines['line']
 
         # Make sure the paginate-values are available
         context['paginateValues'] = paginateValues
@@ -346,11 +344,106 @@ class TextDetailView(DetailView):
         else:
             context['paginateSize'] = self.paginate_by
 
+        # Set other needed values
+        context['text'] = self.text
+        context['linecount'] = self.entrycount
+
         # Set the prefix
         context['app_prefix'] = APP_PREFIX
 
         # Return what we have
         return context
+
+    def get_queryset(self):
+
+        # Get the parameters passed on with the GET request
+        get = self.request.GET
+
+        # Get the Text object
+        textlist = Text.objects.filter(id=self.kwargs['pk'])
+        if textlist != None and textlist.count() >0:
+            self.text = textlist[0]
+            self.qs = self.text.get_sentences()
+            # Set the entry count
+            self.entrycount = self.qs.count()
+        else:
+            self.qs = None
+            self.entrycount = 0
+
+        # Return the resulting filtered and sorted queryset
+        return self.qs
+
+
+class TextDetailView(DetailView):
+    """Allow viewing and editing details of one text"""
+
+    model = Text
+    form_class = TextForm
+    template_name = 'browser/text_view.html'
+    last_url = ''
+
+    def post(self, request, pk):
+        text = get_object_or_404(Text, pk=pk)
+        bound_form = self.form_class(request.POST, instance=text)
+        if bound_form.is_valid():
+            new_text = bound_form.save()
+            # Find out what to do next
+            if '_save' in request.POST:
+                if 'last_url' in request.POST:
+                    return redirect(request.POST['last_url'])
+                else:
+                    return redirect('text_list')
+            elif '_continue' in request.POST:
+                # return redirect(new_text, status = 'save_continue')
+
+                # return render(request, new_text.get_absolute_url(), {'status': 'save_continue'})
+
+                #context = {'form': bound_form,
+                #           'text': new_text,
+                #           'status': 'save_continue'}
+                #return render( request, self.template_name, context)
+                return redirect(new_text.get_absolute_url() + "?status=save_continue")
+        else:
+            context = {'form': bound_form,
+                       'text': text,
+                       'status': 'error'}
+            return render( request, self.template_name, context)
+        
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(TextDetailView, self).get_context_data(**kwargs)
+
+        # Get parameters for the search
+        initial = self.request.GET
+
+        # Pass on the form
+        context['form'] = self.form_class(instance=self.object)
+
+        # Establish the 'last_url' part
+        if 'last_url' in initial:
+            context['last_url'] = initial['last_url']
+        else:
+            context['last_url'] = ''
+
+        status = ""
+        if 'status' in initial:
+            status = initial['status']
+        context['status'] = status
+
+        # Return what we have
+        return context
+
+    def get_queryset(self):
+
+        # Get the parameters passed on with the GET request
+        get = self.request.GET
+
+        self.queryset = super(TextDetailView,self).get_queryset()
+
+        # Return the resulting filtered and sorted queryset
+        return self.queryset
+
 
 
 class TextListView(ListView):
@@ -406,6 +499,10 @@ class TextListView(ListView):
 
         # Set the title
         context['title'] = "Cesar texts"
+
+        # Remember where we are
+        # ONLY GIVES PARTIAL: context['url'] = self.request.resolver_match.url_name
+        context['url'] = self.request.get_full_path()
 
         # Return the calculated context
         return context

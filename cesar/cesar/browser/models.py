@@ -7,6 +7,8 @@ The information here mirrors (and extends) the information in the crp-info.json 
 from django.db import models, transaction
 from django.contrib.auth.models import User
 from datetime import datetime
+from cesar.browser.services import *
+from cesar.settings import APP_PREFIX
 import sys
 import copy
 import json
@@ -833,6 +835,9 @@ class Text(models.Model):
         return self.subtype
     subtypename.short_description = "subtype"
 
+    def get_absolute_url(self):
+        return "/"+APP_PREFIX+"text/view/%i/" % self.id
+
     def admin_form_column_names(self):
         # 'part','format', 'fileName','title', 'date', 'author', 'genre', 'subtype'
         return ("%s %s %s %s %s %s %s %s" %
@@ -846,6 +851,51 @@ class Text(models.Model):
             return None
         else:
             return qs[0]
+
+    def get_sentences(self):
+        """Get the sentences belonging to this text"""
+
+        # Check if they have been fetched
+        if self.sentences.count() == 0:
+            # Need to fetch them
+            oBack = get_crpp_text(self.part.corpus.get_lng_display(), 
+                                  self.part.dir, 
+                                  self.get_format_display(), 
+                                  self.fileName)
+            # Validate what we receive
+            if oBack == None or oBack['status'] == 'error':
+                return None
+            # Process what we received into [Sentence] objects
+            lstSent = []
+            iOrder = 1
+            with transaction.atomic():
+                for oSent in oBack['line']:
+                    # Create a new Sentence object
+                    oNew = Sentence(identifier=oSent['id'],
+                                    order=iOrder,
+                                    sent=oSent['text'],
+                                    text=self)
+                    lstSent.append(oNew)
+                    iOrder += 1
+            # Save what we have so far
+            Sentence.objects.bulk_create(lstSent)
+        # At this point we HAVE all the sentences, so we only need to return the lot together
+        # But this needs to be in a QUERYSET
+        qs = Sentence.objects.filter(text__id=self.id).distinct().select_related().order_by('order')
+        return qs
+
+
+class Sentence(models.Model):
+    """One sentence from the surface form of a text"""
+
+    # [1] Order - number that dictates the order within a text
+    order = models.IntegerField("Order")
+    # [1] Identifier
+    identifier = models.CharField("Identifier", max_length=MAX_TEXT_LEN)
+    # [1] Text content itself
+    sent = models.CharField("Sentence", max_length=MAX_TEXT_LEN)
+    # [1] Link to the [Text] this line belongs to
+    text = models.ForeignKey(Text, blank=False, null=False, related_name="sentences")
 
 
 

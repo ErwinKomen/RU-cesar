@@ -1,53 +1,69 @@
 ﻿{% extends "browser/layout.html" %}
 
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'text_list' %}">Texts</a>
+      &rsaquo; {{text.fileName}}
+  </div>
+{% endblock %}
+
 {% block content %}
 
+  <!-- Contents -->
   <div class="container body-content">
-    <div class="panel panel-default">
-      <form name="partsearch" id="partsearch" action="" method="get"  
-                onsubmit="return do_search('#id_submit_button', 'metavar', 'simple');" >
-        <!-- EK: A sort-order specification is in a hidden form field, which is filled by JS:do_sort_column() -->
-        <div class="hidden">
-          <input name='sortOrder' class='form-control' value='metavar' >
-          <input id="submit_type" name='submit_type' class='form-control' value='simple'>
-        </div>
-      </form>
+
+    <h1>Details of this text</h1>
+
+    <div id="content-main">
+        <h3>{% if text.title %}{{text.title}}{% else %}(no title){% endif %}</h3>
+        <form enctype="multipart/form-data" 
+              action="{{form_url}}" 
+              method="post" 
+              id="text_form" novalidate>
+          {% csrf_token %}
+          <div class="hidden">
+            <input name='last_url' class='form-control' value='{{last_url}}' >
+          </div>
+          <fieldset class="module aligned">
+
+            {% for field in form %}
+              <div class="form-row {% if field.name %} field-{{field.name}}{% endif %}">
+
+                  <div class="field-box{% if field.field.name %} field-{{ field.field.name }}{% endif %}
+                             {% if not field.is_readonly and field.errors %} errors{% endif %}
+                             {% if field.field.is_hidden %} hidden{% endif %}">
+
+                      {% if not field.is_readonly %}{{ field.errors }}{% endif %}
+                      {% if field.is_checkbox %}
+                          {{ field }}{{ field.label_tag }}
+                      {% else %}
+                          {{ field.label_tag }}
+                          {% if field.is_readonly %}
+                              <div class="readonly">{{ field.contents }}</div>
+                          {% else %}
+                              {{ field }}
+                          {% endif %}
+                      {% endif %}
+                      {% if field.help_text %}
+                          <div class="help">{{ field.help_text|safe }}</div>
+                      {% endif %}
+                  </div>
+              </div>
+            {% endfor %}
+          </fieldset>
+          <div class="submit-row">
+              <input type="submit" value="Save" class="default" name="_save" />
+              <p class="deletelink-box">
+                  <a href="{% url 'home' %}" class="deletelink">Delete</a>
+              </p>
+              <input type="submit" value="Save and add another" name="_addanother" />
+              <input type="submit" value="Save and continue editing" name="_continue" />
+          </div>
+        </form>
     </div>
 
-    {% if line_list %}
-      <h3>{% if text.title %}{{text.title}}{% else %}(no title){% endif %}</h3>
-      {% if is_paginated %}
-      <div class="row">
-        <div class="col-sm-4"><span>Length: </span><span>{{linecount}}</span></div>
-        <div class="col-sm-8">
-        <span class="step-links">
 
-        {% include 'browser/pagination.html' %}
-
-        </span>
-        </div>
-      </div>
-      {% endif %}
-      <!-- The contents simple as that -->
-        {% for line in line_list %}
-        <div class="text-line">
-            <span class="line-identifier">{{line.id}}</span>
-            <span class="line-text">{{line.text}}</span>
-        </div>
-        {% endfor %}
-    {% else %}
-      <p>No text is available.</p>
-    {% endif %}
-
-    {% if is_paginated %}
-    <div class="pagination">
-      <span class="step-links">
-
-      {% include 'browser/pagination.html' %}
-
-      </span>
-    </div>
-    {% endif %}
   </div>
 
 

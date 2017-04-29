@@ -64,10 +64,15 @@ div.inline-group a.add-related {
   height: 35px;
 }
 
+/* Adaptation of the standard panel */
+.panel {
+    margin-top: 5px;
+}
+
 /* navbar */
 .navbar-custom {
     background-color: goldenrod;
-    border-color: darkgoldenrod;
+    border-top-color: darkgoldenrod;
 }
 /* title */
 .navbar-custom .navbar-brand {
@@ -140,3 +145,29 @@ div.inline-group a.add-related {
 #header  .navbar-custom  .open .dropdown-menu li  a:visited {
   color: black !important;
 }
+
+/* BASE.css */
+p { 
+    padding: 0;
+    line-height: 140%;
+}
+
+/* Extra small pagination */
+.pagination-xsm > li > a,
+.pagination-xsm > li > span {
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+.pagination-xsm > li:first-child > a,
+.pagination-xsm > li:first-child > span {
+  border-bottom-left-radius: 2px;
+  border-top-left-radius: 2px;
+}
+
+.pagination-xsm > li:last-child > a,
+.pagination-xsm > li:last-child > span {
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+

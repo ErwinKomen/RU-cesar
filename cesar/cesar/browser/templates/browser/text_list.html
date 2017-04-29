@@ -36,12 +36,12 @@
           <tr class="part-item">
             <td class="hidden">{{item.id}}</td>
             <td><span class="part-item-name"><a href="{% url 'part_list' %}?part={{item.part.id}}">{{item.part.name}}</a></span></td>
-            <td><span class="part-item-corp"><a href="/{{app_prefix}}text/view/{{item.id}}">{{item.fileName}}</a></span></td>
+            <td><span class="part-item-corp"><a href="{% url 'text_lines' pk=item.pk %}">{{item.fileName}}</a></span></td>
             <td><span class="part-item-corp">{{item.lines}}</span></td>
             <td><span class="part-item-corp">{{item.genre}}</span></td>
             <td>
                 <span class="part-item-desc">{{item.title}}</span>
-                <span><a class="btn btn-warning btn-xs" href="/{{app_prefix}}part/view/{{item.part.id}}">Metadata</a></span>
+                <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url}}">Edit</a></span>
               </td>
           </tr>
         {% endfor %}
