@@ -444,8 +444,7 @@ class TextDetailView(DetailView):
         # Return the resulting filtered and sorted queryset
         return self.queryset
 
-
-
+      
 class TextListView(ListView):
     """Provide a list of texts (in a part)"""
 
@@ -478,9 +477,16 @@ class TextListView(ListView):
 
         # Get parameters for the search
         initial = self.request.GET
-        search_form = TextSearchForm(initial)
 
+        # Specify the search form
+        search_form = TextSearchForm(initial)
         context['searchform'] = search_form
+
+        # Set the options for the <select> boxes
+        context['lng_list'] = build_choice_list(CORPUS_LANGUAGE)
+        context['corpus_list'] = [crp for crp in Corpus.objects.all().order_by('name')]
+        context['part_list'] = [prt for prt in Part.objects.all().order_by('name')]
+
 
         # Determine the count 
         context['entrycount'] = self.entrycount #  self.get_queryset().count()

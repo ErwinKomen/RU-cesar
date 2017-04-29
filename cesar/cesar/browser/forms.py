@@ -99,7 +99,7 @@ class TextAdminForm(forms.ModelForm):
 
 
 class TextForm(forms.ModelForm):
-    """My own [Text] form"""
+    """Non-admin view and change text metadata"""
 
     class Meta:
         model = Text
@@ -122,7 +122,6 @@ class TextForm(forms.ModelForm):
                 self.fields[field].widget.attrs.update({'class': wClass})
 
 
-
 class PartSearchForm(forms.ModelForm):
 
     search = forms.CharField(label=_("Corpus name"))
@@ -139,17 +138,19 @@ class PartSearchForm(forms.ModelForm):
 
 
 class TextSearchForm(forms.ModelForm):
+    """Search for one text in a particular language/corpus/part/genre etc"""
 
     # Additional fields
-    search = forms.CharField(label=_("Corpus name"))
+    search = forms.CharField(label=_("Text name"))
     sortOrder = forms.CharField(label=_("Sort Order"), initial="metavar")
-    part = forms.CharField(label=_("Corpus part"))
+    language = forms.CharField(label=_("Language"))
+    corpus = forms.CharField(label=_("Corpus"))
+    part = forms.CharField(label=_("Section"))
 
     class Meta:
 
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Text
-        fields = "__all__"    # ('gloss', 'optdialect')
-
+        fields = "__all__"    # Standard fields
 

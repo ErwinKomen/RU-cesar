@@ -1,65 +1,171 @@
 ﻿{% extends "browser/layout.html" %}
 
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; Texts
+  </div>
+{% endblock %}
+
 {% block content %}
 
-  <div class="container body-content">
-    <div class="panel panel-default">
-      <form name="partsearch" id="partsearch" action="" method="get"  
-                onsubmit="return do_search('#id_submit_button', 'metavar', 'simple');" >
+  <div class="row">
+    <div class="col-sm-3 col-md-2 sidebar">
+      <form name="textsearch" id="textsearch" action="" method="get"  
+                onsubmit="return do_search('#id_submit_button', 'text', 'simple');" >
         <!-- EK: A sort-order specification is in a hidden form field, which is filled by JS:do_sort_column() -->
         <div class="hidden">
-          <input name='sortOrder' class='form-control' value='metavar' >
+          <input name='sortOrder' class='form-control' value='part' >
           <input id="submit_type" name='submit_type' class='form-control' value='simple'>
         </div>
+
+        <!-- Search button(s) panel -->
+        <div><label>&nbsp;</label></div>
+        <div class='pull-right'>
+            <!-- Make sure no button has the *name* 'submit', otherwise submit() cannot be used -->
+            <input class='btn btn-primary' type="submit" onclick="do_search(this, 'trefwoord', 'simple');" value="Search">
+            <input class='btn btn-default' type="submit" onclick="do_search(this, 'trefwoord', 'reset');" value="Reset">
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading" data-toggle="collapse" data-target="#filter-corpus">
+            Corpus:&nbsp;
+            <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
+          </div>
+          <!-- Collapsable part -->
+          <div id="filter-corpus" class="collapse {% if not request.GET.search %} inert {% endif %}">
+            <!-- Control #1: Language -->
+            <div><label>&nbsp;</label></div>
+            <div class="input-group">
+              <label class='input-group-addon' for='corpus-language'>{{searchform.language.label}}</label>
+              <select class="form-control" name="corpus-language">
+                <option value="0">-</option>
+              {% for opt_tuple in lng_list %}
+                <option value="{{opt_tuple.0}}">{{opt_tuple.1}}</option>
+              {% endfor %}
+              </select>
+            </div>
+            <!-- Control #2: Corpus   -->
+            <div><label>&nbsp;</label></div>
+            <div class="input-group">
+              <label class='input-group-addon' for='corpus-name'>{{searchform.corpus.label}}</label>
+              <select class="form-control" name="corpus-name">
+                <option value="0">-</option>
+              {% for opt in corpus_list %}
+                <option value="{{opt.id}}">{{opt.name}}</option>
+              {% endfor %}
+              </select>
+            </div>
+            <!-- Control #3: Part     -->
+            <div><label>&nbsp;</label></div>
+            <div class="input-group">
+              <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
+              <select class="form-control" name="part-name">
+                <option value="0">-</option>
+              {% for opt in part_list %}
+                <option value="{{opt.id}}">{{opt.name}}</option>
+              {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading" data-toggle="collapse" data-target="#filter-metadata">
+            Meta data:&nbsp;
+            <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
+          </div>
+          <!-- Collapsable part -->
+          <div id="filter-metadata" class="collapse {% if not request.GET.search %} inert {% endif %}">
+            <!-- Control #1: Language -->
+            <div><label>&nbsp;</label></div>
+            <div class="input-group">
+              <label class='input-group-addon' for='corpus-language'>{{searchform.language.label}}</label>
+              <select class="form-control" name="corpus-language">
+                <option value="0">-</option>
+              {% for opt_tuple in lng_list %}
+                <option value="{{opt_tuple.0}}">{{opt_tuple.1}}</option>
+              {% endfor %}
+              </select>
+            </div>
+            <!-- Control #2: Corpus   -->
+            <div><label>&nbsp;</label></div>
+            <div class="input-group">
+              <label class='input-group-addon' for='corpus-name'>{{searchform.corpus.label}}</label>
+              <select class="form-control" name="corpus-name">
+                <option value="0">-</option>
+              {% for opt in corpus_list %}
+                <option value="{{opt.id}}">{{opt.name}}</option>
+              {% endfor %}
+              </select>
+            </div>
+            <!-- Control #3: Part     -->
+            <div><label>&nbsp;</label></div>
+            <div class="input-group">
+              <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
+              <select class="form-control" name="part-name">
+                <option value="0">-</option>
+              {% for opt in part_list %}
+                <option value="{{opt.id}}">{{opt.name}}</option>
+              {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
       </form>
     </div>
 
-    {% if object_list %}
-      <h3>Text overview</h3>
+    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
+      {% if object_list %}
+        <h3>Text overview</h3>
+        {% if is_paginated %}
+        <div class="row">
+          <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
+          <div class="col-sm-8">
+          <span class="step-links pull-right">
+
+          {% include 'browser/pagination.html' %}
+
+          </span>
+          </div>
+        </div>
+        {% endif %}
+        <!-- The contents as a table -->
+        <table class="table table-hover">
+          <thead><tr><th class="hidden">id</th><th>Part</th><th>File</th><th>Lines</th><th>Genre</th><th>Title</th></tr></thead>
+          <tbody>
+          {% for item in text_list %}
+            <tr class="part-item">
+              <td class="hidden">{{item.id}}</td>
+              <td><span class="part-item-name"><a href="{% url 'part_list' %}?part={{item.part.id}}">{{item.part.name}}</a></span></td>
+              <td><span class="part-item-corp"><a href="{% url 'text_lines' pk=item.pk %}">{{item.fileName}}</a></span></td>
+              <td><span class="part-item-corp">{{item.lines}}</span></td>
+              <td><span class="part-item-corp">{{item.genre}}</span></td>
+              <td>
+                  <span class="part-item-desc">{{item.title}}</span>
+                  <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url}}">Edit</a></span>
+                </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No texts are available.</p>
+      {% endif %}
+
       {% if is_paginated %}
-      <div class="row">
-        <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
-        <div class="col-sm-8">
-        <span class="step-links">
+      <div >
+        <span class="step-links  pull-right">
 
         {% include 'browser/pagination.html' %}
 
         </span>
-        </div>
       </div>
       {% endif %}
-      <!-- The contents as a table -->
-      <table class="table table-hover">
-        <thead><tr><th class="hidden">id</th><th>Part</th><th>File</th><th>Lines</th><th>Genre</th><th>Title</th></tr></thead>
-        <tbody>
-        {% for item in text_list %}
-          <tr class="part-item">
-            <td class="hidden">{{item.id}}</td>
-            <td><span class="part-item-name"><a href="{% url 'part_list' %}?part={{item.part.id}}">{{item.part.name}}</a></span></td>
-            <td><span class="part-item-corp"><a href="{% url 'text_lines' pk=item.pk %}">{{item.fileName}}</a></span></td>
-            <td><span class="part-item-corp">{{item.lines}}</span></td>
-            <td><span class="part-item-corp">{{item.genre}}</span></td>
-            <td>
-                <span class="part-item-desc">{{item.title}}</span>
-                <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url}}">Edit</a></span>
-              </td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>No texts are available.</p>
-    {% endif %}
 
-    {% if is_paginated %}
-    <div class="pagination">
-      <span class="step-links">
-
-      {% include 'browser/pagination.html' %}
-
-      </span>
     </div>
-    {% endif %}
   </div>
 
 

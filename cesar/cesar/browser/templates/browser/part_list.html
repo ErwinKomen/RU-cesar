@@ -1,5 +1,12 @@
 ﻿{% extends "browser/layout.html" %}
 
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; Corpus parts
+  </div>
+{% endblock %}
+
 {% block content %}
 
   <div class="container body-content">

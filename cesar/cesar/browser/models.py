@@ -122,6 +122,7 @@ def build_choice_list(field, position=None, subcat=None, maybe_empty=False):
     # Signbank returns: [('0','-'),('1','N/A')] + choice_list
     # We do not use defaults
     return choice_list;
+
 def choice_english(field, num):
     """Get the english name of the field with the indicated machine_number"""
 
