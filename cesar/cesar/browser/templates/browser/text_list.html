@@ -21,94 +21,84 @@
 
         <!-- Search button(s) panel -->
         <div><label>&nbsp;</label></div>
-        <div class='pull-right'>
-            <!-- Make sure no button has the *name* 'submit', otherwise submit() cannot be used -->
-            <input class='btn btn-primary' type="submit" onclick="do_search(this, 'trefwoord', 'simple');" value="Search">
-            <input class='btn btn-default' type="submit" onclick="do_search(this, 'trefwoord', 'reset');" value="Reset">
+        <div class="row">
+          <div class='pull-right'>
+              <!-- Make sure no button has the *name* 'submit', otherwise submit() cannot be used -->
+              <input class='btn btn-primary' type="submit" onclick="do_search(this, 'trefwoord', 'simple');" value="Search">
+              <input class='btn btn-default' type="submit" onclick="do_search(this, 'trefwoord', 'reset');" value="Reset">
+          </div>
         </div>
 
-        <div class="panel panel-default">
-          <div class="panel-heading" data-toggle="collapse" data-target="#filter-corpus">
-            Corpus:&nbsp;
-            <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
-          </div>
-          <!-- Collapsable part -->
-          <div id="filter-corpus" class="collapse {% if not request.GET.search %} inert {% endif %}">
-            <!-- Control #1: Language -->
-            <div><label>&nbsp;</label></div>
-            <div class="input-group">
-              <label class='input-group-addon' for='corpus-language'>{{searchform.language.label}}</label>
-              <select class="form-control" name="corpus-language">
-                <option value="0">-</option>
-              {% for opt_tuple in lng_list %}
-                <option value="{{opt_tuple.0}}">{{opt_tuple.1}}</option>
-              {% endfor %}
-              </select>
+        <div class="row">
+          <div class="panel panel-default">
+            <div class="panel-heading" data-toggle="collapse" data-target="#filter-corpus">
+              Corpus:&nbsp;
+              <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
             </div>
-            <!-- Control #2: Corpus   -->
-            <div><label>&nbsp;</label></div>
-            <div class="input-group">
-              <label class='input-group-addon' for='corpus-name'>{{searchform.corpus.label}}</label>
-              <select class="form-control" name="corpus-name">
-                <option value="0">-</option>
-              {% for opt in corpus_list %}
-                <option value="{{opt.id}}">{{opt.name}}</option>
-              {% endfor %}
-              </select>
-            </div>
-            <!-- Control #3: Part     -->
-            <div><label>&nbsp;</label></div>
-            <div class="input-group">
-              <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
-              <select class="form-control" name="part-name">
-                <option value="0">-</option>
-              {% for opt in part_list %}
-                <option value="{{opt.id}}">{{opt.name}}</option>
-              {% endfor %}
-              </select>
+            <!-- Collapsable part -->
+            <div id="filter-corpus" class="collapse {% if not request.GET.search %} inert {% endif %}">
+              <!-- Control #1: Language / Corpus / Part -->
+              <div><label>&nbsp;</label></div>
+              <div class="input-group">
+                <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
+                <select class="form-control" name="part-name">
+                  <option value="0">-</option>
+                  {% for opt in part_list %}
+                    {% if opt.corpus_lng.first %}
+                      <optgroup label="{{opt.entry.language}}">
+                    {% endif %}
+                      <option value="{{opt.entry.id}}">{{opt.entry.name}}</option>
+                    {% if opt.corpus_lng.last %}
+                      </optgroup>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="panel panel-default">
-          <div class="panel-heading" data-toggle="collapse" data-target="#filter-metadata">
-            Meta data:&nbsp;
-            <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
-          </div>
-          <!-- Collapsable part -->
-          <div id="filter-metadata" class="collapse {% if not request.GET.search %} inert {% endif %}">
-            <!-- Control #1: Language -->
-            <div><label>&nbsp;</label></div>
-            <div class="input-group">
-              <label class='input-group-addon' for='corpus-language'>{{searchform.language.label}}</label>
-              <select class="form-control" name="corpus-language">
-                <option value="0">-</option>
-              {% for opt_tuple in lng_list %}
-                <option value="{{opt_tuple.0}}">{{opt_tuple.1}}</option>
-              {% endfor %}
-              </select>
+        <div class="row">
+          <div class="panel panel-default">
+            <div class="panel-heading" data-toggle="collapse" data-target="#filter-metadata">
+              Meta data:&nbsp;
+              <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
             </div>
-            <!-- Control #2: Corpus   -->
-            <div><label>&nbsp;</label></div>
-            <div class="input-group">
-              <label class='input-group-addon' for='corpus-name'>{{searchform.corpus.label}}</label>
-              <select class="form-control" name="corpus-name">
-                <option value="0">-</option>
-              {% for opt in corpus_list %}
-                <option value="{{opt.id}}">{{opt.name}}</option>
-              {% endfor %}
-              </select>
-            </div>
-            <!-- Control #3: Part     -->
-            <div><label>&nbsp;</label></div>
-            <div class="input-group">
-              <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
-              <select class="form-control" name="part-name">
-                <option value="0">-</option>
-              {% for opt in part_list %}
-                <option value="{{opt.id}}">{{opt.name}}</option>
-              {% endfor %}
-              </select>
+            <!-- Collapsable part -->
+            <div id="filter-metadata" class="collapse {% if not request.GET.search %} inert {% endif %}">
+              <!-- Control #1: Language -->
+              <div><label>&nbsp;</label></div>
+              <div class="input-group">
+                <label class='input-group-addon' for='corpus-language'>{{searchform.language.label}}</label>
+                <select class="form-control" name="corpus-language">
+                  <option value="0">-</option>
+                {% for opt_tuple in lng_list %}
+                  <option value="{{opt_tuple.0}}">{{opt_tuple.1}}</option>
+                {% endfor %}
+                </select>
+              </div>
+              <!-- Control #2: Corpus   -->
+              <div><label>&nbsp;</label></div>
+              <div class="input-group">
+                <label class='input-group-addon' for='corpus-name'>{{searchform.corpus.label}}</label>
+                <select class="form-control" name="corpus-name">
+                  <option value="0">-</option>
+                {% for opt in corpus_list %}
+                  <option value="{{opt.id}}">{{opt.name}}</option>
+                {% endfor %}
+                </select>
+              </div>
+              <!-- Control #3: Part     -->
+              <div><label>&nbsp;</label></div>
+              <div class="input-group">
+                <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
+                <select class="form-control" name="part-name">
+                  <option value="0">-</option>
+                {% for opt in part_list %}
+                  <option value="{{opt.id}}">{{opt.name}}</option>
+                {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
         </div>

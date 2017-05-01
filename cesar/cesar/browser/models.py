@@ -778,6 +778,9 @@ class Part(models.Model):
         else:
             return qs[0]
 
+    def language(self):
+        return self.corpus.get_lng_display()
+
 
 class Download(models.Model):
     """Download information for one corpus part in one format"""

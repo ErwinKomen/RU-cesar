@@ -26,6 +26,58 @@ paginateSentences = 30
 paginateValues = (1000, 500, 250, 100, 50, 40, 30, 20, 10, )
 
 
+def get_item_list(lVar, lFun, qs):
+    """Turn the queryset [qs] into a list of Items that have first and last information"""
+
+    # Initialize the variables whose changes are important
+    oVariable = {}
+    for i, key in enumerate(lVar):
+        oVariable[key] = "" # {'name': key, 'fun': lFun[i]}
+    lItem = []
+    iLast = len(qs)-1
+    # Iterate over the entries looking for first, last etc
+    for i, entry in enumerate(qs):
+        bIsLastEntry = (i==iLast)
+        oItem = {'entry': entry}
+        for k in lVar:
+            oItem[k] = {'first':False, 'last':False}
+        bIsDict = isinstance(entry, dict)
+        bVarIsLast = False
+        # Check for changes in all the variables
+        for j, k in enumerate(lVar):
+            fun = lFun[j]
+            if callable(fun):
+                sValue = fun(entry)
+            else:
+                for idx, val in enumerate(fun):
+                    if idx==0:
+                        if bIsDict:
+                            sValue = entry[val]
+                        else:
+                            sValue = getattr(entry, val)
+                    else:
+                        if bIsDict:
+                            sValue = sValue[val]
+                        else:
+                            sValue = getattr(sValue, val)
+            # Check for changes in the value of the variable 
+            # if sValue != oVariable[k]:
+            if sValue != oVariable[k] or bVarIsLast or (i>0 and lItem[i-1][k]['last']):
+                # Check if the previous one's [last] must be changed
+                if oVariable[k] != "": lItem[i-1][k]['last'] = True
+                # Adapt the current one's [first] property
+                oItem[k]['first']= True
+                # Adapt the variable
+                oVariable[k] = sValue      
+                # Indicate that the next ones should be regarded as 'last'
+                bVarIsLast = True      
+            # Check if this is the last
+            if bIsLastEntry: oItem[k]['last'] = True
+        # Add this object to the list of items
+        lItem.append(oItem)
+    # Return the list we have made
+    return lItem
+
 
 def home(request):
     """Renders the home page."""
@@ -483,9 +535,12 @@ class TextListView(ListView):
         context['searchform'] = search_form
 
         # Set the options for the <select> boxes
-        context['lng_list'] = build_choice_list(CORPUS_LANGUAGE)
-        context['corpus_list'] = [crp for crp in Corpus.objects.all().order_by('name')]
-        context['part_list'] = [prt for prt in Part.objects.all().order_by('name')]
+        # context['lng_list'] = build_choice_list(CORPUS_LANGUAGE)
+        # context['corpus_list'] = [crp for crp in Corpus.objects.all().order_by('name')]
+
+        # Get a list with 'first' and 'last values for each item in the PART queryset
+        # context['part_list'] = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
+        context['part_list'] = self.get_partlist()
 
 
         # Determine the count 
@@ -512,6 +567,22 @@ class TextListView(ListView):
 
         # Return the calculated context
         return context
+
+    def get_partlist(self):
+        """Get a list of Part elements + first/last information"""
+
+        # REtrieve the correct queryset, sorted on the correct levels
+        qs = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
+        # Start the output
+        html = []
+        # Initialize the variables whose changes are important
+        lVars = ["corpus_lng", "corpus_name", "name"]
+        lFuns = [Part.language, ["corpus", "name"], ["name"]]
+        # Get a list of items containing 'first' and 'last' information
+        lItem = get_item_list(lVars, lFuns, qs)
+        # REturn this list
+        return lItem
+
 
     def get_queryset(self):
 
