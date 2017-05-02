@@ -30,7 +30,7 @@
         {% for item in part_list %}
           <tr class="part-item">
             <td class="hidden">{{item.id}}</td>
-            <td><span class="part-item-name"><a onclick="part_detail_toggle({{item.id}})">{{item.name}}</a></span></td>
+            <td><span class="part-item-name"><a onclick="ru.cesar.part_detail_toggle({{item.id}})">{{item.name}}</a></span></td>
             <td><span class="part-item-corp">{{item.corpus}}</span></td>
             <td>
                 <span class="part-item-desc">{{item.descr}}</span>

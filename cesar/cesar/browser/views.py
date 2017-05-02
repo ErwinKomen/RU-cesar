@@ -78,6 +78,13 @@ def get_item_list(lVar, lFun, qs):
     # Return the list we have made
     return lItem
 
+def get_int_choice(lGetDict, sKey):
+    if lGetDict == None or sKey == None or sKey == "":
+        return -1
+    if sKey in lGetDict and lGetDict[sKey] != "":
+        return int(lGetDict[sKey])
+    else:
+        return -1
 
 def home(request):
     """Renders the home page."""
@@ -437,30 +444,39 @@ class TextDetailView(DetailView):
     def post(self, request, pk):
         text = get_object_or_404(Text, pk=pk)
         bound_form = self.form_class(request.POST, instance=text)
-        if bound_form.is_valid():
-            new_text = bound_form.save()
-            # Find out what to do next
-            if '_save' in request.POST:
-                if 'last_url' in request.POST:
-                    return redirect(request.POST['last_url'])
-                else:
-                    return redirect('text_list')
-            elif '_continue' in request.POST:
-                # return redirect(new_text, status = 'save_continue')
+        oUser = self.request.user
+        if oUser.is_superUser:
+          if bound_form.is_valid():
+              new_text = bound_form.save()
+              # Find out what to do next
+              if '_save' in request.POST:
+                  if 'last_url' in request.POST:
+                      return redirect(request.POST['last_url'])
+                  else:
+                      return redirect('text_list')
+              elif '_continue' in request.POST:
+                  # return redirect(new_text, status = 'save_continue')
 
-                # return render(request, new_text.get_absolute_url(), {'status': 'save_continue'})
+                  # return render(request, new_text.get_absolute_url(), {'status': 'save_continue'})
 
-                #context = {'form': bound_form,
-                #           'text': new_text,
-                #           'status': 'save_continue'}
-                #return render( request, self.template_name, context)
-                return redirect(new_text.get_absolute_url() + "?status=save_continue")
+                  #context = {'form': bound_form,
+                  #           'text': new_text,
+                  #           'status': 'save_continue'}
+                  #return render( request, self.template_name, context)
+                  return redirect(new_text.get_absolute_url() + "?status=save_continue")
+          else:
+              context = {'form': bound_form,
+                         'text': text,
+                         'status': 'error'}
+              return render( request, self.template_name, context)
         else:
-            context = {'form': bound_form,
-                       'text': text,
-                       'status': 'error'}
-            return render( request, self.template_name, context)
-        
+          # Not the superuser
+          context = {'form': bound_form,
+                      'text': text,
+                      'status': 'error',
+                      'msg': 'Need to be super-user'}
+          return render( request, self.template_name, context)
+
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
@@ -534,14 +550,19 @@ class TextListView(ListView):
         search_form = TextSearchForm(initial)
         context['searchform'] = search_form
 
+        # REcall integer choices
+        context['partchoice'] = get_int_choice(initial, 'part')
+        context['formatchoice'] = get_int_choice(initial, 'format')
+
         # Set the options for the <select> boxes
         # context['lng_list'] = build_choice_list(CORPUS_LANGUAGE)
         # context['corpus_list'] = [crp for crp in Corpus.objects.all().order_by('name')]
 
         # Get a list with 'first' and 'last values for each item in the PART queryset
-        # context['part_list'] = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
         context['part_list'] = self.get_partlist()
 
+        # Need to have a list of possible formats
+        context['format_list'] = build_choice_list(CORPUS_FORMAT)
 
         # Determine the count 
         context['entrycount'] = self.entrycount #  self.get_queryset().count()
@@ -560,6 +581,7 @@ class TextListView(ListView):
 
         # Set the title
         context['title'] = "Cesar texts"
+
 
         # Remember where we are
         # ONLY GIVES PARTIAL: context['url'] = self.request.resolver_match.url_name
@@ -582,8 +604,7 @@ class TextListView(ListView):
         lItem = get_item_list(lVars, lFuns, qs)
         # REturn this list
         return lItem
-
-
+      
     def get_queryset(self):
 
         # Get the parameters passed on with the GET request
@@ -591,29 +612,49 @@ class TextListView(ListView):
 
         lstQ = []
 
-        # Fine-tuning: search string is the Part
-        if 'search' in get and get['search'] != '':
-            # Allow simple wildcard search of the Part Name
-            val = adapt_search(get['search'])
+        # Filter on text Format
+        if 'format' in get and get['format'] != '':
+            lstQ.append(Q(format=get['format']))
+
+        # Filter on text Part
+        if 'part' in get and get['part'] != '':
+            lstQ.append(Q(part=get['part']))
+
+        # Filter on text Name
+        if 'fileName' in get and get['fileName'] != '':
+            # Allow simple wildcard search
+            val = adapt_search(get['fileName'])
             lstQ.append(Q(fileName__iregex=val))
 
-        # Fine-tuning: search string is the corpus
-        if 'corpus' in get and get['corpus'] != '':
+        # Filter on text Genre
+        if 'genre' in get and get['genre'] != '':
             # Allow simple wildcard search
-            val = adapt_search(get['corpus'])
-            lstQ.append(Q(part__corpus__name__iregex=val))
+            val = adapt_search(get['genre'])
+            lstQ.append(Q(genre__iregex=val))
 
-        # Check for second search criterion: part
-        if 'part' in get and get['part'] != '':
+        # Filter on text date
+        if 'date' in get and get['date'] != '':
             # Allow simple wildcard search
-            val = adapt_search(get['part'])
-            lstQ.append(Q(part__iregex=val))
+            val = adapt_search(get['date'])
+            lstQ.append(Q(date__iregex=val))
 
-        # Additional fine-tuning: title
+        # Filter on text Title
         if 'title' in get and get['title'] != '':
             # Allow simple wildcard search
             val = adapt_search(get['title'])
             lstQ.append(Q(title__iregex=val))
+
+        # Filter on text Author
+        if 'author' in get and get['author'] != '':
+            # Allow simple wildcard search
+            val = adapt_search(get['author'])
+            lstQ.append(Q(author__iregex=val))
+
+        # Filter on text Subtype
+        if 'subtype' in get and get['subtype'] != '':
+            # Allow simple wildcard search
+            val = adapt_search(get['subtype'])
+            lstQ.append(Q(subtype__iregex=val))
 
         # Make the query set available
         qs = Text.objects.filter(*lstQ).distinct().select_related().order_by(

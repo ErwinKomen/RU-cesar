@@ -98,6 +98,8 @@
     <Content Include="cesar\browser\templates\browser\loginpartial.html" />
     <Content Include="cesar\browser\templates\browser\pagination.html" />
     <Content Include="cesar\browser\templates\browser\sentence_list.html" />
+    <Content Include="cesar\browser\templates\browser\text_list_OLD.html" />
+    <Content Include="cesar\browser\templates\browser\text_list_main.html" />
     <Content Include="cesar\browser\templates\browser\text_view.html" />
     <Content Include="cesar\browser\templates\browser\text_list.html" />
     <Content Include="cesar\browser\templates\browser\part_list.html" />

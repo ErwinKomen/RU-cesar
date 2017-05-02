@@ -1,0 +1,50 @@
+﻿      {% if object_list %}
+        <h3>Text overview</h3>
+        {% if is_paginated %}
+        <div class="row">
+          <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
+          <div class="col-sm-8">
+          <span class="step-links pull-right">
+
+          {% include 'browser/pagination.html' %}
+
+          </span>
+          </div>
+        </div>
+        {% else %}
+        <div class="row">
+          <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
+        </div>
+        {% endif %}
+        <!-- The contents as a table -->
+        <table class="table table-hover">
+          <thead><tr><th class="hidden">id</th><th>Part</th><th>File</th><th>Lines</th><th>Genre</th><th>Title</th></tr></thead>
+          <tbody>
+          {% for item in text_list %}
+            <tr class="part-item">
+              <td class="hidden">{{item.id}}</td>
+              <td><span class="part-item-name"><a href="{% url 'part_list' %}?part={{item.part.id}}">{{item.part.name}}</a></span></td>
+              <td><span class="part-item-corp"><a href="{% url 'text_lines' pk=item.pk %}">{{item.fileName}}</a></span></td>
+              <td><span class="part-item-corp">{{item.lines}}</span></td>
+              <td><span class="part-item-corp">{{item.genre}}</span></td>
+              <td>
+                  <span class="part-item-desc">{{item.title}}</span>
+                  <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url|urlencode}}">Edit</a></span>
+                </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No texts are available.</p>
+      {% endif %}
+
+      {% if is_paginated %}
+      <div >
+        <span class="step-links  pull-right">
+
+        {% include 'browser/pagination.html' %}
+
+        </span>
+      </div>
+      {% endif %}

@@ -3,6 +3,7 @@ Definition of urls for cesar.
 """
 
 from datetime import datetime
+from django.contrib.auth.decorators import login_required, permission_required
 # Uncomment the next lines to enable the admin:
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -39,6 +40,7 @@ urlpatterns = [
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
     url(r'^text/list/$', cesar.browser.views.TextListView.as_view(), name='text_list'),
+    # url(r'^text/view/(?P<pk>\d+)', permission_required('browser.edit')(TextDetailView.as_view()), name='text_view'),
     url(r'^text/view/(?P<pk>\d+)', TextDetailView.as_view(), name='text_view'),
     url(r'^text/lines/(?P<pk>\d+)/$', SentenceListView.as_view(), name='text_lines'),
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),

@@ -144,8 +144,16 @@ class TextSearchForm(forms.ModelForm):
     search = forms.CharField(label=_("Text name"))
     sortOrder = forms.CharField(label=_("Sort Order"), initial="metavar")
     language = forms.CharField(label=_("Language"))
+    format = forms.CharField(label=_("Format"))
     corpus = forms.CharField(label=_("Corpus"))
     part = forms.CharField(label=_("Section"))
+    fileName = forms.CharField(label=_("Name"))
+    # Make sure shorter titles are used
+    genre = forms.CharField(label=_("Genre"))
+    title = forms.CharField(label=_("TItle"))
+    date = forms.CharField(label=_("Date"))
+    subtype = forms.CharField(label=_("Subtype"))
+    author = forms.CharField(label=_("Author"))
 
     class Meta:
 

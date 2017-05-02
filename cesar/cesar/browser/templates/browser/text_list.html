@@ -24,136 +24,88 @@
         <div class="row">
           <div class='pull-right'>
               <!-- Make sure no button has the *name* 'submit', otherwise submit() cannot be used -->
-              <input class='btn btn-primary' type="submit" onclick="do_search(this, 'trefwoord', 'simple');" value="Search">
-              <input class='btn btn-default' type="submit" onclick="do_search(this, 'trefwoord', 'reset');" value="Reset">
+              <input class='btn btn-primary' type="submit" onclick="ru.cesar.do_search(this, 'trefwoord', 'simple');" value="Search">
+              <input class='btn btn-default' type="submit" onclick="ru.cesar.do_search(this, 'trefwoord', 'reset');" value="Reset">
           </div>
         </div>
 
-        <div class="row">
-          <div class="panel panel-default">
-            <div class="panel-heading" data-toggle="collapse" data-target="#filter-corpus">
-              Corpus:&nbsp;
-              <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
-            </div>
-            <!-- Collapsable part -->
-            <div id="filter-corpus" class="collapse {% if not request.GET.search %} inert {% endif %}">
-              <!-- Control #1: Language / Corpus / Part -->
-              <div><label>&nbsp;</label></div>
-              <div class="input-group">
-                <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
-                <select class="form-control" name="part-name">
-                  <option value="0">-</option>
-                  {% for opt in part_list %}
-                    {% if opt.corpus_lng.first %}
-                      <optgroup label="{{opt.entry.language}}">
-                    {% endif %}
-                      <option value="{{opt.entry.id}}">{{opt.entry.name}}</option>
-                    {% if opt.corpus_lng.last %}
-                      </optgroup>
-                    {% endif %}
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-          </div>
+        <!-- Control #1: Language / Corpus / Part -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='part'>{{searchform.part.label}}</label>
+          <select class="form-control" name="part" id="part" erwin="{{partchoice}}">
+            <option value="">-</option>
+            {% for opt in part_list %}
+              {% if opt.corpus_lng.first %}
+                <optgroup label="{{opt.entry.language}}">
+              {% endif %}
+                <option value="{{opt.entry.id}}" {% if opt.entry.id == partchoice %} selected {% endif %}>{{opt.entry.name}}</option>
+              {% if opt.corpus_lng.last %}
+                </optgroup>
+              {% endif %}
+            {% endfor %}
+          </select>
         </div>
 
-        <div class="row">
-          <div class="panel panel-default">
-            <div class="panel-heading" data-toggle="collapse" data-target="#filter-metadata">
-              Meta data:&nbsp;
-              <span class="glyphicon glyphicon-collapse-down pull-right" aria-hidden="true"></span>
-            </div>
-            <!-- Collapsable part -->
-            <div id="filter-metadata" class="collapse {% if not request.GET.search %} inert {% endif %}">
-              <!-- Control #1: Language -->
-              <div><label>&nbsp;</label></div>
-              <div class="input-group">
-                <label class='input-group-addon' for='corpus-language'>{{searchform.language.label}}</label>
-                <select class="form-control" name="corpus-language">
-                  <option value="0">-</option>
-                {% for opt_tuple in lng_list %}
-                  <option value="{{opt_tuple.0}}">{{opt_tuple.1}}</option>
-                {% endfor %}
-                </select>
-              </div>
-              <!-- Control #2: Corpus   -->
-              <div><label>&nbsp;</label></div>
-              <div class="input-group">
-                <label class='input-group-addon' for='corpus-name'>{{searchform.corpus.label}}</label>
-                <select class="form-control" name="corpus-name">
-                  <option value="0">-</option>
-                {% for opt in corpus_list %}
-                  <option value="{{opt.id}}">{{opt.name}}</option>
-                {% endfor %}
-                </select>
-              </div>
-              <!-- Control #3: Part     -->
-              <div><label>&nbsp;</label></div>
-              <div class="input-group">
-                <label class='input-group-addon' for='part-name'>{{searchform.part.label}}</label>
-                <select class="form-control" name="part-name">
-                  <option value="0">-</option>
-                {% for opt in part_list %}
-                  <option value="{{opt.id}}">{{opt.name}}</option>
-                {% endfor %}
-                </select>
-              </div>
-            </div>
-          </div>
+        <!-- Control #2: Format (psdx/folia) -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='format'>{{searchform.format.label}}</label>
+          <select class="form-control" name="format" erwin="{{formatchoice}}">
+            <option value="">-</option>
+          {% for opt_tuple in format_list %}
+            <option value="{{opt_tuple.0}}" {% if opt_tuple.0 == searchform.format.value %} selected {% endif %}>{{opt_tuple.1}}</option>
+          {% endfor %}
+          </select>
+        </div>
+
+        <!-- Control #3: File Name -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='fileName'>{{searchform.fileName.label}}</label>
+          <input name='fileName' class='form-control' {% if searchform.fileName.value %}value='{{searchform.fileName.value}}'{% endif %}>
+        </div>
+
+        <hr />
+        <div><label>Meta data</label></div>
+
+        <!-- Control #3: Title -->
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='title'>{{searchform.title.label}}</label>
+          <input name='title' class='form-control' {% if searchform.title.value %}value='{{searchform.title.value}}'{% endif %}>
+        </div>
+        <!-- Control #4: Date -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='date'>{{searchform.date.label}}</label>
+          <input name='date' class='form-control' {% if searchform.date.value %}value='{{searchform.date.value}}'{% endif %}>
+        </div>
+        <!-- Control #5: Author -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='author'>{{searchform.author.label}}</label>
+          <input name='author' class='form-control' {% if searchform.author.value %}value='{{searchform.author.value}}'{% endif %}>
+        </div>
+        <!-- Control #6: Subtype -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='subtype'>{{searchform.subtype.label}}</label>
+          <input name='subtype' class='form-control' {% if searchform.subtype.value %}value='{{searchform.subtype.value}}'{% endif %}>
+        </div>
+        <!-- Control #7: Genre   -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='genre'>{{searchform.genre.label}}</label>
+          <input name='genre' class='form-control' {% if searchform.genre.value %}value='{{searchform.genre.value}}'{% endif %}>
         </div>
 
       </form>
     </div>
 
-    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+    <div id="mainpart" class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
-      {% if object_list %}
-        <h3>Text overview</h3>
-        {% if is_paginated %}
-        <div class="row">
-          <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
-          <div class="col-sm-8">
-          <span class="step-links pull-right">
+{% include 'browser/text_list_main.html' %}
 
-          {% include 'browser/pagination.html' %}
-
-          </span>
-          </div>
-        </div>
-        {% endif %}
-        <!-- The contents as a table -->
-        <table class="table table-hover">
-          <thead><tr><th class="hidden">id</th><th>Part</th><th>File</th><th>Lines</th><th>Genre</th><th>Title</th></tr></thead>
-          <tbody>
-          {% for item in text_list %}
-            <tr class="part-item">
-              <td class="hidden">{{item.id}}</td>
-              <td><span class="part-item-name"><a href="{% url 'part_list' %}?part={{item.part.id}}">{{item.part.name}}</a></span></td>
-              <td><span class="part-item-corp"><a href="{% url 'text_lines' pk=item.pk %}">{{item.fileName}}</a></span></td>
-              <td><span class="part-item-corp">{{item.lines}}</span></td>
-              <td><span class="part-item-corp">{{item.genre}}</span></td>
-              <td>
-                  <span class="part-item-desc">{{item.title}}</span>
-                  <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url}}">Edit</a></span>
-                </td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p>No texts are available.</p>
-      {% endif %}
-
-      {% if is_paginated %}
-      <div >
-        <span class="step-links  pull-right">
-
-        {% include 'browser/pagination.html' %}
-
-        </span>
-      </div>
-      {% endif %}
 
     </div>
   </div>
