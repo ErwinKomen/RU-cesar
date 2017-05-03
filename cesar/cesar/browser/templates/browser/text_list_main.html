@@ -29,7 +29,7 @@
               <td><span class="part-item-corp">{{item.genre}}</span></td>
               <td>
                   <span class="part-item-desc">{{item.title}}</span>
-                  <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url|urlencode}}">Edit</a></span>
+                  <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url|urlencode}}">Info</a></span>
                 </td>
             </tr>
           {% endfor %}
