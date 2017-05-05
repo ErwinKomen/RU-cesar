@@ -53,6 +53,9 @@ var ru = (function ($, ru) {
         // Bind the change event for text_list.html, 'part-name'
         $("#part-name").bind('change', ru.cesar.part_change);
         $("#part-name").change(ru.cesar.part_change);
+
+        // When a text-line is clicked, a waiting symbol should show up
+        $("#sentence-list .line-text a").bind('click', ru.cesar.sent_click);
       },
     
       type_change: function (el) {
@@ -103,6 +106,14 @@ var ru = (function ($, ru) {
         $("#corpus_selected").html("<b>" + sPartName + "</b>");
       },
 
+      /**
+       * sent_click
+       *   Show waiting symbol when sentence is clicked
+       *
+       */
+      sent_click : function() {
+        $("#sentence-fetch").removeClass("hidden");
+      },
 
       /**
        * tabinline_add_copy

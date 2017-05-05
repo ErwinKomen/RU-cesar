@@ -37,12 +37,18 @@
       </div>
       {% endif %}
       <!-- The contents simple as that -->
+      <div id="sentence-list">
+        <div id="sentence-fetch" class="hidden">
+          <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+        </div>
         {% for item in object_list %}
         <div class="text-line">
             <span class="line-identifier">{{item.identifier}}</span>
-            <span class="line-text">{{item.sent}}</span>
+            <!-- possibly add: target="_blank" -->
+            <span class="line-text"><a href="{% url 'text_line' pk=item.pk %}" >{{item.sent}}</a></span>
         </div>
         {% endfor %}
+      </div>
     {% else %}
       <p>No text is available.</p>
     {% endif %}

@@ -43,6 +43,7 @@ urlpatterns = [
     # url(r'^text/view/(?P<pk>\d+)', permission_required('browser.edit')(TextDetailView.as_view()), name='text_view'),
     url(r'^text/view/(?P<pk>\d+)', TextDetailView.as_view(), name='text_view'),
     url(r'^text/lines/(?P<pk>\d+)/$', SentenceListView.as_view(), name='text_lines'),
+    url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),

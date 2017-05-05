@@ -86,6 +86,9 @@ def get_int_choice(lGetDict, sKey):
     else:
         return -1
 
+def get_current_userid():
+    return 'erkomen'
+
 def home(request):
     """Renders the home page."""
     assert isinstance(request, HttpRequest)
@@ -433,6 +436,55 @@ class SentenceListView(ListView):
         return self.qs
 
 
+class SentenceDetailView(DetailView):
+    """Get and show the details of one sentence"""
+
+    model = Sentence
+    template_name = 'browser/sentence_view.html'
+
+    def get(self, request, *args, **kwargs):
+      back = super().get(request, *args, **kwargs)
+      return back
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(SentenceDetailView, self).get_context_data(**kwargs)
+
+        # Get parameters for the search
+        initial = self.request.GET
+
+        # Establish the 'last_url' part
+        if 'last_url' in initial:
+            context['last_url'] = initial['last_url']
+        else:
+            context['last_url'] = ''
+
+        status = ""
+        if 'status' in initial:
+            status = initial['status']
+        context['status'] = status
+
+        # Fetch the TREE belonging to this sentence
+        sentence = context['sentence']
+        options = {'userid': get_current_userid(),
+                   'lng': sentence.text.part.corpus.get_lng_display(),
+                   'dir': sentence.text.part.dir,
+                   'ext': sentence.text.get_format_display(),
+                   'name': sentence.text.fileName,
+                   'locs': sentence.identifier,
+                   'locw': '',
+                   'type': 'syntax_svg'}
+        oInfo = get_crpp_sent_info(options)
+        if oInfo != None and oInfo['status'] == "ok":
+            context['sent_info'] = oInfo['info']
+        else:
+            context['sent_info'] = None
+
+        # Return what we have
+        return context
+
+
+
 class TextDetailView(DetailView):
     """Allow viewing and editing details of one text"""
 
@@ -476,7 +528,6 @@ class TextDetailView(DetailView):
                       'status': 'error',
                       'msg': 'Need to be super-user'}
           return render( request, self.template_name, context)
-
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
