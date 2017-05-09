@@ -1,0 +1,44 @@
+﻿{% extends "browser/layout.html" %}
+
+
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'text_list' %}">Texts</a>
+      &rsaquo; <a href="{% url 'text_lines' pk=sentence.text.pk %}">{{sentence.text.fileName}}</a>
+      &rsaquo; {{sentence.identifier}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+
+    <h3>{% if sentence.text.title %}{{sentence.text.title}}{% else %}(no title){% endif %}</h3>
+    <!-- Information on this sentence -->
+    <div class="row"><span>Sentence number = {{sentence.order}}</span><span> ({{sentence.identifier}})</span></div>
+
+    <!-- The sentence as such -->
+    <div class="text-line">
+        <span class="line-identifier">{{sentence.order}}</span>
+        <span class="line-text">{{sentence.sent}}</span>
+    </div>
+
+    <!-- The sentence with POS tags and lemma's (if available) -->
+
+    <!-- Tree of this sentence -->
+    <div id="sentdetails_svg" class="row">
+        <!-- Initially show the waiting symbol, until the tree has been fetched-->
+        <!--
+        <div class="row">De syntax van de zin wordt opgehaald...</div>
+        <div class="row"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+            -->
+        {{sent_info.allG|safe}}
+    </div>
+  </div>
+  <!-- Provide interaction to the tree -->
+  <script>crpstudio.tree.drawTree("#sentdetails_svg");</script>
+
+
+{% endblock content %}
