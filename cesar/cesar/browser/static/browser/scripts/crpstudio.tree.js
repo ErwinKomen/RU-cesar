@@ -23,7 +23,11 @@ var crpstudio = (function ($, crpstudio) {
         loc_arLeaf = [],      // Storage of pointers to the LEAFs of the tree
         loc_iTreeId = 0,      // Available ID's for tree
         loc_iShadow = 3,      // 
+        loc_iMargin = 5,      // margin of box around tree image
         loc_iWidth = 0.5,     // Stroke-width in 
+        loc_iMaxLevel = 0,    // Maximum hierarchical level of this tree
+        loc_iDistVert = 60,   // Vertical distance between tree nodes
+        loc_iDistHor = 5,     // Minimal distance between end nodes
         root = null;          // Root of the tree (DOM position)
 
     // Methods that are local to [crpstudio.dbase]
@@ -138,8 +142,9 @@ var crpstudio = (function ($, crpstudio) {
           if (!$(el).is(".lithium-tree")) return false;
           $(el).attr("x", oRect['x']);
           $(el).attr("y", oRect['y']);
-          $(el).attr("width", oRect['width']);
-          $(el).attr("height", oRect['height']);
+          // Optionally set width and height
+          if (oRect.hasOwnProperty("width")) { $(el).attr("width", oRect['width']); }
+          if (oRect.hasOwnProperty("height")) { $(el).attr("height", oRect['height']); }
           // Debugging: immediately apply this location
           private_methods.applyOneLocation(el);
           return true;
@@ -539,6 +544,9 @@ var crpstudio = (function ($, crpstudio) {
             dNode = null, // Current SVG DOM master element
             dLeaf = null, // SVG DOM leaf element
             dPrev = null, // Preceding DOM leaf element
+            dPrevP = null,// Parent of dPrev
+            oPos = {},    // General purpose position object
+            oPosN = {},   // Position of the node
             sType = "",   // The type of situation we are in
             oChild = {};  // One child of [oNode]
 
@@ -548,12 +556,15 @@ var crpstudio = (function ($, crpstudio) {
           if (!oNode.hasOwnProperty("p") || !oNode.hasOwnProperty("level") || !oNode.hasOwnProperty("id")) return "";
           // Get the POS of the node
           sPos = oNode['pos'];
-          // At least create a LITHIUM-TREE element
-          // Create a preliminary <g> element for this node only containing ID and CLASS
+          // Create an svg <g> element that contains its ID and CLASS
           sTree = private_methods.getLithiumNode({ el: oNode, type: "node" });
           dNode = $(dParent).append(sTree);
-          // Fit the text in the node
+          // Fit the text in the node (and this also sets the 'width' and 'height' of the <g> element)
           private_methods.fitRectangle(dNode);
+          // Set the node's w/h
+          oPosN['width'] = $(dNode).width;
+          oPosN['height'] = $(dNode).height;
+          oPosN['y'] = oNode['level'] * loc_iDistVert + loc_iMargin;
           // What is the situation
           sType = (oNode.hasOwnProperty("child")) ? "node" : "terminal";
           switch (sType) {
@@ -566,9 +577,41 @@ var crpstudio = (function ($, crpstudio) {
               dLeaf = $(dNode).append(sNode);
               // Fit the text in the leaf
               private_methods.fitRectangle(dLeaf);
-              // Get the first preceding tree/leaf combination
-              dPrev = loc_arLeaf.last();
-
+              // The w,h are needed for 'setLocation'
+              oPos['width'] = $(dLeaf).width;
+              oPos['height'] = $(dLeaf).height;
+              // Determine the x,y for the leaf
+              if (loc_arLeaf.length === 0) {
+                // This is the first terminal
+                x = loc_iMargin;
+                // TODO: differentiate between two types of end-nodes: Vern+Punct versus Zero+Star
+                oPos['y'] = (loc_iMaxLevel + 1) * loc_iDistVert + loc_iMargin;
+              } else {
+                // Get the first preceding tree/leaf combination
+                dPrev = loc_arLeaf.last(); dPrevP = $(dPrev).parent();
+                // Get the rightmost point of this leaf or its parent node
+                x = Math.max($(dPrev).x + $(dPrev).width, $(dPrevP).x + $(dPrevP).width) + loc_iDistHor;
+                // The vertical position of [dLeaf] is determined by the level
+                oPos['y'] = (oNode['level'] + 1) * loc_iDistVert + loc_iMargin;
+              }
+              // Set the x,y of [dLeaf] and its parent [dNode]
+              if ($(dLeaf).width > $(dNode).width) {
+                // First dLeaf
+                oPos['x'] = x;
+                private_methods.setLocation(dLeaf, oPos);
+                // Adapt x position of the parent [dNode]
+                oPosN['x'] = oPos['x'] + $(dLeaf).width / 2 - $(dNode).width / 2;
+                // Set the location of the node
+                private_methods.setLocation(dNode, oPosN);
+              } else {
+                // First set the location of the dNode
+                oPosN['x'] = x;
+                private_methods.setLocation(dNode, oPosN);
+                // Then determine the location of the leaf
+                oPos['x'] = oPosN['x'] + $(dNode).width / 2 - $(dLeaf).width / 2;
+                private_methods.setLocation(dLeaf, oPos);
+              }
+              
 
               // Store the node in the global variable
               loc_arLeaf.push(dLeaf);
@@ -690,6 +733,8 @@ var crpstudio = (function ($, crpstudio) {
        */
       setParentAndId: function (o, p, iLevel) {
         try {
+          // CHeck for level
+          if (p===null) loc_iMaxLevel = 0;
           // Check for ID
           if (!o.hasOwnProperty("id")) { o['id'] = private_methods.getTreeId(); }
           // Check for level
@@ -700,6 +745,7 @@ var crpstudio = (function ($, crpstudio) {
           if (o.hasOwnProperty('child') && o.child != null) {
             // Go one level down
             iLevel += 1;
+            if (iLevel > loc_iMaxLevel) {loc_iMaxLevel = iLevel;}
             // Treat all children
             for (n in o.child) {
               // Treat this particular child
