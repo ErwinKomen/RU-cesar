@@ -28,6 +28,10 @@
     <!-- The sentence with POS tags and lemma's (if available) -->
 
     <!-- Tree of this sentence -->
+    <div id="sentdetails_err" class="row"></div>
+    <div id="sentdetails_tree" class="row">
+        {{sent_info.allT}}
+    </div>
     <div id="sentdetails_svg" class="row">
         <!-- Initially show the waiting symbol, until the tree has been fetched-->
         <!--
@@ -38,7 +42,12 @@
     </div>
   </div>
   <!-- Provide interaction to the tree -->
-  <script>crpstudio.tree.drawTree("#sentdetails_svg");</script>
+  <script>
+    // Draw the tree using the NEW method
+    crpstudio.tree.treeToSvg("#sentdetails_tree", "#sentdetails_err");
+    // Draw the tree using the traditional method
+    crpstudio.tree.drawTree("#sentdetails_svg");
+  </script>
 
 
 {% endblock content %}

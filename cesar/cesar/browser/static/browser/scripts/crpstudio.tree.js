@@ -532,6 +532,7 @@ var crpstudio = (function ($, crpstudio) {
             y = 0,        // Coordinate
             w = 22,       // Width
             h = 22,       // Height
+            iLen = 0,     // Number of elements
             sClass = "",
             sText = "",   // Text for this node
             sPos = "",    // POS for this node
@@ -545,10 +546,13 @@ var crpstudio = (function ($, crpstudio) {
             dLeaf = null, // SVG DOM leaf element
             dPrev = null, // Preceding DOM leaf element
             dPrevP = null,// Parent of dPrev
-            oPos = {},    // General purpose position object
-            oPosN = {},   // Position of the node
-            sType = "",   // The type of situation we are in
-            oChild = {};  // One child of [oNode]
+            dChildren = [], // My child nodes
+            dChild = null,  // One child
+            dLast = null,   // Last child
+            oPos = {},      // General purpose position object
+            oPosN = {},     // Position of the node
+            sType = "",     // The type of situation we are in
+            oChild = {};    // One child of [oNode]
 
         try {
           // Validate
@@ -610,14 +614,28 @@ var crpstudio = (function ($, crpstudio) {
                 // Then determine the location of the leaf
                 oPos['x'] = oPosN['x'] + $(dNode).width / 2 - $(dLeaf).width / 2;
                 private_methods.setLocation(dLeaf, oPos);
-              }
-              
-
-              // Store the node in the global variable
+              }             
+              // Store the LEAF node in the global list for future reference
               loc_arLeaf.push(dLeaf);
               break;
             default:  // Normal nodes
-              // Determine x,y
+              // THis assumes *ALL* the child nodes have alread been dealt with, so 'I' am the parent of all the nodes under me
+              // (1) How many children do I have?
+              dChildren = $(dNode).children();
+              iLen = $(dChildren).length;
+              if (iLen === 1) {
+                // My x,y are totally dependant upon my one child's x,y
+                dChild = $(dChildren).first();
+                oPosN['x'] = private_methods.getCenter(dChild) - $(dNode).width / 2;
+              } else if (iLen>1) {
+                // There is more than 1 child
+                // Calculate the average between the first and last child
+                dChild = $(dChildren).first();
+                dLast = $(dChildren).last();
+                oPosN['x'] = (private_methods.getCenter(dLast) - private_methods.getCenter(dChild))/2 - $(dNode).width/2;
+              }
+              // Place [dNode] to this new position
+              private_methods.setLocation(dNode, oPosN);
               break;
           }
 
@@ -628,6 +646,20 @@ var crpstudio = (function ($, crpstudio) {
           private_methods.showError("nodeToSvg", ex);
           // Return empty string
           return null;
+        }
+      },
+      getCenter : function (el) {
+        var center = 0;
+
+        try {
+          // Validate 
+          if (el === undefined) return 0;
+          center =  $(el).x + $(el).width / 2;
+          return center;
+        } catch (ex) {
+          // Show error message
+          private_methods.showError("getCenter", ex);
+          return 0;
         }
       },
       /**
@@ -1191,8 +1223,10 @@ var crpstudio = (function ($, crpstudio) {
        * @param {element} errDiv  - DOM where error may appear
        * @returns {boolean}
        */
-      treeToSvg: function( svgDiv, oTree, errDiv) {
+      treeToSvg: function( svgDiv, errDiv) {
         var oMove = { x: 0, y: 0 },
+            oTree = {},
+            sTree = "",
             arCol = ["black", "darkgoldenrod", "darkgreen", "gainsboro", "ivory", "lightblue",
                      "lightgreen", "linen", "purple", "steelblue", "white", "whitesmoke"],
             i,                      // Counter
@@ -1200,8 +1234,11 @@ var crpstudio = (function ($, crpstudio) {
 
         try {
           // Validate
-          if (svgDiv === undefined || oTree === undefined) return false;
+          if (svgDiv === undefined ) return false;
           if (errDiv === undefined) errDiv = svgDiv;
+          // Get the tree
+          sTree = $(svgDiv).text().replace(/'/g, '"');
+          oTree = JSON.parse(sTree);
           // Treat the tree: add parent, level and unique numerical id's
           private_methods.setParentAndId(oTree, null, 0);
           // Other initialisations

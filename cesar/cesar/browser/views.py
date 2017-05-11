@@ -473,7 +473,7 @@ class SentenceDetailView(DetailView):
                    'name': sentence.text.fileName,
                    'locs': sentence.identifier,
                    'locw': '',
-                   'type': 'syntax_svg'}
+                   'type': 'syntax_svg_tree'}
         oInfo = get_crpp_sent_info(options)
         if oInfo != None and oInfo['status'] == "ok":
             context['sent_info'] = oInfo['info']
