@@ -6,25 +6,38 @@
     <title>{{ title }}</title>
     {% load staticfiles %}
     <link rel="stylesheet" type="text/css" href="{% static 'browser/content/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-base.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-form.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-widgets.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'browser/content/site.css' %}" />
     <script src="{% static 'browser/scripts/modernizr-2.6.2.js' %}"></script>
     <script src="{% static 'browser/scripts/jquery-1.10.2.js' %}"></script>
     <script src="{% static 'browser/scripts/bootstrap.js' %}"></script>
+    <!--
+    <script type="text/javascript" src="/static/admin/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/admin/js/jquery.init.js"></script>
+    -->
     <script src="{% static 'browser/scripts/respond.js' %}"></script>
+    <script src="{% static 'browser/scripts/cesar.js' %}"></script>
+    <script src="{% static 'browser/scripts/crpstudio.tree.js' %}"></script>
+{% block scripts %}{% endblock %}
 </head>
 
 <body>
-    {% include 'browser/topnav.html' %}
+{% include 'browser/topnav.html' %}
 
-    <div class="container body-content">
+{% block breadcrumbs %}{% endblock %}
+
+    <div class="container-fluid body-content">
+
 {% block content %}{% endblock %}
+
         <hr/>
         <footer>
             <p>&copy; {{ year }} - Cesar</p>
         </footer>
     </div>
 
-{% block scripts %}{% endblock %}
 
 </body>
 </html>

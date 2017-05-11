@@ -1,0 +1,114 @@
+﻿{% extends "browser/layout.html" %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; Texts
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="row">
+    <div class="col-sm-3 col-md-2 sidebar">
+      <form name="textsearch" id="textsearch" action="" method="get"  
+                onsubmit="return do_search('#id_submit_button', 'text', 'simple');" >
+        <!-- EK: A sort-order specification is in a hidden form field, which is filled by JS:do_sort_column() -->
+        <div class="hidden">
+          <input name='sortOrder' class='form-control' value='part' >
+          <input id="submit_type" name='submit_type' class='form-control' value='simple'>
+        </div>
+
+        <!-- Search button(s) panel -->
+        <div><label>&nbsp;</label></div>
+        <div class="row">
+          <div class='pull-right'>
+              <!-- Make sure no button has the *name* 'submit', otherwise submit() cannot be used -->
+              <input class='btn btn-primary' type="submit" onclick="ru.cesar.do_search(this, 'trefwoord', 'simple');" value="Search">
+              <input class='btn btn-default' type="submit" onclick="ru.cesar.do_search(this, 'trefwoord', 'reset');" value="Reset">
+          </div>
+        </div>
+
+        <!-- Control #1: Language / Corpus / Part -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='part'>{{searchform.part.label}}</label>
+          <select class="form-control" name="part" id="part" erwin="{{partchoice}}">
+            <option value="">-</option>
+            {% for opt in part_list %}
+              {% if opt.corpus_lng.first %}
+                <optgroup label="{{opt.entry.language}}">
+              {% endif %}
+                <option value="{{opt.entry.id}}" {% if opt.entry.id == partchoice %} selected {% endif %}>{{opt.entry.name}}</option>
+              {% if opt.corpus_lng.last %}
+                </optgroup>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Control #2: Format (psdx/folia) -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='format'>{{searchform.format.label}}</label>
+          <select class="form-control" name="format" erwin="{{formatchoice}}">
+            <option value="">-</option>
+          {% for opt_tuple in format_list %}
+            <option value="{{opt_tuple.0}}" {% if opt_tuple.0 == searchform.format.value %} selected {% endif %}>{{opt_tuple.1}}</option>
+          {% endfor %}
+          </select>
+        </div>
+
+        <!-- Control #3: File Name -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='fileName'>{{searchform.fileName.label}}</label>
+          <input name='fileName' class='form-control' {% if searchform.fileName.value %}value='{{searchform.fileName.value}}'{% endif %}>
+        </div>
+
+        <hr />
+        <div><label>Meta data</label></div>
+
+        <!-- Control #3: Title -->
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='title'>{{searchform.title.label}}</label>
+          <input name='title' class='form-control' {% if searchform.title.value %}value='{{searchform.title.value}}'{% endif %}>
+        </div>
+        <!-- Control #4: Date -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='date'>{{searchform.date.label}}</label>
+          <input name='date' class='form-control' {% if searchform.date.value %}value='{{searchform.date.value}}'{% endif %}>
+        </div>
+        <!-- Control #5: Author -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='author'>{{searchform.author.label}}</label>
+          <input name='author' class='form-control' {% if searchform.author.value %}value='{{searchform.author.value}}'{% endif %}>
+        </div>
+        <!-- Control #6: Subtype -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='subtype'>{{searchform.subtype.label}}</label>
+          <input name='subtype' class='form-control' {% if searchform.subtype.value %}value='{{searchform.subtype.value}}'{% endif %}>
+        </div>
+        <!-- Control #7: Genre   -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='genre'>{{searchform.genre.label}}</label>
+          <input name='genre' class='form-control' {% if searchform.genre.value %}value='{{searchform.genre.value}}'{% endif %}>
+        </div>
+
+      </form>
+    </div>
+
+    <div id="mainpart" class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
+{% include 'browser/text_list_main.html' %}
+
+
+    </div>
+  </div>
+
+
+{% endblock content %}

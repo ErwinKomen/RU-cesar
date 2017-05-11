@@ -36,6 +36,9 @@
     </Compile>
     <Compile Include="cesar\browser\migrations\__init__.py" />
     <Compile Include="cesar\browser\models.py" />
+    <Compile Include="cesar\browser\services.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\browser\tests.py" />
     <Compile Include="cesar\browser\views.py" />
     <Compile Include="cesar\browser\__init__.py" />
@@ -62,6 +65,9 @@
   <ItemGroup>
     <Content Include="cesar\browser\static\browser\content\bootstrap.css" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.min.css" />
+    <Content Include="cesar\browser\static\browser\content\ru-base.css" />
+    <Content Include="cesar\browser\static\browser\content\ru-form.css" />
+    <Content Include="cesar\browser\static\browser\content\ru-widgets.css" />
     <Content Include="cesar\browser\static\browser\content\site.css" />
     <Content Include="cesar\browser\static\browser\fonts\glyphicons-halflings-regular.eot" />
     <Content Include="cesar\browser\static\browser\fonts\glyphicons-halflings-regular.svg" />
@@ -73,6 +79,7 @@
     <None Include="cesar\browser\static\browser\scripts\jquery.validate-vsdoc.js" />
     <None Include="cesar\browser\static\browser\scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="cesar\browser\static\browser\scripts\cesar.js" />
+    <Content Include="cesar\browser\static\browser\scripts\crpstudio.tree.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.min.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.min.map" />
@@ -83,12 +90,21 @@
     <Content Include="cesar\browser\static\browser\scripts\modernizr-2.6.2.js" />
     <Content Include="cesar\browser\static\browser\scripts\respond.js" />
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
+    <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\about.html" />
     <Content Include="cesar\browser\templates\browser\contact.html" />
     <Content Include="cesar\browser\templates\browser\index.html" />
     <Content Include="cesar\browser\templates\browser\layout.html" />
     <Content Include="cesar\browser\templates\browser\login.html" />
     <Content Include="cesar\browser\templates\browser\loginpartial.html" />
+    <Content Include="cesar\browser\templates\browser\pagination.html" />
+    <Content Include="cesar\browser\templates\browser\sentence_list.html" />
+    <Content Include="cesar\browser\templates\browser\sentence_view.html" />
+    <Content Include="cesar\browser\templates\browser\text_list_OLD.html" />
+    <Content Include="cesar\browser\templates\browser\text_list_main.html" />
+    <Content Include="cesar\browser\templates\browser\text_view.html" />
+    <Content Include="cesar\browser\templates\browser\text_list.html" />
+    <Content Include="cesar\browser\templates\browser\part_list.html" />
     <Content Include="cesar\browser\templates\browser\topnav.html" />
     <Content Include="cesar\templates\admin\base.html" />
     <Content Include="requirements.txt" />

@@ -1,0 +1,68 @@
+﻿{% extends "browser/layout.html" %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; Corpus parts
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+    <div class="panel panel-default">
+      <form name="partsearch" id="partsearch" action="" method="get"  
+                onsubmit="return do_search('#id_submit_button', 'metavar', 'simple');" >
+        <!-- EK: A sort-order specification is in a hidden form field, which is filled by JS:do_sort_column() -->
+        <div class="hidden">
+          <input name='sortOrder' class='form-control' value='metavar' >
+          <input id="submit_type" name='submit_type' class='form-control' value='simple'>
+        </div>
+      </form>
+    </div>
+
+    {% if object_list %}
+      <h3>Corpus part overview</h3>
+      <!-- The contents as a table -->
+      <table class="table table-hover">
+        <thead><tr><th class="hidden">id</th><th>Part</th><th>Corpus</th><th>Description</th></tr></thead>
+        <tbody>
+        {% for item in part_list %}
+          <tr class="part-item">
+            <td class="hidden">{{item.id}}</td>
+            <td><span class="part-item-name"><a onclick="ru.cesar.part_detail_toggle({{item.id}})">{{item.name}}</a></span></td>
+            <td><span class="part-item-corp">{{item.corpus}}</span></td>
+            <td>
+                <span class="part-item-desc">{{item.descr}}</span>
+                <span><a class="btn btn-success btn-xs" href="/{{app_prefix}}admin/browser/part/{{item.id}}/change/">Edit</a></span>
+              </td>
+          </tr>
+          <tr id="part_details_{{item.id}}" class="hidden">
+            <td colspan="3">
+              <table>
+                <tr><td>Part name:</td><td>{{item.name}}</td></tr>
+                <tr><td>Directory:</td><td>{{item.dir}}</td></tr>
+                <tr><td>Description:</td><td>{{item.descr}}</td></tr>
+                <tr><td>Corpus:</td><td><a href="/{{app_prefix}}admin/browser/corpus/{{item.corpus.id}}/change/">{{item.corpus.name}}</a></td></tr>
+                <tr><td>Release:</td><td>{{item.url}}</td></tr>
+                {% if item.downloads and item.downloads.count > 0 %}
+                  {% for down in item.downloads.all %}
+                  <tr><td><a href="{{down.url}}">{{down.get_format_display}}</a></td><td>{{down.count}}</td></tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="2"><i>(No format details provided)</i></td></tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No corpus parts are available.</p>
+    {% endif %}
+
+  </div>
+
+
+{% endblock content %}

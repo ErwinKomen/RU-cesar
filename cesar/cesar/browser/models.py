@@ -4,11 +4,14 @@ The browser allows browsing through XML files that are part of a corpus.
 A corpus is in a particular language and according to a particular tagset.
 The information here mirrors (and extends) the information in the crp-info.json file.
 """
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from datetime import datetime
+from cesar.browser.services import *
+from cesar.settings import APP_PREFIX
 import sys
 import copy
+import json
 
 MAX_IDENTIFIER_LEN = 10
 MAX_TEXT_LEN = 200
@@ -20,6 +23,45 @@ CORPUS_FORMAT = "corpus.format"
 VARIABLE_TYPE = "variable.type"
 VARIABLE_LOC = "variable.loc"
 LANGUAGE = "language"
+
+# ============================= LOCAL CLASSES ======================================
+class ErrHandle:
+    """Error handling"""
+
+    # ======================= CLASS INITIALIZER ========================================
+    def __init__(self):
+        # Initialize a local error stack
+        self.loc_errStack = []
+
+    # ----------------------------------------------------------------------------------
+    # Name :    Status
+    # Goal :    Just give a status message
+    # History:
+    # 6/apr/2016    ERK Created
+    # ----------------------------------------------------------------------------------
+    def Status(self, msg):
+        # Just print the message
+        print(msg, file=sys.stderr)
+
+    # ----------------------------------------------------------------------------------
+    # Name :    DoError
+    # Goal :    Process an error
+    # History:
+    # 6/apr/2016    ERK Created
+    # ----------------------------------------------------------------------------------
+    def DoError(self, msg, bExit = False):
+        # Append the error message to the stack we have
+        self.loc_errStack.append(msg)
+        # Print the error message for the user
+        print("Error: "+msg+"\nSystem:", file=sys.stderr)
+        for nErr in sys.exc_info():
+            if (nErr != None):
+                print(nErr, file=sys.stderr)
+        # Is this a fatal error that requires exiting?
+        if (bExit):
+            sys.exit(2)
+
+errHandle = ErrHandle()
 
 class FieldChoice(models.Model):
 
@@ -35,7 +77,7 @@ class FieldChoice(models.Model):
     class Meta:
         ordering = ['field','machine_value']
 
-def build_choice_list(field, position=None, subcat=None):
+def build_choice_list(field, position=None, subcat=None, maybe_empty=False):
     """Create a list of choice-tuples"""
 
     choice_list = [];
@@ -46,7 +88,10 @@ def build_choice_list(field, position=None, subcat=None):
         if FieldChoice.objects == None:
             # Take a default list
             choice_list = [('0','-'),('1','N/A')]
+            unique_list = [('0','-'),('1','N/A')]
         else:
+            if maybe_empty:
+                choice_list = [('0','-')]
             for choice in FieldChoice.objects.filter(field__iexact=field):
                 # Default
                 sEngName = ""
@@ -71,7 +116,7 @@ def build_choice_list(field, position=None, subcat=None):
 
             choice_list = sorted(choice_list,key=lambda x: x[1]);
     except:
-        print("Unexpected error [build_choice_list]:", sys.exc_info()[0])
+        print("Unexpected error:", sys.exc_info()[0])
         choice_list = [('0','-'),('1','N/A')];
 
     # Signbank returns: [('0','-'),('1','N/A')] + choice_list
@@ -88,6 +133,16 @@ def choice_english(field, num):
         return result_list[0].english_name
     except:
         return "(empty)"
+
+def choice_value(field, term):
+    try:
+        result_list = FieldChoice.objects.filter(field__iexact=field).filter(english_name__iexact=term)
+        if result_list == None:
+            return -1
+        else:
+            return result_list[0].machine_value
+    except:
+        return -1
 
 def m2m_combi(items):
     if items == None:
@@ -163,6 +218,314 @@ def get_tuple_index(lstTuples, sValue):
             iBack = lstFound[0][0]
     return iBack
 
+class Status(models.Model):
+    """Intermediate loading of /crpp information and status of processing it"""
+
+    # [1] Status of the process
+    status = models.CharField("Status of synchronization", max_length=50)
+    # [1] Counts (as stringified JSON object)
+    count = models.TextField("Count details", default="{}")
+    # [0-1] Error message (if any)
+    msg = models.TextField("Error message", blank=True, null=True)
+
+    def __str__(self):
+        return self.status
+
+    def set(self, sStatus, oCount = None):
+        self.status = sStatus
+        if oCount != None:
+            self.count = json.dumps(oCount)
+        self.save()
+
+
+def process_textlist(oTxtlist, oReq):
+    """Update our own models with the information in [oCorpusInfo]"""
+
+    oBack = {}      # What we return
+
+    try:
+        # Retrieve the correct instance of the status object
+        oStatus = Status.objects.last()
+        oStatus.set("copying")
+
+        # Validate the [oTxtList] object
+        if oTxtlist == None or not 'paths' in oTxtlist or not 'count' in oTxtlist:
+            # We miss information
+            oStatus.status = "information is missing"
+            oStatus.save()
+            return oBack
+
+        # Initialise what we return
+        oBack = {'result': False, 'texts': 0, 
+                 'paths': oTxtlist['paths'],
+                 'total': oTxtlist['count']}
+
+        # Initialisations
+        part = Part.objects.filter(id=oReq['part']).first()
+        format = oReq['format']
+
+        # Walk all the different paths
+        for oPath in oTxtlist['txtlist']:
+            # Process this patth
+            sPath = oPath['path']
+            iPathCount = oPath['count']
+            arList = oPath['list']
+
+            # Keep the transactions together in a bulk edit
+            lstText = []
+            with transaction.atomic():
+                for oText in arList:
+                    # Validate
+                    if 'name' in oText and 'size' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
+                        try:
+                            oNew = Text(fileName=oText['name'], format=format,
+                                        part=part, title=oText['title'], lines=oText['size'],
+                                        date=oText['date'], author=oText['author'],
+                                        genre=oText['genre'], subtype=oText['subtype'])
+                        except:
+                            oStatus.set("error")
+                            errHandle.DoError("process_textlist [new]", True)
+                            return oBack
+                    lstText.append(oNew)
+                oBack['texts'] += 1
+            # Save what we have so far
+            Text.objects.bulk_create(lstText)
+            oBack['paths'] += 1
+
+        # We are done!
+        oStatus.set("done", oBack)
+
+        # return positively
+        oBack['result'] = True
+        return oBack
+    except:
+        # oCsvImport['status'] = 'error'
+        oStatus.set("error")
+        errHandle.DoError("process_textlist", True)
+        return oBack
+
+
+def process_corpusinfo(oCorpusInfo):
+    """Update our own models with the information in [oCorpusInfo]"""
+
+    oBack = {}      # What we return
+
+    try:
+        # Retrieve the correct instance of the status object
+        oStatus = Status.objects.last()
+        oStatus.set("preparing")
+
+        # Initialise what we return
+        oBack = {'result': False, 'constituents': 0, 
+                 'metavar': 0, 'corpora': 0, 'variable': 0, 
+                 'tagset': 0, 'grouping': 0, 'part': 0}
+
+        # Validate
+        if not 'indices' in oCorpusInfo or not 'corpora' in oCorpusInfo or not 'metavar' in oCorpusInfo or not 'constituents' in oCorpusInfo:
+            # We miss information
+            oStatus.status = "information is missing"
+            oStatus.save()
+            return oBack
+
+        # Process the 'constituents' part - most basic and not dependant of other things
+        oStatus.set("constituents", oBack)
+        lConstituents = oCorpusInfo['constituents']
+        for oCns in lConstituents:
+            # Check if this item is defined
+            instCns = Constituent.get_item(oCns['title'])
+            if instCns == None:
+                # This constituent is not yet there: create it
+                oNew = Constituent(title=oCns['title'], 
+                                   eng=oCns['eng'])
+                oNew.save()
+                # Create a constituent name in Dutch linked to me
+                oName = ConstituentNameTrans(lng=choice_value(LANGUAGE, 'nld'), 
+                                             descr=oCns['nld'], 
+                                             constituent=oNew)
+                oName.save()
+                # Bookkeeping
+                oBack['constituents'] += 1
+                oStatus.set("constituents: "+str(oBack['constituents']), oBack)
+
+        # Process the METAVAR information -- only depends on the constituent names
+        oStatus.set("metavar ...", oBack)
+        lMetavar = oCorpusInfo['metavar']
+        for oMvar in lMetavar:
+            # Get the name of the metavar
+            sMvarName = oMvar['name']
+            # Sanity check
+            if sMvarName == "":
+                # THis is no good -- continue with the next item in [metavar]
+                continue
+
+            # If we don't yet have this metavar, create it
+            instMvar = Metavar.get_item(sMvarName)
+            if instMvar == None :
+                # Create it
+                instMvar = Metavar(name=sMvarName, hidden=oMvar['hidden'])
+                instMvar.save()
+                # Bookkeeping
+                oBack['metavar'] += 1
+                oStatus.set("metavar: "+str(oBack['metavar']), oBack)
+
+            # Check out variable definitions--for this particular Metavar-Name
+            lVariable = oMvar['variables']
+            for oVariable in lVariable:
+                # Sanity check
+                if oVariable['name'] != "":
+                    # Check if the VariableName exists (this is Metavar-name independant)
+                    oVname = VariableName.get_item(oVariable['name'])
+                    if oVname == None:
+                        # Create a variable name
+                        oVname = VariableName(name=oVariable['name'],
+                                              descr=oVariable['descr'],
+                                              type=choice_value(VARIABLE_TYPE, oVariable['type'] ))
+                        oVname.save()
+                    # Check if this variable/Metavar-name combination is in there
+                    oNew = Variable.get_item(oVariable['name'], instMvar)
+                    if oNew == None:
+                        # First create a variable name item
+                        # Create it and save it
+                        oNew = Variable(name=oVname,
+                                        metavar=instMvar,
+                                        loc=choice_value(VARIABLE_LOC, oVariable['loc']),
+                                        value=oVariable['value'])
+                        oNew.save()
+                        # Bookkeeping
+                        oBack['variable'] += 1
+                        oStatus.set("metavar variable: "+str(oBack['variable']), oBack)
+
+            # Check out tagset definitions
+            lTagset = oMvar['tagset']
+            for oTagset in lTagset:
+                # Sanity check
+                if oTagset['title'] == "": continue
+                # Try to find a Constituent for this tagset
+                instCns = Constituent.get_item(oTagset['title'])
+                if instCns != None:
+                    # Try get the tagset, dependant upon [metavar]
+                    instTagset = Tagset.get_item(instCns, instMvar)
+                    if instTagset == None:
+                        # Create a new tagset item
+                        instTagSet = Tagset(metavar=instMvar, 
+                                            constituent=instCns,
+                                            definition=oTagset['def'])
+                        instTagSet.save()
+                        # Bookkeeping
+                        oBack['tagset'] += 1
+                        oStatus.set("metavar tagset: "+str(oBack['tagset']), oBack)
+
+            # Check out grouping definitions
+            lGrouping = oMvar['groupings']
+            for oGroup in lGrouping:
+                # Sanity check
+                if oGroup['name'] =="": continue
+                # First check for the grouping-name
+                instGrpName = GroupingName.get_item(oGroup['name'])
+                if instGrpName == None:
+                    # Add the grouping name
+                    instGrpName = GroupingName(name=oGroup['name'],
+                                               descr=oGroup['descr'])
+                    instGrpName.save()
+                # Check if this grouping is in there
+                instGrp = Grouping.get_item(instGrpName, instMvar)
+                if instGrp == None:
+                    # grouping is not yet defined: define it
+                    instGrp = Grouping(name=instGrpName, 
+                                       value=oGroup['value'],
+                                       metavar=instMvar)
+                    instGrp.save()
+                    # Bookkeeping
+                    oBack['grouping'] += 1
+                    oStatus.set("metavar grouping: "+str(oBack['grouping']), oBack)
+
+        # Process the 'corpora' part
+        oStatus.set("corpora information", oBack)
+        lCorpora = oCorpusInfo['corpora']
+        for oCrp in lCorpora:
+            # Check if this corpus exists already
+            instCrp = Corpus.get_item(oCrp['name'])
+            if instCrp == None:
+                # Create this corpus
+                if oCrp['hidden']:
+                    sStatus = 'hidden'
+                else:
+                    sStatus = 'public'
+                sMvar = oCrp['metavar']
+                if sMvar == "":
+                    # NOte: it is not obligatory for one corpus to have one instance of a metavar
+                    instMvar = None
+                else:
+                    instMvar = Metavar.get_item(sMvar)
+                # Only now can we create a corpus instance
+                instCrp = Corpus(name=oCrp['name'],
+                                 lng=choice_value(CORPUS_LANGUAGE, oCrp['lng']),
+                                 eth=choice_value(CORPUS_ETHNO, oCrp['eth']),
+                                 metavar=instMvar,
+                                 status=sStatus)
+                instCrp.save()
+                oBack['corpora'] += 1
+                oStatus.set("corpora: "+str(oBack['corpora']), oBack)
+            # Now check for all the [part] elements in this corpus
+            for oPart in oCrp['parts']:
+                # Sanity check
+                if oPart['name'] == "": continue
+                # Check if this corpus/part item already exists
+                instPart = Part.get_item(oPart['name'], instCrp)
+                if instPart == None:
+                    # This part does not yet exist: add it
+                    sMvar = oPart['metavar']
+                    if sMvar != "":
+                        # Metavar is obligatory for a [Part]
+                        instMvar = Metavar.get_item(sMvar)
+                        # Now create a [Part]
+                        instPart = Part(name=oPart['name'],
+                                        dir=oPart['dir'],
+                                        descr=oPart['descr'],
+                                        url=oPart['url'],
+                                        metavar=instMvar,
+                                        corpus=instCrp)
+                        instPart.save()
+                        oBack['part'] += 1
+                        oStatus.set("part: "+str(oBack['part']), oBack)
+                        # Sanity check
+                        if not 'psdx' in oPart:
+                            # Stop right here
+                            iStop = 1
+                        else:
+                            # Look for download information
+                            if oPart['psdx'] != "":
+                                # Add psdx download information
+                                instDown = Download(url=oPart['psdx'],
+                                                    format=choice_value(CORPUS_FORMAT, 'psdx'),
+                                                    part=instPart)
+                                instDown.save()
+                        # Sanity check
+                        if not 'folia' in oPart:
+                            # Stop right here
+                            iStop = 1
+                        else:
+                            if oPart['folia'] != "":
+                                # Add psdx download information
+                                instDown = Download(url=oPart['folia'],
+                                                    format=choice_value(CORPUS_FORMAT, 'folia'),
+                                                    part=instPart)
+                                instDown.save()
+                    
+
+        # We are done!
+        oStatus.set("done", oBack)
+
+        # return positively
+        oBack['result'] = True
+        return oBack
+    except:
+        # oCsvImport['status'] = 'error'
+        oStatus.set("error")
+        errHandle.DoError("process_corpusinfo", True)
+        return oBack
+
+
 class HelpChoice(models.Model):
     """Define the URL to link to for the help-text"""
     
@@ -215,6 +578,13 @@ class Metavar(models.Model):
     def __str__(self):
         return self.name
 
+    def get_item(sName):
+        qs = Metavar.objects.filter(name=sName)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
 
 class VariableName(models.Model):
     """One variable name that can be used by Variable specification"""
@@ -229,6 +599,13 @@ class VariableName(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_item(sName):
+        qs = VariableName.objects.filter(name=sName)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
 
 
 class Variable(models.Model):
@@ -246,6 +623,13 @@ class Variable(models.Model):
     def __str__(self):
         return "{}_{}".format(self.name.name, self.metavar.name)
 
+    def get_item(sName, instMvar):
+        qs = Variable.objects.filter(name__name__iexact=sName).filter(metavar=instMvar)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
 
 class GroupingName(models.Model):
     """One variable name that can be used by Grouping specification"""
@@ -258,6 +642,13 @@ class GroupingName(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_item(sName):
+        qs = GroupingName.objects.filter(name=sName)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
 
 
 class Grouping(models.Model):
@@ -273,6 +664,13 @@ class Grouping(models.Model):
     def __str__(self):
         return "{}_{}".format(self.name.name, self.metavar.name)
 
+    def get_item(instGrpName, instMvar):
+        qs = Grouping.objects.filter(name=instGrpName).filter(metavar=instMvar)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
 
 class Constituent(models.Model):
     """One constituent that can be used by tagsets and other stuff"""
@@ -285,6 +683,13 @@ class Constituent(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_item(sName):
+        qs = Constituent.objects.filter(title=sName)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
 
 
 class ConstituentNameTrans(models.Model):
@@ -314,6 +719,13 @@ class Tagset(models.Model):
     def __str__(self):
         return "{}_{}".format(self.constituent.title, self.metavar.name)
 
+    def get_item(instConst, instMvar):
+        qs = Tagset.objects.filter(constituent=instConst).filter(metavar=instMvar)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
 
 class Corpus(models.Model):
     """Description of one XML text corpus"""
@@ -324,13 +736,20 @@ class Corpus(models.Model):
     lng = models.CharField("Language of the texts", choices=build_choice_list(CORPUS_LANGUAGE), max_length=5, help_text=get_help(CORPUS_LANGUAGE))
     # [1]
     eth = models.CharField("Ethnologue 3-letter code of the text langauge", choices=build_choice_list(CORPUS_ETHNO), max_length=5, help_text=get_help(CORPUS_ETHNO))
-    # [1]
-    metavar = models.ForeignKey(Metavar, blank=False, null=False)
+    # [0-1]
+    metavar = models.ForeignKey(Metavar, blank=True, null=True)
     # [1]
     status = models.CharField("The status (e.g. 'hidden')", choices=build_choice_list(CORPUS_STATUS), max_length=5, help_text=get_help(CORPUS_STATUS))
 
     def __str__(self):
         return self.name
+
+    def get_item(sName):
+        qs = Corpus.objects.filter(name=sName)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
 
 
 class Part(models.Model):
@@ -352,18 +771,135 @@ class Part(models.Model):
     def __str__(self):
         return self.name
 
+    def get_item(sName, instCrp):
+        qs = Part.objects.filter(name=sName).filter(corpus=instCrp)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
+    def language(self):
+        return self.corpus.get_lng_display()
+
 
 class Download(models.Model):
     """Download information for one corpus part in one format"""
 
     # [1]
-    format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
-    # [1; f] Actual URL to place on the internet
-    url = models.URLField("Link to download this corpus (part)")
+    format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), 
+                              max_length=5, help_text=get_help(CORPUS_FORMAT))
+    # [0-1; f] Actual URL to place on the internet
+    url = models.URLField("Link to download this corpus (part)", blank=True, null=True)
+    # [1] Number of texts available in this format
+    count = models.CharField("Number of texts", max_length=10, default="unknown")
     # [1]    Link to the [Part] this download belongs to
-    part = models.ForeignKey(Part, blank=False, null=False)
+    part = models.ForeignKey(Part, blank=False, null=False, related_name="downloads")
 
     def __str__(self):
         return "{}_{}".format(self.part.name, choice_english(CORPUS_FORMAT, self.format))
+
+
+class Text(models.Model):
+    """One text that belongs to a Part of a Corpus"""
+
+    # [1] - this is only the *last* part of the file name
+    fileName = models.CharField("Name of the text file", max_length=MAX_TEXT_LEN)
+    # [1] - every text must be [psdx] or [folia] or something
+    format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
+    # [1] - Every text must be part of a Part
+    part = models.ForeignKey(Part, blank=False, null=False)
+    # [1] - EVery text must have a length in number of lines
+    lines = models.IntegerField("Number of lines", default=0)
+    # [0-1] - Every text may have a metadata file associated with it
+    metaFile = models.CharField("Name of the metadata file", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a title
+    title = models.CharField("Title of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a date
+    date = models.CharField("Publication year of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have an author
+    author = models.CharField("Author(s) of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a genre
+    genre = models.CharField("Genre of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+    # [0-1] - Every text *MAY* have a subtype
+    subtype = models.CharField("Subtype of this text", max_length=MAX_TEXT_LEN, blank=True, null=True)
+
+    def __str__(self):
+        return self.fileName
+
+    def formatname(self):
+        return self.get_format_display()
+    formatname.short_description = "format"
+    def datename(self):
+        return self.date
+    datename.short_description = "date"
+    def genrename(self):
+        return self.genre
+    genrename.short_description = "genre"
+    def subtypename(self):
+        return self.subtype
+    subtypename.short_description = "subtype"
+
+    def get_absolute_url(self):
+        return "/"+APP_PREFIX+"text/view/%i/" % self.id
+
+    def admin_form_column_names(self):
+        # 'part','format', 'fileName','title', 'date', 'author', 'genre', 'subtype'
+        return ("%s %s %s %s %s %s %s %s" %
+            (self.part.name, self.get_format_display(),
+            self.fileName, self.title, self.date, self.author, self.genre, self.subtype)
+            )
+
+    def get_item(sName):
+        qs = Text.objects.filter(fileName=sName)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
+    def get_sentences(self):
+        """Get the sentences belonging to this text"""
+
+        # Check if they have been fetched
+        if self.sentences.count() == 0:
+            # Need to fetch them
+            oBack = get_crpp_text(self.part.corpus.get_lng_display(), 
+                                  self.part.dir, 
+                                  self.get_format_display(), 
+                                  self.fileName)
+            # Validate what we receive
+            if oBack == None or oBack['status'] == 'error':
+                return None
+            # Process what we received into [Sentence] objects
+            lstSent = []
+            iOrder = 1
+            with transaction.atomic():
+                for oSent in oBack['line']:
+                    # Create a new Sentence object
+                    oNew = Sentence(identifier=oSent['id'],
+                                    order=iOrder,
+                                    sent=oSent['text'],
+                                    text=self)
+                    lstSent.append(oNew)
+                    iOrder += 1
+            # Save what we have so far
+            Sentence.objects.bulk_create(lstSent)
+        # At this point we HAVE all the sentences, so we only need to return the lot together
+        # But this needs to be in a QUERYSET
+        qs = Sentence.objects.filter(text__id=self.id).distinct().select_related().order_by('order')
+        return qs
+
+
+class Sentence(models.Model):
+    """One sentence from the surface form of a text"""
+
+    # [1] Order - number that dictates the order within a text
+    order = models.IntegerField("Order")
+    # [1] Identifier
+    identifier = models.CharField("Identifier", max_length=MAX_TEXT_LEN)
+    # [1] Text content itself
+    sent = models.CharField("Sentence", max_length=MAX_TEXT_LEN)
+    # [1] Link to the [Text] this line belongs to
+    text = models.ForeignKey(Text, blank=False, null=False, related_name="sentences")
+
 
 
