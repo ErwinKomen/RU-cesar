@@ -36,6 +36,7 @@ urlpatterns = [
     # Examples:
     url(r'^$', cesar.browser.views.home, name='home'),
     url(r'^contact$', cesar.browser.views.contact, name='contact'),
+    url(r'^more$', cesar.browser.views.more, name='more'),
     url(r'^about', cesar.browser.views.about, name='about'),
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
@@ -48,6 +49,7 @@ urlpatterns = [
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
+    url(r'^signup/$', cesar.browser.views.signup, name='signup'),
 
     url(r'^login/$',
         django.contrib.auth.views.login,

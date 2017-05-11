@@ -3,32 +3,35 @@
 {% block content %}
 
 <div class="jumbotron">
-    <h1>Django</h1>
-    <p class="lead">Django is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-    <p><a href="https://www.djangoproject.com/" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+    <h1>CESAR</h1>
+    <p class="lead">The Cesar web application provides a low-level way to do syntactic research in a number of text corpora.</p>
+    <p><a href="{% url 'more' %}" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
 </div>
 
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <h2>Getting started</h2>
         <p>
-            Django gives you a powerful, patterns-based way to build dynamic websites that
-            enables a clean separation of concerns and gives you full control over markup
-            for enjoyable, agile development.
+            The CESAR application has been designed by the Technical Service Group of the Humanities Lab at the Radboud University Nijmegen.
+          Any researcher is invited to registrate (create an account) and maintain his or her own research projects.
+          Projects of one researcher are by default <i>not</i> visible to other researchers, but it is possible to specify a different accessibility level.
         </p>
         <p>Pfx={{pfx}}</p>
         <p>site_url={{site_url}}</p>
-        <p><a class="btn btn-default" href="http://www.djangobook.com/en/2.0/index.html">Learn more &raquo;</a></p>
+        <p>
+          {% if user.is_authenticated %}
+          (See the <b>Extra</b> menu for logout and other options)
+          {% else %}
+          <a class="btn btn-default" href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a>
+          <a class="btn btn-default" href="{% url 'signup' %}">Sign up</a>
+          {% endif %}
+        </p>
     </div>
-    <div class="col-md-4">
-        <h2>Get more libraries</h2>
-        <p>The Python Package Index is a repository of software for the Python programming language.</p>
-        <p><a class="btn btn-default" href="https://pypi.python.org/pypi">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Microsoft Azure</h2>
-        <p>You can easily publish to Microsoft Azure using Python Tools for Visual Studio. Find out how you can host your application using a free trial today.</p>
-        <p><a class="btn btn-default" href="http://azure.microsoft.com">Learn more &raquo;</a></p>
+    <div class="col-md-6">
+        <h2>Define Cesar items</h2>
+        <p> (Explanation follows)
+        </p>
+        <p><a class="btn btn-default" href="mailto:e.komen@let.ru.nl">Request assistance &raquo;</a></p>
     </div>
 </div>
 
