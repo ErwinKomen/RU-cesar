@@ -4,7 +4,7 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <Name>cesar</Name>
     <RootNamespace>cesar</RootNamespace>
-    <InterpreterId>{1fc2586f-c05e-4f94-a0f4-897e6b703631}</InterpreterId>
+    <InterpreterId>{757cedb3-4a1b-4814-8189-58b1d580ea4a}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup>
@@ -97,10 +97,11 @@
     <Content Include="cesar\browser\templates\browser\layout.html" />
     <Content Include="cesar\browser\templates\browser\login.html" />
     <Content Include="cesar\browser\templates\browser\loginpartial.html" />
+    <Content Include="cesar\browser\templates\browser\more.html" />
     <Content Include="cesar\browser\templates\browser\pagination.html" />
     <Content Include="cesar\browser\templates\browser\sentence_list.html" />
     <Content Include="cesar\browser\templates\browser\sentence_view.html" />
-    <Content Include="cesar\browser\templates\browser\text_list_OLD.html" />
+    <Content Include="cesar\browser\templates\browser\signup.html" />
     <Content Include="cesar\browser\templates\browser\text_list_main.html" />
     <Content Include="cesar\browser\templates\browser\text_view.html" />
     <Content Include="cesar\browser\templates\browser\text_list.html" />
@@ -116,15 +117,15 @@
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="..\..\..\..\..\env\cesar\">
-      <Id>{1fc2586f-c05e-4f94-a0f4-897e6b703631}</Id>
-      <BaseInterpreter>{9a7a9026-48c1-4688-9d5d-e5699d47d074}</BaseInterpreter>
+      <Id>{757cedb3-4a1b-4814-8189-58b1d580ea4a}</Id>
+      <BaseInterpreter>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</BaseInterpreter>
       <Version>3.5</Version>
-      <Description>cesar (Python 64-bit 3.5)</Description>
+      <Description>cesar (Python 3.5)</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <LibraryPath>Lib\</LibraryPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
-      <Architecture>Amd64</Architecture>
+      <Architecture>X86</Architecture>
     </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Django.targets" />

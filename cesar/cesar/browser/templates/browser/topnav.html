@@ -51,6 +51,7 @@
                           <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
                         {% else %}
                           <li><a href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a></li>
+                          <li><a href="{% url 'signup' %}">Sign up</a></li>
                         {% endif %}
                       </ul>
                     </li>

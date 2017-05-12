@@ -2,17 +2,21 @@
 Definition of views.
 """
 
-from django.views.generic.detail import DetailView
-from django.views.generic.base import RedirectView
-from django.views.generic import ListView
-from django.shortcuts import get_object_or_404, render, redirect
-from django.http import HttpRequest, HttpResponse
-from django.http import JsonResponse
 from django.contrib import admin
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.models import Group
+from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.db.models.functions import Lower
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
+from django.views.generic.detail import DetailView
+from django.views.generic.base import RedirectView
+from django.views.generic import ListView
 from datetime import datetime
+
 from cesar.settings import APP_PREFIX
 from cesar.browser.services import *
 from cesar.browser.models import *
@@ -116,6 +120,18 @@ def contact(request):
         }
     )
 
+def more(request):
+    """Renders the more page."""
+    assert isinstance(request, HttpRequest)
+    return render(
+        request,
+        'browser/more.html',
+        {
+            'title':'More',
+            'year':datetime.now().year,
+        }
+    )
+
 def about(request):
     """Renders the about page."""
     assert isinstance(request, HttpRequest)
@@ -128,6 +144,35 @@ def about(request):
             'year':datetime.now().year,
         }
     )
+
+def signup(request):
+    """Provide basic sign up and validation of it """
+
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            # Save the form
+            form.save()
+            # Create the user
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            # also make sure that the user gets into the STAFF,
+            #      otherwise he/she may not see the admin pages
+            user = authenticate(username=username, 
+                                password=raw_password,
+                                is_staff=True)
+            user.is_staff = True
+            user.save()
+            # Add user to the "RegistryUser" group
+            g = Group.objects.get(name="RegistryUser")
+            if g != None:
+                g.user_set.add(user)
+            # Log in as the user
+            login(request, user)
+            return redirect('home')
+    else:
+        form = SignUpForm()
+    return render(request, 'browser/signup.html', {'form': form})
 
 def sync_crpp(request):
     """Synchronize information FROM /crpp"""
