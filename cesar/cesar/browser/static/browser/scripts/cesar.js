@@ -26,6 +26,7 @@ var ru = (function ($, ru) {
   ru.cesar = (function ($, config) {
     // Define variables for ru.collbank here
     var loc_example = "",
+        loc_divErr = "sentdetails_err",
         oSyncTimer = null;
 
 
@@ -37,6 +38,10 @@ var ru = (function ($, ru) {
        */
       methodNotVisibleFromOutside: function () {
         return "something";
+      },
+      errMsg: function (sMsg, ex) {
+        var sHtml = "Error in [" + sMsg + "]<br>" + ex.message;
+        $("#" + loc_divErr).html(sHtml);
       }
     }
 
@@ -95,6 +100,29 @@ var ru = (function ($, ru) {
         var k = 0;
       },
 
+      /**
+       * start_tree_draw
+       *   Initiate drawing a syntax tree
+       *
+       */
+      start_tree_draw: function () {
+        var sTree = "", oTree = {},
+            divNodes = "sentdetails_node",
+            divTree = "sentdetails_tree",
+            divSvg = "sentdetails_svg";
+
+        try {
+          // Convert the tree we get
+          sTree = $("#" + divNodes).text().replace(/'/g, '"');
+          oTree = JSON.parse(sTree);
+          // Draw the tree using the NEW method
+          crpstudio.tree.treeToSvg("#" + divTree, oTree, "#" + loc_divErr);
+          // Draw the tree using the traditional method
+          // crpstudio.tree.drawTree("#"+divSvg);
+        } catch (ex) {
+          private_methods.errMsg("start_tree_draw", ex);
+        }
+      },
 
       /**
        * part_change: act on a change in selected 'part' in text_list.html

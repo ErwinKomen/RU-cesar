@@ -19,15 +19,17 @@ var crpstudio = (function ($, crpstudio) {
         graphAbstract = {},   // Representation of the total
         width = 1025,         // Initial canvas width
         height = 631,         // Initial canvas height
-        errDiv = null,        // Where to show errors
+        loc_svgRoot = null,
+        loc_errDiv = null,    // Where to show errors
         loc_arLeaf = [],      // Storage of pointers to the LEAFs of the tree
         loc_iTreeId = 0,      // Available ID's for tree
         loc_iShadow = 3,      // 
         loc_iMargin = 5,      // margin of box around tree image
+        loc_iToggle = 10,     // Width and height of toggle
         loc_iWidth = 0.5,     // Stroke-width in 
         loc_iMaxLevel = 0,    // Maximum hierarchical level of this tree
         loc_iDistVert = 60,   // Vertical distance between tree nodes
-        loc_iDistHor = 5,     // Minimal distance between end nodes
+        loc_iDistHor = 10,     // Minimal distance between end nodes
         root = null;          // Root of the tree (DOM position)
 
     // Methods that are local to [crpstudio.dbase]
@@ -37,27 +39,77 @@ var crpstudio = (function ($, crpstudio) {
        *     Show the error at the indicated place
        */
       showError: function (sFunction, ex) {
-        var sMsg = "Error in " + sFunction + ": " + ex.message;
-        if (errDiv !== undefined) $(errDiv).html(sMsg);
+        var sOld = "",
+            sMsg = "Error in " + sFunction + ": " + ex.message;
+
+        if (loc_errDiv !== undefined && loc_errDiv !== null) {
+          sOld = $(loc_errDiv).html();
+          $(loc_errDiv).html(sOld + "<p><code>"+sMsg+"</code></p>");
+        }
       },
-      initSvg: function () {
-        var lHtml = [];
+      setErrLoc: function(sLoc) {
+        loc_errDiv = sLoc;
+        if (sLoc.indexOf("#")!==0) {
+          loc_errDiv = "#" + loc_errDiv;
+        }
+        // Clear the errors
+        $(loc_errDiv).html();
+      },
+      setSvgRoot : function(sSvgRoot) {
+        loc_svgRoot = sSvgRoot;
+      },
+      refreshSvg: function () {
+        /*
+        $(loc_svgRoot).html($(loc_svgRoot).html());
+        */
+        // Do nothing
+      },
+      /**
+       * initSvg
+       *    Initialize the <svg> in the @sDiv
+       * 
+       * @param {el} sDiv
+       * @returns {bool}
+       */
+      initSvg: function (sDiv) {
+        var lHtml = [],   // Where we combine SVG
+            svgDiv = null,
+            svgDoc = null,
+            sHtml = "",
+            arCol = ["black", "darkgoldenrod", "darkgreen", "gainsboro", "ivory", "lightblue",
+                     "lightgreen", "linen", "purple", "steelblue", "white", "whitesmoke"],
+            i;            // Counter
 
         try {
+          /* 
+          // Start creating an SVG document
+          svgDiv = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+          $(sDiv).append(svgDiv);
+          svgDoc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svgDoc.setAttribute("width", "1047");
+          svgDoc.setAttribute("height", "542");
+          $(sDiv).find("div").append(svgDoc); */
+          /* */
           // Create an <svg> element
-          lHtml.push("<svg width='1047px' height='542px' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>");
-          lHtml.push("<defs>");
+          lHtml.push("<svg width=\"1047px\" height=\"542px\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+          /* */
+          // Create defs
+          lHtml.push("<defs >");
           for (i = 0; i < arCol.length; i++) {
-            lHtml.push("<linearGradient id='" + arCol[i] + "_gradient'><stop offset='5%' stop-color='" + arCol[i] + "' />");
-            lHtml.push("<stop offset='95%' stop-color='whitesmoke' /></linearGradient>");
+            lHtml.push("<linearGradient id=\"" + arCol[i] + "_gradient\"><stop offset=\"5%\" stop-color=\"" + arCol[i] + "\" />");
+            lHtml.push("<stop offset=\"95%\" stop-color=\"whitesmoke\" /></linearGradient>");
           }
           lHtml.push("</defs>");
           // Finish the tree
           lHtml.push("</svg>");
-          return lHtml.join("\n");
+          sHtml = lHtml.join("\n");
+          //  OLD: $(sDiv).html(sHtml);
+          sHtml = jQuery.parseXML(sHtml);
+          $(sDiv).append(sHtml.documentElement);
+          return true;
         } catch (ex) {
           private_methods.showError("initSvg", ex);
-          return "";
+          return false;
         }
       },
       /**
@@ -131,15 +183,16 @@ var crpstudio = (function ($, crpstudio) {
        *    If this is a <g> element from 'lithium-tree', then
        *    set the x,y,width,height attributes according to oRect
        * 
-       * @param {type} el
+       * @param {type} gThis
        * @param {type} oRect
        * @returns {Boolean}
        */
-      setLocation: function (el, oRect) {
+      setLocation: function (gThis, oRect) {
         try {
           // Validate: exist and must be <g> with class "lithium-tree"
-          if (el === undefined) return false;
-          if (!$(el).is(".lithium-tree")) return false;
+          if (gThis === undefined) return false;
+          if (!$(gThis).is(".lithium-tree")) return false;
+          /*
           $(el).attr("x", oRect['x']);
           $(el).attr("y", oRect['y']);
           // Optionally set width and height
@@ -147,6 +200,54 @@ var crpstudio = (function ($, crpstudio) {
           if (oRect.hasOwnProperty("height")) { $(el).attr("height", oRect['height']); }
           // Debugging: immediately apply this location
           private_methods.applyOneLocation(el);
+          */
+
+          // Get my main components
+          var node = $(gThis).children(".lithium-node").first();
+          // The [node] contains: [rect], [shadow] and [text]
+          var mainRect = $(node).children("rect").first();
+          var shadowRect = $(node).children(".lithium-shadow").children("rect").first();
+          var mainText = $(node).children("text").first();
+          // Calculate the shift
+          var shift_x = oRect['x'] - parseInt($(mainRect).attr("x"), 10);
+          var shift_y = oRect['y'] - parseInt($(mainRect).attr("y"), 10);
+          var new_w = oRect['width'];
+          var new_h = oRect['height'];
+          // Apply the shift to the rect-elements
+          private_methods.applyRectShiftSize(mainRect, shift_x, shift_y, new_w, new_h);
+          private_methods.applyRectShiftSize(shadowRect, shift_x, shift_y, new_w, new_h);
+          // Apply the rect-like shift to the <text> element
+          //   (but do not change its size)
+          private_methods.applyRectShiftSize(mainText, shift_x, shift_y, -1, -1);
+          // Do we have a toggle?
+          var toggle = $(gThis).children(".lithium-toggle");
+          if ($(toggle).length > 0) {
+            // Treat the [toggle]
+            var toggleRect = $(toggle).children("rect").first();
+            var toggleLines = $(toggle).children("line");
+            // Calculate the toggle position
+            var oToggle = private_methods.getRectSize(toggleRect);
+            oToggle['x'] = parseInt($(mainRect).attr("x"), 10) +
+                 Math.ceil((parseInt($(mainRect).attr("width"), 10) -
+                                     oToggle['width']) / 2);
+            oToggle['y'] = Math.ceil(parseInt($(mainRect).attr("y"), 10) + new_h);
+            // Now clear the entire toggle contents
+            $(toggle).empty();
+            // Start building up again: add the correct rect
+            var sRect = private_methods.svgRect(oToggle);
+
+            // The visibility of the vertical bar depends on whether one or more children are invisible
+            var bPlus = private_methods.isVisible($(gThis).children(".lithium-tree").first());
+
+            // Create new content
+            var sLines = private_methods.crossInRect(oToggle, bPlus);
+            // Add this content
+            $(toggle).html(sRect + sLines);
+          }
+          // Connections: special case TODO: adapt
+          var connPart = $(gThis).children(".lithium-conn");
+          if ($(connPart).length > 0) $(connPart).empty();
+
           return true;
         } catch (ex) {
           private_methods.showError("setLocation", ex);
@@ -299,9 +400,13 @@ var crpstudio = (function ($, crpstudio) {
           // Validate
           if (!$(gSrc).is(".lithium-tree") || !$(gSrc).is(".lithium-tree")) return "";
           // Get the start and end rectangles
-          var oSrc = private_methods.getRectSize(gSrc, ".lithium-tree");
-          var oDst = private_methods.getRectSize(gDst, ".lithium-tree");
+          //var oSrc = private_methods.getRectSize(gSrc, ".lithium-tree");
+          //var oDst = private_methods.getRectSize(gDst, ".lithium-tree");
+          var oSrc = private_methods.getRect(gSrc);
+          var oDst = private_methods.getRect(gDst);
           if (oSrc === null || oDst === null) return "";
+          // Make sure the destination is not too large
+          oDst['y'] = oDst['y'] + loc_iToggle;
           // Set default values
           var sStroke = "black";
           var sStrokeWidth = "0.5";
@@ -359,6 +464,36 @@ var crpstudio = (function ($, crpstudio) {
 
       },
       /**
+       * svgText
+       *    Construct a <text> element according to the parameters in [oRect]
+       * 
+       * @param {type} oRect
+       * @returns {undefined}
+       */
+      svgText: function (oRect) {
+        try {
+          // Validate
+          if (!oRect.hasOwnProperty("x") || !oRect.hasOwnProperty("y") ||
+              !oRect.hasOwnProperty("text")) return "[TEXT-ERROR]";
+          // Add default arguments if  needed
+          if (!oRect.hasOwnProperty("font-family")) oRect['font-family'] = "Verdana";
+          if (!oRect.hasOwnProperty("font-size")) oRect['font-size'] = "12";
+          if (!oRect.hasOwnProperty("fill")) oRect['fill'] = "black";
+          // Now create the svg stuff
+          var sBack = "<text x=\"" + (oRect['x'] + 5) +
+                          "\" y=\"" + (oRect['y'] + 15) +
+                          "\" font-family=\"" + oRect['font-family'] +
+                          "\" font-size=\"" + oRect['font-size'] + 
+                          "\" fill=\"" + oRect['fill'] +
+                          "\">" + oRect['text'] + "</text>";
+          // Return what we made
+          return sBack;
+        } catch (ex) {
+          private_methods.showError("svgText", ex);
+          return null;
+        }
+      },
+      /**
        * svgRect
        *    Construct a rectangle according to the parameters in [oRect]
        * 
@@ -366,6 +501,8 @@ var crpstudio = (function ($, crpstudio) {
        * @returns {undefined}
        */
       svgRect: function (oRect) {
+        var sR = "";
+
         try {
           // Validate
           if (!oRect.hasOwnProperty("x") || !oRect.hasOwnProperty("y") ||
@@ -374,14 +511,19 @@ var crpstudio = (function ($, crpstudio) {
           if (!oRect.hasOwnProperty("stroke")) oRect['stroke'] = "black";
           if (!oRect.hasOwnProperty("stroke-width")) oRect['stroke-width'] = "0.5";
           if (!oRect.hasOwnProperty("fill")) oRect['fill'] = "white";
+          // Do we need to add the R?
+          if (oRect.hasOwnProperty("rx") && oRect.hasOwnProperty("ry")) {
+            sR = " rx=\"" + loc_iShadow + "\"" +
+                 " ry=\"" + loc_iShadow + "\"";
+          }
           // Now create the svg stuff
-          var sBack = "<rect x='" + oRect['x'] +
-                          "' y='" + oRect['y'] +
-                          "' width='" + oRect['width'] +
-                          "' height='" + oRect['height'] +
-                          "' fill='" + oRect['fill'] +
-                          "' stroke='" + oRect['stroke'] +
-                          "' stroke-width='" + oRect['stroke-width'] + "' />";
+          var sBack = "<rect x=\"" + oRect['x'] +
+                          "\" y=\"" + oRect['y'] + "\"" + sR +
+                          " width=\"" + oRect['width'] +
+                          "\" height=\"" + oRect['height'] +
+                          "\" fill=\"" + oRect['fill'] +
+                          "\" stroke=\"" + oRect['stroke'] +
+                          "\" stroke-width=\"" + oRect['stroke-width'] + "\" />";
           // Return what we made
           return sBack;
         } catch (ex) {
@@ -398,7 +540,7 @@ var crpstudio = (function ($, crpstudio) {
           w = options['w'];
           h = options['h'];
 
-          return private_method.svgRect({
+          return private_methods.svgRect({
             x: x + loc_iShadow, y: y + loc_iShadow, width: w, height: h, rx: loc_iShadow, ry: loc_iShadow,
             fill: "gainsboro", stroke: "gainsboro", 'stroke-width': loc_iWidth
           });
@@ -407,7 +549,23 @@ var crpstudio = (function ($, crpstudio) {
           return "";
         }
       },
-      rectNode: function (options) {
+      textNode: function (options) {
+        var x, y, t;
+
+        try {
+          // Get the coordinates
+          x = options['x'];
+          y = options['y'];
+          t = options['t'];
+          return private_methods.svgText({
+            x: x, y: y, text: t
+          });
+        } catch (ex) {
+          private_methods.showError("textNode", ex);
+          return "";
+        }        
+      },
+      rectNode : function(options) {
         var x, y, w, h,   // Coordinates
             sColor;       // Color
 
@@ -424,7 +582,7 @@ var crpstudio = (function ($, crpstudio) {
             case "sel": sColor = "url(#darkgoldenrod_gradient)"; break;
           }
 
-          return private_method.svgRect({
+          return private_methods.svgRect({
             x: x , y: y , width: w, height: h, rx: loc_iShadow, ry: loc_iShadow,
             fill: sColor, stroke: "black", 'stroke-width': loc_iWidth
           });
@@ -479,11 +637,11 @@ var crpstudio = (function ($, crpstudio) {
        */
       svgLine: function (x1, y1, x2, y2, bHidden) {
         try {
-          var sLine = "<line x1='" + x1 +
-                      "' y1='" + y1 + "' x2='" + x2 +
-                      "' y2='" + y2 + "' stroke='black' stroke-width='0.5' />";
+          var sLine = "<line x1=\"" + x1 +
+                      "\" y1=\"" + y1 + "\" x2=\"" + x2 +
+                      "\" y2=\"" + y2 + "\" stroke=\"black\" stroke-width=\"0.5\" />";
           if (bHidden) {
-            sLine = "<g class='lithium-vbar hidden'>" +
+            sLine = "<g class=\"lithium-vbar hidden\">" +
                     sLine + "</g>";
           }
           return sLine;
@@ -514,6 +672,32 @@ var crpstudio = (function ($, crpstudio) {
           $(el).attr("y2", parseInt($(el).attr("y2"), 10) + shift_y);
         } catch (ex) {
           private_methods.showError("applyLineShift", ex);
+        }
+      },
+      getGwidth : function(el) {
+        try {
+          if (el === undefined || el === null) return 0;
+          var elRect = $(el).find("rect");
+          if ($(elRect).length > 0) {
+            return $(elRect).first().attr("width");
+          } else {
+            return 0;
+          }
+        } catch (ex) {
+          private_methods.showError("getGwidth", ex);
+          return 0;
+        }
+      },
+      appendSvg : function(el, sSvg) {
+        try {
+          var sTree = jQuery.parseXML(sSvg);
+          // OLD $(dParent).append(sTree);
+          $(el).append(sTree.documentElement);
+          // Refresh
+          $(el).html($(el).html());
+          return true;
+        } catch (ex) {
+          return false;
         }
       },
       /**
@@ -551,23 +735,46 @@ var crpstudio = (function ($, crpstudio) {
             dLast = null,   // Last child
             oPos = {},      // General purpose position object
             oPosN = {},     // Position of the node
+            oRect = {},     // General purpose
+            oRectP = {},
+            oRectL = {},
+            oRectN = {},
             sType = "",     // The type of situation we are in
             oChild = {};    // One child of [oNode]
 
         try {
           // Validate
           if (oNode === undefined) return "";
-          if (!oNode.hasOwnProperty("p") || !oNode.hasOwnProperty("level") || !oNode.hasOwnProperty("id")) return "";
+          if (!oNode.hasOwnProperty("pos") || !oNode.hasOwnProperty("level") || !oNode.hasOwnProperty("id")) return "";
           // Get the POS of the node
           sPos = oNode['pos'];
           // Create an svg <g> element that contains its ID and CLASS
           sTree = private_methods.getLithiumNode({ el: oNode, type: "node" });
-          dNode = $(dParent).append(sTree);
+          // OLD $(dParent).append(sTree);
+          private_methods.appendSvg(dParent, sTree);
+          dNode = $(dParent).children().last();
+
+          // Now FIRST walk all my children (if there are any)
+          if (oNode.hasOwnProperty("child")) {
+            iLen = oNode['child'].length;
+            for (i = 0; i < iLen; i++) {
+              // Treat this child
+              dChild = private_methods.nodeToSvg(oNode['child'][i], dNode);
+            }
+          }
+
+          // Debugging
+          if (oNode['pos'] === "NP-GEN") {
+            var iStop = 1;
+          }
+
+          // Once all the child nodes have been done, we can continue...
           // Fit the text in the node (and this also sets the 'width' and 'height' of the <g> element)
           private_methods.fitRectangle(dNode);
+          oRectN = private_methods.getRect(dNode);
           // Set the node's w/h
-          oPosN['width'] = $(dNode).width;
-          oPosN['height'] = $(dNode).height;
+          oPosN['width'] = oRectN['width'];
+          oPosN['height'] = oRectN['height'];
           oPosN['y'] = oNode['level'] * loc_iDistVert + loc_iMargin;
           // What is the situation
           sType = (oNode.hasOwnProperty("child")) ? "node" : "terminal";
@@ -578,12 +785,16 @@ var crpstudio = (function ($, crpstudio) {
               // Create an SVG 'lithium-node'
               sNode = private_methods.getLithiumNode({ el: oNode, type: 'terminal' });
               // Add this leaf node under [dNode]
-              dLeaf = $(dNode).append(sNode);
+              // OLD dLeaf = $(dNode).append(sNode);
+              private_methods.appendSvg(dNode, sNode);
+              dLeaf = $(dNode).children().last();
+
               // Fit the text in the leaf
               private_methods.fitRectangle(dLeaf);
+              oRectL = private_methods.getRect(dLeaf);
               // The w,h are needed for 'setLocation'
-              oPos['width'] = $(dLeaf).width;
-              oPos['height'] = $(dLeaf).height;
+              oPos['width'] = oRectL['width'];
+              oPos['height'] = oRectL['height'];
               // Determine the x,y for the leaf
               if (loc_arLeaf.length === 0) {
                 // This is the first terminal
@@ -592,19 +803,26 @@ var crpstudio = (function ($, crpstudio) {
                 oPos['y'] = (loc_iMaxLevel + 1) * loc_iDistVert + loc_iMargin;
               } else {
                 // Get the first preceding tree/leaf combination
-                dPrev = loc_arLeaf.last(); dPrevP = $(dPrev).parent();
+                dPrev = loc_arLeaf[loc_arLeaf.length-1]; dPrevP = $(dPrev).parent();
+                oRect = private_methods.getRect(dPrev);
+                oRectP = private_methods.getRect(dPrevP);
                 // Get the rightmost point of this leaf or its parent node
-                x = Math.max($(dPrev).x + $(dPrev).width, $(dPrevP).x + $(dPrevP).width) + loc_iDistHor;
-                // The vertical position of [dLeaf] is determined by the level
-                oPos['y'] = (oNode['level'] + 1) * loc_iDistVert + loc_iMargin;
+                x = Math.max(oRect['x'] + oRect['width'], oRectP['x'] + oRectP['width']) + loc_iDistHor;
+                if (oNode['txt'].indexOf("*") === 0 || oNode['txt'] == "0") {
+                  // The vertical position of [dLeaf] is determined by the level for *T* and 0
+                  oPos['y'] = (oNode['level'] + 1) * loc_iDistVert + loc_iMargin;
+                } else {
+                  // Otherwise it is determine by the max
+                  oPos['y'] = (loc_iMaxLevel + 1) * loc_iDistVert + loc_iMargin;
+                }
               }
               // Set the x,y of [dLeaf] and its parent [dNode]
-              if ($(dLeaf).width > $(dNode).width) {
+              if (oPos['width'] > oPosN["width"]) {
                 // First dLeaf
                 oPos['x'] = x;
                 private_methods.setLocation(dLeaf, oPos);
                 // Adapt x position of the parent [dNode]
-                oPosN['x'] = oPos['x'] + $(dLeaf).width / 2 - $(dNode).width / 2;
+                oPosN['x'] = oPos['x'] + oRectL['width'] / 2 - oRectN['width'] / 2;
                 // Set the location of the node
                 private_methods.setLocation(dNode, oPosN);
               } else {
@@ -612,7 +830,7 @@ var crpstudio = (function ($, crpstudio) {
                 oPosN['x'] = x;
                 private_methods.setLocation(dNode, oPosN);
                 // Then determine the location of the leaf
-                oPos['x'] = oPosN['x'] + $(dNode).width / 2 - $(dLeaf).width / 2;
+                oPos['x'] = oPosN['x'] + oRectN['width'] / 2 - oRectL['width'] / 2;
                 private_methods.setLocation(dLeaf, oPos);
               }             
               // Store the LEAF node in the global list for future reference
@@ -621,18 +839,21 @@ var crpstudio = (function ($, crpstudio) {
             default:  // Normal nodes
               // THis assumes *ALL* the child nodes have alread been dealt with, so 'I' am the parent of all the nodes under me
               // (1) How many children do I have?
-              dChildren = $(dNode).children();
+              dChildren = $(dNode).children(".lithium-tree");
               iLen = $(dChildren).length;
               if (iLen === 1) {
                 // My x,y are totally dependant upon my one child's x,y
                 dChild = $(dChildren).first();
-                oPosN['x'] = private_methods.getCenter(dChild) - $(dNode).width / 2;
+                oPosN['x'] = private_methods.getCenter(dChild) -
+                             oRectN['width'] / 2;
               } else if (iLen>1) {
                 // There is more than 1 child
                 // Calculate the average between the first and last child
                 dChild = $(dChildren).first();
                 dLast = $(dChildren).last();
-                oPosN['x'] = (private_methods.getCenter(dLast) - private_methods.getCenter(dChild))/2 - $(dNode).width/2;
+                oPosN['x'] = (private_methods.getCenter(dLast) +
+                              private_methods.getCenter(dChild)) / 2 -
+                              oRectN['width']  / 2;
               }
               // Place [dNode] to this new position
               private_methods.setLocation(dNode, oPosN);
@@ -649,12 +870,14 @@ var crpstudio = (function ($, crpstudio) {
         }
       },
       getCenter : function (el) {
-        var center = 0;
+        var center = 0,
+            oRect = {};
 
         try {
           // Validate 
           if (el === undefined) return 0;
-          center =  $(el).x + $(el).width / 2;
+          oRect = private_methods.getRect(el);
+          center = oRect['x'] + oRect['width'] / 2;
           return center;
         } catch (ex) {
           // Show error message
@@ -673,10 +896,10 @@ var crpstudio = (function ($, crpstudio) {
         var lHtml = [],
             sText = "",
             el,
-            x = 0,
-            y = 0,
-            w = 10,
-            h=10,
+            x = 10,
+            y = 10,
+            w = 100,
+            h = 22,
             sType;
 
         try {
@@ -689,7 +912,7 @@ var crpstudio = (function ($, crpstudio) {
               // Get the text of the node
               sText = el['txt'];
               // Add a 'tree_leaf'  element
-              lHtml.push(private_methods.getGstart({ type: "tree_leaf", el: el, x: x, y: y, width: w, height: h }));
+              lHtml.push(private_methods.getGstart({ type: "tree_leaf", el: el }));
               if (el.parent !== null) {
                 // Add a <g> 'lithium-conn' part: connection with the parent
                 lHtml.push(private_methods.getGstart({ type: "conn_leaf", el: el }));
@@ -707,7 +930,7 @@ var crpstudio = (function ($, crpstudio) {
               // Add an end-node rect
               lHtml.push(private_methods.rectNode({ x: x, y: y, w: w, h: h, type: "end" }));
               // Add a <text> node
-              lhtml.push(private_methods.textNode({ x: x, y: x, t: sText }));
+              lHtml.push(private_methods.textNode({ x: x, y: x, t: sText }));
               // Finish the 'node_leaf'
               lHtml.push("</g>");
               // Finish the 'tree_leaf'
@@ -717,7 +940,7 @@ var crpstudio = (function ($, crpstudio) {
               // The text of the node is the POS
               sText = el['pos'];
               // Add a 'tree'  element
-              lHtml.push(private_methods.getGstart({ type: "tree", el: el, x: x, y: y, width: w, height: h }));
+              lHtml.push(private_methods.getGstart({ type: "tree", el: el }));
               if (el.parent !== null) {
                 // Add a <g> 'lithium-conn' part: connection with the parent
                 lHtml.push(private_methods.getGstart({ type: "conn", el: el }));
@@ -727,18 +950,31 @@ var crpstudio = (function ($, crpstudio) {
 
               // Add a <g> 'lithium-node' part + its shadow
               lHtml.push(private_methods.getGstart({ type: "node", el: el }));
+
+              // Within the 'lithium-node' there is a SHADOW:
               lHtml.push(private_methods.getGstart({ type: "shadow", el: el }));
               // Add a <rect> element to realise the shadow
               lHtml.push(private_methods.rectShadow({ x: x, y: y, w: w, h: h }));
               // Finish the shadow
               lHtml.push("</g>");
-              // Add an end-node rect
+
+              // Within the 'lithium-node there is a RECT and TEXT
               lHtml.push(private_methods.rectNode({ x: x, y: y, w: w, h: h, type: "node" }));
               // Add a <text> node
-              lhtml.push(private_methods.textNode({ x: x, y: x, t: sText }));
-              // Finish the 'node_leaf'
+              lHtml.push(private_methods.textNode({ x: x, y: x, t: sText }));
+
+              // Finish the 'node'
               lHtml.push("</g>");
-              // Finish the 'tree_leaf'
+
+              // Add a 'lithium-toggle' element
+              lHtml.push(private_methods.getGstart({ type: "toggle", el: el }));
+              // And the toggle contains a RECT and a LINE
+              lHtml.push(private_methods.rectNode({ x: x+w/2-loc_iToggle/2, y: y+h, w: loc_iToggle, h: loc_iToggle, type: "node" }));
+              lHtml.push(private_methods.svgLine(10, 10, 18, 10, false));
+              // Finish the 'toggle' element
+              lHtml.push("</g>");
+
+              // Finish the 'tree' element
               lHtml.push("</g>");
               break;
           }
@@ -761,9 +997,12 @@ var crpstudio = (function ($, crpstudio) {
        *  @param {object} o   - myself
        *  @param {object} p   - my parent
        *  @param {int} iLevel - deepness level
-       *  @return {void}
+       *  @return {bool}      - Used for errors
        */
-      setParentAndId: function (o, p, iLevel) {
+      setParentAndId : function (o, p, iLevel) {
+        var n = null,   // object node
+            i = 0;      // counter
+
         try {
           // CHeck for level
           if (p===null) loc_iMaxLevel = 0;
@@ -774,23 +1013,27 @@ var crpstudio = (function ($, crpstudio) {
           // CHeck for parent
           if (!o.hasOwnProperty("parent")) { o['parent'] = p;}
           // Check for children
-          if (o.hasOwnProperty('child') && o.child != null) {
+          if (o.hasOwnProperty('child') && o['child'] !== null) {
             // Go one level down
             iLevel += 1;
             if (iLevel > loc_iMaxLevel) {loc_iMaxLevel = iLevel;}
             // Treat all children
-            for (n in o.child) {
+            for (i = 0; i < o.child.length;i++) {
               // Treat this particular child
-              private_methods.setParentAndId(o.nodes[n], o, iLevel);
+              if (!private_methods.setParentAndId(o['child'][i], o, iLevel)) {
+                return false;
+              }
             }
             // Go one level up again
             iLevel -= 1;
           }
+          // Return success
+          return true;
         } catch (ex) {
           // Show error message
-          private_methods.showError("setParent", ex);
-          // Return empty string
-          return "";
+          private_methods.showError("setParentAndId", ex);
+          // Return false
+          return false;
         }
       },
       /**
@@ -821,13 +1064,13 @@ var crpstudio = (function ($, crpstudio) {
           switch (options['type']) {
             case "conn":  // Connection from this to parent
               oParent = oThis['parent'];
-              lHtml.push("id='" + options['type'] + "_" + oThis['id'] + "_" + oParent['id'] + "'");
+              lHtml.push("id=\"" + options['type'] + "_" + oThis['id'] + "_" + oParent['id'] + "\"");
               break;
             case "shadow":
               // THe shadow <g> elements do NOT require an id
               break;
             default:      // Other node
-              lHtml.push("id='" + options['type'] + "_" + oThis['id'] + "'");
+              lHtml.push("id=\"" + options['type'] + "_" + oThis['id'] + "\"");
               break;
           }
           // Add the @class
@@ -842,12 +1085,12 @@ var crpstudio = (function ($, crpstudio) {
               }
               break;
           }
-          lHtml.push("class='" +sClass + "'");
+          lHtml.push("class=\"" + sClass + "\"");
           // Optional" with, height, x, y
-          if (options.hasOwnProperty("x")) { lHtml.push("x='" + options['x'] + "'");}
-          if (options.hasOwnProperty("y")) { lHtml.push("y='" + options['y'] + "'"); }
-          if (options.hasOwnProperty("width")) { lHtml.push("width='" + options['width'] + "'"); }
-          if (options.hasOwnProperty("height")) { lHtml.push("height='" + options['height'] + "'"); }
+          if (options.hasOwnProperty("x")) { lHtml.push("x=\"" + options['x'] + "\""); }
+          if (options.hasOwnProperty("y")) { lHtml.push("y=\"" + options['y'] + "\""); }
+          if (options.hasOwnProperty("width")) { lHtml.push("width=\"" + options['width'] + "\""); }
+          if (options.hasOwnProperty("height")) { lHtml.push("height=\"" + options['height'] + "\""); }
           // Finish the element
           lHtml.push(">");
           // REturn the element
@@ -1022,7 +1265,14 @@ var crpstudio = (function ($, crpstudio) {
               var sText = $(node).children("text").first().text();
               textWidth = sText.length * 4;
             } else {
-              textWidth = $(node).children("text").first().get(0).getBBox().width;
+              try {
+                // Refresh
+                private_methods.refreshSvg();
+                textWidth = $(node).children("text").first().get(0).getBBox().width;
+              } catch (ex) {
+                var sText = $(node).children("text").first().text();
+                textWidth = sText.length * 4;
+              }
             }
             // var textWidth = $(node).children("text").first().get(0).getBBox().width;
             // Continue
@@ -1037,9 +1287,11 @@ var crpstudio = (function ($, crpstudio) {
             oRect['width'] = textWidth;
             oRect['height'] = myHeight;
             oRect['expanded'] = private_methods.getExpanded(el);
+            /* May not put X and Y in <g>
             // Set these parameters in the <g> 
             $(el).attr("width", oRect['width']);
             $(el).attr("height", oRect['height']);
+            */
           }
           // Return the rectangle
           return oRect;
@@ -1168,7 +1420,7 @@ var crpstudio = (function ($, crpstudio) {
           // Validate
           if (el !== undefined) {
             // Find first lithium-node under me
-            var rect = $(root).find(".lithium-node rect").first();
+            var rect = $(el).find(".lithium-node").children("rect").first();
             if (rect !== undefined) {
               // Create structure with x,y etc
               var oRect = {};
@@ -1212,6 +1464,53 @@ var crpstudio = (function ($, crpstudio) {
         }
       }
     };
+
+    var svg_methods = {
+      /**
+       * initSvg
+       *    Initialize the <svg> in the @sDiv
+       * 
+       * @param {el} sDiv
+       * @returns {bool}
+       */
+      initSvg: function (sDiv) {
+        var lHtml = [],   // Where we combine SVG
+            svgDiv = null,
+            svgDoc = null,
+            sHtml = "",
+            arCol = ["black", "darkgoldenrod", "darkgreen", "gainsboro", "ivory", "lightblue",
+                     "lightgreen", "linen", "purple", "steelblue", "white", "whitesmoke"],
+            i;            // Counter
+
+        try {
+          // Start creating an SVG document
+          svgDoc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svgDoc.setAttribute("width", "1047");
+          svgDoc.setAttribute("height", "542");
+          $(sDiv).append(svgDoc);
+          /* */
+          // Create an <svg> element
+          lHtml.push("<svg width=\"1047px\" height=\"542px\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+          /* */
+          // Create defs
+          lHtml.push("<defs >");
+          for (i = 0; i < arCol.length; i++) {
+            lHtml.push("<linearGradient id=\"" + arCol[i] + "_gradient\"><stop offset=\"5%\" stop-color=\"" + arCol[i] + "\" />");
+            lHtml.push("<stop offset=\"95%\" stop-color=\"whitesmoke\" /></linearGradient>");
+          }
+          lHtml.push("</defs>");
+          // Finish the tree
+          lHtml.push("</svg>");
+          sHtml = lHtml.join("\n");
+          $(sDiv).html(sHtml);
+          return true;
+        } catch (ex) {
+          private_methods.showError("initSvg", ex);
+          return false;
+        }
+      }
+
+    };
     // Methods that are exported by [crpstudio.project] for others
     return {
       /**
@@ -1223,30 +1522,29 @@ var crpstudio = (function ($, crpstudio) {
        * @param {element} errDiv  - DOM where error may appear
        * @returns {boolean}
        */
-      treeToSvg: function( svgDiv, errDiv) {
-        var oMove = { x: 0, y: 0 },
-            oTree = {},
-            sTree = "",
-            arCol = ["black", "darkgoldenrod", "darkgreen", "gainsboro", "ivory", "lightblue",
-                     "lightgreen", "linen", "purple", "steelblue", "white", "whitesmoke"],
-            i,                      // Counter
-            lHtml = [];
+      treeToSvg: function( svgDiv, oTree, errDiv) {
+        var sHtml = "",   // Html content
+            i;            // Counter
 
         try {
           // Validate
           if (svgDiv === undefined ) return false;
-          if (errDiv === undefined) errDiv = svgDiv;
-          // Get the tree
-          sTree = $(svgDiv).text().replace(/'/g, '"');
-          oTree = JSON.parse(sTree);
+          if (errDiv === undefined || errDiv === null) errDiv = svgDiv;
+          // Set the local error div
+          private_methods.setErrLoc(errDiv);
+          private_methods.setSvgRoot(svgDiv);
           // Treat the tree: add parent, level and unique numerical id's
           private_methods.setParentAndId(oTree, null, 0);
           // Other initialisations
           loc_arLeaf = [];
           root = null;
-          $(svgDiv).html(private_methods.initSvg());
+          // Put initial <svg> there
+          private_methods.initSvg(svgDiv);
           // Hierarchically build an SVG picture based on [oTree]
-          root = private_methods.nodeToSvg(oTree, svgDiv);
+          root = private_methods.nodeToSvg(oTree, $(svgDiv).find("svg"));
+          // Apply the changes in x,y,w,h to all elements
+          private_methods.applyLocations(root, "conn");
+
           // Return positively
           return true;
         } catch (ex) {
