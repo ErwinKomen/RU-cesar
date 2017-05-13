@@ -8,8 +8,8 @@
 /*globals jQuery, crpstudio, Crpstudio, alert: false, */
 var crpstudio = (function ($, crpstudio) {
   "use strict";
-  crpstudio.tree = (function ($, config) {
-    // Local variables within crpstudio.tree
+  crpstudio.svg = (function ($, config) {
+    // Local variables within crpstudio.svg
     var marginLeft = 10,      // Margin of whole figure
         wordSpacing = 12,     // Space between nodes
         branchHeight = 70,    // Height between branches
@@ -20,6 +20,7 @@ var crpstudio = (function ($, crpstudio) {
         width = 1025,         // Initial canvas width
         height = 631,         // Initial canvas height
         loc_svgRoot = null,
+        loc_oNode = {},       // Local version of current node tree
         loc_errDiv = null,    // Where to show errors
         loc_arLeaf = [],      // Storage of pointers to the LEAFs of the tree
         loc_iTreeId = 0,      // Available ID's for tree
@@ -58,11 +59,8 @@ var crpstudio = (function ($, crpstudio) {
       setSvgRoot : function(sSvgRoot) {
         loc_svgRoot = sSvgRoot;
       },
-      refreshSvg: function () {
-        /*
-        $(loc_svgRoot).html($(loc_svgRoot).html());
-        */
-        // Do nothing
+      setNodeTree : function(oThis) {
+        loc_oNode = oThis;
       },
       /**
        * initSvg
@@ -105,7 +103,8 @@ var crpstudio = (function ($, crpstudio) {
           sHtml = lHtml.join("\n");
           //  OLD: $(sDiv).html(sHtml);
           sHtml = jQuery.parseXML(sHtml);
-          $(sDiv).append(sHtml.documentElement);
+          // REPLACE whatever was there
+          $(sDiv).html(sHtml.documentElement);
           return true;
         } catch (ex) {
           private_methods.showError("initSvg", ex);
@@ -136,7 +135,37 @@ var crpstudio = (function ($, crpstudio) {
         }
       },
       initTreeId: function () { loc_iTreeId = 0; },
-      getTreeId: function () { loc_iTreeId += 1; return loc_iTreeId;},
+      getTreeId: function () { loc_iTreeId += 1; return loc_iTreeId; },
+      /**
+       * getNode
+       *    Find the node with the indicated id
+       * 
+       * @param {object} oTree
+       * @param {int}    iNodeId
+       * @returns {object}
+       */
+      getNode: function (oTree, iNodeId) {
+        var i = 0,
+            oBack = {};
+
+        try {
+          if (oTree.id === iNodeId) {
+            return oTree;
+          } else if (oTree.hasOwnProperty("child") && oTree['child'].length > 0) {
+            // Walk children
+            for (i = 0; i < oTree['child'].length; i++) {
+              oBack = private_methods.getNode(oTree['child'][i], iNodeId);
+              if (oBack !== null) {
+                return oBack;
+              }
+            }
+          }
+          return null;
+        } catch (ex) {
+          private_methods.showError("getNode", ex);
+          return null;
+        }
+      },
       getText: function (el) {
         try {
           // Validate
@@ -690,7 +719,7 @@ var crpstudio = (function ($, crpstudio) {
       },
       appendSvg : function(el, sSvg) {
         try {
-          var sTree = jQuery.parseXML(sSvg);
+          var sTree = jQuery.parseXML(sSvg.replace(/&/g, "&amp;"));
           // OLD $(dParent).append(sTree);
           $(el).append(sTree.documentElement);
           // Refresh
@@ -726,6 +755,7 @@ var crpstudio = (function ($, crpstudio) {
             sConn = "",   // Text of <g> 'conn'   part
             svgRect = "",
             svgText = "",
+            sId = "",
             dNode = null, // Current SVG DOM master element
             dLeaf = null, // SVG DOM leaf element
             dPrev = null, // Preceding DOM leaf element
@@ -733,12 +763,15 @@ var crpstudio = (function ($, crpstudio) {
             dChildren = [], // My child nodes
             dChild = null,  // One child
             dLast = null,   // Last child
+            oChild = null,  // One [oNode] child
             oPos = {},      // General purpose position object
             oPosN = {},     // Position of the node
             oRect = {},     // General purpose
             oRectP = {},
             oRectL = {},
             oRectN = {},
+            bCollapsed = false,
+            patt = new RegExp("tree_leaf.*"),
             sType = "",     // The type of situation we are in
             oChild = {};    // One child of [oNode]
 
@@ -753,18 +786,30 @@ var crpstudio = (function ($, crpstudio) {
           // OLD $(dParent).append(sTree);
           private_methods.appendSvg(dParent, sTree);
           dNode = $(dParent).children().last();
+          // Copy the 'expanded' attribute, if available in the node
+          if (oNode.hasOwnProperty("expanded")) {
+            $(dNode).attr("expanded", oNode['expanded']);
+          } else {
+            $(dNode).attr("expanded", true);
+          }
+
+          // Debugging
+          if (oNode['expanded'] === false || $(dNode).attr("expanded") === "false") {
+            var iStop = 1;
+          }
 
           // Now FIRST walk all my children (if there are any)
-          if (oNode.hasOwnProperty("child")) {
+          if (oNode.hasOwnProperty("child") && $(dNode).attr("expanded") === "true") {
             iLen = oNode['child'].length;
             for (i = 0; i < iLen; i++) {
               // Treat this child
-              dChild = private_methods.nodeToSvg(oNode['child'][i], dNode);
+              oChild = oNode['child'][i];
+              dChild = private_methods.nodeToSvg(oChild, dNode);
             }
           }
 
           // Debugging
-          if (oNode['pos'] === "NP-GEN") {
+          if (oNode['expanded'] === false || $(dNode).attr("expanded") === "false") {
             var iStop = 1;
           }
 
@@ -778,7 +823,32 @@ var crpstudio = (function ($, crpstudio) {
           oPosN['y'] = oNode['level'] * loc_iDistVert + loc_iMargin;
           // What is the situation
           sType = (oNode.hasOwnProperty("child")) ? "node" : "terminal";
+          if (!oNode['expanded']) sType += "_collapsed";
           switch (sType) {
+            case "node_collapsed":
+            case "terminal_collapsed":
+              // This is an end-node, but not one with text, but only with a POS label
+              // Determine the [x] for this node
+              if (loc_arLeaf.length === 0) {
+                // THis is te first terminal node
+                x = loc_iMargin;
+              } else {
+                // Get the first preceding tree/leaf combination
+                dPrev = loc_arLeaf[loc_arLeaf.length - 1]; dPrevP = $(dPrev).parent();
+                oRect = private_methods.getRect(dPrev);
+                oRectP = private_methods.getRect(dPrevP);
+                // Get the rightmost point of this leaf or its parent node
+                x = Math.max(oRect['x'] + oRect['width'], oRectP['x'] + oRectP['width']) + loc_iDistHor;
+              }
+              oPosN['x'] = x;
+              // Place [dNode] to this new position
+              private_methods.setLocation(dNode, oPosN);
+              // Make sure the vbar is shown
+              private_methods.classRemove($(dNode).children(".lithium-toggle").children(".lithium-vbar"), "hidden");
+
+              // Store this node as if it were a LEAF node in the global list for future reference
+              loc_arLeaf.push(dNode);
+              break;
             case "terminal":
               // THis is an end-node: it must contain text
               if (!oNode.hasOwnProperty("txt")) return "";
@@ -803,11 +873,20 @@ var crpstudio = (function ($, crpstudio) {
                 oPos['y'] = (loc_iMaxLevel + 1) * loc_iDistVert + loc_iMargin;
               } else {
                 // Get the first preceding tree/leaf combination
-                dPrev = loc_arLeaf[loc_arLeaf.length-1]; dPrevP = $(dPrev).parent();
+                dPrev = loc_arLeaf[loc_arLeaf.length - 1];
                 oRect = private_methods.getRect(dPrev);
-                oRectP = private_methods.getRect(dPrevP);
-                // Get the rightmost point of this leaf or its parent node
-                x = Math.max(oRect['x'] + oRect['width'], oRectP['x'] + oRectP['width']) + loc_iDistHor;
+                // Is this a real leaf or a node?
+                sId = $(dPrev).attr("id");
+                bCollapsed = !patt.test(sId);
+                if (bCollapsed) {
+                  // Not a terminal node, but a collapsed node
+                  x = oRect['x'] + oRect['width'] + loc_iDistHor;
+                } else {
+                  dPrevP = $(dPrev).parent();
+                  oRectP = private_methods.getRect(dPrevP);
+                  // Get the rightmost point of this leaf or its parent node
+                  x = Math.max(oRect['x'] + oRect['width'], oRectP['x'] + oRectP['width']) + loc_iDistHor;
+                }
                 if (oNode['txt'].indexOf("*") === 0 || oNode['txt'] == "0") {
                   // The vertical position of [dLeaf] is determined by the level for *T* and 0
                   oPos['y'] = (oNode['level'] + 1) * loc_iDistVert + loc_iMargin;
@@ -854,7 +933,7 @@ var crpstudio = (function ($, crpstudio) {
                 oPosN['x'] = (private_methods.getCenter(dLast) +
                               private_methods.getCenter(dChild)) / 2 -
                               oRectN['width']  / 2;
-              }
+              } 
               // Place [dNode] to this new position
               private_methods.setLocation(dNode, oPosN);
               break;
@@ -1010,6 +1089,8 @@ var crpstudio = (function ($, crpstudio) {
           if (!o.hasOwnProperty("id")) { o['id'] = private_methods.getTreeId(); }
           // Check for level
           if (!o.hasOwnProperty("level")) { o['level'] = iLevel; }
+          // Check for expanded
+          if (!o.hasOwnProperty("expanded")) { o['expanded'] = true; }
           // CHeck for parent
           if (!o.hasOwnProperty("parent")) { o['parent'] = p;}
           // Check for children
@@ -1266,8 +1347,6 @@ var crpstudio = (function ($, crpstudio) {
               textWidth = sText.length * 4;
             } else {
               try {
-                // Refresh
-                private_methods.refreshSvg();
                 textWidth = $(node).children("text").first().get(0).getBBox().width;
               } catch (ex) {
                 var sText = $(node).children("text").first().text();
@@ -1300,7 +1379,27 @@ var crpstudio = (function ($, crpstudio) {
           return null;
         }
       },
+      setMaxSize: function (oRect) {
+        var svgDiv = loc_svgRoot;
 
+        try {
+          if (svgDiv === undefined || oRect === undefined) return false;
+          if (!oRect.hasOwnProperty("width") || !oRect.hasOwnProperty("height")) return false
+
+          // Adapt the max to include a margin
+          oRect['width'] += loc_iMargin;
+          oRect['height'] += loc_iMargin + loc_iToggle;
+
+          // Also adapt the SVG's width and height
+          var svg = $(svgDiv).find("svg").first();
+          $(svg).attr("width", oRect['width'].toString() + 'px');
+          $(svg).attr("height", oRect['height'].toString() + 'px');
+
+          return true;
+        } catch (ex) {
+          return false;
+        }
+      },
       /**
        * setRectangle
        *    Set the elements associated with this rectangle to
@@ -1465,53 +1564,7 @@ var crpstudio = (function ($, crpstudio) {
       }
     };
 
-    var svg_methods = {
-      /**
-       * initSvg
-       *    Initialize the <svg> in the @sDiv
-       * 
-       * @param {el} sDiv
-       * @returns {bool}
-       */
-      initSvg: function (sDiv) {
-        var lHtml = [],   // Where we combine SVG
-            svgDiv = null,
-            svgDoc = null,
-            sHtml = "",
-            arCol = ["black", "darkgoldenrod", "darkgreen", "gainsboro", "ivory", "lightblue",
-                     "lightgreen", "linen", "purple", "steelblue", "white", "whitesmoke"],
-            i;            // Counter
-
-        try {
-          // Start creating an SVG document
-          svgDoc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-          svgDoc.setAttribute("width", "1047");
-          svgDoc.setAttribute("height", "542");
-          $(sDiv).append(svgDoc);
-          /* */
-          // Create an <svg> element
-          lHtml.push("<svg width=\"1047px\" height=\"542px\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
-          /* */
-          // Create defs
-          lHtml.push("<defs >");
-          for (i = 0; i < arCol.length; i++) {
-            lHtml.push("<linearGradient id=\"" + arCol[i] + "_gradient\"><stop offset=\"5%\" stop-color=\"" + arCol[i] + "\" />");
-            lHtml.push("<stop offset=\"95%\" stop-color=\"whitesmoke\" /></linearGradient>");
-          }
-          lHtml.push("</defs>");
-          // Finish the tree
-          lHtml.push("</svg>");
-          sHtml = lHtml.join("\n");
-          $(sDiv).html(sHtml);
-          return true;
-        } catch (ex) {
-          private_methods.showError("initSvg", ex);
-          return false;
-        }
-      }
-
-    };
-    // Methods that are exported by [crpstudio.project] for others
+    // Methods that are exported by [crpstudio.svg] for outside functions
     return {
       /**
        * treeToSvg
@@ -1524,6 +1577,7 @@ var crpstudio = (function ($, crpstudio) {
        */
       treeToSvg: function( svgDiv, oTree, errDiv) {
         var sHtml = "",   // Html content
+            oRect = {},
             i;            // Counter
 
         try {
@@ -1533,6 +1587,7 @@ var crpstudio = (function ($, crpstudio) {
           // Set the local error div
           private_methods.setErrLoc(errDiv);
           private_methods.setSvgRoot(svgDiv);
+          private_methods.setNodeTree(oTree);
           // Treat the tree: add parent, level and unique numerical id's
           private_methods.setParentAndId(oTree, null, 0);
           // Other initialisations
@@ -1542,8 +1597,35 @@ var crpstudio = (function ($, crpstudio) {
           private_methods.initSvg(svgDiv);
           // Hierarchically build an SVG picture based on [oTree]
           root = private_methods.nodeToSvg(oTree, $(svgDiv).find("svg"));
+
           // Apply the changes in x,y,w,h to all elements
           private_methods.applyLocations(root, "conn");
+
+          // Calculate a minPoint
+          var maxSize = { width: 0, height: 0 };
+          // Initialize the maxsizes if root is a lithium-tree
+          if ($(root).is(".lithium-tree")) {
+            oRect = private_methods.getRect(root);
+            maxSize['width'] = oRect['x'] + oRect['width'];
+            maxSize['height'] = oRect['y'] + oRect['height'];
+          }
+          // Walk over all shapes
+          $(root).find(".lithium-tree").each(function () {
+            if (private_methods.isVisible(this)) {
+              var oThisRect = private_methods.getRect(this);
+              var iNewWidth = oThisRect['x'] + oThisRect['width'];
+              var iNewHeight = oThisRect['y'] + oThisRect['height'];
+
+              // Look for max width / max height
+              maxSize['width'] = Math.max(iNewWidth, maxSize['width']);
+              maxSize['height'] = Math.max(iNewHeight, maxSize['height']);
+            }
+          });
+          // Adjust the maximum size
+          private_methods.setMaxSize(maxSize);
+
+          // Attach an event handler to all the toggles
+          $(svgDiv).find(".lithium-toggle rect, line").click(function () { crpstudio.svg.toggle_svg(this); });
 
           // Return positively
           return true;
@@ -1645,7 +1727,7 @@ var crpstudio = (function ($, crpstudio) {
           $(svg).attr("height", maxSize['height'].toString() + 'px');
 
           // Attach an event handler to all the toggles
-          $(svg).find(".lithium-toggle rect, line").click(function () { crpstudio.tree.toggle(this); });
+          $(svg).find(".lithium-toggle rect, line").click(function () { crpstudio.svg.toggle_draw(this); });
         }
         // All went well
         return true;
@@ -1653,12 +1735,65 @@ var crpstudio = (function ($, crpstudio) {
 
       /**
        * toggle
-       *    Behaviour when I am toggled
+       *    Behaviour when an svg tree is toggled
        * 
        * @param {element} elRect
        * @returns {undefined}
        */
-      toggle: function (elRect) {
+      toggle_svg: function (elRect) {
+        var bVisible,   // VIsibility
+          sId = "",     // ID as string
+          iNodeId=0,    // Node id as integer
+          oNode,        // The item from loc_oNode that I am associated with
+          elSvg,        // The SVG root of the tree
+          elToggle,     // The .lithium-toggle element
+          elVbar,       // My own vertical bar
+          elTree;       // The tree I am in
+
+        // Get vertical bar and my tree
+        elToggle = $(elRect).parent();                  // This is the "lithium-toggle" <g> element
+        elVbar = $(elToggle).children(".lithium-vbar"); // The hidden <g> element under "lithium-toggle"
+        elTree = $(elToggle).parent();                  // THis is the parent "lithium-tree" <g> element
+        elSvg = $(elRect).closest("svg");               // THis is the root <svg> element of this tree
+        // Get my ID
+        sId = $(elTree).attr("id");
+        iNodeId = parseInt(sId.match(/\d+/g), 10);
+        // Get the node with this id
+        oNode = private_methods.getNode(loc_oNode, iNodeId);
+        // Get my status
+        bVisible = private_methods.isVisible(elVbar);
+        // Action depends on visibility
+        if (bVisible) {
+          // Bar is visible: close it
+          private_methods.classAdd(elVbar, "hidden");
+          // Make all children visible again
+          $(elTree).find(".lithium-tree").each(function () {
+            private_methods.classRemove(this, "hidden");
+          });
+          // Adapt the [expanded] state in the correct oNode
+          oNode['expanded'] = true;
+        } else {
+          // Bar is invisible: show it
+          private_methods.classRemove(elVbar, "hidden");
+          // Make all children invisible
+          $(elTree).find(".lithium-tree").each(function () {
+            private_methods.classAdd(this, "hidden");
+          });
+          // Adapt the [expanded] state in the correct oNode
+          oNode['expanded'] = false;
+        }
+        // Now make sure the whole svg-tree is re-drawn
+        crpstudio.svg.treeToSvg($(elSvg).parent(), loc_oNode, loc_errDiv);
+      },
+
+      /**
+       * toggle_draw
+       *    Behaviour when a 'drawtree' is toggled
+       * 
+       * @param {element} elRect
+       * @returns {undefined}
+       */
+      toggle_draw: function (elRect) {
         var bVisible,   // VIsibility
           elSvg,        // The SVG root of the tree
           elToggle,     // The .lithium-toggle element
@@ -1666,10 +1801,10 @@ var crpstudio = (function ($, crpstudio) {
           elTree;       // The tree I am in
 
         // Get vertical bar and my tree
-        elToggle = $(elRect).parent();
-        elVbar = $(elToggle).children(".lithium-vbar");
-        elTree = $(elToggle).parent();
-        elSvg = $(elRect).closest("svg");
+        elToggle = $(elRect).parent();                  // This is the "lithium-toggle" <g> element
+        elVbar = $(elToggle).children(".lithium-vbar"); // The hidden <g> element under "lithium-toggle"
+        elTree = $(elToggle).parent();                  // THis is the parent "lithium-tree" <g> element
+        elSvg = $(elRect).closest("svg");               // THis is the root <svg> element of this tree
         // Get my status
         bVisible = private_methods.isVisible(elVbar);
         // Action depends on visibility
@@ -1693,8 +1828,9 @@ var crpstudio = (function ($, crpstudio) {
           $(elTree).attr("expanded", false);
         }
         // Now make sure the whole tree is re-drawn
-        crpstudio.tree.drawTree($(elSvg).parent());
+        crpstudio.svg.drawTree($(elSvg).parent());
       }
+
 
     };
   }($, crpstudio.config));

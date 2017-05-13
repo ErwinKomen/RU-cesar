@@ -116,9 +116,9 @@ var ru = (function ($, ru) {
           sTree = $("#" + divNodes).text().replace(/'/g, '"');
           oTree = JSON.parse(sTree);
           // Draw the tree using the NEW method
-          crpstudio.tree.treeToSvg("#" + divTree, oTree, "#" + loc_divErr);
+          crpstudio.svg.treeToSvg("#" + divTree, oTree, "#" + loc_divErr);
           // Draw the tree using the traditional method
-          // crpstudio.tree.drawTree("#"+divSvg);
+          // crpstudio.svg.drawTree("#"+divSvg);
         } catch (ex) {
           private_methods.errMsg("start_tree_draw", ex);
         }

@@ -79,7 +79,7 @@
     <None Include="cesar\browser\static\browser\scripts\jquery.validate-vsdoc.js" />
     <None Include="cesar\browser\static\browser\scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="cesar\browser\static\browser\scripts\cesar.js" />
-    <Content Include="cesar\browser\static\browser\scripts\crpstudio.tree.js" />
+    <Content Include="cesar\browser\static\browser\scripts\crpstudio.svg.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.min.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.min.map" />

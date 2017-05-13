@@ -13,7 +13,7 @@
 
 {% block content %}
 
-  <div class="container body-content">
+  <div class="container-large body-content">
 
     <h3>{% if sentence.text.title %}{{sentence.text.title}}{% else %}(no title){% endif %}</h3>
     <!-- Information on this sentence -->
@@ -32,12 +32,12 @@
     <div id="sentdetails_node" class="row hidden">
         {{sent_info.allT}}
     </div>
-    <div id="sentdetails_tree" class="row">Hier komt boom versie #1</div>
+    <div id="sentdetails_tree" class="row"></div>
     <div id="sentdetails_svg" class="row">
+        <!-- 
         <p>Boom versie #2:</p>
-        <!-- -->
         {{sent_info.allG|safe}}
-        <!--     -->
+            -->
     </div>
   </div>
   <!-- Provide interaction to the tree -->
