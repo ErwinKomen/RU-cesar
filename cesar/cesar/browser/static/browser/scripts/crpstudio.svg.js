@@ -607,6 +607,7 @@ var crpstudio = (function ($, crpstudio) {
           // Determine the color
           switch (options['type']) {
             case "end": sColor = "url(#ivory_gradient)"; break;
+            case "end_star": sColor = "url(#lightgreen_gradient)"; break;
             case "node": sColor = "url(#steelblue_gradient)"; break;
             case "sel": sColor = "url(#darkgoldenrod_gradient)"; break;
           }
@@ -979,6 +980,7 @@ var crpstudio = (function ($, crpstudio) {
             y = 10,
             w = 100,
             h = 22,
+            sTerminal,    // Kind of terminal node
             sType;
 
         try {
@@ -1007,7 +1009,12 @@ var crpstudio = (function ($, crpstudio) {
               // Finish the shadow
               lHtml.push("</g>");
               // Add an end-node rect
-              lHtml.push(private_methods.rectNode({ x: x, y: y, w: w, h: h, type: "end" }));
+              if (el.hasOwnProperty("type")) {
+                sTerminal = (el['type'] === "Vern" || el['type'] === "Punct") ? "end" : "end_star";
+              } else {
+                sTerminal = "end";
+              }
+              lHtml.push(private_methods.rectNode({ x: x, y: y, w: w, h: h, type: sTerminal }));
               // Add a <text> node
               lHtml.push(private_methods.textNode({ x: x, y: x, t: sText }));
               // Finish the 'node_leaf'
