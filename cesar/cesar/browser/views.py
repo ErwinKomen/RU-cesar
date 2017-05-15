@@ -521,7 +521,11 @@ class SentenceDetailView(DetailView):
                    'type': 'syntax_svg_tree'}
         oInfo = get_crpp_sent_info(options)
         if oInfo != None and oInfo['status'] == "ok":
-            context['sent_info'] = oInfo['info']
+            # Make sure that 'object' sections are translated to proper JSON
+            oSentInfo = oInfo['info']
+            if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
+            if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])
+            context['sent_info'] = oSentInfo
         else:
             context['sent_info'] = None
 
