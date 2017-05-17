@@ -246,3 +246,5 @@ ModelManifest.xml
 /cesar/cesar/browser/migrations
 /cesar/cesar/browser/__pycache__
 /cesar/cesar/__pycache__
+/cesardata.db
+/cesardata.py

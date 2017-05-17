@@ -24,6 +24,9 @@
         <span class="line-identifier">{{sentence.order}}</span>
         <span class="line-text">{{sentence.sent}}</span>
     </div>
+    {% if eng %}
+      <div class="text-line-eng">{{eng}}</div>
+    {% endif %}
 
     <!-- The sentence with POS tags and lemma's (if available) -->
 
@@ -33,12 +36,6 @@
         {{sent_info.allT|safe}}
     </div>
     <div id="sentdetails_tree" class="row"></div>
-    <div id="sentdetails_svg" class="row">
-        <!-- 
-        <p>Boom versie #2:</p>
-        {{sent_info.allG|safe}}
-            -->
-    </div>
   </div>
   <!-- Provide interaction to the tree -->
   <script>ru.cesar.start_tree_draw();</script>

@@ -113,13 +113,10 @@ var ru = (function ($, ru) {
 
         try {
           // Convert the tree we get
-          // sTree = $("#" + divNodes).text().replace(/'/g, '"');
           sTree = $("#" + divNodes).text();
           oTree = JSON.parse(sTree);
           // Draw the tree using the NEW method
           crpstudio.svg.treeToSvg("#" + divTree, oTree, "#" + loc_divErr);
-          // Draw the tree using the traditional method
-          // crpstudio.svg.drawTree("#"+divSvg);
         } catch (ex) {
           private_methods.errMsg("start_tree_draw", ex);
         }

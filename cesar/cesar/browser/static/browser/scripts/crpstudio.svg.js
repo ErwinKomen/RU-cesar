@@ -974,8 +974,10 @@ var crpstudio = (function ($, crpstudio) {
        */
       getLithiumNode: function (options) {
         var lHtml = [],
+            lFeat = [],   // List of features in HTML
             sText = "",
             el,
+            oFeat = {},   // Feature object
             x = 10,
             y = 10,
             w = 100,
@@ -987,6 +989,8 @@ var crpstudio = (function ($, crpstudio) {
           // Get obligatory parameters
           sType = options['type'];
           el = options['el'];
+          // Get all features (if any)
+          oFeat = el['f'];
           // Action depends on type
           switch (sType) {
             case "terminal":  // This is a terminal node

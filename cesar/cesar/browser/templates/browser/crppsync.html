@@ -39,7 +39,7 @@
             <span><a id="sync_start_corpora" class="btn btn-primary btn-xs" 
                 sync-start="{% url 'sync_start' %}?synctype=corpora" 
                 sync-progress="{% url 'sync_progress' %}?synctype=corpora" 
-                onclick="sync_start('corpora')">Synchronize corpus information</a>
+                onclick="ru.cesar.sync_start('corpora')">Synchronize corpus information</a>
             </span>
           </div>
           <div id="sync_progress_corpora" class="col-md-9">
@@ -89,7 +89,7 @@
               <span><a id="sync_start_texts" class="btn btn-primary btn-xs" 
                   sync-start="{% url 'sync_start' %}?synctype=texts" 
                   sync-progress="{% url 'sync_progress' %}?synctype=texts" 
-                  onclick="sync_start('texts')">Synchronize the list of texts</a>
+                  onclick="ru.cesar.sync_start('texts')">Synchronize the list of texts</a>
               </span>
             </div>
             <div id="sync_progress_texts" class="col-md-9">
