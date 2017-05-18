@@ -31,6 +31,8 @@ var crpstudio = (function ($, crpstudio) {
         loc_iMaxLevel = 0,    // Maximum hierarchical level of this tree
         loc_iDistVert = 60,   // Vertical distance between tree nodes
         loc_iDistHor = 10,     // Minimal distance between end nodes
+        loc_iCurrentNode = -1, // ID of the currently selected node
+        loc_bKeep = false,    // Stay on fixed position
         root = null;          // Root of the tree (DOM position)
 
     // Methods that are local to [crpstudio.dbase]
@@ -61,6 +63,74 @@ var crpstudio = (function ($, crpstudio) {
       },
       setNodeTree : function(oThis) {
         loc_oNode = oThis;
+      },
+      /**
+       * fitFeatureBox
+       *    Initialize the <svg> in the @sDiv
+       * 
+       * @param {object} oBound
+       * @param {el} elTarget
+       * @returns {object}
+       */
+      fitFeatureBox: function (oBound, elTarget) {
+        var rect = null;
+
+        try {
+          // Take into account scrolling
+          oBound['x'] -= document.documentElement.scrollLeft || document.body.scrollLeft;
+          oBound['y'] -= document.documentElement.scrollTop || document.body.scrollTop;
+          // Make sure it all fits
+          if (oBound['x'] + $(elTarget).width() + oBound['width'] +10> $(window).width()) {
+            oBound['x'] -= $(elTarget).width() + oBound['width'];
+          } else if (oBound['x'] < 0) {
+            oBound['x'] = 10;
+          }
+          if (oBound['y'] + $(elTarget).height() + oBound['height'] +10 > $(window).height()) {
+            oBound['y'] -= $(elTarget).height() + oBound['height'];
+          } else if (oBound['y'] < 0) {
+            oBound['y'] = 10;
+          } else {
+            oBound['y'] += oBound['height'] + 10;
+          }
+          // Take into account scrolling
+          oBound['x'] += document.documentElement.scrollLeft || document.body.scrollLeft;
+          oBound['y'] += document.documentElement.scrollTop || document.body.scrollTop;
+          return oBound;
+        } catch (ex) {
+          private_methods.showError("fitFeatureBox", ex);
+          return oBound;
+        }
+      },
+      /**
+       * screenCoordsForRect
+       *    Get the correct screen coordinates for the indicated <svg> <rect> element
+       * 
+       * @param {el} svgRect
+       * @returns {object}
+       */
+      screenCoordsForRect: function (svgRect) {
+        var pt = null,
+            elSvg = null,
+            rect = null,
+            oBound = {},
+            matrix;
+            
+        try {
+          // Get the root <svg>
+          elSvg = $(svgRect).closest("svg").get(0);
+
+          rect = svgRect.get(0);
+          oBound = rect.getBoundingClientRect();
+
+          // Take into account scrolling
+          oBound['x'] += document.documentElement.scrollLeft || document.body.scrollLeft;
+          oBound['y'] += document.documentElement.scrollTop || document.body.scrollTop;
+          return oBound;
+        } catch (ex) {
+          private_methods.showError("screenCoordsForRect", ex);
+          return oBound;
+        }
+
       },
       /**
        * initSvg
@@ -1366,7 +1436,7 @@ var crpstudio = (function ($, crpstudio) {
             }
             // var textWidth = $(node).children("text").first().get(0).getBBox().width;
             // Continue
-            textWidth += 8;
+            textWidth += 9;
             var myHeight = 0;
             // Set the width of the box to the correct value 
             $(node).find("rect").each(function () {
@@ -1637,6 +1707,10 @@ var crpstudio = (function ($, crpstudio) {
 
           // Attach an event handler to all the toggles
           $(svgDiv).find(".lithium-toggle rect, line").click(function () { crpstudio.svg.toggle_svg(this); });
+          // Attach an event handler to all the NODES
+          $(svgDiv).find(".lithium-node").mouseover(function() { crpstudio.svg.node_svg(this, false)});
+          $(svgDiv).find(".lithium-node").mouseout(function () { crpstudio.svg.node_stop_svg(this) });
+          $(svgDiv).find(".lithium-node").click(function () { crpstudio.svg.node_fix_svg(this) });
 
           // Return positively
           return true;
@@ -1646,104 +1720,6 @@ var crpstudio = (function ($, crpstudio) {
           return null;
         }
       },
-      /**
-       * drawTree
-       *    Mimic the LithiumControl.DrawTree() method, starting at [el]
-       * 
-       * @param {element} svgDiv
-       * @returns {boolean}
-       */
-      drawTree: function (svgDiv) {
-        var oMove = { x: 0, y: 0 };
-
-        // Validate
-        if (svgDiv === undefined) return false;
-        // Find the root: the top <g> node
-        root = $(svgDiv).find("g.lithium-root").first();
-        if (root === undefined || root === null) return false;
-        // Center the <g> coordinates of the root
-        private_methods.fitRectangle(root);
-        private_methods.centerRoot(root);
-        // Store the location of the root
-        var p = private_methods.getLocation(root);
-        if (p !== undefined && p !== null) {
-          var parent = $(root).parent();
-          // Set the graphabstract to the root
-          graphAbstract['root'] = p;
-          // Perform a re-drawing, starting from the root downwards
-          level = 0;
-          private_methods.verticalDrawTree(root, marginLeft, p['y']);
-          // Calculate how much must be moved
-          oMove['x'] = p['x'] - parseInt($(root).attr('x'), 10);
-          oMove['y'] = p['y'] - parseInt($(root).attr('y'), 10);
-          // Move the whole
-          private_methods.moveDiagram(parent, oMove);
-
-          // Calculate maxY
-          var maxY = 0;
-          $(parent).find(".lithium-tree").each(function () {
-            if ((private_methods.isVisible(this)) &&
-                    $(this).children(".lithium-tree").length === 0) {
-              var this_y = parseInt($(this).attr("y"), 10);
-              if (this_y > maxY) maxY = this_y;
-            }
-          });
-          // Move all items in the y-direction
-          $(parent).find(".lithium-tree").each(function () {
-            if ((private_methods.isVisible(this)) &&
-                    $(this).children(".lithium-tree").length === 0) {
-              $(this).attr("y", maxY);
-              // Debugging: immediately apply this location
-              private_methods.applyOneLocation(this);
-            }
-          });
-
-          // Calculate a minPoint
-          var minPoint = { x: 1000000, y: 1000000 };
-          var maxSize = { width: 0, height: 0 };
-          // Walk over all shapes
-          $(parent).find(".lithium-tree").each(function () {
-            if (private_methods.isVisible(this)) {
-              var oThisRect = private_methods.getLocation(this);
-              var iNewWidth = oThisRect['x'] + oThisRect['width'];
-              var iNewHeight = oThisRect['y'] + oThisRect['height'];
-
-              // Look for max width / max height
-              maxSize['width'] = Math.max(iNewWidth, maxSize['width']);
-              maxSize['height'] = Math.max(iNewHeight, maxSize['height']);
-
-              // Look for minimum size
-              minPoint['x'] = Math.min(minPoint['x'], oThisRect['x']);
-              minPoint['y'] = Math.min(minPoint['y'], oThisRect['y']);
-            }
-          });
-
-          // Move the whole diagram, teking into account [minPoint]
-          oMove['x'] = 50 - minPoint['x'];
-          oMove['y'] = 50 - minPoint['y'];
-          private_methods.moveDiagram(parent, oMove);
-
-          // Apply the changes in x,y,w,h to all elements
-          private_methods.applyLocations(parent, "loc");
-
-          // Apply the changes in x,y,w,h to all elements
-          private_methods.applyLocations(parent, "conn");
-
-          // Adapt maxSize again
-          maxSize['width'] = maxSize['width'] - minPoint['x'] + 100;
-          maxSize['height'] = maxSize['height'] - minPoint['y'] + 100;
-          // Also adapt the SVG's width and height
-          var svg = $(svgDiv).find("svg").first();
-          $(svg).attr("width", maxSize['width'].toString() + 'px');
-          $(svg).attr("height", maxSize['height'].toString() + 'px');
-
-          // Attach an event handler to all the toggles
-          $(svg).find(".lithium-toggle rect, line").click(function () { crpstudio.svg.toggle_draw(this); });
-        }
-        // All went well
-        return true;
-      },
-
       /**
        * toggle
        *    Behaviour when an svg tree is toggled
@@ -1761,85 +1737,143 @@ var crpstudio = (function ($, crpstudio) {
           elVbar,       // My own vertical bar
           elTree;       // The tree I am in
 
-        // Get vertical bar and my tree
-        elToggle = $(elRect).parent();                  // This is the "lithium-toggle" <g> element
-        elVbar = $(elToggle).children(".lithium-vbar"); // The hidden <g> element under "lithium-toggle"
-        elTree = $(elToggle).parent();                  // THis is the parent "lithium-tree" <g> element
-        elSvg = $(elRect).closest("svg");               // THis is the root <svg> element of this tree
-        // Get my ID
-        sId = $(elTree).attr("id");
-        iNodeId = parseInt(sId.match(/\d+/g), 10);
-        // Get the node with this id
-        oNode = private_methods.getNode(loc_oNode, iNodeId);
-        // Get my status
-        bVisible = private_methods.isVisible(elVbar);
-        // Action depends on visibility
-        if (bVisible) {
-          // Bar is visible: close it
-          private_methods.classAdd(elVbar, "hidden");
-          // Make all children visible again
-          $(elTree).find(".lithium-tree").each(function () {
-            private_methods.classRemove(this, "hidden");
-          });
-          // Adapt the [expanded] state in the correct oNode
-          oNode['expanded'] = true;
-        } else {
-          // Bar is invisible: show it
-          private_methods.classRemove(elVbar, "hidden");
-          // Make all children invisible
-          $(elTree).find(".lithium-tree").each(function () {
-            private_methods.classAdd(this, "hidden");
-          });
-          // Adapt the [expanded] state in the correct oNode
-          oNode['expanded'] = false;
+        try {
+          // Get vertical bar and my tree
+          elToggle = $(elRect).parent();                  // This is the "lithium-toggle" <g> element
+          elVbar = $(elToggle).children(".lithium-vbar"); // The hidden <g> element under "lithium-toggle"
+          elTree = $(elToggle).parent();                  // THis is the parent "lithium-tree" <g> element
+          elSvg = $(elRect).closest("svg");               // THis is the root <svg> element of this tree
+          // Get my ID
+          sId = $(elTree).attr("id");
+          iNodeId = parseInt(sId.match(/\d+/g), 10);
+          // Get the node with this id
+          oNode = private_methods.getNode(loc_oNode, iNodeId);
+          // Get my status
+          bVisible = private_methods.isVisible(elVbar);
+          // Action depends on visibility
+          if (bVisible) {
+            // Bar is visible: close it
+            private_methods.classAdd(elVbar, "hidden");
+            // Make all children visible again
+            $(elTree).find(".lithium-tree").each(function () {
+              private_methods.classRemove(this, "hidden");
+            });
+            // Adapt the [expanded] state in the correct oNode
+            oNode['expanded'] = true;
+          } else {
+            // Bar is invisible: show it
+            private_methods.classRemove(elVbar, "hidden");
+            // Make all children invisible
+            $(elTree).find(".lithium-tree").each(function () {
+              private_methods.classAdd(this, "hidden");
+            });
+            // Adapt the [expanded] state in the correct oNode
+            oNode['expanded'] = false;
+          }
+          // Now make sure the whole svg-tree is re-drawn
+          crpstudio.svg.treeToSvg($(elSvg).parent(), loc_oNode, loc_errDiv);
+        } catch (ex) {
+          // Show the error at the indicated place
+          $(errDiv).html("toggle_svg error: " + ex.message);
         }
-        // Now make sure the whole svg-tree is re-drawn
-        crpstudio.svg.treeToSvg($(elSvg).parent(), loc_oNode, loc_errDiv);
       },
 
       /**
-       * toggle_draw
-       *    Behaviour when a 'drawtree' is toggled
-       * 
-       * @param {element} elRect
-       * @returns {undefined}
-       */
-      toggle_draw: function (elRect) {
-        var bVisible,   // VIsibility
-          elSvg,        // The SVG root of the tree
-          elToggle,     // The .lithium-toggle element
-          elVbar,       // My own vertical bar
-          elTree;       // The tree I am in
+      * node_svg
+      *    Behaviour when there is a mouse-over on one particular node
+      * 
+      * @param {element} elRect
+      * @param {boolean} bGetId
+      * @returns {undefined}
+      */
+      node_svg: function (elRect, bGetId) {
+        var iNodeId = 0,  // Node id as integer
+            prop,         // Counter
+            lHtml = [],   // Where we gather HTML
+            oSvg,         // Coordinates of the svg rect element
+            elTarget,     // The <div> we want to position
+            oNode,        // The item from loc_oNode that I am associated with
+            oFeat = {},   // Feature object
+            sId = "";     // Identifier of the element that has been hit
 
-        // Get vertical bar and my tree
-        elToggle = $(elRect).parent();                  // This is the "lithium-toggle" <g> element
-        elVbar = $(elToggle).children(".lithium-vbar"); // The hidden <g> element under "lithium-toggle"
-        elTree = $(elToggle).parent();                  // THis is the parent "lithium-tree" <g> element
-        elSvg = $(elRect).closest("svg");               // THis is the root <svg> element of this tree
-        // Get my status
-        bVisible = private_methods.isVisible(elVbar);
-        // Action depends on visibility
-        if (bVisible) {
-          // Bar is visible: close it
-          private_methods.classAdd(elVbar, "hidden");
-          // Make all children visible again
-          $(elTree).find(".lithium-tree").each(function () {
-            private_methods.classRemove(this, "hidden");
-          });
-          // Adapt [expanded] state
-          $(elTree).attr("expanded", true);
-        } else {
-          // Bar is invisible: show it
-          private_methods.classRemove(elVbar, "hidden");
-          // Make all children invisible
-          $(elTree).find(".lithium-tree").each(function () {
-            private_methods.classAdd(this, "hidden");
-          });
-          // Adapt [expanded] state
-          $(elTree).attr("expanded", false);
+        try {
+          // Validate: this must be a lithium-node <g> element
+          if (!$(elRect).is("g.lithium-node")) {
+            return;
+          }
+          if (loc_bKeep) return;
+          // The node must have an identifier
+          sId = $(elRect).attr("id");
+          iNodeId = parseInt(sId.match(/\d+/g), 10);
+          // Are we already there?
+          if (iNodeId === loc_iCurrentNode) { return;}
+          // Get the node with this id
+          oNode = private_methods.getNode(loc_oNode, iNodeId);
+          // Get the features in this node
+          if (oNode.hasOwnProperty("f")) {
+            oFeat = oNode['f'];
+            // Convert this into an HTML element
+            lHtml.push("<div id='svg-features" + iNodeId.toString() + "' class='svg-features'><table>");
+            if (bGetId) {
+              lHtml.push("<tr><td class='attrlabel'>id</td><td class='attrvalue'>" + oNode['id'] + "</td></tr>");
+              lHtml.push("<tr><td class='attrlabel'>pos</td><td class='attrvalue'>" + oNode['pos'] + "</td></tr>");
+            }
+            if (Object.keys(oFeat).length === 0) {
+              lHtml.push("<tr><td colspan='2'>(this node has no features)</td></tr>");
+            } else {
+              for (prop in oFeat) {
+                if (oFeat.hasOwnProperty(prop)) {
+                  lHtml.push("<tr><td class='attrlabel'>" + prop + "</td><td class='attrvalue'>" + oFeat[prop] + "</td></tr>");
+                }
+              }
+            }
+            lHtml.push("</table></div>");
+            // Add this element at an appropriate place
+            $("#sentdetails_feats").html(lHtml.join("\n"));
+            elTarget = $("#sentdetails_feats").find(".svg-features").get(0);
+            // Get screen coordinates
+            oSvg = private_methods.screenCoordsForRect($(elRect).children("rect").first());
+            elTarget.style.left = oSvg['x'] + 'px';
+            elTarget.style.top = (oSvg['y'] + oSvg['height'] + 10).toString() + 'px';
+            $("#sentdetails_feats").removeClass("hidden");
+            // Now adjust the position based on the shown div
+            oSvg = private_methods.fitFeatureBox(oSvg, elTarget);
+            elTarget.style.left = oSvg['x'] + 'px';
+            elTarget.style.top = oSvg['y']  + 'px';
+          }
+
+        } catch (ex) {
+          // Show the error at the indicated place
+          $(errDiv).html("node_svg error: " + ex.message);
         }
-        // Now make sure the whole tree is re-drawn
-        crpstudio.svg.drawTree($(elSvg).parent());
+      },
+      node_fix_svg: function (elRect) {
+        var elTarget;     // The <div> we want to position
+
+        try {
+          if (loc_bKeep) {
+            loc_bKeep = false;
+            return;
+          }
+          // Make sure the calculation is done
+          crpstudio.svg.node_svg(elRect, true);
+          crpstudio.svg.node_stop_svg(elRect);
+          // Show the information in the correct place
+          elTarget = $("#sentdetails_feats").find(".svg-features").get(0);
+          elTarget.style.left =  '10px';
+          elTarget.style.top  =  '80px';
+          $("#sentdetails_feats").removeClass("hidden");
+          loc_bKeep = true;
+        } catch (ex) {
+          // Show the error at the indicated place
+          $(errDiv).html("node_fix_svg error: " + ex.message);
+        }
+      },
+      node_stop_svg: function (elRect) {
+        if (!loc_bKeep) {
+          $("#sentdetails_feats").addClass("hidden");
+          loc_iCurrentNode = -1;
+        }
       }
 
 

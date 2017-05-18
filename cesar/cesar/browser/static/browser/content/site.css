@@ -273,3 +273,56 @@ p {
     background-color: lightgoldenrodyellow;
     color: darkred;
 }
+
+svg {
+    stroke-width: 1;
+}
+svg .lithium-conn path:hover {
+    stroke: red;
+    stroke-width: 2;
+}
+
+svg .lithium-shadow rect:hover {
+    fill: lightgray;
+    stroke: transparent;
+    stroke-width: 1;
+}
+svg .lithium-toggle rect:hover {
+    fill: yellow;
+    stroke: darkred;
+    stroke-width: 1;
+}
+
+/* What happens when we hover over a node */
+svg g.lithium-node:hover > rect {
+    fill: yellow;
+    stroke: darkred;
+    stroke-width: 2;
+}
+svg g.lithium-node:hover > text {
+    fill: darkgreen;
+}
+.svg-features {
+    background: #b4d4d1 none repeat scroll 0 0;
+    border: 1px solid #628f8b;
+    display: block;
+    font-size: 12px;
+    /* left: 2em; */
+    /* right: 10px; */
+    opacity: 0.9;
+    padding: 5px;
+    position: absolute;
+    text-decoration: none !important;
+    /* top: 90px; */
+    /* width: 320px; */
+    max-width: 600px;
+}
+.svg-features .attrlabel {
+    color: #254643;
+    display: inline-block;
+    font-weight: bold;
+    width: 90px;
+}
+.svg-features .attrvalue {
+    font-family: monospace;
+}

@@ -111,7 +111,7 @@ def get_crpp_sent_info(options):
         r = requests.get(url)
         # Action depends on what we receive
         if r.status_code == 200:
-            # Convert to JSON
+            # Convert to JSON (and replace any tabs to a space)
             reply = json.loads(r.text.replace("\t", " "))
             # Get the [content] part (note: no final 's')
             oContent = reply['content']
