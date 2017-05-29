@@ -225,6 +225,7 @@ def sync_crpp_start(request):
                 data['count'] = oResult
 
         elif synctype == "texts":
+            # Update texts from a particular part and a particular format
             part = Part.objects.filter(id=get['part'])
             if len(part) > 0:
                 sPart = part[0].dir
@@ -244,7 +245,7 @@ def sync_crpp_start(request):
                 oStatus.save()
 
                 # Update the models with the /crpp/txtlist information
-                oResult = process_textlist(crpp_texts, get)
+                oResult = process_textlist(crpp_texts, part, sFormat)
 
                 # Process the reply from [process_textlist()]
                 if oResult == None or oResult['result'] == False:
@@ -252,15 +253,58 @@ def sync_crpp_start(request):
                 elif oResult != None:
                     data['count'] = oResult
 
+                # Completely ready
+                oStatus.set("done", oResult)
+
             else:
                 # Create a new synchronisation object that contains all relevant information
                 oStatus = Status(status="error", msg="Cannot find [part] information" )
                 oStatus.save()
                 data.status = 'error'
 
+        elif synctype == "alltexts":
+            # Create a new synchronisation object that contains all relevant information
+            oStatus = Status(status="contacting", msg="Obtaining data from /crpp" )
+            oStatus.save()
 
+            data['count'] = 0
+            oBack = {}
 
-            # Update the models with the new information
+            # We are going to try and update ALL the texts in the entire application
+            for part in Part.objects.all():
+                sPart = part.dir
+                sLng = choice_english(CORPUS_LANGUAGE, part.corpus.lng)
+                # Walk all available text formats
+                for sFormat in ['folia', 'psdx']:
+                    # Note what we are doing
+                    data['lng'] = sLng
+                    data['part'] = sPart
+                    data['format'] = sFormat
+
+                    # Create a new synchronisation object that contains all relevant information
+                    oBack['lng'] = sLng
+                    oBack['part'] = sPart
+                    oBack['format'] = sFormat
+                    oStatus.set("crpp", oBack)
+
+                    # Get the data from the CRPP api
+                    crpp_texts = get_crpp_texts(sLng, sPart, sFormat)               
+
+                    # Update the models with the /crpp/txtlist information
+                    oResult = process_textlist(crpp_texts, part, sFormat)
+
+                    # Process the reply from [process_textlist()]
+                    if oResult == None or oResult['result'] == False:
+                        data.status = 'error'
+                        oStatus.set("error")
+                    elif oResult != None:
+                        data['count'] += oResult['total']
+                        oResult['alltexts'] = data['count']
+                        oStatus.set("okay", oResult)
+                        oBack = oResult
+            # Completely ready
+            oStatus.set("done", oBack)
+
 
 
     # Return this response
@@ -288,6 +332,7 @@ def sync_crpp_progress(request):
         if oStatus != None:
             # Get the last status information
             data['status'] = oStatus.status
+            data['msg'] = oStatus.msg
             data['count'] = oStatus.count
 
     # Return this response
