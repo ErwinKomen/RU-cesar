@@ -101,6 +101,39 @@
       </div>
     </div>
   </fieldset>
+
+  <div class="row">&nbsp;</div>
+  <div class="row">&nbsp;</div>
+
+  <!-- Synchronizing /alltexts -->
+  <fieldset class="module aligned" style="border: 1px solid darkgray; padding-top: 15px;  padding-bottom: 15px;">
+    <div class="row">
+      <div class="col-md-4">
+        <h3 class="straight" style="margin-top: 0px; margin-left: 10px;">Get all available texts</h3>
+          <p style="margin-top: 0px; margin-left: 10px;">Use the /crpp/txtlist command on all possible combinations of 'corpus part' and 'file format' 
+          in order to get or update the list of texts available for that combination. 
+          The information stored in the server gets transferred to the Cesar application, and is then accessible from there.</p>
+      </div>
+      <div class="col-md-8">
+        <form id="sync_form_texts" method="POST">
+          <div class="row">
+            <div class="col-md-3">
+              <span><a id="sync_start_alltexts" class="btn btn-primary btn-xs" 
+                  sync-start="{% url 'sync_start' %}?synctype=alltexts" 
+                  sync-progress="{% url 'sync_progress' %}?synctype=alltexts" 
+                  onclick="ru.cesar.sync_start('alltexts')">Refresh all the texts</a>
+              </span>
+            </div>
+            <div id="sync_progress_alltexts" class="col-md-9">
+              <!-- This is where the progress will be reported -->
+            </div>
+          </div>
+          <div id="sync_details_alltexts" class="row"></div>
+        </form>
+      </div>
+    </div>
+  </fieldset>
+
 {% else %}
   <p>Since you are not logged in, no further processing of /crpp information is possible.</p>
 {% endif %}

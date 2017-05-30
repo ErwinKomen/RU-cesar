@@ -276,7 +276,7 @@ var ru = (function ($, ru) {
           default:
             // Default action is to show the status
             $("#sync_progress_" + sSyncType).html(json.status);
-            $("#sync_details_" + sSyncType).html(sync_details(json));
+            $("#sync_details_" + sSyncType).html(ru.cesar.sync_details(json));
             ru.cesar.oSyncTimer = window.setTimeout(function (json) { ru.cesar.sync_progress(sSyncType); }, 1000);
             break;
         }
