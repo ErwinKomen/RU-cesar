@@ -1,4 +1,4 @@
-"""Models for the browser ap.
+"""Models for the browser app.
 
 The browser allows browsing through XML files that are part of a corpus.
 A corpus is in a particular language and according to a particular tagset.
@@ -7,6 +7,7 @@ The information here mirrors (and extends) the information in the crp-info.json 
 from django.db import models, transaction
 from django.contrib.auth.models import User
 from datetime import datetime
+from cesar.utils import *
 from cesar.browser.services import *
 from cesar.settings import APP_PREFIX
 import sys
@@ -25,42 +26,6 @@ VARIABLE_LOC = "variable.loc"
 LANGUAGE = "language"
 
 # ============================= LOCAL CLASSES ======================================
-class ErrHandle:
-    """Error handling"""
-
-    # ======================= CLASS INITIALIZER ========================================
-    def __init__(self):
-        # Initialize a local error stack
-        self.loc_errStack = []
-
-    # ----------------------------------------------------------------------------------
-    # Name :    Status
-    # Goal :    Just give a status message
-    # History:
-    # 6/apr/2016    ERK Created
-    # ----------------------------------------------------------------------------------
-    def Status(self, msg):
-        # Just print the message
-        print(msg, file=sys.stderr)
-
-    # ----------------------------------------------------------------------------------
-    # Name :    DoError
-    # Goal :    Process an error
-    # History:
-    # 6/apr/2016    ERK Created
-    # ----------------------------------------------------------------------------------
-    def DoError(self, msg, bExit = False):
-        # Append the error message to the stack we have
-        self.loc_errStack.append(msg)
-        # Print the error message for the user
-        print("Error: "+msg+"\nSystem:", file=sys.stderr)
-        for nErr in sys.exc_info():
-            if (nErr != None):
-                print(nErr, file=sys.stderr)
-        # Is this a fatal error that requires exiting?
-        if (bExit):
-            sys.exit(2)
-
 errHandle = ErrHandle()
 
 class FieldChoice(models.Model):
@@ -900,6 +865,7 @@ class Sentence(models.Model):
     sent = models.CharField("Sentence", max_length=MAX_TEXT_LEN)
     # [1] Link to the [Text] this line belongs to
     text = models.ForeignKey(Text, blank=False, null=False, related_name="sentences")
+
 
 
 
