@@ -213,6 +213,9 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting):
     oBack = {}      # What we return
     lOblig = ['name', 'size', 'title', 'date', 'author', 'genre', 'subtype']
 
+    # Get the value for format
+    format_choice = choice_value(CORPUS_FORMAT, sFormat)
+
     if bNoDeleting == None:
         bNoDeleting = False
 
@@ -272,7 +275,7 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting):
                             # Validate
                             if has_oblig_fields(oText):
                                 # check if it is in [Text] already
-                                lMatches = Text.objects.filter(fileName=oText['name'], format=sFormat,
+                                lMatches = Text.objects.filter(fileName=oText['name'], format=format_choice,
                                                 part=part, title=oText['title'], lines=oText['size'],
                                                 date=oText['date'], author=oText['author'],
                                                 genre=lGenre[oText['genre']], 
@@ -287,17 +290,22 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting):
 
             # Keep the transactions together in a bulk edit
             lstText = []
-            oBack['part'] = part.name
+            oBack['language'] =  part.corpus.get_lng_display()
+            oBack['part'] =  "{}: {}".format(part.dir, sPath)
             oBack['format'] = sFormat
             oStatus.set("bulk add", oBack)
+            iChunk = 0
+            iChunkLen = len(arList) // 100
             for chunk_this in chunks(arList, 100):
+                iChunk += 1
+                oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
                 with transaction.atomic():
                     for oText in chunk_this:
                         # Validate
                         if has_oblig_fields(oText):
                             # if 'name' in oText and 'size' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
                             try:
-                                oNew = Text(fileName=oText['name'], format=sFormat,
+                                oNew = Text(fileName=oText['name'], format=format_choice,
                                             part=part, title=oText['title'], lines=oText['size'],
                                             date=oText['date'], author=oText['author'],
                                             genre=lGenre[oText['genre']], 

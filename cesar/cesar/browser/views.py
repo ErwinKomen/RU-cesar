@@ -727,10 +727,6 @@ class TextListView(ListView):
         context['partchoice'] = get_int_choice(initial, 'part')
         context['formatchoice'] = get_int_choice(initial, 'format')
 
-        # Set the options for the <select> boxes
-        # context['lng_list'] = build_choice_list(CORPUS_LANGUAGE)
-        # context['corpus_list'] = [crp for crp in Corpus.objects.all().order_by('name')]
-
         # Get a list with 'first' and 'last values for each item in the PART queryset
         context['part_list'] = self.get_partlist()
 
