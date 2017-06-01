@@ -42,6 +42,19 @@
     <Compile Include="cesar\browser\tests.py" />
     <Compile Include="cesar\browser\views.py" />
     <Compile Include="cesar\browser\__init__.py" />
+    <Compile Include="cesar\seeker\admin.py" />
+    <Compile Include="cesar\seeker\apps.py" />
+    <Compile Include="cesar\seeker\migrations\__init__.py" />
+    <Compile Include="cesar\seeker\models.py" />
+    <Compile Include="cesar\seeker\tests.py" />
+    <Compile Include="cesar\seeker\views.py" />
+    <Compile Include="cesar\seeker\__init__.py" />
+    <Compile Include="cesar\utils.py" />
+    <Compile Include="cesar\viewer\admin.py" />
+    <Compile Include="cesar\viewer\apps.py" />
+    <Compile Include="cesar\viewer\models.py" />
+    <Compile Include="cesar\viewer\tests.py" />
+    <Compile Include="cesar\viewer\views.py" />
     <Compile Include="manage.py" />
     <Compile Include="cesar\__init__.py" />
     <Compile Include="cesar\settings.py" />
@@ -59,8 +72,13 @@
     <Folder Include="cesar\browser\static\browser\scripts\" />
     <Folder Include="cesar\browser\templates\" />
     <Folder Include="cesar\browser\templates\browser\" />
+    <Folder Include="cesar\seeker\" />
+    <Folder Include="cesar\seeker\migrations\" />
+    <Folder Include="cesar\seeker\templates\" />
     <Folder Include="cesar\templates\" />
     <Folder Include="cesar\templates\admin\" />
+    <Folder Include="cesar\viewer\" />
+    <Folder Include="cesar\viewer\templates\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="cesar\browser\static\browser\content\bootstrap.css" />
@@ -107,7 +125,9 @@
     <Content Include="cesar\browser\templates\browser\text_list.html" />
     <Content Include="cesar\browser\templates\browser\part_list.html" />
     <Content Include="cesar\browser\templates\browser\topnav.html" />
+    <Content Include="cesar\seeker\templates\index.html" />
     <Content Include="cesar\templates\admin\base.html" />
+    <Content Include="cesar\viewer\templates\index.html" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>

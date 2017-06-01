@@ -1,4 +1,4 @@
-"""Models for the viewer app.
+"""Models for the VIEWER app.
 
 The viewer allows viewing search results.
 The results are user-specific, and are loaded in the viewer when a user wants to start viewing.

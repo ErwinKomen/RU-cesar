@@ -251,3 +251,4 @@ ModelManifest.xml
 /cesar/cesar/viewer/migrations/__init__.py
 /cesar/cesar/viewer/__init__.py
 /cesar/cesar/browser/static/browser/scripts/_references.js
+/cesar/cesar/seeker/migrations/__init__.py
