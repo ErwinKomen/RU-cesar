@@ -70,7 +70,7 @@ class Construction(models.Model):
     # [1] Main search item
     search = models.ForeignKey(SearchMain, blank=False, null=False)
     # [1] Every gateway has one or more constructions it may look for
-    gateway = models.ForeignKey(Construction, blank=False, null=False, related_name="constructions")
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="constructions")
 
     def __str__(self):
         return self.name
@@ -81,17 +81,48 @@ class Variable(models.Model):
 
     # [1] Variable obligatory name
     name = models.CharField("Name of this variable", max_length=MAX_NAME_LEN)
-    # [1] A variable may optionally have a pre-defined value
+
+    def __str__(self):
+        return self.name
+
+
+class ConstructionVariable(models.Model):
+    """Each construction may provide its own value to the variables belonging to the gateway"""
+
+    # [1] Link to the Gateway the variable belongs to
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="gatewayvariables")
+    # [1] Link to the Construction the variable value belongs to
+    construction = models.ForeignKey(Construction, blank=False, null=False, related_name="constructionvariables")
+    # [1] Link to the name of this variable
+    variable = models.ForeignKey(Variable,  blank=False, null=False, related_name="variablenames")
+    # [1] Value of the variable for this combination of Gateway/Construction
     value = models.CharField("Value", max_length=MAX_TEXT_LEN)
+
+    def __str__(self):
+        sGateway = self.gateway.name
+        sConstruction = self.construction.name
+        sVariable = self.variable.name
+        return "{}-{}-{}-{}".format(sGateway, sConstruction, sVariable, self.value)
+
 
 
 class Gateway(models.Model):
-    """One gateway is one possible search definition"""
+    """One gateway is one possible search definition
+    
+    A gateway has 1 or more 'Construction' elements that define what construction to look for.
+    A gateway may also have any number of defined 'Variable' elements.
+    The values of these variables can be construction-dependant.
+    """
 
     # [1] Gateway option name
     name = models.CharField("Name of this gateway option", max_length=MAX_TEXT_LEN)
+    # [0-1] Description
+    description = models.TextField("Description for this option")
     # [0-n] Additional search items
     # [1-n]
+
+    def __str__(self):
+        return self.name
 
 
 
@@ -104,7 +135,7 @@ class Research(models.Model):
     purpose = models.TextField("Purpose")
     # [1] Each research project has a gateway
     gateway = models.ForeignKey(Gateway, blank=False, null=False)
-    # [1] Each research project 
+    # [1] Each research project ... (TODO: work out further)
 
     def __str__(self):
         return self.name
