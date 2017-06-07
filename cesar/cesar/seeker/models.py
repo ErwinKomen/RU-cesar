@@ -42,21 +42,20 @@ class SearchMain(models.Model):
             self.get_operator_display())
     
 
-class SearchItem(models.Model):
-    """A search item is one 'search' variable specification for a gateway"""
+class Gateway(models.Model):
+    """One gateway is one possible search definition
+    
+    A gateway has 1 or more 'Construction' elements that define what construction to look for.
+    A gateway may also have any number of defined 'Variable' elements.
+    The values of these variables can be construction-dependant.
+    """
 
-    # [1] Each search item has a name
-    name = models.CharField("Name of this search item", max_length=MAX_TEXT_LEN)
-    # [1] Functions are e.g: word-text, word-category, constituent-text, constituent-category
-    function = models.CharField("Format for this corpus (part)", choices=build_choice_list(SEARCH_FUNCTION), 
-                              max_length=5, help_text=get_help(SEARCH_FUNCTION))
-    # [1] The value for this function
-    value = models.CharField("Value", max_length=MAX_TEXT_LEN)
-    # [1] Comparison operator: equals, matches, contains etc
-    operator = models.CharField("Operator", choices=build_choice_list(SEARCH_OPERATOR), 
-                              max_length=5, help_text=get_help(SEARCH_OPERATOR))
-    # [1] Every construction has one or more search items
-    construction = models.ForeignKey(Construction, blank=False, null=False, related_name="searchitems")
+    # [1] Gateway option name
+    name = models.CharField("Name of this gateway option", max_length=MAX_TEXT_LEN)
+    # [0-1] Description
+    description = models.TextField("Description for this option")
+    # [0-n] Additional search items
+    # [1-n]
 
     def __str__(self):
         return self.name
@@ -105,25 +104,24 @@ class ConstructionVariable(models.Model):
         return "{}-{}-{}-{}".format(sGateway, sConstruction, sVariable, self.value)
 
 
+class SearchItem(models.Model):
+    """A search item is one 'search' variable specification for a gateway"""
 
-class Gateway(models.Model):
-    """One gateway is one possible search definition
-    
-    A gateway has 1 or more 'Construction' elements that define what construction to look for.
-    A gateway may also have any number of defined 'Variable' elements.
-    The values of these variables can be construction-dependant.
-    """
-
-    # [1] Gateway option name
-    name = models.CharField("Name of this gateway option", max_length=MAX_TEXT_LEN)
-    # [0-1] Description
-    description = models.TextField("Description for this option")
-    # [0-n] Additional search items
-    # [1-n]
+    # [1] Each search item has a name
+    name = models.CharField("Name of this search item", max_length=MAX_TEXT_LEN)
+    # [1] Functions are e.g: word-text, word-category, constituent-text, constituent-category
+    function = models.CharField("Format for this corpus (part)", choices=build_choice_list(SEARCH_FUNCTION), 
+                              max_length=5, help_text=get_help(SEARCH_FUNCTION))
+    # [1] The value for this function
+    value = models.CharField("Value", max_length=MAX_TEXT_LEN)
+    # [1] Comparison operator: equals, matches, contains etc
+    operator = models.CharField("Operator", choices=build_choice_list(SEARCH_OPERATOR), 
+                              max_length=5, help_text=get_help(SEARCH_OPERATOR))
+    # [1] Every construction has one or more search items
+    construction = models.ForeignKey(Construction, blank=False, null=False, related_name="searchitems")
 
     def __str__(self):
         return self.name
-
 
 
 class Research(models.Model):
