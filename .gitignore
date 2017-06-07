@@ -256,3 +256,10 @@ ModelManifest.xml
 /cesar/cesar/viewer/migrations/__pycache__/0001_initial.cpython-35.pyc
 /cesar/cesar/viewer/migrations/__pycache__/__init__.cpython-35.pyc
 /cesar/cesar/viewer/migrations/0001_initial.py
+/cesar/cesar/seeker/migrations/__pycache__/0001_initial.cpython-35.pyc
+/cesar/cesar/seeker/migrations/__pycache__/__init__.cpython-35.pyc
+/cesar/cesar/seeker/__pycache__/__init__.cpython-35.pyc
+/cesar/cesar/seeker/__pycache__/models.cpython-35.pyc
+/cesar/cesar/seeker/__pycache__/admin.cpython-35.pyc
+/cesar/cesar/viewer/__pycache__/models.cpython-35.pyc
+/cesar/cesar/viewer/__pycache__/admin.cpython-35.pyc

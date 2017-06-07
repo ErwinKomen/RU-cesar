@@ -13,10 +13,6 @@
     <script src="{% static 'browser/scripts/modernizr-2.6.2.js' %}"></script>
     <script src="{% static 'browser/scripts/jquery-1.10.2.js' %}"></script>
     <script src="{% static 'browser/scripts/bootstrap.js' %}"></script>
-    <!--
-    <script type="text/javascript" src="/static/admin/js/jquery.min.js"></script>
-    <script type="text/javascript" src="/static/admin/js/jquery.init.js"></script>
-    -->
     <script src="{% static 'browser/scripts/respond.js' %}"></script>
     <script src="{% static 'browser/scripts/crpstudio.svg.js' %}"></script>
     <script src="{% static 'browser/scripts/cesar.js' %}"></script>
@@ -24,7 +20,7 @@
 </head>
 
 <body>
-{% include 'browser/topnav.html' %}
+{% include 'topnav.html' %}
 
 {% block breadcrumbs %}{% endblock %}
 

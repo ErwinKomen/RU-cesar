@@ -99,7 +99,7 @@ def home(request):
     assert isinstance(request, HttpRequest)
     return render(
         request,
-        'browser/index.html',
+        'index.html',
         {
             'title':'RU-Cesar',
             'year':datetime.now().year,
@@ -113,7 +113,7 @@ def contact(request):
     assert isinstance(request, HttpRequest)
     return render(
         request,
-        'browser/contact.html',
+        'contact.html',
         {
             'title':'Contact',
             'message':'Erwin Komen (E.komen@Let.ru.nl)',
@@ -126,7 +126,7 @@ def more(request):
     assert isinstance(request, HttpRequest)
     return render(
         request,
-        'browser/more.html',
+        'more.html',
         {
             'title':'More',
             'year':datetime.now().year,
@@ -138,7 +138,7 @@ def about(request):
     assert isinstance(request, HttpRequest)
     return render(
         request,
-        'browser/about.html',
+        'about.html',
         {
             'title':'About',
             'message':'Radboud University CESAR utility.',
@@ -173,7 +173,7 @@ def signup(request):
             return redirect('home')
     else:
         form = SignUpForm()
-    return render(request, 'browser/signup.html', {'form': form})
+    return render(request, 'signup.html', {'form': form})
 
 def sync_crpp(request):
     """Synchronize information FROM /crpp"""

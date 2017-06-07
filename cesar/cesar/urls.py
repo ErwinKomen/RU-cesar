@@ -54,7 +54,7 @@ urlpatterns = [
     url(r'^login/$',
         django.contrib.auth.views.login,
         {
-            'template_name': 'browser/login.html',
+            'template_name': 'login.html',
             'authentication_form': cesar.browser.forms.BootstrapAuthenticationForm,
             'extra_context':
             {
