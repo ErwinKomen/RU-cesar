@@ -44,6 +44,9 @@
     <Compile Include="cesar\browser\__init__.py" />
     <Compile Include="cesar\seeker\admin.py" />
     <Compile Include="cesar\seeker\apps.py" />
+    <Compile Include="cesar\seeker\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\seeker\migrations\__init__.py" />
     <Compile Include="cesar\seeker\models.py" />
     <Compile Include="cesar\seeker\tests.py" />
@@ -111,6 +114,7 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.js" />
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
+    <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\templates\about.html" />
     <Content Include="cesar\templates\contact.html" />
     <Content Include="cesar\templates\index.html" />

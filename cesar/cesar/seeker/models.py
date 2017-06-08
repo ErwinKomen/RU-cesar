@@ -80,6 +80,8 @@ class Variable(models.Model):
 
     # [1] Variable obligatory name
     name = models.CharField("Name of this variable", max_length=MAX_NAME_LEN)
+    # [0-1] Description/explanation for this variable
+    description = models.TextField("Description of this variable")
 
     def __str__(self):
         return self.name

@@ -13,6 +13,7 @@ import django.contrib.auth.views
 import cesar.browser.views
 from cesar.browser.views import *
 from cesar.browser.forms import *
+from cesar.seeker.views import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
@@ -45,6 +46,9 @@ urlpatterns = [
     url(r'^text/view/(?P<pk>\d+)', TextDetailView.as_view(), name='text_view'),
     url(r'^text/lines/(?P<pk>\d+)/$', SentenceListView.as_view(), name='text_lines'),
     url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
+    url(r'^seek/wizard/$', "seeker_gateway_wizard_view", name='seeker_define'),
+    url(r'^seek/gateway/new/$', GatewayDetailView.as_view(), name='seeker_gateway_new'),
+    url(r'^seek/list/$', SeekerListView.as_view(), name='seeker_list'),
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),

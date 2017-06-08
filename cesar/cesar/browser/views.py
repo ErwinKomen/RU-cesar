@@ -1,5 +1,5 @@
 """
-Definition of views.
+Definition of views for the BROWSER app.
 """
 
 from django.contrib import admin
