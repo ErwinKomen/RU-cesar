@@ -130,10 +130,10 @@ class Research(models.Model):
     """Main entry for a research project"""
 
     # [1] Name of the CRP from which the results come (does not necessarily have to be here)
-    name = models.CharField("Name of this research", max_length=MAX_TEXT_LEN)
+    name = models.CharField("Research project name", max_length=MAX_TEXT_LEN)
     # [1] Purpose of this research
     purpose = models.TextField("Purpose")
-    # [1] Each research project has a gateway
+    # [1] Each research project has a 'gateway': a specification for the $search element
     gateway = models.ForeignKey(Gateway, blank=False, null=False)
     # [1] Each research project ... (TODO: work out further)
 

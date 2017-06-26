@@ -77,6 +77,9 @@
     <Folder Include="cesar\browser\templates\browser\" />
     <Folder Include="cesar\seeker\" />
     <Folder Include="cesar\seeker\migrations\" />
+    <Folder Include="cesar\seeker\static\" />
+    <Folder Include="cesar\seeker\static\seeker\" />
+    <Folder Include="cesar\seeker\static\seeker\scripts\" />
     <Folder Include="cesar\seeker\templates\" />
     <Folder Include="cesar\seeker\templates\seeker\" />
     <Folder Include="cesar\templates\" />
@@ -114,7 +117,9 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.js" />
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
+    <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_edit.html" />
     <Content Include="cesar\templates\about.html" />
     <Content Include="cesar\templates\contact.html" />
     <Content Include="cesar\templates\index.html" />
