@@ -42,6 +42,16 @@
     <Compile Include="cesar\browser\tests.py" />
     <Compile Include="cesar\browser\views.py" />
     <Compile Include="cesar\browser\__init__.py" />
+    <Compile Include="cesar\utils.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cesar\viewer\admin.py" />
+    <Compile Include="cesar\viewer\apps.py" />
+    <Compile Include="cesar\viewer\migrations\__init__.py" />
+    <Compile Include="cesar\viewer\models.py" />
+    <Compile Include="cesar\viewer\tests.py" />
+    <Compile Include="cesar\viewer\views.py" />
+    <Compile Include="cesar\viewer\__init__.py" />
     <Compile Include="manage.py" />
     <Compile Include="cesar\__init__.py" />
     <Compile Include="cesar\settings.py" />
@@ -61,6 +71,9 @@
     <Folder Include="cesar\browser\templates\browser\" />
     <Folder Include="cesar\templates\" />
     <Folder Include="cesar\templates\admin\" />
+    <Folder Include="cesar\viewer\" />
+    <Folder Include="cesar\viewer\migrations\" />
+    <Folder Include="cesar\viewer\templates\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="cesar\browser\static\browser\content\bootstrap.css" />
@@ -108,6 +121,7 @@
     <Content Include="cesar\browser\templates\browser\part_list.html" />
     <Content Include="cesar\browser\templates\browser\topnav.html" />
     <Content Include="cesar\templates\admin\base.html" />
+    <Content Include="cesar\viewer\templates\index.html" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
