@@ -1,0 +1,101 @@
+﻿{% extends "layout.html" %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'text_list' %}">Search</a>
+      &rsaquo; Define
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">
+    <h2>Research project</h2>
+    <div id="research_err"></div>
+    <div class="xpanel xpanel-default">
+
+      <div class="btn-group" role="group" aria-label="Research specification">
+        <button type="button" class="btn btn-secondary" onclick="ru.cesar.seeker.research_wizard(this, '1');">Project type</button>
+        <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '2');">Search element(s) >></button>
+      </div>
+
+      <!--
+      <ul class="nav nav-tabs">
+        <li role="presentation" class="active" ><a onclick="ru.cesar.seeker.research_wizard(this, '1');">Project type</a></li>
+        <li role="presentation" ><a onclick="ru.cesar.seeker.research_wizard(this, '2');">Search element(s)</a></li>
+      </ul>
+        -->
+
+      <div class="panel panel-default">
+        <!-- The form, divided per content element -->
+        <form >
+          <!-- The hidden elements we work with -->
+          <div class="hidden">
+            <input name='research_part' class='form-control' value='wrd' >
+            <input id="submit_type" name='submit_type' class='form-control' value='simple'>
+          </div>
+
+          <!-- Part 1: select the TYPE of the construction's main element -->
+          <div id="research_part_1" class="row research-part" >
+            <div>
+              <span>The main element of the construction this project looks for is a:</span>
+              <span>{{form.targetType}}</span>
+            </div>
+          </div>
+
+          <!-- Part 2: One or more search elements -->
+          <div id="research_part_2" class="row research-part hidden inline-group">
+
+            <!-- WORD search elements -->
+            <div id="research_intro-wrd" class="hidden research-wrd tabular inline-related">
+              <fieldset class="module">
+                <h2>Search element(s)</h2>
+                <ul class="list-unstyled">
+                  <li><span>&bull; &nbsp;</span>If a search element consists of more words, put them on one line.</li>
+                  <li><span>&bull; &nbsp;</span>If a search element can be one of a set of words,
+                  put those words on separate lines.</li>
+                </ul>
+                <table>
+                  <thead><tr><th>#</th><th>Name</th><th>Word(s)</th><th>DELETE?</th></tr></thead>
+                  <tbody>
+                    {% for wrd_form in construction_formset %}
+                    <tr>
+                      <td valign="top">{{forloop.counter}}</td>
+                      <td valign="top">{{wrd_form.name}}</td>
+                      <td valign="top">{{wrd_form.value}}</td>
+                      <td valign="top">{{wrd_form.DELETE}}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="add-row">
+                      <td colspan="4">
+                        <a href="#">Add another search element option</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </fieldset>
+            </div>
+
+            <!-- CONSTITUENT search elements -->
+            <div id="research_intro-cns" class="hidden research-cns">
+              <p>Provide one or more options for the search construction.</p>
+              <p>Each search construction starts out with one constituent, which can be further specified by e.g. children or siblings.</p>
+            </div>
+          </div>
+        </form>      
+      </div>
+
+
+      <!-- Show the buttons to save, cancel, delete and so forth -->
+      <div class="btn-group" role="group" aria-label="Form action">
+        <button type="button" class="btn btn-default">Cancel</button>
+        <button type="button" class="btn btn-primary"  disabled>Save</button>
+        <button type="button" class="btn btn-primary"  disabled>Save and continue</button>
+      </div>
+    </div>
+  </div>
+
+
+{% endblock content %}

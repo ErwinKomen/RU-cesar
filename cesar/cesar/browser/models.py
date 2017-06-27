@@ -1,4 +1,4 @@
-"""Models for the browser app.
+"""Models for the BROWSER app.
 
 The browser allows browsing through XML files that are part of a corpus.
 A corpus is in a particular language and according to a particular tagset.
@@ -634,7 +634,8 @@ class VariableName(models.Model):
     # [1; o] Description in plain text of this variable
     descr = models.TextField("Description of this variable", blank=False, null=False)
     # [1; f] Type of variable as available from a fixed set of possibilities
-    type = models.CharField("Type of this variable", choices=build_choice_list(VARIABLE_TYPE), max_length=5, help_text=get_help(VARIABLE_TYPE))
+    type = models.CharField("Type of this variable", choices=build_choice_list(VARIABLE_TYPE), 
+                            max_length=5, help_text=get_help(VARIABLE_TYPE))
 
     def __str__(self):
         return self.name

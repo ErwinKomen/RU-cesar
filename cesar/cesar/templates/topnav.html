@@ -16,11 +16,27 @@
 
                     <li class="dropdown">
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
-                         aria-haspopup="true" aria-expanded="false">Texts<span class="caret"></span></a>
+                         aria-haspopup="true" aria-expanded="false">Browse<span class="caret"></span></a>
                       <ul class="dropdown-menu">
-                          <li><a href="{% url 'text_list' %}">Texts</a></li>
+                          <li><a href="{% url 'text_list' %}?part=1&format=0">English: YCOE</a></li>
+                          <li><a href="{% url 'text_list' %}?part=4&format=0">English: PPCMBE</a></li>
+                          <li><a href="{% url 'text_list' %}?part=14&format=0">Chechen</a></li>
+                          <li><a href="{% url 'text_list' %}?part=7&format=1">Dutch: LassyKlein</a></li>
+                          <li><a href="{% url 'text_list' %}?part=8&format=1">Dutch: Sonar (all)</a></li>
+                          <li><a href="{% url 'text_list' %}?part=9&format=1">Dutch: Sonar (books)</a></li>
+                          <li><a href="{% url 'text_list' %}?part=19&format=1">Dutch: Sonar (brochures)</a></li>
+                          <li><a href="{% url 'text_list' %}?part=13&format=1">Dutch: Sonar (newsletters)</a></li>
+                          <li><a href="{% url 'text_list' %}">All Texts</a></li>
                           <li role="separator" class="divider"></li>
                           <li><a href="{% url 'part_list' %}">Corpus parts</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
+                         aria-haspopup="true" aria-expanded="false">Search<span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                          <li><a href="{% url 'seeker_define' %}">Specify</a></li>
+                          <li><a href="{% url 'seeker_list' %}">List</a></li>
                       </ul>
                     </li>
                 </ul>

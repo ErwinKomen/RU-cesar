@@ -326,3 +326,8 @@ svg g.lithium-node:hover > text {
 .svg-features .attrvalue {
     font-family: monospace;
 }
+
+/*  cesar.seeker */
+.research-part {
+  padding: 5px 30px;
+}
