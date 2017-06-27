@@ -103,7 +103,60 @@ var ru = (function ($, ru) {
         $("#sentence-fetch").removeClass("hidden");
       },
 
+      /**
+       *  cloneMore
+       *      Add a form to the formset
+       *      selector = the element that should be duplicated
+       *      type     = the formset type
+       *      number   = boolean indicating that re-numbering on the first <td> must be done
+       *
+       */
+      cloneMore: function (selector, type, number) {
+        try {
+          // Clone the element in [selector]
+          var newElement = $(selector).clone(true);
+          // Find the total number of [type] elements
+          var total = $('#id_' + type + '-TOTAL_FORMS').val();
 
+          // Find each <input> element
+          newElement.find(':input').each(function () {
+            // Get the name of this element, adapting it on the fly
+            var name = $(this).attr('name').replace('-' + (total - 1) + '-', '-' + total + '-');
+            // Produce a new id for this element
+            var id = 'id_' + name;
+            // Adapt this element's name and id, unchecking it
+            $(this).attr({ 'name': name, 'id': id }).val('').removeAttr('checked');
+          });
+
+          // Find each <label> under newElement
+          newElement.find('label').each(function () {
+            // Adapt the 'for' attribute
+            var newFor = $(this).attr('for').replace('-' + (total - 1) + '-', '-' + total + '-');
+            $(this).attr('for', newFor);
+          });
+
+          // Adapt the total number of forms in this formset
+          total++;
+          $('#id_' + type + '-TOTAL_FORMS').val(total);
+
+          // Append the new element after the selector's last child
+          $(selector).after(newElement);
+
+          // Should we re-number?
+          if (number !== undefined && number) {
+            // Walk all <tr> elements of the table
+            var iRow = 1;
+            $(selector).parent().find("tr").not(".add-row").each(function () {
+              var elFirstCell = $(this).find("td:first");
+              $(elFirstCell).html(iRow);
+              iRow += 1;
+            });
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("cloneMore", ex);
+        }
+      },
 
 
       /**

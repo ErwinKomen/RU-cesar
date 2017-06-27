@@ -10,7 +10,7 @@ from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView
 
-from formtools.wizard.views import SessionWizardView
+# from formtools.wizard.views import SessionWizardView
 
 from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm
 from cesar.seeker.models import *

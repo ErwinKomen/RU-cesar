@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'formtools',
+    # 'formtools',
     'cesar.browser',
     'cesar.viewer',
     'cesar.seeker',
