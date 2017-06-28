@@ -47,7 +47,9 @@
     <Compile Include="cesar\seeker\forms.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="cesar\seeker\migrations\__init__.py" />
+    <Compile Include="cesar\seeker\migrations\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\seeker\models.py" />
     <Compile Include="cesar\seeker\tests.py" />
     <Compile Include="cesar\seeker\views.py" />

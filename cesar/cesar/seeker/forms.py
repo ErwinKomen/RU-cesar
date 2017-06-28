@@ -144,27 +144,27 @@ class SeekerResearchForm(ModelForm):
         if not self.gateway_form.is_valid():
             raise forms.ValidationError("Gateway not valid")
 
-    def save(self, *args, **kwargs):
-        # Save the gateway form first
-        gateway = self.gateway_form.save()
+    #def save(self, *args, **kwargs):
+    #    # Save the gateway form first
+    #    gateway = self.gateway_form.save()
 
-        # now make sure the SeekerResearchForm has the gateway
-        self.instance.gateway = gateway
+    #    # now make sure the SeekerResearchForm has the gateway
+    #    self.instance.gateway = gateway
 
-        # Also make sure that all Constructions get the link to this gateway
+    #    # Also make sure that all Constructions get the link to this gateway
 
-        # Now save the larger form
-        research = super(SeekerResearchForm, self).save( *args, **kwargs)
+    #    # Now save the larger form
+    #    research = super(SeekerResearchForm, self).save( *args, **kwargs)
 
-        # THIS IS NOT NEEDED ANYMORE:
-        ## Get the correct gateway
-        #research.gateway = gateway
+    #    # THIS IS NOT NEEDED ANYMORE:
+    #    ## Get the correct gateway
+    #    #research.gateway = gateway
 
-        # Now save the research object
-        research.save()
+    #    # Now save the research object
+    #    research.save()
 
-        # And return it
-        return research
+    #    # And return it
+    #    return research
 
     def has_changed(self):
         return super(SeekerResearchForm,self).has_changed() or self.gateway_form.has_changed()

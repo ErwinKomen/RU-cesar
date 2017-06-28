@@ -128,17 +128,23 @@ def research_main(request, object_id=None):
                 cns.gateway = gateway
                 # Save this construction
                 cns.save()
+                cns_form.save()
         # If the form is valid we can save it
         if form.is_valid():
             form_validated = True
             # Save the form
-            new_object = form.save()
+            new_object = form.save(commit=False)
+            new_object.gateway = gateway
         else:
             new_object = form.instance
+            # Remove any gateway that was created
+            gateway.delete()
         # Are we valid?
         if construction_formset.is_valid() and form_validated:
-            # all are valid: save the model instance
+            # All valid: 
+            # - save the model instance
             new_object.save()
+            # construction_formset.save()
             # If the form is valid and the user pressed 'save' then show a summary
             # TODO: Show a summary
             if add:
