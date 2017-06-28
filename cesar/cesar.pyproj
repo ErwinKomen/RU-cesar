@@ -135,6 +135,7 @@
     <Content Include="cesar\browser\templates\browser\text_view.html" />
     <Content Include="cesar\browser\templates\browser\text_list.html" />
     <Content Include="cesar\browser\templates\browser\part_list.html" />
+    <Content Include="cesar\templates\submit_row.html" />
     <Content Include="cesar\templates\topnav.html" />
     <Content Include="cesar\seeker\templates\index.html" />
     <Content Include="cesar\templates\admin\base.html" />

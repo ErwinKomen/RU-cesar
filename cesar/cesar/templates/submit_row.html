@@ -1,0 +1,12 @@
+﻿{% load i18n %}
+<div class="submit-row">
+  {% if show_save %}<input class="default" type="submit" name="_save" value="{% trans 'Save' %}" />{% endif %}
+  {% if show_delete_link %}
+    <p class="deletelink-box">
+      <a class="deletelink" href="{{delete_url}}">{% trans "Delete" %}</a>
+    </p>
+  {% endif %}
+  {% if show_save_as_new %}<input type="submit" name="_saveasnew" value="{% trans 'Save as new' %}">{% endif %}
+  {% if show_save_and_add_another %}<input type="submit" name="_addanother" value="{% trans 'Save and add another' %}">{% endif %}
+  {% if show_save_and_continue %}<input type="submit" name="_continue" value="{% trans 'Save and continue editing' %}">{% endif %}
+</div>

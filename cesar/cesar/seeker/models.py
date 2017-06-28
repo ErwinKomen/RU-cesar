@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
-from cesar.browser.models import build_choice_list, get_help
+from cesar.browser.models import build_choice_list, get_help, choice_value
 import sys
 import copy
 import json
@@ -40,7 +40,31 @@ class SearchMain(models.Model):
             self.get_function_display(),
             self.value,
             self.get_operator_display())
+
+    def create_item(function, value, operator):
+        operator_matches = choice_value(SEARCH_OPERATOR, operator)
+        function_word = choice_value(SEARCH_FUNCTION, function)
+        obj = SearchMain.objects.create(function=function_word,
+                                        operator=operator_matches,
+                                        value = value)
+        return obj
+
     
+
+class GatewayManager(models.Manager):
+
+    def create_gateway(self, name='leeg'):
+        # Get all the gateways that ARE used
+        gateway_ids = Research.objects.values_list('gateway__id', flat=True)
+        # Remove any gateways that are not used
+        gateway_unused = list(Gateway.objects.exclude(id__in=gateway_ids))
+        for obj in gateway_unused:
+            obj.delete()
+
+        # Create a new gateway
+        gateway = self.create(name=name)
+        return gateway
+
 
 class Gateway(models.Model):
     """One gateway is one possible search definition
@@ -51,11 +75,13 @@ class Gateway(models.Model):
     """
 
     # [1] Gateway option name
-    name = models.CharField("Name of this gateway option", max_length=MAX_TEXT_LEN)
+    name = models.CharField("Name of this gateway option", max_length=MAX_TEXT_LEN, default='leeg')
     # [0-1] Description
-    description = models.TextField("Description for this option")
+    description = models.TextField("Description for this option", blank=True)
     # [0-n] Additional search items
     # [1-n]
+
+    objects = GatewayManager()
 
     def __str__(self):
         return self.name
@@ -134,8 +160,11 @@ class Research(models.Model):
     # [1] Purpose of this research
     purpose = models.TextField("Purpose")
     # [1] Each research project has a 'gateway': a specification for the $search element
-    gateway = models.ForeignKey(Gateway, blank=False, null=False)
+    gateway = models.OneToOneField(Gateway, blank=False, null=False)
     # [1] Each research project ... (TODO: work out further)
 
     def __str__(self):
         return self.name
+
+    def gateway_name(self):
+        return self.gateway.name
