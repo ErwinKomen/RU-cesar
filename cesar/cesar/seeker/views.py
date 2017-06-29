@@ -114,6 +114,8 @@ def research_main(request, object_id=None):
             form = ModelForm(request.POST, request.FILES)
         else:
             form = ModelForm(request.POST, request.FILES, instance=obj)
+
+
         # Also get all required formsets
         construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction')
         # Walk the formset

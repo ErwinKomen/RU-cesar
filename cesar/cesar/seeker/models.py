@@ -36,10 +36,10 @@ class SearchMain(models.Model):
                               max_length=5, help_text=get_help(SEARCH_OPERATOR))
 
     def __str__(self):
-        return "{}{}{}".format(
+        return "{}({}({}))".format(
             self.get_function_display(),
-            self.value,
-            self.get_operator_display())
+            self.get_operator_display(),
+            self.value)
 
     def create_item(function, value, operator):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
