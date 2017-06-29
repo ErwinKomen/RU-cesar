@@ -123,7 +123,7 @@ class SeekerResearchForm(ModelForm):
                     data=self.gateway_data
                 )
         else:
-            # Didn't get any POST data
+            # Didn't get any POST data: process the GET instance
             # Fill the form with the gateway data, or create a blank form
             if hasattr(self.instance, 'gateway') and  self.instance.gateway:
                 # There is a gateway, so use it

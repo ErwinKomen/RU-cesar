@@ -3,8 +3,9 @@ Definition of views for the SEEKER app.
 """
 
 from django.forms import formset_factory
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, BaseInlineFormSet
 from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
@@ -16,23 +17,11 @@ from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, Co
 from cesar.seeker.models import *
 from cesar.settings import APP_PREFIX
 
-TO_FIELD_VAR = '_to_field'
+paginateEntries = 20
 
-#GATEWAY_FORMS = [
-#    ("step1", Form1),
-#    ("step2", Form2),
-#]
-#GATEWAY_TEMPLATES = { 
-#    "step1": "template/path/step1.html",
-#    "step2": "template/path/step2.html"
-#}
-
-
-#class SeekerGatewayWizard(SessionWizardView):
-#    # my awesome code
-#    x = 1
-
-#seeker_gateway_wizard_view = SeekerGatewayWizard.as_view(GATEWAY_FORMS)
+class CustomInlineFormset(BaseInlineFormSet):
+    def clean(self):
+        super(CustomInlineFormset, self).clean()
 
 
 class GatewayDetailView(DetailView):
@@ -47,6 +36,10 @@ class GatewayCreateView(CreateView):
 
 class SeekerListView(ListView):
     model = Research
+    template_name = 'seeker/research_list.html'
+    paginate_by = paginateEntries
+    entrycount = 0
+    qs = None
 
 
 def get_changeform_initial_data(model, request):
@@ -75,9 +68,7 @@ def research_main(request, object_id=None):
     # Initialisation
     construction_formset = None
     template = 'seeker/research_edit.html'
-
-    # copied from django/contrib/admin/options.py changeform_view()
-    # to_field = request.POST.get(TO_FIELD_VAR, request.GET.get(TO_FIELD_VAR))
+    delete_url = ''
 
     # check for 'save-as-new'
     if request.method == "POST" and '_saveasnew' in request.POST:
@@ -91,70 +82,99 @@ def research_main(request, object_id=None):
         obj = None
     else:
         # Get the instance of this research object
-        # obj = Research.get_object(request, unquote(object_id), to_field)
-        obj = Research.objects.filter(pk=object_id)
+        obj = Research.objects.get(pk=object_id)
+        # Create a delete url for this object
+        delete_url = reverse('seeker_delete', args=[object_id])
         # TODO: act if this object does not exist
 
     # Some initialisations
     ModelForm = SeekerResearchForm
     form_validated = False
 
-    # Find out how we get here
+    # If POST, we need to SAVE data
     if request.method == 'POST':
-        gatewayForm = GatewayForm(request.POST)
-        if gatewayForm.is_valid():
-            gateway = gatewayForm.save(commit=False)
-            # TODO: possible changes to the gateway...
+        # Start out with no errors
+        sErr = ""
 
-            # Save the gateway instance...
-            gateway.save()
-        # This is a POST request, so this is an existing form
-        # BUT: the [obj] may not exist if this is a new object
-        if obj == None:
-            form = ModelForm(request.POST, request.FILES)
-        else:
-            form = ModelForm(request.POST, request.FILES, instance=obj)
-
-
-        # Also get all required formsets
-        construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction')
-        # Walk the formset
-        for cns_form in construction_formset:
-            # Check if this form is valid
-            if cns_form.is_valid():
-                # Save it preliminarily
-                cns = cns_form.save(commit=False)
-                # Add the correct search item
-                cns.search = SearchMain.create_item("word-group", cns_form.cleaned_data['value'], 'groupmatches')
-                # Add the link to the correct gateway
-                cns.gateway = gateway
-                # Save this construction
-                cns.save()
-                cns_form.save()
-        # If the form is valid we can save it
+        # First check the research form
+        form = ModelForm(request.POST, request.FILES, instance=obj)
         if form.is_valid():
-            form_validated = True
-            # Save the form
-            new_object = form.save(commit=False)
-            new_object.gateway = gateway
-        else:
-            new_object = form.instance
-            # Remove any gateway that was created
-            gateway.delete()
-        # Are we valid?
-        if construction_formset.is_valid() and form_validated:
-            # All valid: 
-            # - save the model instance
-            new_object.save()
-            # construction_formset.save()
-            # If the form is valid and the user pressed 'save' then show a summary
-            # TODO: Show a summary
-            if add:
-                return redirect('home')
+
+            # First create and save a gateway (no form needed)
+            gatewayForm = GatewayForm(request.POST)
+            if gatewayForm.is_valid():
+                gateway = gatewayForm.save(commit=False)
+                # TODO: possible changes to the gateway in the future...
+
+                # Save the gateway instance...
+                gateway.save()
+            # NOTE: should add an ELSE statement
+
+
+            # Also get all required formsets
+            construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction', instance=gateway)
+            # Is it valid?
+            if construction_formset.is_valid():
+                # Walk the formset
+                for cns_form in construction_formset:
+                    # Check if this form is valid
+                    if cns_form.is_valid():
+                        # Save it preliminarily
+                        cns = cns_form.save(commit=False)
+                        # Add the correct search item
+                        cns.search = SearchMain.create_item("word-group", cns_form.cleaned_data['value'], 'groupmatches')
+                        ## Add the link to the correct gateway
+                        #cns.gateway = gateway
+                        # Save this construction
+                        cns.save()
+                       #  cns_form.save()
+
+                # Prepare and save the RESEARCH
+                research = form.save(commit=False)
+                research.gateway = gateway
+                research.save()
+
+                # If the form is valid and the user pressed 'save' then show a summary
+                if add:
+                    # This is a new instance that is being added
+                    # TODO: Show a summary
+                    return redirect('home')
+                else:
+                    # This is an existing instence
+                    return redirect('home')
             else:
-                return redirect('home')
+                # Get the formset errors string
+                sErr = construction_formset.errors
+                # Delete the gateway we created
+                gateway.delete()
         else:
-            sErr = construction_formset.errors
+            sErr = form.errors
+
+            ## If the form is valid we can save it
+            #if form.is_valid():
+            #    form_validated = True
+            #    # Save the form
+            #    new_object = form.save(commit=False)
+            #    new_object.gateway = gateway
+            #else:
+            #    new_object = form.instance
+            #    # Remove any gateway that was created
+            #    gateway.delete()
+            # Are we valid?
+            #if construction_formset.is_valid() and form_validated:
+            #    # All valid: 
+            #    # - save the model instance
+            #    new_object.save()
+            #    # construction_formset.save()
+            #    # If the form is valid and the user pressed 'save' then show a summary
+            #    # TODO: Show a summary
+            #    if add:
+            #        return redirect('home')
+            #    else:
+            #        return redirect('home')
+            #else:
+            #    sErr = construction_formset.errors
+
     else:
         # This is a GET request, so get an empty form
         if add:
@@ -163,10 +183,18 @@ def research_main(request, object_id=None):
             form = ModelForm(initial=initial)
             # Create a completely new formset
             construction_formset = ConstructionFormSet(prefix='construction')
+        elif '/delete/' in request.path:
+            # We need to delete
+            # TODO: ask for confirmation
+
+            # Perform the deletion of the Research object
+            obj.delete()
+            # Redirect to the list of projects
+            return redirect('seeker_list')
         else:
             form = ModelForm(instance=obj)
             # create a formset for this particular instance
-            construction_formset = ConstructionFormSet(prefix='construction', instance=obj)
+            construction_formset = ConstructionFormSet(prefix='construction', instance=obj.gateway)
 
 
     # Start setting the context
@@ -179,6 +207,7 @@ def research_main(request, object_id=None):
         show_save_and_continue = True,
         show_save_and_add_another = True,
         show_delete_link = not add,
+        delete_url=delete_url,
         )
 
     # Hide the "Save" and "Save and continue" buttons if "Save as New" was

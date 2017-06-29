@@ -93,9 +93,9 @@ class Construction(models.Model):
     # [1] Construction name
     name = models.CharField("Name of this search construction", max_length=MAX_TEXT_LEN)
     # [1] Main search item
-    search = models.ForeignKey(SearchMain, blank=False, null=False)
+    search = models.ForeignKey(SearchMain, blank=False, null=False, on_delete=models.CASCADE)
     # [1] Every gateway has one or more constructions it may look for
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="constructions")
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="constructions", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -160,7 +160,7 @@ class Research(models.Model):
     # [1] Purpose of this research
     purpose = models.TextField("Purpose")
     # [1] Each research project has a 'gateway': a specification for the $search element
-    gateway = models.OneToOneField(Gateway, blank=False, null=False)
+    gateway = models.OneToOneField(Gateway, blank=False, null=False, on_delete=models.CASCADE)
     # [1] Each research project ... (TODO: work out further)
 
     def __str__(self):
