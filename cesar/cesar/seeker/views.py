@@ -64,7 +64,7 @@ def research_main(request, object_id=None):
     """Main entry point for the specification of a seeker research project"""
 
     # This is required for any view
-    ConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, extra=1, can_delete=True, can_order=True)
+    ConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
     # Initialisation
     construction_formset = None
     template = 'seeker/research_edit.html'
@@ -149,31 +149,6 @@ def research_main(request, object_id=None):
                 gateway.delete()
         else:
             sErr = form.errors
-
-            ## If the form is valid we can save it
-            #if form.is_valid():
-            #    form_validated = True
-            #    # Save the form
-            #    new_object = form.save(commit=False)
-            #    new_object.gateway = gateway
-            #else:
-            #    new_object = form.instance
-            #    # Remove any gateway that was created
-            #    gateway.delete()
-            # Are we valid?
-            #if construction_formset.is_valid() and form_validated:
-            #    # All valid: 
-            #    # - save the model instance
-            #    new_object.save()
-            #    # construction_formset.save()
-            #    # If the form is valid and the user pressed 'save' then show a summary
-            #    # TODO: Show a summary
-            #    if add:
-            #        return redirect('home')
-            #    else:
-            #        return redirect('home')
-            #else:
-            #    sErr = construction_formset.errors
 
     else:
         # This is a GET request, so get an empty form
