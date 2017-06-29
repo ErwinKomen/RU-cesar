@@ -6,13 +6,6 @@ from django import forms
 from django.forms import ModelForm, formset_factory, modelformset_factory
 from cesar.seeker.models import *
 
-WORD_ORIENTED = 'w'
-CONSTITUENT_ORIENTED = 'c'
-TARGET_TYPE_CHOICES = (
-    (WORD_ORIENTED, 'Word(s)'),
-    (CONSTITUENT_ORIENTED, 'Constituent(s)'),
-)
-
 SEARCHMAIN_WRD_FUNCTIONS = (
         ('w-m', 'Word matches'),
         ('wn-m', 'Next word matches'),
@@ -57,6 +50,24 @@ class ConstructionWrdForm(ModelForm):
         model = Construction
         fields = ['name']
 
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(ConstructionWrdForm, self).__init__(*args, **kwargs)
+        # Get the instance
+        if 'instance' in kwargs and 'value' in self.fields:
+            instance = kwargs['instance']
+
+            # Get the value
+            sValue = instance.search.value
+            # Get the number of lines to display it properly
+            iLines = len( sValue.split('\n'))
+            if iLines == 0: iLines = 1
+            # Set the number of lines
+            self.fields['value'].widget.attrs['rows'] = iLines
+            # Set the initial value
+            self.fields['value'].initial = sValue
+
+
     #def save(self, *args, **kwargs):
     #    # Create a search for this one
     #    value=self.value
@@ -95,7 +106,7 @@ class SeekerResearchForm(ModelForm):
     #   but exclude the one-to-one 'gateway' link
     class Meta:
         model = Research
-        fields = ['name', 'purpose']
+        fields = ['name', 'purpose', 'targetType']
         widgets={
           'purpose': forms.Textarea(attrs={'rows': 1, 'cols': 100})
           }

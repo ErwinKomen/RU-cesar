@@ -24,8 +24,16 @@ var ru = (function ($, ru) {
         return "something";
       },
       errMsg: function (sMsg, ex) {
-        var sHtml = "Error in [" + sMsg + "]<br>" + ex.message;
+        var sHtml = "";
+        if (ex === undefined) {
+          sHtml = "Error: " + sMsg;
+        } else {
+          sHtml = "Error in [" + sMsg + "]<br>" + ex.message;
+        }
         $("#" + loc_divErr).html(sHtml);
+      },
+      errClear: function () {
+        $("#" + loc_divErr).html("");
       }
     }
 
@@ -43,6 +51,18 @@ var ru = (function ($, ru) {
             elList = null;
 
         try {
+          // Sanity check
+          sTargetType = $("#id_targetType").val();
+          switch (sTargetType) {
+            case "w":
+            case "c":
+              private_methods.errClear();
+              break;
+            default:
+              // There really is no other option, so warn the user and do not change place
+              private_methods.errMsg("Choose the main element type");
+              return;
+          }
           // Hide all research parts
           $(".research-part").addClass("hidden");
           $(".research-part").removeClass("active");
@@ -51,7 +71,6 @@ var ru = (function ($, ru) {
           $(sTargetId).removeClass("hidden");
           // If this is not [Project Type] then get the project type
           if (sPart !== '1') {
-            sTargetType = $("#id_targetType").val();
             // Set the <input> element
             $("#research_part").val(sTargetType);
             // Hide all 

@@ -19,6 +19,15 @@ MAX_TEXT_LEN = 200
 SEARCH_FUNCTION = "search.function"
 SEARCH_OPERATOR = "search.operator"
 
+WORD_ORIENTED = 'w'
+CONSTITUENT_ORIENTED = 'c'
+TARGET_TYPE_CHOICES = (
+    ('0', '----'),
+    (WORD_ORIENTED, 'Word(s)'),
+    (CONSTITUENT_ORIENTED, 'Constituent(s)'),
+)
+
+
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
 
@@ -159,6 +168,9 @@ class Research(models.Model):
     name = models.CharField("Research project name", max_length=MAX_TEXT_LEN)
     # [1] Purpose of this research
     purpose = models.TextField("Purpose")
+    # [1] The main type of this research: is it word oriented or constituent oriented?
+    targetType = models.CharField("Main element type", choices=TARGET_TYPE_CHOICES, 
+                              max_length=5)
     # [1] Each research project has a 'gateway': a specification for the $search element
     gateway = models.OneToOneField(Gateway, blank=False, null=False, on_delete=models.CASCADE)
     # [1] Each research project ... (TODO: work out further)

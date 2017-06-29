@@ -59,8 +59,6 @@
 
             <!-- GATEWAY specification is hidden -->
             <div id="research_gateway" class="hidden">
-              <!-- {{form.gateway}}-->
-              <!-- {{form.gateway_form.management_form}}-->
               {{form.gateway_form.as_p}}
             </div>
 
@@ -80,6 +78,7 @@
                   <tbody>
                     {% for wrd_form in construction_formset %}
                     <tr>
+                      <td class="hidden">{{wrd_form.id}}</td>
                       <td valign="top">{{forloop.counter}}</td>
                       <td valign="top">{{wrd_form.name}}</td>
                       <td valign="top">{{wrd_form.value}}</td>
