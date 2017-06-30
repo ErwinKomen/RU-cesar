@@ -26,12 +26,13 @@
       <h3>Research project overview</h3>
       <!-- The contents as a table -->
       <table class="table table-hover">
-        <thead><tr><th class="hidden">id</th><th>Type</th><th>Name</th><th>Purpose</th></tr></thead>
+        <thead><tr><th class="hidden">id</th><th>Owner</th><th>Type</th><th>Name</th><th>Purpose</th></tr></thead>
         <tbody>
         {% for item in object_list %}
           <tr class="part-item">
             <td class="hidden">{{item.id}}</td>
-            <td><span class="research-item-type">onbekend</span></td>
+            <td><span class="research-item-user">{{item.username}}</span></td>
+            <td><span class="research-item-type">{{item.get_targetType_display}}</span></td>
             <td><span class="research-item-name"><a class="btn btn-default btn-xs" href="{% url 'seeker_edit' object_id=item.id %}">{{item.name}}</a></span></td>
             <td><span class="research-item-purpose">{{item.purpose}}</span></td>
           </tr>

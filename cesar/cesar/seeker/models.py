@@ -4,7 +4,7 @@ The seeker helps users define and execute searches through the texts that
 are available at the back end
 """
 from django.db import models, transaction
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
@@ -18,6 +18,7 @@ MAX_TEXT_LEN = 200
 
 SEARCH_FUNCTION = "search.function"
 SEARCH_OPERATOR = "search.operator"
+SEARCH_PERMISSION = "search.permission"
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -90,10 +91,19 @@ class Gateway(models.Model):
     # [0-n] Additional search items
     # [1-n]
 
+    # This line is needed, in order to add the Gateway.create_gateway() call
     objects = GatewayManager()
 
     def __str__(self):
         return self.name
+
+    def delete(self, using = None, keep_parents = False):
+        """Delete all the Construction items pointing to me"""
+        cns_set = self.constructions.all()
+        for cns_this in cns_set:
+            cns_this.delete()
+        # Now perform the normal deletion
+        return super().delete(using, keep_parents)
 
 
 class Construction(models.Model):
@@ -109,6 +119,13 @@ class Construction(models.Model):
     def __str__(self):
         return self.name
 
+    def delete(self, using = None, keep_parents = False):
+        # Also delete the searchMain
+        self.search.delete()
+        # And then delete myself
+        return super().delete(using, keep_parents)
+
+
 
 class Variable(models.Model):
     """A variable has a name and a value, possibly combined with a function and a condition"""
@@ -117,28 +134,44 @@ class Variable(models.Model):
     name = models.CharField("Name of this variable", max_length=MAX_NAME_LEN)
     # [0-1] Description/explanation for this variable
     description = models.TextField("Description of this variable")
+    # [1] Link to the Gateway the variable belongs to
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="gatewayvariables")
 
     def __str__(self):
         return self.name
 
 
+class VarDef(Variable):
+    """Each research project may have a number of variables that are construction-specific"""
+    pass
+
+
+class GlobalVariable(Variable):
+    """Each research project may have any number of global (static) variables"""
+
+    # [1] Value of the variable for this combination of Gateway/Construction
+    value = models.TextField("Value")
+
+    def __str__(self):
+        sConstruction = self.construction.name
+        sVariable = self.variable.name
+        return "G:{}-{}=[{}]".format(sGateway, sConstruction, sVariable, self.value)
+
+
 class ConstructionVariable(models.Model):
     """Each construction may provide its own value to the variables belonging to the gateway"""
 
-    # [1] Link to the Gateway the variable belongs to
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="gatewayvariables")
     # [1] Link to the Construction the variable value belongs to
     construction = models.ForeignKey(Construction, blank=False, null=False, related_name="constructionvariables")
     # [1] Link to the name of this variable
-    variable = models.ForeignKey(Variable,  blank=False, null=False, related_name="variablenames")
+    variable = models.ForeignKey(VarDef,  blank=False, null=False, on_delete=models.CASCADE, related_name="variablenames")
     # [1] Value of the variable for this combination of Gateway/Construction
-    value = models.CharField("Value", max_length=MAX_TEXT_LEN)
+    value = models.TextField("Value")
 
     def __str__(self):
-        sGateway = self.gateway.name
         sConstruction = self.construction.name
         sVariable = self.variable.name
-        return "{}-{}-{}-{}".format(sGateway, sConstruction, sVariable, self.value)
+        return "C:{}-{}=[{}]".format(sConstruction, sVariable, self.value)
 
 
 class SearchItem(models.Model):
@@ -173,10 +206,37 @@ class Research(models.Model):
                               max_length=5)
     # [1] Each research project has a 'gateway': a specification for the $search element
     gateway = models.OneToOneField(Gateway, blank=False, null=False, on_delete=models.CASCADE)
-    # [1] Each research project ... (TODO: work out further)
+    # [1] Each research project has its owner: obligatory, but not to be selected by the user himself
+    owner = models.ForeignKey(User, editable=False)
 
     def __str__(self):
         return self.name
 
     def gateway_name(self):
         return self.gateway.name
+
+    def delete(self, using = None, keep_parents = False):
+        # Delete the gateway
+        self.gateway.delete()
+        # Delete any sharegroups
+        for grp in self.sharegroups.all():
+            grp.delete()
+        # Delete myself
+        return super().delete(using, keep_parents)
+
+    def username(self):
+        return self.owner.username
+
+
+class ShareGroup(models.Model):
+    """Group witch which a project is shared"""
+
+    # [1] The group a project is shared with
+    group = models.OneToOneField(Group, blank=False, null=False)
+    # [1] THe permissions granted to this group
+    permission = models.CharField("Permissions", choices=build_choice_list(SEARCH_PERMISSION), 
+                              max_length=5, help_text=get_help(SEARCH_PERMISSION))
+    # [1] Each Research object can be shared with any number of groups
+    research = models.ForeignKey(Research, blank=False, null=False, related_name="sharegroups")
+
+

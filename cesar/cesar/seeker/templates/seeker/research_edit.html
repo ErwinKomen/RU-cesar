@@ -14,13 +14,13 @@
   <!-- Contents -->
   <div class="container body-content">
     <h2>Research project</h2>
-    <div id="research_err"></div>
+    <div id="research_err">{{error_list}}</div>
     <div class="xpanel xpanel-default">
 
       <div class="btn-group" role="group" aria-label="Research specification">
         <button type="button" class="btn btn-secondary" onclick="ru.cesar.seeker.research_wizard(this, '1');">Project type</button>
         <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '2');">Search elements >></button>
-        <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '3');">Variables >></button>
+        <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '3');">Variables >></button>
         <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '4');">Conditions >></button>
         <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '5');">Features</button>
       </div>
@@ -59,6 +59,9 @@
 
             <!-- GATEWAY specification is hidden -->
             <div id="research_gateway" class="hidden">
+              <!-- {{form.gateway}}-->
+              <!-- {{form.gateway_form.management_form}}-->
+              {{form.gateway_form.id}}
               {{form.gateway_form.as_p}}
             </div>
 
@@ -102,6 +105,80 @@
             </div>
           </div>
 
+
+          <!-- Part 3: Variables -->
+          <div id="research_part_3" class="row research-part hidden">
+
+            <!-- Part 3a: GLOBAL variables specification-->
+            <div class="row js-inline-formset inline-group"
+                 data-inline-type="tabular"
+                 data-inline-formset="{{gvar_formset.inline_formset_data}}">
+                <h2>Global variables</h2>
+                <!-- GLOBAL VARIABLE specification -->
+                <div id="research_gvar" class="tabular inline-related">
+                  {{gvar_formset.management_form}}
+                    <fieldset class="module {{gvar_formset.classes}}">
+                      <p>Provide the names and values of static, global variables (if there are any)</p>
+                      <table>
+                        <thead><tr><th>Name</th><th>Description</th><th>Value</th><th>DELETE?</th></tr></thead>
+                        <tbody>
+                          {% for gvar_this in gvar_formset %}
+                          <tr>
+                            <td class="hidden">{{gvar_this.variable_ptr}}</td>
+                            <td valign="top">{{gvar_this.name}}</td>
+                            <td valign="top">{{gvar_this.description}}</td>
+                            <td valign="top">{{gvar_this.value}}</td>
+                            <td valign="top">{{gvar_this.DELETE}}</td>
+                          </tr>
+                          {% endfor %}
+                          <tr class="add-row">
+                            <td colspan="4">
+                              <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another global variable</a>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </fieldset>
+                </div>
+
+            </div>
+
+            <!-- Part 3b: Construction variable definitions -->
+            <div class="row js-inline-formset inline-group"
+                 data-inline-type="tabular"
+                 data-inline-formset="{{vardef_formset.inline_formset_data}}">
+                <h2>Construction variable definitions</h2>
+                <!-- VARIABLE definition specification -->
+                <div id="research_vardef" class="tabular inline-related">
+                  {{vardef_formset.management_form}}
+                    <fieldset class="module {{vardef_formset.classes}}">
+                      <p>Provide the names and descriptions of the construction-specific variables</p>
+                      <table>
+                        <thead><tr><th>Name</th><th>Description</th><th>DELETE?</th></tr></thead>
+                        <tbody>
+                          {% for vardef_this in vardef_formset %}
+                          <tr>
+                            <td class="hidden">{{vardef_this.variable_ptr}}</td>
+                            <td valign="top">{{vardef_this.name}}</td>
+                            <td valign="top">{{vardef_this.description}}</td>
+                            <td valign="top">{{vardef_this.DELETE}}</td>
+                          </tr>
+                          {% endfor %}
+                          <tr class="add-row">
+                            <td colspan="4">
+                              <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another construction variable definition</a>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </fieldset>
+                </div>
+
+            </div>
+
+          </div>
+
+
           <!-- Show the buttons to save, cancel, delete and so forth -->
           {% include 'submit_row.html' %}
         </form>      
@@ -113,8 +190,33 @@
 
 <script>
   $('tr.add-row a').click(function () {
-    var elTable = $("#research_intro-wrd tr").not(".add-row").last();
-    ru.cesar.seeker.cloneMore(elTable, "construction", true);
+    var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef'],
+        arPrefix = ['construction', 'construction', 'gvar', 'vardef'],
+        arNumber = [true, true, false, false],
+        elTable = null,
+        sId = "",
+        i;
+
+    // Find out just where we are
+    sId = $(this).closest("div").attr("id");
+    // Walk all tables
+    for (i = 0; i < arTable.length; i++) {
+      if (sId === arTable[i]) {
+        // Get a list of all the <tr> elements under the table, except for the .add-row element
+        elTable = $("#" + arTable[i] + " tr").not(".add-row").last();
+        // Perform the cloneMore function to this <tr>
+        ru.cesar.seeker.cloneMore(elTable, arPrefix[i], arNumber[i]);
+        // We are done...
+        break;
+      }
+    }
+
+    //// Bind function [cloneMore] to the research_intro-wrd table
+    //elTable = $("#research_intro-wrd tr").not(".add-row").last();
+    //ru.cesar.seeker.cloneMore(elTable, "construction", true);
+
+    //// Bind function [cloneMore] to the [research_gvar] table
+
   });
 </script>
 

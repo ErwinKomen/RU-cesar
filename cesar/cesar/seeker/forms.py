@@ -65,9 +65,14 @@ class ConstructionWrdForm(ModelForm):
             # Set the number of lines
             self.fields['value'].widget.attrs['rows'] = iLines
             # Set the initial value
+
             self.fields['value'].initial = sValue
 
-
+    def is_valid(self):
+        # Do default is valid
+        valid = super(ConstructionWrdForm, self).is_valid()
+        return valid
+            
     #def save(self, *args, **kwargs):
     #    # Create a search for this one
     #    value=self.value
@@ -89,13 +94,43 @@ class ConstructionWrdForm(ModelForm):
 
 class ConstructionCnsForm(ModelForm):
     function_sc = forms.ChoiceField(choices=SEARCHMAIN_CNS_FUNCTIONS, required = True)
-    value = forms.CharField(required=True)
+    value = forms.CharField(required=True, widget=forms.Textarea(attrs={'rows': 1, 'cols': 40}))
     class Meta:
         model = Construction
-        fields = ['name', 'search']
+        fields = ['name']
+
+
+class GvarForm(ModelForm):
+    """The definition and value of global variables"""
+
+    class Meta:
+        model = GlobalVariable
+        fields = ['name', 'description', 'value']
         widgets={
+          'description': forms.Textarea(attrs={'rows': 1, 'cols': 40}),
           'value': forms.Textarea(attrs={'rows': 2, 'cols': 40})
           }
+
+    def is_valid(self):
+        """Return true if this form is valid"""
+        valid = super(GvarForm, self).is_valid()
+        return valid
+
+
+class VarDefForm(ModelForm):
+    """The DEFINITION of construction variables"""
+
+    class Meta:
+        model = VarDef
+        fields = ['name', 'description']
+        widgets={
+          'description': forms.Textarea(attrs={'rows': 1, 'cols': 70})
+          }
+
+    def is_valid(self):
+        """Return true if this form is valid"""
+        valid = super(VarDefForm, self).is_valid()
+        return valid
 
 
 class SeekerResearchForm(ModelForm):

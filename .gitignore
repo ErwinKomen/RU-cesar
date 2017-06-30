@@ -274,3 +274,7 @@ ModelManifest.xml
 /cesar/cesar/seeker/migrations/0004_auto_20170629_1031.py
 /cesar/cesar/seeker/migrations/__pycache__/0005_research_targettype.cpython-35.pyc
 /cesar/cesar/seeker/migrations/0005_research_targettype.py
+/cesar/cesar/seeker/migrations/__pycache__/0003_auto_20170630_1533.cpython-35.pyc
+/cesar/cesar/seeker/migrations/__pycache__/0002_auto_20170630_1203.cpython-35.pyc
+/cesar/cesar/seeker/migrations/0003_auto_20170630_1533.py
+/cesar/cesar/seeker/migrations/0002_auto_20170630_1203.py
