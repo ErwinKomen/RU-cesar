@@ -118,7 +118,7 @@ class GvarForm(ModelForm):
 
 
 class VarDefForm(ModelForm):
-    """The DEFINITION of construction variables"""
+    """The DEFINITION of construction variables (not their values)"""
 
     class Meta:
         model = VarDef
@@ -131,6 +131,18 @@ class VarDefForm(ModelForm):
         """Return true if this form is valid"""
         valid = super(VarDefForm, self).is_valid()
         return valid
+
+
+class CvarForm(ModelForm):
+    """The VALUES of construction variables"""
+
+    class Meta:
+        model = ConstructionVariable
+        fields = ['type', 'svalue']
+        widgets={
+          'svalue': forms.Textarea(attrs={'rows': 1, 'cols': 70})
+          }
+
 
 
 class SeekerResearchForm(ModelForm):

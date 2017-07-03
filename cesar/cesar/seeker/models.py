@@ -19,6 +19,7 @@ MAX_TEXT_LEN = 200
 SEARCH_FUNCTION = "search.function"
 SEARCH_OPERATOR = "search.operator"
 SEARCH_PERMISSION = "search.permission"
+SEARCH_VARIABLE_TYPE = "search.variabletype"
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -105,6 +106,15 @@ class Gateway(models.Model):
         # Now perform the normal deletion
         return super().delete(using, keep_parents)
 
+    def get_vardef_list(self):
+          vardef_pk_list = [p.id for p in VarDef.objects.all()]
+          vardef_list = [var for var in self.gatewayvariables.filter(pk__in=vardef_pk_list)]
+          return vardef_list
+
+    def get_construction_list(self):
+        return [cns for cns in self.constructions.all()]
+
+
 
 class Construction(models.Model):
     """A search construction consists of a [search] element and one or more search items"""
@@ -165,13 +175,16 @@ class ConstructionVariable(models.Model):
     construction = models.ForeignKey(Construction, blank=False, null=False, related_name="constructionvariables")
     # [1] Link to the name of this variable
     variable = models.ForeignKey(VarDef,  blank=False, null=False, on_delete=models.CASCADE, related_name="variablenames")
-    # [1] Value of the variable for this combination of Gateway/Construction
-    value = models.TextField("Value")
+    # [1] Type of value: string or expression
+    type = models.CharField("Variable type", choices=build_choice_list(SEARCH_VARIABLE_TYPE), 
+                              max_length=5, help_text=get_help(SEARCH_VARIABLE_TYPE))
+    # [1] String value of the variable for this combination of Gateway/Construction
+    svalue = models.TextField("Value")
 
     def __str__(self):
         sConstruction = self.construction.name
         sVariable = self.variable.name
-        return "C:{}-{}=[{}]".format(sConstruction, sVariable, self.value)
+        return "C:{}-{}=[{}]".format(sConstruction, sVariable, self.svalue)
 
 
 class SearchItem(models.Model):

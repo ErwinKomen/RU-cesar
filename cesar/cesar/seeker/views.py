@@ -3,7 +3,7 @@ Definition of views for the SEEKER app.
 """
 
 from django.forms import formset_factory
-from django.forms import inlineformset_factory, BaseInlineFormSet
+from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.views.generic.detail import DetailView
@@ -13,7 +13,7 @@ from django.views.generic import ListView
 
 # from formtools.wizard.views import SessionWizardView
 
-from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm, GvarForm, VarDefForm
+from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm, GvarForm, VarDefForm, CvarForm
 from cesar.seeker.models import *
 from cesar.settings import APP_PREFIX
 
@@ -90,10 +90,13 @@ def research_main(request, object_id=None):
     ConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
     GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, form=GvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
     VardefFormSet = inlineformset_factory(Gateway, VarDef, form=VarDefForm, min_num=1, extra=0, can_delete=True, can_order=True)
+    CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
+    # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
     # Initialisation
     construction_formset = None
     gvar_formset = None
     vardef_formset = None
+    cvar_form_list = []
     template = 'seeker/research_edit.html'
     delete_url = ''
     arErr = []         # Start out with no errors
@@ -174,6 +177,18 @@ def research_main(request, object_id=None):
                 else:
                     arErr.append(vardef_formset.errors)
 
+                # Process the [ConstructionVariable] instances for
+                #    each [Contruction] in the current Gateway that is connected with
+                #    each [VarDef]      in the current Gateway
+                for cvar_form_row in cvar_form_list:
+                    for cvar_form_obj in cvar_form_row:
+                        cvar_formset = cvar_form_obj['fs']
+                        if cvar_formset.is_valid():
+                            cvar = cvar_formset.save()
+                        else:
+                            arErr.append(cvar_formset.errors)
+                            break
+
                 # Prepare and save the RESEARCH
                 research = form.save(commit=False)
                 # Add the correct gateway
@@ -202,8 +217,9 @@ def research_main(request, object_id=None):
             arErr.append(form.errors)
 
     else:
-        # This is a GET request, so get an empty form
+        # This is a GET request
         if add:
+            # We should CREATE a NEW form
             initial = get_changeform_initial_data(ModelForm, request)
             # form = SeekerResearchForm()
             form = ModelForm(initial=initial)
@@ -211,6 +227,17 @@ def research_main(request, object_id=None):
             construction_formset = ConstructionFormSet(prefix='construction')
             gvar_formset = GvarFormSet(prefix='gvar')
             vardef_formset = VardefFormSet(prefix='vardef')
+            # Create a table of forms for each ConstructionVariable
+            vardef_list = gateway.get_vardef_list()
+            cns_list = gateway.get_construction_list()
+            for var in vardef_list:
+                cvar_form_row = []
+                for cns in cns_list:
+                    cvar_initial = [{'construction': cns, 'variable': var, 'value': ''}]
+                    fs = CvarFormSet(prefix='cvar', initial=cvar_initial)
+                    cvar_form_obj = {'fs': fs, 'variable': var, 'construction': cns}
+                    cvar_form_row.append(cvar_form_obj)
+                cvar_form_list.append(cvar_form_row)
         elif '/delete/' in request.path:
             # We need to delete
             # TODO: ask for confirmation
@@ -220,11 +247,29 @@ def research_main(request, object_id=None):
             # Redirect to the list of projects
             return redirect('seeker_list')
         else:
+            # We should show the data belonging to the current Research [obj]
             form = ModelForm(instance=obj)
             # create a formset for this particular instance
             construction_formset = ConstructionFormSet(prefix='construction', instance=obj.gateway)
             gvar_formset = GvarFormSet(prefix='gvar', instance=obj.gateway)
             vardef_formset = VardefFormSet(prefix='vardef', instance=obj.gateway)
+            # Create a table of forms for each ConstructionVariable
+            vardef_list = obj.gateway.get_vardef_list()
+            cns_list = obj.gateway.get_construction_list()
+            for var in vardef_list:
+                cvar_form_row = []
+                for cns in cns_list:
+                    cvar_qs = ConstructionVariable.objects.filter(construction=cns).filter(variable=var)
+                    if cvar_qs.count() == 0:
+                        cvar = ''
+                        cvar_initial = [{'construction': cns, 'variable': var}]
+                    else:
+                        cvar = cvar_qs[0]
+                        cvar_initial = [{'construction': cns, 'variable': var, 'svalue': cvar}]
+                    fs = CvarFormSet(prefix='cvar', initial=cvar_initial)
+                    cvar_form_obj = {'fs': fs, 'variable': var, 'construction': cns}
+                    cvar_form_row.append(cvar_form_obj)
+                cvar_form_list.append(cvar_form_row)
 
     # COnvert all lists of errors to a string
     sErr = '\n'.join(arErr).strip()
@@ -238,6 +283,7 @@ def research_main(request, object_id=None):
         construction_formset = construction_formset,
         gvar_formset = gvar_formset,
         vardef_formset = vardef_formset,
+        cvar_form_list = cvar_form_list,
         show_save = True,
         show_save_and_continue = True,
         show_save_and_add_another = True,
