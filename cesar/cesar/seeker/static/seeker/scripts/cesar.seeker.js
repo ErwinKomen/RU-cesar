@@ -63,6 +63,24 @@ var ru = (function ($, ru) {
               private_methods.errMsg("Choose the main element type");
               return;
           }
+          // Some actions depend on the particular page we are going to visit
+          switch (sPart) {
+            case "4": // Page 4=Calculation
+              // Specify the function to be called when the user presses [Calculation...]
+              $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
+              break;
+            case "5": // Page 4=Calculation
+              // Make sure the 'Type' field values are processed everywhere
+              $(".cvar-item").each(function () {
+                // Perform the same function as if we were clicking it
+                ru.cesar.seeker.cvartype_click(this);
+              });
+              // Specify the change reaction function
+              $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
+              // Specify the function to be called when the user presses "summary"
+              $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
+              break;
+          }
           // Hide all research parts
           $(".research-part").addClass("hidden");
           $(".research-part").removeClass("active");
@@ -83,6 +101,7 @@ var ru = (function ($, ru) {
             }
           }
           // Determine what type we are
+          // And then switch to the correct page
           switch ($(el).prop("tagName").toLowerCase()) {
             case "a":
               // Get the <li> element
@@ -110,6 +129,74 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("research_wizard", ex);
+        }
+      },
+
+      /**
+       * cvartype_click
+       *   Set the type of construction variable: fixed value or calculate
+       *
+       */
+      cvartype_click: function (el) {
+        var elRow = (el.target === undefined) ? el : $(this).closest("tr") ;
+        var elType = $(elRow).find(".cvar-type").first();
+        var elVal = $(elRow).find(".cvar-val-exp").first();
+        // Find the type element
+        var elCvarType = $(elType).find("select").first();
+        // Get its value
+        var elCvarTypeVal = $(elCvarType).val();
+        // Hide/show, depending on the value
+        switch (elCvarTypeVal) {
+          case "0": // Fixed value
+            $(elVal).find(".cvar-value").removeClass("hidden");
+            $(elVal).find(".cvar-expression").addClass("hidden");
+            break;
+          case "1": // Expression
+            $(elVal).find(".cvar-value").addClass("hidden");
+            $(elVal).find(".cvar-expression").removeClass("hidden");
+            break;
+        }
+      },
+
+      /**
+       * cvarsummary_click
+       *   Show or hide the summary of the expression here
+       *
+       */
+      cvarsummary_click: function () {
+        // Get to the row from here
+        var elRow = $(this).closest("tr");
+        // Find the expression summary
+        var elSum = $(elRow).find(".cvar-expression-summary");
+        // Is it closed or opened?
+        if ($(elSum).hasClass("hidden")) {
+          // Calculate and show the value
+          $(elSum).html("hier komt de waarde");
+          // Unhide it
+          $(elSum).removeClass("hidden");
+        } else {
+          // Hide it
+          $(elSum).addClass("hidden");
+        }
+      },
+
+      /**
+       * cvarsummary_click
+       *   Show or hide the summary of the expression here
+       *
+       */
+      cvarcalculate_click: function () {
+        // Get the loopid 
+        var loopid = $(this).attr("loopid");
+        // Find the correct row
+        var elCalcRow = $(this).closest("tbody").find("#research_calc_" + loopid);
+        // Is it closed or opened?
+        if ($(elCalcRow).hasClass("hidden")) {
+          // Unhide it
+          $(elCalcRow).removeClass("hidden");
+        } else {
+          // Hide it
+          $(elCalcRow).addClass("hidden");
         }
       },
 

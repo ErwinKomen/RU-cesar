@@ -107,9 +107,11 @@ class Gateway(models.Model):
         return super().delete(using, keep_parents)
 
     def get_vardef_list(self):
-          vardef_pk_list = [p.id for p in VarDef.objects.all()]
-          vardef_list = [var for var in self.gatewayvariables.filter(pk__in=vardef_pk_list)]
-          return vardef_list
+        # Get a list of all variables for this gateway
+        var_pk_list = [var.pk for var in self.gatewayvariables.all()]
+        # Now get the list of vardef variables coinciding with this
+        vardef_list = [var for var in VarDef.objects.filter(pk__in=var_pk_list)]
+        return vardef_list
 
     def get_construction_list(self):
         return [cns for cns in self.constructions.all()]
@@ -179,7 +181,7 @@ class ConstructionVariable(models.Model):
     type = models.CharField("Variable type", choices=build_choice_list(SEARCH_VARIABLE_TYPE), 
                               max_length=5, help_text=get_help(SEARCH_VARIABLE_TYPE))
     # [1] String value of the variable for this combination of Gateway/Construction
-    svalue = models.TextField("Value")
+    svalue = models.TextField("Value", blank=True)
 
     def __str__(self):
         sConstruction = self.construction.name

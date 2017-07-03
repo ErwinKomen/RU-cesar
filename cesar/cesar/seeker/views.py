@@ -90,7 +90,7 @@ def research_main(request, object_id=None):
     ConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
     GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, form=GvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
     VardefFormSet = inlineformset_factory(Gateway, VarDef, form=VarDefForm, min_num=1, extra=0, can_delete=True, can_order=True)
-    CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
+    # CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
     # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
     # Initialisation
     construction_formset = None
@@ -182,11 +182,11 @@ def research_main(request, object_id=None):
                 #    each [VarDef]      in the current Gateway
                 for cvar_form_row in cvar_form_list:
                     for cvar_form_obj in cvar_form_row:
-                        cvar_formset = cvar_form_obj['fs']
-                        if cvar_formset.is_valid():
-                            cvar = cvar_formset.save()
+                        cvar_form = cvar_form_obj['fm']
+                        if cvar_form.is_valid():
+                            cvar = cvar_form.save()
                         else:
-                            arErr.append(cvar_formset.errors)
+                            arErr.append(cvar_form.errors)
                             break
 
                 # Prepare and save the RESEARCH
@@ -230,12 +230,14 @@ def research_main(request, object_id=None):
             # Create a table of forms for each ConstructionVariable
             vardef_list = gateway.get_vardef_list()
             cns_list = gateway.get_construction_list()
-            for var in vardef_list:
+            for cns in cns_list:
                 cvar_form_row = []
-                for cns in cns_list:
-                    cvar_initial = [{'construction': cns, 'variable': var, 'value': ''}]
-                    fs = CvarFormSet(prefix='cvar', initial=cvar_initial)
-                    cvar_form_obj = {'fs': fs, 'variable': var, 'construction': cns}
+                for var in vardef_list:
+                    # Create a variable
+                    cvar = ConstructionVariable(construction=cns, variable=var)
+                    # make a form for this variable
+                    fm = CvarForm(instance=cvar)
+                    cvar_form_obj = {'form': fm, 'variable': var, 'construction': cns}
                     cvar_form_row.append(cvar_form_obj)
                 cvar_form_list.append(cvar_form_row)
         elif '/delete/' in request.path:
@@ -256,18 +258,17 @@ def research_main(request, object_id=None):
             # Create a table of forms for each ConstructionVariable
             vardef_list = obj.gateway.get_vardef_list()
             cns_list = obj.gateway.get_construction_list()
-            for var in vardef_list:
+            for cns in cns_list:
                 cvar_form_row = []
-                for cns in cns_list:
+                for var in vardef_list:
                     cvar_qs = ConstructionVariable.objects.filter(construction=cns).filter(variable=var)
                     if cvar_qs.count() == 0:
-                        cvar = ''
-                        cvar_initial = [{'construction': cns, 'variable': var}]
+                        # Doesn't exist: create a variable
+                        cvar = ConstructionVariable(construction=cns, variable=var)
                     else:
                         cvar = cvar_qs[0]
-                        cvar_initial = [{'construction': cns, 'variable': var, 'svalue': cvar}]
-                    fs = CvarFormSet(prefix='cvar', initial=cvar_initial)
-                    cvar_form_obj = {'fs': fs, 'variable': var, 'construction': cns}
+                    fm = CvarForm(instance=cvar, auto_id="cvar-cns-{}-var{}-%s".format(cns.id, var.id))
+                    cvar_form_obj = {'form': fm, 'variable': var, 'construction': cns}
                     cvar_form_row.append(cvar_form_obj)
                 cvar_form_list.append(cvar_form_row)
 

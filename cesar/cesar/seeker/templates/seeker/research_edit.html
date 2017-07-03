@@ -20,10 +20,11 @@
       <div class="btn-group" role="group" aria-label="Research specification">
         <button type="button" class="btn btn-secondary" onclick="ru.cesar.seeker.research_wizard(this, '1');">Project type</button>
         <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '2');">Search elements >></button>
-        <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '3');">Variables >></button>
-        <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '4');">Calculation >></button>
-        <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '5');">Conditions >></button>
-        <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '6');">Features</button>
+        <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '3');">Global >></button>
+        <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '4');">Constructions >></button>
+        <button type="button" class="btn btn-primary" onclick="ru.cesar.seeker.research_wizard(this, '5');">Calculation >></button>
+        <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '6');">Conditions >></button>
+        <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '7');">Features</button>
       </div>
 
       <!--
@@ -107,14 +108,13 @@
           </div>
 
 
-          <!-- Part 3: Variables -->
+          <!-- Part 3: Global variables -->
           <div id="research_part_3" class="row research-part hidden">
 
-            <!-- Part 3a: GLOBAL variables specification-->
+            <!-- Global Variable specification-->
             <div class="row js-inline-formset inline-group"
                  data-inline-type="tabular"
                  data-inline-formset="{{gvar_formset.inline_formset_data}}">
-                <h2>Global variables</h2>
                 <!-- GLOBAL VARIABLE specification -->
                 <div id="research_gvar" class="tabular inline-related">
                   {{gvar_formset.management_form}}
@@ -144,26 +144,41 @@
 
             </div>
 
-            <!-- Part 3b: Construction variable definitions -->
+          </div>
+
+          <!-- Part 4: Construction Variables -->
+          <div id="research_part_4" class="row research-part hidden">
+
+            <!-- Construction variable definitions -->
             <div class="row js-inline-formset inline-group"
                  data-inline-type="tabular"
                  data-inline-formset="{{vardef_formset.inline_formset_data}}">
-                <h2>Construction variable definitions</h2>
                 <!-- VARIABLE definition specification -->
                 <div id="research_vardef" class="tabular inline-related">
                   {{vardef_formset.management_form}}
                     <fieldset class="module {{vardef_formset.classes}}">
                       <p>Provide the names and descriptions of the construction-specific variables</p>
                       <table>
-                        <thead><tr><th>Name</th><th>Description</th><th>DELETE?</th></tr></thead>
+                        <thead><tr><th>Name</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
                         <tbody>
                           {% for vardef_this in vardef_formset %}
-                          <tr>
-                            <td class="hidden">{{vardef_this.variable_ptr}}</td>
-                            <td valign="top">{{vardef_this.name}}</td>
-                            <td valign="top">{{vardef_this.description}}</td>
-                            <td valign="top">{{vardef_this.DELETE}}</td>
-                          </tr>
+                            <tr>
+                              <td class="hidden">{{vardef_this.variable_ptr}}</td>
+                              <td valign="top">{{vardef_this.name}}</td>
+                              <td valign="top">{{vardef_this.description}}</td>
+                              <td valign="top" align="left">
+                                <a class="btn btn-xs btn-default cvar-calculate" role="button" loopid="{{forloop.counter}}" >Calculation...</a>
+                              </td>
+                              <td valign="top" align="center">{{vardef_this.DELETE}}</td>
+                            </tr>
+                            <!-- Sub-form to specify calculation of this construction variable for all search elements -->
+                            <tr id="research_calc_{{forloop.counter}}" class="hidden">
+                              <td colspan="4">
+                                <div class="panel panel-default">
+                                  Hier komt het panel
+                                </div>
+                              </td>
+                            </tr>
                           {% endfor %}
                           <tr class="add-row">
                             <td colspan="4">
@@ -179,10 +194,10 @@
 
           </div>
 
-          <!-- Part 4: Calculation -->
-          <div id="research_part_4" class="row research-part hidden">
+          <!-- Part 5: Calculation -->
+          <div id="research_part_5" class="row research-part hidden">
 
-            <!-- Part 4: Construction variable calculation -->
+            <!-- Part 5: Construction variable calculation -->
             <div class="row js-inline-formset inline-group"
                  data-inline-type="tabular"
                  data-inline-formset="{{vardef_formset.inline_formset_data}}">
@@ -191,48 +206,32 @@
                 {% for cvar_form_row in cvar_form_list %}
                   <div>Specify: 
                     <a class="btn btn-xs btn-primary">
-                      {{cvar_form_row.first.construction}}
-                        {% for cvar_form_obj in cvar_form_row %}
+                      {% for cvar_form_obj in cvar_form_row %}
                         {% if forloop.first %}
                         {{cvar_form_obj.construction.name}}
                         {% endif %}
-                        {% endfor %}
+                      {% endfor %}
                     </a>
                   </div>
                   <div id="research_cvar" class="tabular inline-related {% if not forloop.first %}hidden{% endif %}">
                     <div class="panel panel-default">
                       <table>
-                        <thead><tr><th>#</th><th>Name</th><th>Value</th></tr></thead>
+                        <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Value</th></tr></thead>
                         <tbody>
                         {% for cvar_form_obj in cvar_form_row %}
-                        <tr>
-                          <td>{{forloop.counter}}</td>
-                          <td>{{cvar_form_obj.variable.name}}</td>
-                          <td>
-                              {% for cvar_form in cvar_form_obj.fs %}
-                              {{cvar_form.svalue}}
-                              {% endfor %}
+                        <tr class="cvar-item">
+                          <td class="hidden">{{cvar_form_obj.form.id}}</td>
+                          <td valign="top">{{forloop.counter}}</td>
+                          <td valign="top">{{cvar_form_obj.variable.name}}</td>
+                          <td valign="top" class="cvar-type">{{cvar_form_obj.form.type}}</td>
+                          <td valign="top" class="cvar-val-exp">
+                            <span class="cvar-value">{{cvar_form_obj.form.svalue}}</span>
+                            <span class="cvar-expression">
+                              <a href="" target="_blank">{% trans 'specification' %}...</a>
+                              <a class="cvar-summary">{% trans 'summary' %}...</a>
+                            </span>
+                            <div class="cvar-expression-summary hidden"></div>
                           </td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                {% endfor %}
-                <div>------------------------------</div>
-                {% for wrd_form in construction_formset %}
-                  <div>Specify: <a class="btn btn-xs btn-primary">{{wrd_form.name.value}}</a></div>
-                  <div id="research_vardef" class="tabular inline-related {% if not forloop.first %}hidden{% endif %}">
-                    <div class="panel panel-default">
-                      <table>
-                        <thead><tr><th>#</th><th>Name</th><th>Value</th></tr></thead>
-                        <tbody>
-                        {% for vardef_this in vardef_formset %}
-                        <tr>
-                          <td>{{forloop.counter}}</td>
-                          <td>{{vardef_this.name.value}}</td>
-                          <td></td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -245,12 +244,12 @@
           </div>
 
           <!-- Part 5: Conditions -->
-          <div id="research_part_5" class="row research-part hidden">
+          <div id="research_part_6" class="row research-part hidden">
               Specifying hit conditions
           </div>
 
           <!-- Part 6: Features -->
-          <div id="research_part_6" class="row research-part hidden">
+          <div id="research_part_7" class="row research-part hidden">
               Feature calculation
           </div>
 
@@ -286,7 +285,7 @@
       }
     }
   });
-  $('.inline-group a.btn').click(function () {
+  $('.inline-group > div > a.btn').click(function () {
     var elGroup = null,
         elTabular = null,
         sStatus = "";
@@ -301,7 +300,6 @@
         $(elTabular).addClass("hidden");
       }
     }
-
   });
 </script>
 

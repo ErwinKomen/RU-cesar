@@ -5,6 +5,7 @@ Definition of forms for the SEEKER app.
 from django import forms
 from django.forms import ModelForm, formset_factory, modelformset_factory
 from cesar.seeker.models import *
+from cesar.browser.models import build_choice_list, get_help
 
 SEARCHMAIN_WRD_FUNCTIONS = (
         ('w-m', 'Word matches'),
@@ -14,6 +15,11 @@ SEARCHMAIN_CNS_FUNCTIONS = (
         ('c-m', 'Category matches'),
         ('c--m', 'Child category matches'),
     )
+
+def init_choices(obj, sFieldName, sSet, maybe_empty=False):
+    if (obj.fields != None and sFieldName in obj.fields):
+        obj.fields[sFieldName].choices = build_choice_list(sSet, maybe_empty=maybe_empty)
+        obj.fields[sFieldName].help_text = get_help(sSet)
 
 
 class VariableForm(ModelForm):
@@ -135,6 +141,7 @@ class VarDefForm(ModelForm):
 
 class CvarForm(ModelForm):
     """The VALUES of construction variables"""
+    type = forms.ChoiceField(choices=build_choice_list(SEARCH_VARIABLE_TYPE), required=True)
 
     class Meta:
         model = ConstructionVariable
@@ -142,6 +149,10 @@ class CvarForm(ModelForm):
         widgets={
           'svalue': forms.Textarea(attrs={'rows': 1, 'cols': 70})
           }
+
+    def __init__(self, *args, **kwargs):
+        super(CvarForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'type', SEARCH_VARIABLE_TYPE)
 
 
 
