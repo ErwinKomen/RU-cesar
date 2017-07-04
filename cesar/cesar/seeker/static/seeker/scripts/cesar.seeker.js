@@ -68,6 +68,15 @@ var ru = (function ($, ru) {
             case "4": // Page 4=Calculation
               // Specify the function to be called when the user presses [Calculation...]
               $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
+              // Make sure the 'Type' field values are processed everywhere
+              $(".cvar-item").each(function () {
+                // Perform the same function as if we were clicking it
+                ru.cesar.seeker.cvartype_click(this);
+              });
+              // Specify the change reaction function
+              $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
+              // Specify the function to be called when the user presses "summary"
+              $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
               break;
             case "5": // Page 4=Calculation
               // Make sure the 'Type' field values are processed everywhere
@@ -181,8 +190,8 @@ var ru = (function ($, ru) {
       },
 
       /**
-       * cvarsummary_click
-       *   Show or hide the summary of the expression here
+       * cvarcalculate_click
+       *   Show or hide the calculation of one data-specific variable for all search-elements
        *
        */
       cvarcalculate_click: function () {

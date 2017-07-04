@@ -79,24 +79,26 @@ def research_main(request, object_id=None):
         # Simply redirect to the home page
         return redirect('home')
 
-    # FOR FUTURE WORK:
+    # FOR FUTURE WORK (using a different method):
     # Required for any view
     sForm = SeekerForm()
     sForm.add_formset(Gateway, Construction, ConstructionWrdForm)
     sForm.add_formset(Gateway, GlobalVariable, GvarForm)
     sForm.add_formset(Gateway, VarDef, VarDefForm)
+    # Note: adding CvarFormset needs a different way...
 
     # This is required for any view
     ConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
     GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, form=GvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
     VardefFormSet = inlineformset_factory(Gateway, VarDef, form=VarDefForm, min_num=1, extra=0, can_delete=True, can_order=True)
-    # CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
-    # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
+    CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0)
+    # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0)
     # Initialisation
     construction_formset = None
     gvar_formset = None
     vardef_formset = None
     cvar_form_list = []
+    cvar_formset_list = []
     template = 'seeker/research_edit.html'
     delete_url = ''
     arErr = []         # Start out with no errors
@@ -189,6 +191,25 @@ def research_main(request, object_id=None):
                             arErr.append(cvar_form.errors)
                             break
 
+                # New method: one formset for each combination of cns/var
+                vardef_list = gateway.get_vardef_list()
+                cns_list = gateway.get_construction_list()
+                for cns in cns_list:
+                    for var in vardef_list:
+                        # Determine the prefix for this cns/var formset
+                        pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+                        # Get the formset for this cns/var formset
+                        fs = CvarFormSet(request.POST, request.FILES, prefix=pfx)
+                        # Walk the forms in this formset
+                        for cvar_form in fs:
+                            # Check if this form is valid
+                            if cvar_form.is_valid():
+                                # Save the model instance by calling the save method of the formset
+                                cvar = cvar_form.save(commit=False)
+                                cvar.construction = cns
+                                cvar.variable = var
+                                cvar.save()
+
                 # Prepare and save the RESEARCH
                 research = form.save(commit=False)
                 # Add the correct gateway
@@ -227,19 +248,30 @@ def research_main(request, object_id=None):
             construction_formset = ConstructionFormSet(prefix='construction')
             gvar_formset = GvarFormSet(prefix='gvar')
             vardef_formset = VardefFormSet(prefix='vardef')
-            # Create a table of forms for each ConstructionVariable
-            vardef_list = gateway.get_vardef_list()
-            cns_list = gateway.get_construction_list()
-            for cns in cns_list:
-                cvar_form_row = []
-                for var in vardef_list:
-                    # Create a variable
-                    cvar = ConstructionVariable(construction=cns, variable=var)
-                    # make a form for this variable
-                    fm = CvarForm(instance=cvar)
-                    cvar_form_obj = {'form': fm, 'variable': var, 'construction': cns}
-                    cvar_form_row.append(cvar_form_obj)
-                cvar_form_list.append(cvar_form_row)
+            # Sorry, for a totally new form, this is just not possible yet
+            # Reason: the gateway is not known
+            # Besides: there are no constructions or variables yet for this project
+            if False:
+                # Create a table of forms for each ConstructionVariable
+                vardef_list = gateway.get_vardef_list()
+                cns_list = gateway.get_construction_list()
+                # Walk the vardef formset
+                for vardef_fs in vardef_formset:
+                    var = vardef_fs.instance
+                    cvar_formset_list = []
+                    for cns in cns_list:
+                        # Create a variable
+                        cvar = ConstructionVariable(construction=cns, variable=var)
+                        # Determine the prefix for this cns/var formset
+                        pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+                        # Create a formset for this cns/var formset
+                        fs = CvarFormSet(prefix=pfx)
+                        fs.construction = cns
+                        # Add the formset to the list of formsets for this vardef
+                        cvar_formset_list.append(fs)
+                    # Add the list of formset to this vardef
+                    vardef_fs.cvar_formset_list = cvar_formset_list
+
         elif '/delete/' in request.path:
             # We need to delete
             # TODO: ask for confirmation
@@ -258,19 +290,28 @@ def research_main(request, object_id=None):
             # Create a table of forms for each ConstructionVariable
             vardef_list = obj.gateway.get_vardef_list()
             cns_list = obj.gateway.get_construction_list()
-            for cns in cns_list:
-                cvar_form_row = []
-                for var in vardef_list:
+            # Walk the vardef formset
+            for vardef_fs in vardef_formset:
+                var = vardef_fs.instance
+                cvar_formset_list = []
+                for cns in cns_list:
+                    # Get or create cvar as instance for cns/var formset
                     cvar_qs = ConstructionVariable.objects.filter(construction=cns).filter(variable=var)
                     if cvar_qs.count() == 0:
                         # Doesn't exist: create a variable
                         cvar = ConstructionVariable(construction=cns, variable=var)
                     else:
                         cvar = cvar_qs[0]
-                    fm = CvarForm(instance=cvar, auto_id="cvar-cns-{}-var{}-%s".format(cns.id, var.id))
-                    cvar_form_obj = {'form': fm, 'variable': var, 'construction': cns}
-                    cvar_form_row.append(cvar_form_obj)
-                cvar_form_list.append(cvar_form_row)
+                    # Determine the prefix for this cns/var formset
+                    pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+                    # Create a formset for this cns/var formset
+                    fs = CvarFormSet(prefix=pfx, queryset=cvar_qs)
+                    fs.construction = cns
+                    # Add the formset to the list of formsets for this vardef
+                    cvar_formset_list.append(fs)
+                # Add the list of formset to this vardef
+                vardef_fs.cvar_formset_list = cvar_formset_list
+
 
     # COnvert all lists of errors to a string
     sErr = '\n'.join(arErr).strip()
@@ -284,7 +325,6 @@ def research_main(request, object_id=None):
         construction_formset = construction_formset,
         gvar_formset = gvar_formset,
         vardef_formset = vardef_formset,
-        cvar_form_list = cvar_form_list,
         show_save = True,
         show_save_and_continue = True,
         show_save_and_add_another = True,
