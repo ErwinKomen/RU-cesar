@@ -20,6 +20,7 @@ SEARCH_FUNCTION = "search.function"
 SEARCH_OPERATOR = "search.operator"
 SEARCH_PERMISSION = "search.permission"
 SEARCH_VARIABLE_TYPE = "search.variabletype"
+SEARCH_ARGTYPE = "search.argtype"
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -116,8 +117,7 @@ class Gateway(models.Model):
     def get_construction_list(self):
         return [cns for cns in self.constructions.all()]
 
-
-
+      
 class Construction(models.Model):
     """A search construction consists of a [search] element and one or more search items"""
 
@@ -137,8 +137,7 @@ class Construction(models.Model):
         # And then delete myself
         return super().delete(using, keep_parents)
 
-
-
+      
 class Variable(models.Model):
     """A variable has a name and a value, possibly combined with a function and a condition"""
 
@@ -170,6 +169,37 @@ class GlobalVariable(Variable):
         return "G:{}-{}=[{}]".format(sGateway, sConstruction, sVariable, self.value)
 
 
+class Function(models.Model):
+    """Specification of one function"""
+
+    # [1] The short (internal) name of this function
+    name = models.CharField("Short function name", max_length=MAX_NAME_LEN)
+    # [1] The title of this function to be shown
+    title = models.CharField("Function title", max_length=MAX_TEXT_LEN)
+    # [1] Each function must have one or more arguments
+    argnum = models.IntegerField("Number of arguments", default=1)
+    # [1] The value that is the outcome of this function
+    #     This is a JSON list, so can be bool, int, string of any number
+    output = models.TextField("JSON value", null=False, blank=True, default="[]")
+
+    def __str__(self):
+        return self.name
+
+
+class Argument(models.Model):
+    """The kinds of arguments that can be taken"""
+
+    # [1] The descriptive name of this argument
+    name = models.CharField("Descriptive name", max_length=MAX_TEXT_LEN)
+    # [1] The text to preced this argument within the specification element
+    text = models.CharField("Preceding text", blank=True, max_length=MAX_TEXT_LEN)
+    # [1] The value that is the outcome of this function: 
+    #     This is a JSON list, it can contain any number of bool, int, string
+    argval = models.TextField("JSON value", blank=True, default="[]")
+    # Each function may take a number of input arguments
+    function = models.ForeignKey(Function, null=False, related_name = "arguments")
+
+
 class ConstructionVariable(models.Model):
     """Each construction may provide its own value to the variables belonging to the gateway"""
 
@@ -182,6 +212,8 @@ class ConstructionVariable(models.Model):
                               max_length=5, help_text=get_help(SEARCH_VARIABLE_TYPE))
     # [1] String value of the variable for this combination of Gateway/Construction
     svalue = models.TextField("Value", blank=True)
+    # [0-1] Possible link to function that calculates the value
+    calculate = models.ForeignKey(Function, blank=True, null=True)
 
     def __str__(self):
         sConstruction = self.construction.name
@@ -202,7 +234,7 @@ class SearchItem(models.Model):
     # [1] Comparison operator: equals, matches, contains etc
     operator = models.CharField("Operator", choices=build_choice_list(SEARCH_OPERATOR), 
                               max_length=5, help_text=get_help(SEARCH_OPERATOR))
-    # [1] Every construction has one or more search items
+    # [1] Every ConstructionVariable instance can have one or more search items
     construction = models.ForeignKey(Construction, blank=False, null=False, related_name="searchitems")
 
     def __str__(self):

@@ -81,7 +81,7 @@
                   <thead><tr><th>#</th><th>Name</th><th>Word(s)</th><th>DELETE?</th></tr></thead>
                   <tbody>
                     {% for wrd_form in construction_formset %}
-                    <tr>
+                    <tr class="form-row">
                       <td class="hidden">{{wrd_form.id}}</td>
                       <td valign="top">{{forloop.counter}}</td>
                       <td valign="top">{{wrd_form.name}}</td>
@@ -89,6 +89,13 @@
                       <td valign="top">{{wrd_form.DELETE}}</td>
                     </tr>
                     {% endfor %}
+                    <tr id="arguments-empty" class="form-row empty-form row1">
+                        <td class="hidden">{{construction_formset.empty_form.id}}</td>
+                        <td valign="top">__counter__</td>
+                        <td valign="top">{{construction_formset.empty_form.name}}</td>
+                        <td valign="top">{{construction_formset.empty_form.value}}</td>
+                        <td valign="top" align="center">{{construction_formset.empty_form.DELETE}}</td>
+                    </tr>
                     <tr class="add-row">
                       <td colspan="4">
                         <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another search element option</a>
@@ -123,7 +130,7 @@
                         <thead><tr><th>Name</th><th>Description</th><th>Value</th><th>DELETE?</th></tr></thead>
                         <tbody>
                           {% for gvar_this in gvar_formset %}
-                          <tr>
+                          <tr class="form-row">
                             <td class="hidden">{{gvar_this.variable_ptr}}</td>
                             <td valign="top">{{gvar_this.name}}</td>
                             <td valign="top">{{gvar_this.description}}</td>
@@ -131,6 +138,13 @@
                             <td valign="top">{{gvar_this.DELETE}}</td>
                           </tr>
                           {% endfor %}
+                          <tr id="arguments-empty" class="form-row empty-form row1">
+                            <td class="hidden">{{gvar_formset.empty_form.variable_ptr}}</td>
+                            <td valign="top">{{gvar_formset.empty_form.name}}</td>
+                            <td valign="top">{{gvar_formset.empty_form.description}}</td>
+                            <td valign="top">{{gvar_formset.empty_form.value}}</td>
+                            <td valign="top" align="center">{{gvar_formset.empty_form.DELETE}}</td>
+                          </tr>
                           <tr class="add-row">
                             <td colspan="4">
                               <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another global variable</a>
@@ -161,58 +175,26 @@
                         <thead><tr><th>Name</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
                         <tbody>
                           {% for vardef_this in vardef_formset %}
-                            <tr class="form-row">
+                            <tr id="arguments-{{forloop.counter0}}" class="form-row row{{forloop.counter}}">
                               <td class="hidden">{{vardef_this.variable_ptr}}</td>
                               <td valign="top">{{vardef_this.name}}</td>
                               <td valign="top">{{vardef_this.description}}</td>
                               <td valign="top" align="left">
-                                <a class="btn btn-xs btn-default cvar-calculate" role="button" loopid="{{forloop.counter}}" >Calculation...</a>
+                                <a class="btn btn-xs btn-default cvar-calculate" role="button" loopid="research_calc_{{forloop.counter}}" >Calculation...</a>
                               </td>
                               <td valign="top" align="center">{{vardef_this.DELETE}}</td>
                             </tr>
-                            <!-- Sub-form to specify calculation of this construction variable for all search elements -->
-                            <tr id="research_calc_{{forloop.counter}}" class="hidden form-row inline">
-                              <td colspan="4">
-                                <div class="panel panel-default">
-                                  <p>Specify how variable <code>{{vardef_this.name.value}}</code> should be calculated for each search element</p>
-                                  <table>
-                                    <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Value</th></tr></thead>
-                                    <tbody>
-                                    {% for cvar_formset in vardef_this.cvar_formset_list %}
-                                      {{cvar_formset.management_form}}
-                                        <tr class="form-row cvar-item">
-                                          <td class="hidden">
-                                            {% for cvar_form in cvar_formset %}
-                                              <div>{{cvar_form.id}}</div>
-                                            {% endfor %}
-                                          </td>
-                                          <td valign="top">{{forloop.counter}}</td>
-                                          <td valign="top">{{cvar_formset.construction.name}}</td>
-                                          <td valign="top" class="cvar-type">
-                                            {% for cvar_form in cvar_formset %}
-                                              <div>{{cvar_form.type}}</div>
-                                            {% endfor %}
-                                          </td>
-                                          <td valign="top" class="cvar-val-exp">
-                                            {% for cvar_form in cvar_formset %}
-                                              <div>
-                                              <span class="cvar-value">{{cvar_form.svalue}}</span>
-                                              <span class="cvar-expression">
-                                                <a href="" target="_blank">{% trans 'specification' %}...</a>
-                                                <a class="cvar-summary">{% trans 'summary' %}...</a>
-                                              </span>
-                                              <div class="cvar-expression-summary hidden"></div>
-                                              </div>
-                                            {% endfor %}
-                                          </td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </td>
-                            </tr>
+                            {% include "seeker/part4sub.html" with vardef_number=forloop.counter %}
                           {% endfor %}
+                          <tr id="arguments-empty" class="form-row empty-form row1">
+                            <td class="hidden">{{vardef_formset.empty_form.variable_ptr}}</td>
+                            <td valign="top">{{vardef_formset.empty_form.name}}</td>
+                            <td valign="top">{{vardef_formset.empty_form.description}}</td>
+                            <td valign="top" align="left">
+                              <a class="btn btn-xs btn-default cvar-calculate" role="button" loopid="research_calc___counter__" >Calculation...</a>
+                            </td>
+                            <td valign="top" align="center">{{vardef_formset.empty_form.DELETE}}</td>
+                          </tr>
                           <tr class="add-row">
                             <td colspan="4">
                               <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another construction variable definition</a>
@@ -247,28 +229,7 @@
   </div>
 
 <script>
-  $('tr.add-row a').click(function () {
-    var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef'],
-        arPrefix = ['construction', 'construction', 'gvar', 'vardef'],
-        arNumber = [true, true, false, false],
-        elTable = null,
-        sId = "",
-        i;
-
-    // Find out just where we are
-    sId = $(this).closest("div").attr("id");
-    // Walk all tables
-    for (i = 0; i < arTable.length; i++) {
-      if (sId === arTable[i]) {
-        // Get a list of all the <tr> elements under the table, except for the .add-row element
-        elTable = $("#" + arTable[i] + " tr").not(".add-row").last();
-        // Perform the cloneMore function to this <tr>
-        ru.cesar.seeker.cloneMore(elTable, arPrefix[i], arNumber[i]);
-        // We are done...
-        break;
-      }
-    }
-  });
+  $('tr.add-row a').click(ru.cesar.seeker.tabular_addrow);
   $('.inline-group > div > a.btn').click(function () {
     var elGroup = null,
         elTabular = null,
@@ -285,6 +246,8 @@
       }
     }
   });
+  $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
+  $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
 </script>
 
 {% endblock content %}

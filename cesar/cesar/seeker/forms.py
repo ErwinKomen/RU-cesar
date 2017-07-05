@@ -4,6 +4,7 @@ Definition of forms for the SEEKER app.
 
 from django import forms
 from django.forms import ModelForm, formset_factory, modelformset_factory
+from cesar.seeker.widgets import SeekerTextarea
 from cesar.seeker.models import *
 from cesar.browser.models import build_choice_list, get_help
 
@@ -51,7 +52,7 @@ class GatewayForm(ModelForm):
 
 class ConstructionWrdForm(ModelForm):
     # function_sc = forms.ChoiceField(choices=SEARCHMAIN_WRD_FUNCTIONS, required = True)
-    value = forms.CharField(required=True, widget=forms.Textarea(attrs={'rows': 1, 'cols': 40}))
+    value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40}))
     class Meta:
         model = Construction
         fields = ['name']
@@ -100,7 +101,7 @@ class ConstructionWrdForm(ModelForm):
 
 class ConstructionCnsForm(ModelForm):
     function_sc = forms.ChoiceField(choices=SEARCHMAIN_CNS_FUNCTIONS, required = True)
-    value = forms.CharField(required=True, widget=forms.Textarea(attrs={'rows': 1, 'cols': 40}))
+    value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40}))
     class Meta:
         model = Construction
         fields = ['name']
@@ -113,8 +114,8 @@ class GvarForm(ModelForm):
         model = GlobalVariable
         fields = ['name', 'description', 'value']
         widgets={
-          'description': forms.Textarea(attrs={'rows': 1, 'cols': 40}),
-          'value': forms.Textarea(attrs={'rows': 2, 'cols': 40})
+          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40}),
+          'value': SeekerTextarea(attrs={'rows': 2, 'cols': 40})
           }
 
     def is_valid(self):
@@ -130,7 +131,7 @@ class VarDefForm(ModelForm):
         model = VarDef
         fields = ['name', 'description']
         widgets={
-          'description': forms.Textarea(attrs={'rows': 1, 'cols': 70})
+          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 70})
           }
 
     def is_valid(self):
@@ -147,13 +148,20 @@ class CvarForm(ModelForm):
         model = ConstructionVariable
         fields = ['type', 'svalue']
         widgets={
-          'svalue': forms.Textarea(attrs={'rows': 1, 'cols': 70})
+          'svalue': SeekerTextarea(attrs={'rows': 1, 'cols': 70})
           }
 
     def __init__(self, *args, **kwargs):
         super(CvarForm, self).__init__(*args, **kwargs)
         init_choices(self, 'type', SEARCH_VARIABLE_TYPE)
 
+
+class ArgumentForm(ModelForm):
+    """The specification of an argument to a function"""
+
+    class Meta:
+        model = Argument
+        fields = ['name', 'text']
 
 
 class SeekerResearchForm(ModelForm):
@@ -166,7 +174,7 @@ class SeekerResearchForm(ModelForm):
         model = Research
         fields = ['name', 'purpose', 'targetType']
         widgets={
-          'purpose': forms.Textarea(attrs={'rows': 1, 'cols': 100})
+          'purpose': SeekerTextarea(attrs={'rows': 1, 'cols': 100})
           }
 
     def __init__(self, *args, **kwargs):

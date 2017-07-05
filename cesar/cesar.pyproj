@@ -53,6 +53,9 @@
     <Compile Include="cesar\seeker\models.py" />
     <Compile Include="cesar\seeker\tests.py" />
     <Compile Include="cesar\seeker\views.py" />
+    <Compile Include="cesar\seeker\widgets.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\seeker\__init__.py" />
     <Compile Include="cesar\utils.py" />
     <Compile Include="cesar\viewer\admin.py" />
@@ -121,8 +124,10 @@
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
+    <Content Include="cesar\seeker\templates\seeker\part4sub.html" />
     <Content Include="cesar\seeker\templates\seeker\research_list.html" />
     <Content Include="cesar\seeker\templates\seeker\research_edit.html" />
+    <Content Include="cesar\seeker\templates\seeker\specbuilder.html" />
     <Content Include="cesar\templates\about.html" />
     <Content Include="cesar\templates\contact.html" />
     <Content Include="cesar\templates\index.html" />

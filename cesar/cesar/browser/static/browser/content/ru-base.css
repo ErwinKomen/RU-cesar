@@ -252,3 +252,9 @@ div.breadcrumbs a:focus, div.breadcrumbs a:hover {
     color: #c4dce8;
 }
 
+thead th {
+    padding: 2px 4px;
+    line-height: normal;
+    background: #f6f6f6;
+}
+

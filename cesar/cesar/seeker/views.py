@@ -144,6 +144,25 @@ def research_main(request, object_id=None):
                     gateway.save()
             # NOTE: should add an ELSE statement
 
+            # New method: one formset for each combination of cns/var
+            vardef_list = gateway.get_vardef_list()
+            cns_list = gateway.get_construction_list()
+            for cns in cns_list:
+                for var in vardef_list:
+                    # Determine the prefix for this cns/var formset
+                    pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+                    # Get the formset for this cns/var formset
+                    fs = CvarFormSet(request.POST, request.FILES, prefix=pfx)
+                    # Walk the forms in this formset
+                    for cvar_form in fs:
+                        # Check if this form is valid
+                        if cvar_form.is_valid():
+                            # Save the model instance by calling the save method of the formset
+                            cvar = cvar_form.save(commit=False)
+                            cvar.construction = cns
+                            cvar.variable = var
+                            cvar.save()
+
 
             # Also get all required formsets
             construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction', instance=gateway)
@@ -162,6 +181,8 @@ def research_main(request, object_id=None):
                         # Save this construction
                         cns.save()
                        #  cns_form.save()
+                    else:
+                        arErr.append(construction_formset.errors)
 
                 # Deal with the formset for global variables
                 gvar_formset = GvarFormSet(request.POST, request.FILES, prefix='gvar', instance=gateway)
@@ -191,24 +212,24 @@ def research_main(request, object_id=None):
                             arErr.append(cvar_form.errors)
                             break
 
-                # New method: one formset for each combination of cns/var
-                vardef_list = gateway.get_vardef_list()
-                cns_list = gateway.get_construction_list()
-                for cns in cns_list:
-                    for var in vardef_list:
-                        # Determine the prefix for this cns/var formset
-                        pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
-                        # Get the formset for this cns/var formset
-                        fs = CvarFormSet(request.POST, request.FILES, prefix=pfx)
-                        # Walk the forms in this formset
-                        for cvar_form in fs:
-                            # Check if this form is valid
-                            if cvar_form.is_valid():
-                                # Save the model instance by calling the save method of the formset
-                                cvar = cvar_form.save(commit=False)
-                                cvar.construction = cns
-                                cvar.variable = var
-                                cvar.save()
+                ## New method: one formset for each combination of cns/var
+                #vardef_list = gateway.get_vardef_list()
+                #cns_list = gateway.get_construction_list()
+                #for cns in cns_list:
+                #    for var in vardef_list:
+                #        # Determine the prefix for this cns/var formset
+                #        pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+                #        # Get the formset for this cns/var formset
+                #        fs = CvarFormSet(request.POST, request.FILES, prefix=pfx)
+                #        # Walk the forms in this formset
+                #        for cvar_form in fs:
+                #            # Check if this form is valid
+                #            if cvar_form.is_valid():
+                #                # Save the model instance by calling the save method of the formset
+                #                cvar = cvar_form.save(commit=False)
+                #                cvar.construction = cns
+                #                cvar.variable = var
+                #                cvar.save()
 
                 # Prepare and save the RESEARCH
                 research = form.save(commit=False)

@@ -198,7 +198,7 @@ var ru = (function ($, ru) {
         // Get the loopid 
         var loopid = $(this).attr("loopid");
         // Find the correct row
-        var elCalcRow = $(this).closest("tbody").find("#research_calc_" + loopid);
+        var elCalcRow = $(this).closest("tbody").find("#" + loopid);
         // Is it closed or opened?
         if ($(elCalcRow).hasClass("hidden")) {
           // Unhide it
@@ -216,6 +216,73 @@ var ru = (function ($, ru) {
        */
       sent_click: function () {
         $("#sentence-fetch").removeClass("hidden");
+      },
+
+      toggle_textarea_click: function() {
+        var elGroup = null,
+            elSpan = null,
+            sStatus = "";
+
+        // Get the following <span> of class td-textarea
+        elSpan = $(this).next(".td-textarea");
+        // Sanity check
+        if (elSpan !== null) {
+          // Show it if needed
+          if ($(elSpan).hasClass("hidden")) {
+            $(elSpan).removeClass("hidden");
+          }
+          // Hide myself
+          $(this).addClass("hidden");
+        }
+      },
+
+      toggle_textarea_out: function() {
+        var elSpan = null,
+            sText = "";
+
+        // Get the text inside the textarea
+        sText = $(this).children().first().html();
+        if ($.trim(sText) !== "") {
+          // Get the previous <span> of class td-toggle-textarea
+          elSpan = $(this).prev(".td-toggle-textarea");
+          // Check
+          if (elSpan !== null) {
+            // Hide the textarea and show the text
+            $(elSpan).children().first().html(sText);
+            $(elSpan).removeClass("hidden");
+            $(this).addClass("hidden");
+          }
+        }
+      },
+
+      /**
+       * tabular_addrow
+       *   Add one row into a tabular inline
+       *
+       */
+      tabular_addrow: function () {
+        var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec'],
+            arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'spec'],
+            arNumber = [true, true, false, false, false],
+            elTable = null,
+            iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)
+            sId = "",
+            i;
+
+        // Find out just where we are
+        sId = $(this).closest("div").attr("id");
+        // Walk all tables
+        for (i = 0; i < arTable.length; i++) {
+          if (sId === arTable[i] || sId.indexOf(arTable[i]) >=0) {
+            // Go to the <tbody> and find the last form-row
+            elTable = $(this).closest("tbody").children("tr.form-row.empty-form")
+
+            // Perform the cloneMore function to this <tr>
+            ru.cesar.seeker.cloneMore(elTable, arPrefix[i], arNumber[i]);
+            // We are done...
+            break;
+          }
+        }
       },
 
       /**
@@ -236,9 +303,9 @@ var ru = (function ($, ru) {
           // Find each <input> element
           newElement.find(':input').each(function () {
             // Get the name of this element, adapting it on the fly
-            var name = $(this).attr('name').replace('-' + (total - 1) + '-', '-' + total + '-');
+            var name = $(this).attr("name").replace("__prefix__", total.toString());
             // Produce a new id for this element
-            var id = 'id_' + name;
+            var id = $(this).attr("id").replace("__prefix__", total.toString());
             // Adapt this element's name and id, unchecking it
             $(this).attr({ 'name': name, 'id': id }).val('').removeAttr('checked');
           });
@@ -246,23 +313,45 @@ var ru = (function ($, ru) {
           // Find each <label> under newElement
           newElement.find('label').each(function () {
             // Adapt the 'for' attribute
-            var newFor = $(this).attr('for').replace('-' + (total - 1) + '-', '-' + total + '-');
+            var newFor = $(this).attr("for").replace("__prefix__", total.toString());
             $(this).attr('for', newFor);
           });
+          
+          // Look at the inner text of <td>
+          newElement.find('td').each(function () {
+            var elText = $(this).children().first();
+            if (elText !== undefined) {
+              $(elText).text($(elText).text().replace("__counter__", total.toString()));
+            }
+          });
+          // Look at the attributes of <a>
+          newElement.find('a').each(function () {
+            // Iterate over all attributes
+            var elA = this;
+            $.each(elA.attributes, function (i, attrib) {
+              var attrText = $(elA).attr(attrib.name).replace("__counter__", total.toString());
+              $(this).attr(attrib.name, attrText);
+            });
+          });
+
 
           // Adapt the total number of forms in this formset
           total++;
           $('#id_' + type + '-TOTAL_FORMS').val(total);
 
-          // Append the new element after the selector's last child
-          $(selector).after(newElement);
+          // Adaptations on the new <tr> itself
+          newElement.attr("id", "arguments-"+(total-1).toString());
+          newElement.attr("class", "form-row row" + total.toString());
+
+          // Insert the new element before the selector = empty-form
+          $(selector).before(newElement);
 
           // Should we re-number?
           if (number !== undefined && number) {
             // Walk all <tr> elements of the table
             var iRow = 1;
-            $(selector).parent().find("tr").not(".add-row").each(function () {
-              var elFirstCell = $(this).find("td:first");
+            $(selector).closest("tbody").children("tr.form-row").not(".empty-form").each(function () {
+              var elFirstCell = $(this).find("td").not(".hidden").first();
               $(elFirstCell).html(iRow);
               iRow += 1;
             });
