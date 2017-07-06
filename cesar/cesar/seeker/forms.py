@@ -160,7 +160,7 @@ class ArgumentForm(ModelForm):
     """The specification of an argument to a function"""
 
     class Meta:
-        model = Argument
+        model = ArgumentDef
         fields = ['name', 'text']
 
 

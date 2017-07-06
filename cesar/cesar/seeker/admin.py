@@ -22,23 +22,23 @@ class ResearchAdmin(admin.ModelAdmin):
         }
 
 
-class ArgumentInline(admin.TabularInline):
-    model = Argument
+class ArgumentDefInline(admin.TabularInline):
+    model = ArgumentDef
     form = ArgumentForm
     extra = 0
 
 
-class FunctionAdmin(admin.ModelAdmin):
+class FunctionDefAdmin(admin.ModelAdmin):
     """Display and edit of [Function] definitions"""
 
     list_display = ['name', 'title', 'argnum']
     search_fields = ['name', 'title', 'argnum']
     fields = ['name', 'title', 'argnum']
-    inlines = [ArgumentInline]
+    inlines = [ArgumentDefInline]
 
 
 # Models for Cesar Browser
 admin.site.register(Research, ResearchAdmin)
 admin.site.register(Gateway)
 admin.site.register(Construction)
-admin.site.register(Function, FunctionAdmin)
+admin.site.register(FunctionDef, FunctionDefAdmin)

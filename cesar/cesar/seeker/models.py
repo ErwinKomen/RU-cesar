@@ -169,8 +169,8 @@ class GlobalVariable(Variable):
         return "G:{}-{}=[{}]".format(sGateway, sConstruction, sVariable, self.value)
 
 
-class Function(models.Model):
-    """Specification of one function"""
+class FunctionDef(models.Model):
+    """Definition of one function"""
 
     # [1] The short (internal) name of this function
     name = models.CharField("Short function name", max_length=MAX_NAME_LEN)
@@ -178,16 +178,26 @@ class Function(models.Model):
     title = models.CharField("Function title", max_length=MAX_TEXT_LEN)
     # [1] Each function must have one or more arguments
     argnum = models.IntegerField("Number of arguments", default=1)
-    # [1] The value that is the outcome of this function
-    #     This is a JSON list, so can be bool, int, string of any number
-    output = models.TextField("JSON value", null=False, blank=True, default="[]")
 
     def __str__(self):
         return self.name
 
 
-class Argument(models.Model):
-    """The kinds of arguments that can be taken"""
+class Function(models.Model):
+    """Realization of one function based on a definition"""
+
+    # [1] Must point to a definition
+    functiondef = models.ForeignKey(FunctionDef, null=False)
+    # [1] The value that is the outcome of this function
+    #     This is a JSON list, so can be bool, int, string of any number
+    output = models.TextField("JSON value", null=False, blank=True, default="[]")
+
+    def __str__(self):
+        return self.output
+
+      
+class ArgumentDef(models.Model):
+    """Definition of one argument for a function"""
 
     # [1] The descriptive name of this argument
     name = models.CharField("Descriptive name", max_length=MAX_TEXT_LEN)
@@ -197,7 +207,25 @@ class Argument(models.Model):
     #     This is a JSON list, it can contain any number of bool, int, string
     argval = models.TextField("JSON value", blank=True, default="[]")
     # Each function may take a number of input arguments
-    function = models.ForeignKey(Function, null=False, related_name = "arguments")
+    function = models.ForeignKey(FunctionDef, null=False, related_name = "arguments")
+
+
+class Argument(models.Model):
+    """The realization of an argument, based on its definition"""
+
+    # [1] Must point to a definition
+    argumentdef = models.ForeignKey(ArgumentDef, null=False)
+    # [1] The value can be of type: fixed, global variable, construction variable, function-output
+    argtype = models.CharField("Variable type", choices=build_choice_list(SEARCH_ARGTYPE), 
+                              max_length=5, help_text=get_help(SEARCH_ARGTYPE))
+    # [1] In the end, the value is calculated and appears here
+    argval = models.TextField("JSON value", blank=True, default="[]")
+    # [0-1] This argument may link to a Global Variable
+    gvar = models.ForeignKey("GlobalVariable", null=True)
+    # [0-1] This argument may link to a Construction Variable
+    cvar = models.ForeignKey("ConstructionVariable", null=True)
+    # [0-1] This argument may link to a Function (not its definition)
+    function = models.ForeignKey("Function", null=True)
 
 
 class ConstructionVariable(models.Model):
@@ -212,8 +240,10 @@ class ConstructionVariable(models.Model):
                               max_length=5, help_text=get_help(SEARCH_VARIABLE_TYPE))
     # [1] String value of the variable for this combination of Gateway/Construction
     svalue = models.TextField("Value", blank=True)
-    # [0-1] Possible link to function that calculates the value
-    calculate = models.ForeignKey(Function, blank=True, null=True)
+    # [0-1] This variable may be determined by a Global Variable
+    gvar = models.ForeignKey("GlobalVariable", null=True)
+    # [0-1] This variable may be determined by a Function
+    function = models.ForeignKey("Function", null=True)
 
     def __str__(self):
         sConstruction = self.construction.name
