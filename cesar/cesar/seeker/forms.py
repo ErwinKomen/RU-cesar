@@ -142,18 +142,40 @@ class VarDefForm(ModelForm):
 
 class CvarForm(ModelForm):
     """The VALUES of construction variables"""
-    type = forms.ChoiceField(choices=build_choice_list(SEARCH_VARIABLE_TYPE), required=True)
+    # type = forms.ChoiceField(choices=build_choice_list(SEARCH_VARIABLE_TYPE), required=True)
 
     class Meta:
         model = ConstructionVariable
-        fields = ['type', 'svalue']
+        fields = ['type', 'svalue', 'gvar', 'function', 'functiondef']
         widgets={
-          'svalue': SeekerTextarea(attrs={'rows': 1, 'cols': 70})
+          'svalue': SeekerTextarea(attrs={'rows': 1, 'cols': 70}),
+          'functiondef': forms.Select()
           }
 
     def __init__(self, *args, **kwargs):
         super(CvarForm, self).__init__(*args, **kwargs)
         init_choices(self, 'type', SEARCH_VARIABLE_TYPE)
+        # Set required and optional fields
+        self.fields['type'].required = True
+        self.fields['gvar'].required = False
+        self.fields['function'].required = False
+        self.fields['functiondef'].required = False
+        self.fields['functiondef'].queryset = FunctionDef.objects.all()
+
+
+class FunctionForm(ModelForm):
+    """Specify the function the user wants to choose"""
+
+    class Meta:
+        model = Function
+        fields = ['functiondef']
+        widgets={
+            'functiondef': forms.Select()
+            }
+
+    def __init__(self, *args, **kwargs):
+        super(FunctionForm, self).__init__(*args, **kwargs)
+        self.fields['functiondef'].queryset=FunctionDef.objects.all()
 
 
 class ArgumentForm(ModelForm):

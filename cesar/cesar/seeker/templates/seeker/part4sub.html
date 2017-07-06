@@ -25,10 +25,27 @@
               <td valign="top" class="cvar-val-exp">
                 {% for cvar_form in cvar_formset %}
                   <div>
+                  <!-- option 0: fixed value -->
                   <span class="cvar-value">{{cvar_form.svalue}}</span>
+                  <!-- option 1: function/expression -->
                   <span class="cvar-expression">
-                    <a class="cvar-calculate" loopid="research_spec_{{vardef_number}}_{{forloop.parentloop.counter}}" >{% trans 'specification' %}...</a>
-                    <a class="cvar-summary">{% trans 'summary' %}...</a>
+                    <span class="cvar-fundef">
+                      {{cvar_form.functiondef}}
+                    </span>
+                      
+                    <a class="cvar-calculate" loopid="research_spec_{{vardef_number}}_{{forloop.parentloop.counter}}" >
+                      {% if cvar_form.function_id %}
+                      {% trans 'edit specification' %}
+                      {% else %}
+                      {% trans 'please specify' %}
+                      {% endif %}
+                    </a>
+                    <a class="cvar-summary">{% trans 'summary' %}</a>
+                    ...
+                  </span>
+                  <!-- option 2: global variable -->
+                  <span class="cvar-gvar">
+                    {{cvar_form.gvar}}
                   </span>
                   <div class="cvar-expression-summary hidden"></div>
                   </div>

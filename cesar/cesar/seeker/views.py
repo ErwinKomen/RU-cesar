@@ -13,7 +13,7 @@ from django.views.generic import ListView
 
 # from formtools.wizard.views import SessionWizardView
 
-from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm, GvarForm, VarDefForm, CvarForm
+from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm, GvarForm, VarDefForm, CvarForm, FunctionForm
 from cesar.seeker.models import *
 from cesar.settings import APP_PREFIX
 
@@ -93,12 +93,15 @@ def research_main(request, object_id=None):
     VardefFormSet = inlineformset_factory(Gateway, VarDef, form=VarDefForm, min_num=1, extra=0, can_delete=True, can_order=True)
     CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0)
     # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0)
+    # FunctionFormSet = inlineformset_factory(ConstructionVariable, Function, form=FunctionForm, min_num=1, extra=0)
+    FunctionFormSet = modelformset_factory(Function, form=FunctionForm, min_num=1, extra=0)
     # Initialisation
     construction_formset = None
     gvar_formset = None
     vardef_formset = None
     cvar_form_list = []
     cvar_formset_list = []
+    function_formset = []
     template = 'seeker/research_edit.html'
     delete_url = ''
     arErr = []         # Start out with no errors
@@ -162,6 +165,8 @@ def research_main(request, object_id=None):
                             cvar.construction = cns
                             cvar.variable = var
                             cvar.save()
+                        else:
+                            arErr.append(cvar_form.errors)
 
 
             # Also get all required formsets
@@ -308,6 +313,7 @@ def research_main(request, object_id=None):
             construction_formset = ConstructionFormSet(prefix='construction', instance=obj.gateway)
             gvar_formset = GvarFormSet(prefix='gvar', instance=obj.gateway)
             vardef_formset = VardefFormSet(prefix='vardef', instance=obj.gateway)
+            function_formset = FunctionFormSet(prefix='function')
             # Create a table of forms for each ConstructionVariable
             vardef_list = obj.gateway.get_vardef_list()
             cns_list = obj.gateway.get_construction_list()
@@ -328,6 +334,10 @@ def research_main(request, object_id=None):
                     # Create a formset for this cns/var formset
                     fs = CvarFormSet(prefix=pfx, queryset=cvar_qs)
                     fs.construction = cns
+                    ## Create and add a Cvar-Function formset
+                    #fs.fun_formset = FunctionFormSet(instance=cvar)
+                    ## Add a Function form
+                    #fs.funform = FunctionForm(instance=cvar)
                     # Add the formset to the list of formsets for this vardef
                     cvar_formset_list.append(fs)
                 # Add the list of formset to this vardef
@@ -346,6 +356,7 @@ def research_main(request, object_id=None):
         construction_formset = construction_formset,
         gvar_formset = gvar_formset,
         vardef_formset = vardef_formset,
+        function_formset = function_formset,
         show_save = True,
         show_save_and_continue = True,
         show_save_and_add_another = True,

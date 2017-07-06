@@ -145,6 +145,11 @@ var ru = (function ($, ru) {
        * cvartype_click
        *   Set the type of construction variable: fixed value or calculate
        *
+       *   Assumptions:
+       *    0 = fixed value
+       *    1 = expression (function)
+       *    2 = global variable
+       *
        */
       cvartype_click: function (el) {
         var elRow = (el.target === undefined) ? el : $(this).closest("tr") ;
@@ -159,10 +164,17 @@ var ru = (function ($, ru) {
           case "0": // Fixed value
             $(elVal).find(".cvar-value").removeClass("hidden");
             $(elVal).find(".cvar-expression").addClass("hidden");
+            $(elVal).find(".cvar-gvar").addClass("hidden");
             break;
           case "1": // Expression
             $(elVal).find(".cvar-value").addClass("hidden");
             $(elVal).find(".cvar-expression").removeClass("hidden");
+            $(elVal).find(".cvar-gvar").addClass("hidden");
+            break;
+          case "2": // Global variable
+            $(elVal).find(".cvar-value").addClass("hidden");
+            $(elVal).find(".cvar-expression").addClass("hidden");
+            $(elVal).find(".cvar-gvar").removeClass("hidden");
             break;
         }
       },
@@ -262,7 +274,7 @@ var ru = (function ($, ru) {
        */
       tabular_addrow: function () {
         var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec'],
-            arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'spec'],
+            arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'function'],
             arNumber = [true, true, false, false, false],
             elTable = null,
             iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)
@@ -302,6 +314,14 @@ var ru = (function ($, ru) {
 
           // Find each <input> element
           newElement.find(':input').each(function () {
+            // Get the name of this element, adapting it on the fly
+            var name = $(this).attr("name").replace("__prefix__", total.toString());
+            // Produce a new id for this element
+            var id = $(this).attr("id").replace("__prefix__", total.toString());
+            // Adapt this element's name and id, unchecking it
+            $(this).attr({ 'name': name, 'id': id }).val('').removeAttr('checked');
+          });
+          newElement.find('select').each(function () {
             // Get the name of this element, adapting it on the fly
             var name = $(this).attr("name").replace("__prefix__", total.toString());
             // Produce a new id for this element

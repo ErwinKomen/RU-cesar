@@ -160,13 +160,12 @@ class VarDef(Variable):
 class GlobalVariable(Variable):
     """Each research project may have any number of global (static) variables"""
 
-    # [1] Value of the variable for this combination of Gateway/Construction
+    # [1] Value of the variable
     value = models.TextField("Value")
 
     def __str__(self):
-        sConstruction = self.construction.name
-        sVariable = self.variable.name
-        return "G:{}-{}=[{}]".format(sGateway, sConstruction, sVariable, self.value)
+        # The default string-value of a global variable is its name
+        return self.name
 
 
 class FunctionDef(models.Model):
@@ -243,7 +242,9 @@ class ConstructionVariable(models.Model):
     # [0-1] This variable may be determined by a Global Variable
     gvar = models.ForeignKey("GlobalVariable", null=True)
     # [0-1] This variable may be determined by a Function
-    function = models.ForeignKey("Function", null=True)
+    function = models.OneToOneField(Function, null=True)
+    # [0-1] If a function is supplied, then here's the place to define the function def to be used
+    functiondef = models.ForeignKey(FunctionDef, null=True)
 
     def __str__(self):
         sConstruction = self.construction.name
