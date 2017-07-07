@@ -58,6 +58,8 @@ class ConstructionWrdForm(ModelForm):
         fields = ['name']
 
     def __init__(self, *args, **kwargs):
+        # First get the user out of the way
+        self.user = kwargs.pop('user', None)
         # Start by executing the standard handling
         super(ConstructionWrdForm, self).__init__(*args, **kwargs)
         # Get the instance
@@ -74,6 +76,10 @@ class ConstructionWrdForm(ModelForm):
             # Set the initial value
 
             self.fields['value'].initial = sValue
+            # Compare the owner with the current user
+            if instance.gateway.research.owner != self.user:
+                self.fields['name'].disabled = True
+                self.fields['value'].disabled = True
 
     def is_valid(self):
         # Do default is valid
@@ -106,6 +112,11 @@ class ConstructionCnsForm(ModelForm):
         model = Construction
         fields = ['name']
 
+    def __init__(self, *args, **kwargs):
+        super(ConstructionCnsForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, 'instance', None)
+        if instance:
+            owner = instance.gateway
 
 class GvarForm(ModelForm):
     """The definition and value of global variables"""

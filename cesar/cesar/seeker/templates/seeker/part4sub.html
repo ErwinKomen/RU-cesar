@@ -32,8 +32,10 @@
                     <span class="cvar-fundef">
                       {{cvar_form.functiondef}}
                     </span>
+                    <span id="cvar-functionid" class="hidden"><input id="id_cvar-function-__id__-id" type="hidden" value="" /></span>
                       
-                    <a class="cvar-calculate" loopid="research_spec_{{vardef_number}}_{{forloop.parentloop.counter}}" >
+                    <!-- old method: [research_spec_] Test method: [research_specform_] -->
+                    <a class="cvar-specify" loopid="research_spec_{{vardef_number}}_{{forloop.parentloop.counter}}" >
                       {% if cvar_form.function_id %}
                       {% trans 'edit specification' %}
                       {% else %}

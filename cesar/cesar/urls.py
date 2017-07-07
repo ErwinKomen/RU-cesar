@@ -53,6 +53,7 @@ urlpatterns = [
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),
+    url(r'^ajax/getspecel/$', cesar.seeker.views.get_spec_el, name='get_spec_el'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^signup/$', cesar.browser.views.signup, name='signup'),
 

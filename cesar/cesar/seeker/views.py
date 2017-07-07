@@ -4,6 +4,7 @@ Definition of views for the SEEKER app.
 
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.views.generic.detail import DetailView
@@ -70,6 +71,16 @@ class SeekerForm():
         self.formset_list.append(oFormset)
 
 
+def get_spec_el(request):
+    # Get any information from the request
+    info = request.GET.get('cvarid', None)
+    sHtml = "<p>Dit gaat <b>goed</b></p>"
+    # Create data to be returned
+    data = {'status': 'ok', 'specelform': sHtml}
+    # Return the information
+    return JsonResponse(data)
+
+
 
 def research_main(request, object_id=None):
     """Main entry point for the specification of a seeker research project"""
@@ -88,13 +99,23 @@ def research_main(request, object_id=None):
     # Note: adding CvarFormset needs a different way...
 
     # This is required for any view
-    ConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
+    BaseConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
     GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, form=GvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
     VardefFormSet = inlineformset_factory(Gateway, VarDef, form=VarDefForm, min_num=1, extra=0, can_delete=True, can_order=True)
     CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0)
     # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0)
     # FunctionFormSet = inlineformset_factory(ConstructionVariable, Function, form=FunctionForm, min_num=1, extra=0)
     FunctionFormSet = modelformset_factory(Function, form=FunctionForm, min_num=1, extra=0)
+
+    class ConstructionFormSet(BaseConstructionFormSet):
+        #def __init__(self, *args, **kwargs):
+        #    self.user = 
+        #    super(ConstructionFormSet, self).__init__(*args, **kwargs)
+
+        def _construct_form(self, *args, **kwargs):
+            kwargs['user'] = request.user
+            return super(ConstructionFormSet, self)._construct_form(*args, **kwargs)
+
     # Initialisation
     construction_formset = None
     gvar_formset = None

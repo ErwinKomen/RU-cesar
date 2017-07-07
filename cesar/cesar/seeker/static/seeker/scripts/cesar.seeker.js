@@ -68,6 +68,8 @@ var ru = (function ($, ru) {
             case "4": // Page 4=Calculation
               // Specify the function to be called when the user presses [Calculation...]
               $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
+              // Specify the function to be called when the user presses [Calculation...]
+              $(".cvar-specify").click(ru.cesar.seeker.cvarspecify_click);
               // Make sure the 'Type' field values are processed everywhere
               $(".cvar-item").each(function () {
                 // Perform the same function as if we were clicking it
@@ -215,6 +217,46 @@ var ru = (function ($, ru) {
         if ($(elCalcRow).hasClass("hidden")) {
           // Unhide it
           $(elCalcRow).removeClass("hidden");
+        } else {
+          // Hide it
+          $(elCalcRow).addClass("hidden");
+        }
+      },
+
+      /**
+       * cvarspecify_click
+       *   Create a calculation form and show it to the user
+       *
+       */
+      cvarspecify_click: function () {
+        // Get the loopid to find out exactly where we are...
+        var loopid = $(this).attr("loopid");
+        // Find the correct row
+        var elCalcRow = $(this).closest("tbody").find("#" + loopid);
+        // Is it closed or opened?
+        if ($(elCalcRow).hasClass("hidden")) {
+          // Find the nearest [cvar-item]
+          var elCvarItem = $(this).closest("tr").find(" td.hidden div input");
+          // Get the id attribute
+          var cvarId = $(elCvarItem).attr("id");
+          // Make an AJAX call to get an existing or new specification element HTML code
+          $.ajax({
+            url: '/ajax/getspecel/',
+            data: {
+              'cvarid': cvarId
+            },
+            dataType: 'json',
+            success: function (data) {
+              if (data.status && data.status === 'ok') {
+                $(elCalcRow).html(data.specelform);
+                // Unhide it
+                $(elCalcRow).removeClass("hidden");
+              }
+            },
+            failure: function () {
+              var iStop = 1;
+            }
+          });
         } else {
           // Hide it
           $(elCalcRow).addClass("hidden");
