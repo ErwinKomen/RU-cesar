@@ -231,6 +231,8 @@ var ru = (function ($, ru) {
       cvarspecify_click: function () {
         // Get the loopid to find out exactly where we are...
         var loopid = $(this).attr("loopid");
+        var vardefid = $(this).attr("vardefid");
+        var constructionid = $(this).attr("constructionid");
         // Find the correct row
         var elCalcRow = $(this).closest("tbody").find("#" + loopid);
         // Is it closed or opened?
@@ -243,7 +245,7 @@ var ru = (function ($, ru) {
           $.ajax({
             url: '/ajax/getspecel/',
             data: {
-              'cvarid': cvarId
+              'cvarid': cvarId, 'vardefid': vardefid, 'constructionid': constructionid
             },
             dataType: 'json',
             success: function (data) {

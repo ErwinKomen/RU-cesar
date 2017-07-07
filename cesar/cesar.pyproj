@@ -128,6 +128,7 @@
     <Content Include="cesar\seeker\templates\seeker\research_list.html" />
     <Content Include="cesar\seeker\templates\seeker\research_edit.html" />
     <Content Include="cesar\seeker\templates\seeker\specbuilder.html" />
+    <Content Include="cesar\seeker\templates\seeker\specel.html" />
     <Content Include="cesar\templates\about.html" />
     <Content Include="cesar\templates\contact.html" />
     <Content Include="cesar\templates\index.html" />

@@ -6,6 +6,7 @@ from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
@@ -72,9 +73,26 @@ class SeekerForm():
 
 
 def get_spec_el(request):
+    """Entry point for the creation/updating of a Specification Element construction"""
+
+    # Specify the template to be used
+    template = 'seeker/specel.html'
+
     # Get any information from the request
     info = request.GET.get('cvarid', None)
-    sHtml = "<p>Dit gaat <b>goed</b></p>"
+    vardefid = request.GET.get('vardefid', None)
+    constructionid = request.GET.get('constructionid', None)
+  
+    # Specify the context
+    context= {}
+    context['cvar'] = info
+    context['vardef'] = VarDef.objects.get(id=vardefid)
+    context['construction'] = Construction.objects.get(id=constructionid)
+
+    # Create HTML
+    # sHtml = render_to_string(request, template, context)
+    sHtml = render_to_string(template, context)
+
     # Create data to be returned
     data = {'status': 'ok', 'specelform': sHtml}
     # Return the information

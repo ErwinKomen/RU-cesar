@@ -35,11 +35,13 @@
                     <span id="cvar-functionid" class="hidden"><input id="id_cvar-function-__id__-id" type="hidden" value="" /></span>
                       
                     <!-- old method: [research_spec_] Test method: [research_specform_] -->
-                    <a class="cvar-specify" loopid="research_spec_{{vardef_number}}_{{forloop.parentloop.counter}}" >
+                    <a class="btn btn-xs btn-default cvar-specify" role="button" 
+                       loopid="research_spec_{{vardef_number}}_{{forloop.parentloop.counter}}"
+                       vardefid="{{vardef_this.instance.id}}" constructionid="{{cvar_formset.construction.id}}" >
                       {% if cvar_form.function_id %}
-                      {% trans 'edit specification' %}
+                      {% trans 'edit' %}
                       {% else %}
-                      {% trans 'please specify' %}
+                      {% trans 'create' %}
                       {% endif %}
                     </a>
                     <a class="cvar-summary">{% trans 'summary' %}</a>
