@@ -296,7 +296,7 @@ class Research(models.Model):
     def delete(self, using = None, keep_parents = False):
         # Delete the gateway
         self.gateway.delete()
-        # Delete any sharegroups
+        # Delete all the sharegroup instances pointing to this research instance
         for grp in self.sharegroups.all():
             grp.delete()
         # Delete myself

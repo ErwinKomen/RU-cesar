@@ -51,6 +51,8 @@ var ru = (function ($, ru) {
             elList = null;
 
         try {
+          // Specify all ajax forms
+          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
           // Sanity check
           sTargetType = $("#id_targetType").val();
           switch (sTargetType) {
@@ -220,6 +222,82 @@ var ru = (function ($, ru) {
         } else {
           // Hide it
           $(elCalcRow).addClass("hidden");
+        }
+      },
+      nowTime: function() {
+        var now = new Date(Date.now());
+        var sNow = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+        return sNow;
+      },
+
+      /**
+       * ajaxform_click
+       *   General way to process an ajax form request
+       *
+       */
+      ajaxform_click: function () {
+        var data = [],      // Array to stor the POST data
+            elCall = this,
+            callType = "";  // Type of element that calls us
+
+        // /WHo is calling?
+        callType = $(this)[0].tagName.toLowerCase();
+
+        // obligatory parameter: ajaxurl
+        var ajaxurl = $(this).attr("ajaxurl");
+        var instanceid = $(this).attr("instanceid");
+
+        // Derive the data
+        if ($(this).attr("data")) {
+          data = $(this).attr("data");
+        } else {
+          var frm = $(this).closest("form");
+          if (frm !== undefined) {
+            data = $(frm).serializeArray();
+          }
+        }
+        data.push({ 'name': 'instanceid', 'value': instanceid });
+        // THird parameter: the id of the element to be opened: OPTIONAL
+        var openid = $(this).attr("openid");
+        // Find the element to be opened/closed
+        var elOpen = null;
+        if (openid !== undefined) {
+          elOpen = $(this).closest("tbody").find("#" + openid);
+        }
+        // Check if the element is opened or closed
+        if (elOpen === null || $(elOpen).hasClass("hidden")) {
+          // It is closed: open it up
+          // Make an AJAX call to get an existing or new specification element HTML code
+          $.ajax({
+            url: ajaxurl,
+            type: "POST",
+            data: data,
+            dataType: 'json',
+            success: function (data) {
+              var sOkay = "<div class='row'>Saved at "+ru.cesar.seeker.nowTime()+"</div>";
+
+              if (data.status && data.status === 'ok') {
+                if (elOpen !== null) {
+                  $(elOpen).html(data.html);
+                  // Unhide it
+                  $(elOpen).removeClass("hidden");
+                }
+                // Other action depends on the calltype
+                switch (callType) {
+                  case "button":
+                    // Add message below the button
+                    $(elCall).after(sOkay);
+                    break;
+                }
+              }
+            },
+            failure: function () {
+              var iStop = 1;
+            }
+          });
+        } else {
+          // Hide it
+          if (elOpen !== null) { $(elOpen).addClass("hidden"); }
         }
       },
 

@@ -1,4 +1,7 @@
 ﻿{% load i18n %}
+
+{% if not currentowner or currentowner == user %}
+
 <div class="submit-row">
   {% if show_save %}<input class="default" type="submit" name="_save" value="{% trans 'Save' %}" />{% endif %}
   {% if show_delete_link %}
@@ -10,3 +13,7 @@
   {% if show_save_and_add_another %}<input type="submit" name="_addanother" value="{% trans 'Save and add another' %}">{% endif %}
   {% if show_save_and_continue %}<input type="submit" name="_continue" value="{% trans 'Save and continue editing' %}">{% endif %}
 </div>
+
+{% else %}
+<div><i>Only the owner [{{currentowner}}] can edit or remove this project</i></div>
+{% endif %}

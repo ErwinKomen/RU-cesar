@@ -72,6 +72,43 @@ class SeekerForm():
         self.formset_list.append(oFormset)
 
 
+def research_part_1(request):
+    """Entry point for processing part #1 of a research project"""
+
+    ## Get information from the request
+    #instanceid = request.POST.get('instanceid', None)
+    #instanceid = request.POST['instanceid']
+    #data = request.GET.get('data', None)
+    #lData = json.loads(data)
+
+    if request.POST:
+        # Check the gateway
+        gatewayForm = GatewayForm(request.POST)
+        if gatewayForm.is_valid():
+            gateway = gatewayForm.save(commit=False)
+            # TODO: possible changes to the gateway in the future...
+
+            # Save the gateway instance...
+            gateway.save()
+
+        # Load the FORM information from the POST request
+        researchForm = SeekerResearchForm(request.POST)
+        if researchForm.is_valid():
+            research = researchForm.save(commit=False)
+            # Check if we have a gateway
+            if research.gateway_id == None:
+                research.gateway = gateway
+            # Check for the owner
+            if research.owner_id == None:
+                research.owner = request.user
+            research.save()
+
+    # Create data to be returned
+    data = {'status': 'ok', 'html': ''}
+    # Return the information
+    return JsonResponse(data)
+
+
 def get_spec_el(request):
     """Entry point for the creation/updating of a Specification Element construction"""
 
@@ -79,15 +116,16 @@ def get_spec_el(request):
     template = 'seeker/specel.html'
 
     # Get any information from the request
-    info = request.GET.get('cvarid', None)
-    vardefid = request.GET.get('vardefid', None)
-    constructionid = request.GET.get('constructionid', None)
+    instanceid = request.GET.get('instanceid', None)
+
+    # Specific processing
+    cvar = ConstructionVariable.objects.get(id=instanceid)
   
     # Specify the context
     context= {}
-    context['cvar'] = info
-    context['vardef'] = VarDef.objects.get(id=vardefid)
-    context['construction'] = Construction.objects.get(id=constructionid)
+    context['instance'] = cvar
+    context['vardef'] = cvar.variable
+    context['construction'] = cvar.construction
 
     # Create HTML
     # sHtml = render_to_string(request, template, context)
@@ -97,6 +135,7 @@ def get_spec_el(request):
     data = {'status': 'ok', 'specelform': sHtml}
     # Return the information
     return JsonResponse(data)
+
 
 
 
@@ -296,7 +335,6 @@ def research_main(request, object_id=None):
             else:
                 # Get the formset errors string
                 arErr.append(construction_formset.errors)
-                arErr.append(gvar_formset.errors)
                 # Delete the gateway we created
                 gateway.delete()
         else:
@@ -384,7 +422,9 @@ def research_main(request, object_id=None):
 
 
     # COnvert all lists of errors to a string
-    sErr = '\n'.join(arErr).strip()
+    # sErr = '\n'.join([str(item) for item in arErr]).strip()
+    # error_list = [item for item in arErr]
+    error_list = [str(item) for item in arErr]
 
 
     # Start setting the context
@@ -401,7 +441,7 @@ def research_main(request, object_id=None):
         show_save_and_add_another = True,
         show_delete_link = not add,
         delete_url=delete_url,
-        error_list=sErr,
+        error_list=error_list, #sErr,
         )
 
     # Hide the "Save" and "Save and continue" buttons if "Save as New" was

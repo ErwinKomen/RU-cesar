@@ -222,16 +222,15 @@ class SeekerResearchForm(ModelForm):
             # There is POST data, so fill the forms with the required information
             self.gateway_data = {key: data[key] for key in data if key.startswith('gateway-')}
             if hasattr(self.instance, 'gateway'):
-                self.gateway_form = GatewayForm(
-                    instance = self.instance.gateway,
-                    prefix='gateway',
-                    data=self.gateway_data
-                )
+                gw = self.instance.gateway
             else:
-                self.gateway_form = GatewayForm(
-                    prefix='gateway',
-                    data=self.gateway_data
-                )
+                gw = Gateway(name=self.gateway_data['gateway-name'], description=self.gateway_data['gateway-description'])
+                gw.save()
+            self.gateway_form = GatewayForm(
+                instance = gw,
+                prefix='gateway',
+                data=self.gateway_data
+            )
         else:
             # Didn't get any POST data: process the GET instance
             # Fill the form with the gateway data, or create a blank form

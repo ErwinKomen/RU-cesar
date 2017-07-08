@@ -14,7 +14,13 @@
   <!-- Contents -->
   <div class="container body-content">
     <h2>Research project</h2>
-    <div id="research_err">{{error_list}}</div>
+    <div id="research_err">
+      <code>
+          {% for item in error_list %}
+          {{item}}
+          {% endfor %}
+      </code>
+    </div>
     <div class="xpanel xpanel-default">
 
       <div class="btn-group" role="group" aria-label="Research specification">
@@ -25,13 +31,6 @@
         <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '6');">Conditions >></button>
         <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '7');">Features</button>
       </div>
-
-      <!--
-      <ul class="nav nav-tabs">
-        <li role="presentation" class="active" ><a onclick="ru.cesar.seeker.research_wizard(this, '1');">Project type</a></li>
-        <li role="presentation" ><a onclick="ru.cesar.seeker.research_wizard(this, '2');">Search element(s)</a></li>
-      </ul>
-        -->
 
       <div class="panel panel-default">
         <!-- The form, divided per content element -->
@@ -50,6 +49,19 @@
               <tr><td>Purpose:</td><td>{{form.purpose}}</td></tr>
               <tr><td>Main element type:</td><td>{{form.targetType}}</td></tr>
             </table>
+
+            <!-- GATEWAY specification is hidden -->
+            <div id="research_gateway" class="hidden">
+                {{form.gateway_form}}
+              {{form.gateway_form.id}}
+            </div>
+
+            <div class="submit-row">
+              <button type="button" class="btn btn-primary ajaxform"
+                      instanceid="{{form.instance.id}}"
+                      ajaxurl="{% url 'research_part_1' %}"
+                      data="">{% trans 'Save' %}</button>
+            </div>
           </div>
 
           <!-- Part 2: One or more search elements -->
@@ -57,11 +69,6 @@
                class="row research-part hidden js-inline-formset inline-group"
                data-inline-type="tabular"
                data-inline-formset="{{construction_formset.inline_formset_data}}">
-
-            <!-- GATEWAY specification is hidden -->
-            <div id="research_gateway" class="hidden">
-              {{form.gateway_form.id}}
-            </div>
 
             <!-- WORD search elements -->
             <div id="research_intro-wrd" 
@@ -112,8 +119,9 @@
               <p>Provide one or more options for the search construction.</p>
               <p>Each search construction starts out with one constituent, which can be further specified by e.g. children or siblings.</p>
             </div>
+            <!-- Show the buttons to save, cancel, delete and so forth -->
+            {% include "submit_row.html" with currentowner=form.instance.owner %}
           </div>
-
 
           <!-- Part 3: Global variables -->
           <div id="research_part_3" class="row research-part hidden">
@@ -160,6 +168,8 @@
 
             </div>
 
+            <!-- Show the buttons to save, cancel, delete and so forth -->
+            {% include "submit_row.html" with currentowner=form.instance.owner %}
           </div>
 
           <!-- Part 4: Construction Variables -->
@@ -212,24 +222,24 @@
 
             </div>
 
+            <!-- Show the buttons to save, cancel, delete and so forth -->
+            {% include "submit_row.html" with currentowner=form.instance.owner %}
           </div>
 
           <!-- Part 5: Conditions -->
           <div id="research_part_6" class="row research-part hidden">
               Specifying hit conditions
+            <!-- Show the buttons to save, cancel, delete and so forth -->
+            {% include "submit_row.html" with currentowner=form.instance.owner %}
           </div>
 
           <!-- Part 6: Features -->
           <div id="research_part_7" class="row research-part hidden">
               Feature calculation
+            <!-- Show the buttons to save, cancel, delete and so forth -->
+            {% include "submit_row.html" with currentowner=form.instance.owner %}
           </div>
 
-          <!-- Show the buttons to save, cancel, delete and so forth -->
-          {% if form.instance.owner == user %}
-          {% include 'submit_row.html' %}
-          {% else %}
-          <div><i>Only the owner [{{form.instance.owner}}] can edit or remove this project</i></div>
-          {% endif %}
         </form>  
         
       </div>
@@ -258,6 +268,7 @@
   });
   $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
   $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
+  ru.cesar.seeker.research_wizard(this, '1');
 </script>
 
 {% endblock content %}

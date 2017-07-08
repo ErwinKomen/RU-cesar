@@ -165,8 +165,9 @@ def signup(request):
             user.is_staff = True
             user.save()
             # Add user to the "RegistryUser" group
-            g = Group.objects.get(name="RegistryUser")
-            if g != None:
+            gQs = Group.objects.filter(name="seeker_user")
+            if gQs.count() > 0:
+                g = gQs[0]
                 g.user_set.add(user)
             # Log in as the user
             login(request, user)
