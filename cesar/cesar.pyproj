@@ -125,8 +125,11 @@
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\part4sub.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_edit_ORG.html" />
     <Content Include="cesar\seeker\templates\seeker\research_list.html" />
     <Content Include="cesar\seeker\templates\seeker\research_edit.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_part_2.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_part_1.html" />
     <Content Include="cesar\seeker\templates\seeker\specbuilder.html" />
     <Content Include="cesar\seeker\templates\seeker\specel.html" />
     <Content Include="cesar\templates\about.html" />

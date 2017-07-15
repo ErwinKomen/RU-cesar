@@ -6,12 +6,13 @@ from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
+from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
-from django.views.generic import ListView
+from django.views.generic import ListView, View
 
 # from formtools.wizard.views import SessionWizardView
 
@@ -72,39 +73,476 @@ class SeekerForm():
         self.formset_list.append(oFormset)
 
 
-def research_part_1(request):
+class ResearchPart(View):
+    # Initialisations:     
+    arErr = []              # errors   
+    template_name = None    # The template to be used
+    form_validated = True   # Used for POST form validation
+    savedate = None         # When saving information, the savedate is returned in the context
+    add = False             # Are we adding a new record or editing an existing one?
+    obj = None              # The instance of the MainModel
+    MainModel = None        # The model that is mainly used for this form
+    form_objects = []       # List of forms to be processed
+    formset_objects = []    # List of formsets to be processed
+    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
+    
+    def post(self, request, object_id=None):
+        # A POST request means we are trying to SAVE something
+        self.initializations(request, object_id)
+
+        if self.checkAuthentication(request):
+            # Build the context
+            context = dict(object_id = object_id, savedate=None)
+            # Walk all the forms
+            for formObj in self.form_objects:
+                # Are we SAVING a NEW item?
+                if self.add:
+                    # We are saving a NEW item
+                    formObj['forminstance'] = formObj['form'](request.POST, prefix=formObj['prefix'])
+                else:
+                    # We are saving an EXISTING item
+                    # Determine the instance to be passed on
+                    instance = self.get_instance(formObj['prefix'])
+                    # Make the instance available in the form-object
+                    formObj['instance'] = instance
+                    # Get an instance of the form
+                    formObj['forminstance'] = formObj['form'](request.POST, prefix=formObj['prefix'], instance=instance)
+            # Iterate again
+            for formObj in self.form_objects:
+                # Check validity of form
+                if formObj['forminstance'].is_valid():
+                    # Save it preliminarily
+                    instance = formObj['forminstance'].save(commit=False)
+                    # The instance must be made available (even though it is only 'preliminary')
+                    formObj['instance'] = instance
+                    # Perform actions to this form BEFORE FINAL saving
+                    self.before_save(formObj['prefix'], request)
+                    # Perform the saving
+                    instance.save()
+                    # Put the instance in the form object
+                    formObj['instance'] = instance
+                    context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                else:
+                    self.arErr.append(formObj['forminstance'].errors)
+                    self.form_validated = False
+
+                # Add instance to the context object
+                context[formObj['prefix'] + "Form"] = formObj['forminstance']
+            # Walk all the formset objects
+            for formsetObj in self.formset_objects:
+                formsetClass = formsetObj['formsetClass']
+                prefix  = formsetObj['prefix']
+                if self.add:
+                    # Saving a NEW item
+                    formset = formsetClass(request.POST, request.FILES, prefix=prefix)
+                else:
+                    # Saving an EXISTING item
+                    instance = self.get_instance(prefix)
+                    formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance)
+                # Process all the forms in the formset
+                self.process_formset(prefix, request, formset)
+                # Store the instance
+                formsetObj['formsetinstance'] = formset
+                # Is the formset valid?
+                if formset.is_valid():
+                    # Walk all the forms in the formset
+                    for form in formset:
+                        # Check if this form is valid
+                        if form.is_valid():
+                            # Save it preliminarily
+                            instance = form.save(commit=False)
+                            # Any actions before saving
+                            self.before_save(prefix, request, instance, form)
+                            # Save this construction
+                            instance.save()
+                        else:
+                            arErr.append(form.errors)
+                else:
+                    arErr.append(formset.errors)
+                # Add the formset to the context
+                context[prefix + "_formset"] = formset
+                # Adapt the last save time
+                context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+
+            # Allow user to add to the context
+            context = self.add_to_context(context)
+
+            # Make sure we have a list of any errors
+            error_list = [str(item) for item in self.arErr]
+            context['error_list'] = error_list
+            # Get the HTML response
+            self.data['html'] = render_to_string(self.template_name, context, request)
+        else:
+            self.data['html'] = "Please log in before continuing"
+
+        # Return the information
+        return JsonResponse(self.data)
+        
+    def get(self, request, object_id=None): 
+        # Perform the initializations that need to be made anyway
+        self.initializations(request, object_id)
+        if self.checkAuthentication(request):
+            context = dict(object_id = object_id, savedate=None)
+            # Walk all the form objects
+            for formObj in self.form_objects:        
+                # Used to populate a NEW research project
+                # - CREATE a NEW research form, populating it with any initial data in the request
+                initial = dict(request.GET.items())
+                if self.add:
+                    # Create a new form
+                    formObj['forminstance'] = formObj['form'](initial=initial, prefix=formObj['prefix'])
+                else:
+                    # Used to show EXISTING information
+                    instance = self.get_instance(formObj['prefix'])
+                    # We should show the data belonging to the current Research [obj]
+                    formObj['forminstance'] = formObj['form'](instance=instance, prefix=formObj['prefix'])
+                # Add instance to the context object
+                context[formObj['prefix'] + "Form"] = formObj['forminstance']
+            # Walk all the formset objects
+            for formsetObj in self.formset_objects:
+                formsetClass = formsetObj['formsetClass']
+                prefix  = formsetObj['prefix']
+                if self.add:
+                    # - CREATE a NEW formset, populating it with any initial data in the request
+                    initial = dict(request.GET.items())
+                    # Saving a NEW item
+                    formset = formsetClass(initial=initial, prefix=prefix)
+                else:
+                    # show the data belonging to the current [obj]
+                    instance = self.get_instance(prefix)
+                    formset = formsetClass(prefix=prefix, instance=instance)
+                # Process all the forms in the formset
+                self.process_formset(prefix, request, formset)
+                # Store the instance
+                formsetObj['formsetinstance'] = formset
+                # Add the formset to the context
+                context[prefix + "_formset"] = formset
+            # Allow user to add to the context
+            context = self.add_to_context(context)
+            # Make sure we have a list of any errors
+            error_list = [str(item) for item in self.arErr]
+            context['error_list'] = error_list
+            
+            # Get the HTML response
+            self.data['html'] = render_to_string(self.template_name, context, request)
+        else:
+            self.data['html'] = "Please log in before continuing"
+
+        # Return the information
+        return JsonResponse(self.data)
+      
+    def checkAuthentication(self,request):
+        # first check for authentication
+        if not request.user.is_authenticated:
+            # Simply redirect to the home page
+            self.data['html'] = "Please log in to work on a research project"
+            return False
+        else:
+            return True
+
+    def initializations(self, request, object_id):
+        # COpy the request
+        self.request = request
+        # Do we need adding?
+        if object_id == None:
+            if request.GET and 'object_id' in request.GET and request.GET.get('object_id') != 'None':
+                object_id = request.GET.get('object_id')
+        self.add = object_id is None
+
+        # Find out what the Main Model instance is, if any
+        if self.add:
+            self.obj = None
+        else:
+            # Get the instance of the Main Model object
+            self.obj =  self.MainModel.objects.get(pk=object_id)
+
+    def get_instance(self, prefix):
+        return self.obj
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        pass
+
+    def add_to_context(self, context):
+        return context
+
+    def process_formset(self, prefix, request, formset):
+        pass
+
+
+class ResearchPart1(ResearchPart):
+    template_name = 'seeker/research_part_1.html'
+    MainModel = Research
+    form_objects = [{'form': GatewayForm, 'prefix': 'gateway'},
+                    {'form': SeekerResearchForm, 'prefix': 'research'}]
+             
+    def get_instance(self, prefix):
+        if prefix == 'research':
+            return self.obj
+        else:
+            return self.obj.gateway
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        if prefix == 'research':
+            research = None
+            gateway = None
+            for formObj in self.form_objects:
+                if formObj['prefix'] == 'gateway': gateway = formObj['instance']
+                if formObj['prefix'] == 'research': research = formObj['instance']
+            if research != None:
+                research.gateway = gateway
+                # Check for the owner
+                if research.owner_id == None:
+                    research.owner = request.user
+
+
+class ResearchPart2(ResearchPart):
+    template_name = 'seeker/research_part_2.html'
+    MainModel = Research
+    ConstructionFormSet = inlineformset_factory(Gateway, Construction, 
+                                                    form=ConstructionWrdForm, min_num=1, 
+                                                    extra=0, can_delete=True, can_order=True)
+    formset_objects = [{'formsetClass': ConstructionFormSet, 'prefix': 'construction'}]
+             
+    def get_instance(self, prefix):
+        if prefix == 'construction':
+            return self.obj.gateway
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        if prefix == 'construction':
+            # Add the correct search item
+            instance.search = SearchMain.create_item("word-group", form.cleaned_data['value'], 'groupmatches')
+
+    def add_to_context(self, context):
+        if self.obj == None:
+            targettype = None
+            currentowner = None
+        else:
+            targettype = self.obj.targetType
+            currentowner = self.obj.owner
+        context['targettype'] = targettype
+        context['currentowner'] = currentowner
+        return context
+
+    def process_formset(self, prefix, request, formset):
+        if prefix == 'construction':
+            # Get the owner of the research project
+            owner = self.obj.owner
+            currentuser = request.user
+            # Need to process all the forms here
+            for form in formset:
+                # Compare the owner with the current user
+                if owner != currentuser:
+                    form.fields['name'].disabled = True
+                    form.fields['value'].disabled = True
+                
+
+
+def research_part_1(request, object_id=None):
     """Entry point for processing part #1 of a research project"""
 
-    ## Get information from the request
-    #instanceid = request.POST.get('instanceid', None)
-    #instanceid = request.POST['instanceid']
-    #data = request.GET.get('data', None)
-    #lData = json.loads(data)
+    # Initialisations:     
+    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
+    arErr = []                                # errors   
+    template = 'seeker/research_part_1.html'  # Template
+    form_validated = True                     # Used for POST form validation
+    savedate = None
 
-    if request.POST:
-        # Check the gateway
-        gatewayForm = GatewayForm(request.POST)
-        if gatewayForm.is_valid():
-            gateway = gatewayForm.save(commit=False)
-            # TODO: possible changes to the gateway in the future...
+    # Do we need adding?
+    if object_id == None:
+        if request.GET and 'object_id' in request.GET and request.GET.get('object_id') != 'None':
+            object_id = request.GET.get('object_id')
+    add = object_id is None
 
-            # Save the gateway instance...
-            gateway.save()
+    # Find out what the REsearch instance is, if any
+    if add:
+        obj = None
+    else:
+        # Get the instance of this research object
+        obj = Research.objects.get(pk=object_id)
 
-        # Load the FORM information from the POST request
-        researchForm = SeekerResearchForm(request.POST)
-        if researchForm.is_valid():
-            research = researchForm.save(commit=False)
-            # Check if we have a gateway
-            if research.gateway_id == None:
-                research.gateway = gateway
-            # Check for the owner
-            if research.owner_id == None:
-                research.owner = request.user
-            research.save()
+    # first check for authentication
+    if not request.user.is_authenticated:
+        # Simply redirect to the home page
+        data['html'] = "Please log in to work on a research project"
+    else:
+        # User is authenticated
+        # Further action depends on POST or GET
+        if request.POST:
 
-    # Create data to be returned
-    data = {'status': 'ok', 'html': ''}
+            # Load the FORM information from the POST request
+            if add:
+                # Used when saving a NEW item
+                researchForm = SeekerResearchForm(request.POST, prefix="research")
+                # Also load the gateway from from the POST request
+                gatewayForm = GatewayForm(request.POST, prefix="gateway")
+            else:
+                # Used when saving an EXISTING item
+                researchForm = SeekerResearchForm(request.POST, prefix="research", instance=obj)
+                # Also load the gateway from from the POST request
+                gatewayForm = GatewayForm(request.POST, prefix="gateway", instance=obj.gateway)
+            if researchForm.is_valid():
+                # Do a preliminary saving
+                research = researchForm.save(commit=False)
+                # Check if we have a gateway
+                if research.gateway_id == None:
+                    if gatewayForm.is_valid():
+                        gateway = gatewayForm.save(commit=False)
+                        # TODO: possible changes to the gateway in the future...
+
+                        # Save the gateway instance...
+                        gateway.save()
+                    else:
+                        arErr.append(gatewayForm.errors)
+                        form_validated = False
+                    research.gateway = gateway
+                # Check for the owner
+                if research.owner_id == None:
+                    research.owner = request.user
+                # Now save the object
+                obj = research.save()
+                # Confirm correct saving by supplying the savedate
+                savedate = "saved at {}".format(datetime.now().strftime("%X"))
+            else:
+                arErr.append(researchForm.errors)
+                form_validated = False
+        else:
+            # This is a GET request, so it is a request for NEW or for EXISTING information
+            if add:
+                # Used to populate a NEW research project
+                # - CREATE a NEW research form, populating it with any initial data in the request
+                initial = dict(request.GET.items())
+                # researchForm = SeekerResearchForm(initial=get_changeform_initial_data(SeekerResearchForm, request))
+                researchForm = SeekerResearchForm(initial=initial, prefix="research")
+                # - CREATE a new gateway form
+                # gatewayForm = GatewayForm(initial=get_changeform_initial_data(GatewayForm, request))
+                gatewayForm = GatewayForm(initial=initial, prefix="gateway")
+            else:
+                # Used to show an EXISTING research project
+                # We should show the data belonging to the current Research [obj]
+                researchForm = SeekerResearchForm(instance=obj, prefix="research")
+                gatewayForm = GatewayForm(instance=obj.gateway, prefix="gateway")
+
+        # Make sure we have a list of any errors
+        error_list = [str(item) for item in arErr]
+        # Build the context
+        context = dict(
+            object_id = object_id,
+            researchForm = researchForm,
+            gatewayForm = gatewayForm,
+            savedate = savedate,
+            error_list = error_list,)
+        # Get the HTML response
+        data['html'] = render_to_string(template, context, request)
+
+
+    # Return the information
+    return JsonResponse(data)
+
+
+def research_part_2(request, object_id=None):
+    """Entry point for processing part #2 of a research project"""
+
+    # Initialisations:     
+    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
+    arErr = []                                # errors   
+    template = 'seeker/research_part_2.html'  # Template
+    form_validated = True                     # Used for POST form validation
+    savedate = None
+    construction_formset = None
+
+    BaseConstructionFormSet = inlineformset_factory(Gateway, Construction, 
+                                                    form=ConstructionWrdForm, min_num=1, 
+                                                    extra=0, can_delete=True, can_order=True)
+
+    class ConstructionFormSet(BaseConstructionFormSet):
+        #def __init__(self, *args, **kwargs):
+        #    self.user = 
+        #    super(ConstructionFormSet, self).__init__(*args, **kwargs)
+
+        def _construct_form(self, *args, **kwargs):
+            kwargs['user'] = request.user
+            return super(ConstructionFormSet, self)._construct_form(*args, **kwargs)
+
+    # Do we need adding?
+    if object_id == None:
+        if request.GET and 'object_id' in request.GET and request.GET.get('object_id') != 'None':
+            object_id = request.GET.get('object_id')
+    add = object_id is None
+
+    # Find out what the REsearch instance is, if any
+    if add:
+        obj = None
+        gateway = None
+        currentowner = None
+        targettype = ""
+    else:
+        # Get the instance of this research object
+        obj = Research.objects.get(pk=object_id)
+        gateway = obj.gateway
+        currentowner = obj.owner
+        targettype = obj.targetType
+
+    # first check for authentication
+    if not request.user.is_authenticated:
+        # Simply redirect to the home page
+        data['html'] = "Please log in to work on a research project"
+    else:
+        # User is authenticated
+
+        # Further action depends on POST or GET
+        if request.POST:
+
+            # Load the FORM information from the POST request
+            if add:
+                construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction')
+            else:
+                # Also get all required formsets
+                construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction', instance=gateway)
+            # Are all the formsets valid?
+            if construction_formset.is_valid() :
+
+                # Walk the construction formset, in order to add more information per construction
+                for cns_form in construction_formset:
+                    # Check if this form is valid
+                    if cns_form.is_valid():
+                        # Save it preliminarily
+                        cns = cns_form.save(commit=False)
+                        # Add the correct search item
+                        cns.search = SearchMain.create_item("word-group", cns_form.cleaned_data['value'], 'groupmatches')
+                        # Save this construction
+                        cns.save()
+                    else:
+                        arErr.append(construction_formset.errors)
+                # Confirm correct saving by supplying the savedate
+                savedate = "saved at {}".format(datetime.now().strftime("%X"))
+            else:
+                arErr.append(construction_formset.errors)
+                form_validated = False
+        else:
+            # This is a GET request, so it is a request for NEW or for EXISTING information
+            if add:
+                # Apparently this is a request for a NEW research project
+                # - CREATE a NEW research form, populating it with any initial data in the request
+                initial = dict(request.GET.items())
+                construction_formset = ConstructionFormSet(initial=initial, prefix="construction")
+            else:
+                # We should show the data belonging to the current Research [obj]
+                construction_formset = ConstructionFormSet(prefix='construction', instance=gateway)
+
+        # Make sure we have a list of any errors
+        error_list = [str(item) for item in arErr]
+        # Build the context
+        context = dict(
+            object_id = object_id,
+            construction_formset = construction_formset,
+            savedate = savedate,
+            targettype = targettype,
+            currentowner = currentowner,
+            error_list = error_list,)
+        # Get the HTML response
+        data['html'] = render_to_string(template, context, request)
+
+
     # Return the information
     return JsonResponse(data)
 

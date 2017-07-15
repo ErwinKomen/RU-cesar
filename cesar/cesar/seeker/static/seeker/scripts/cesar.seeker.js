@@ -45,26 +45,50 @@ var ru = (function ($, ru) {
        *
        */
       research_wizard: function(el, sPart) {
-        var sTargetId = "research_part_",
+        var sTargetId = "research_container_",
             sTargetType = "",
+            sObjectId = "",
+            html = "",
             elListItem = null,
             elList = null;
 
         try {
-          // Specify all ajax forms
-          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
-          // Sanity check
-          sTargetType = $("#id_targetType").val();
-          switch (sTargetType) {
-            case "w":
-            case "c":
-              private_methods.errClear();
-              break;
-            default:
-              // There really is no other option, so warn the user and do not change place
-              private_methods.errMsg("Choose the main element type");
-              return;
+          // Get the correct target id
+          sTargetId = "#" + sTargetId + sPart;
+          sObjectId = $("#researchid").text().trim();
+          sTargetType = $("#id_research-targetType").val();
+          // Before continuing: has the targettype been chosen?
+          if (sPart !== "1") {
+            // Sanity check          
+            switch (sTargetType) {
+              case "w":
+              case "c":
+                private_methods.errClear();
+                break;
+              default:
+                // There really is no other option, so warn the user and do not change place
+                private_methods.errMsg("Choose the main element type");
+                // We need to LEAVE at this point
+                return;
+            }
           }
+          // Some of these need to be loaded through an ajax call
+          switch (sPart) {
+            case "1":
+            case "2":
+              // Fetch the corr
+              var response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
+              if (response.status && response.status === "ok") {
+                // Make the HTML response visible
+                $(sTargetId).html(response.html);
+                // Make sure events are set again
+                ru.cesar.seeker.init_events();
+              }
+              break;
+          }
+          // Bind the click event to all class="ajaxform" elements
+          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
+
           // Some actions depend on the particular page we are going to visit
           switch (sPart) {
             case "4": // Page 4=Calculation
@@ -95,10 +119,9 @@ var ru = (function ($, ru) {
               break;
           }
           // Hide all research parts
-          $(".research-part").addClass("hidden");
-          $(".research-part").removeClass("active");
-          // Get the correct target id
-          sTargetId = "#"+ sTargetId + sPart;
+          $(".research-part").not(sTargetId).addClass("hidden");
+          $(".research-part").not(sTargetId).removeClass("active");
+
           $(sTargetId).removeClass("hidden");
           // If this is not [Project Type] then get the project type
           if (sPart !== '1') {
@@ -231,6 +254,44 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * ajaxform_load
+       *   General way to load an ajax form for 'New' or 'Edit' purposes
+       *
+       */
+      ajaxform_load: function (ajaxurl, instanceid) {
+        var data = [],      // Array to store the POST data
+            response = {},
+            html = "";      // The HTML code to be put
+
+        // Initial response
+        response['status'] = "none";
+        // Store the instanceid
+        data.push({ 'name': 'object_id', 'value': instanceid });
+        // NOTE: the form data will be fetched in the Python Server part
+        // Make an AJAX GET call to get the correct HTML code
+        $.ajax({
+          url: ajaxurl,
+          type: "GET",
+          data: data,
+          async: false,
+          dataType: 'json',
+          success: function (data) {
+            // Take over the JSON response (consisting of 'status' and 'html')
+            response = data;
+            // Make sure events are set again
+            ru.cesar.seeker.init_events();
+            var x = 1;
+          },
+          failure: function () {
+            response['status'] = "error";
+            response['html'] = "AJAX get failure";
+          }
+        });
+        // REturn the response
+        return response;
+      },
+
+      /**
        * ajaxform_click
        *   General way to process an ajax form request
        *
@@ -262,43 +323,28 @@ var ru = (function ($, ru) {
         // Find the element to be opened/closed
         var elOpen = null;
         if (openid !== undefined) {
-          elOpen = $(this).closest("tbody").find("#" + openid);
+          elOpen = $(this).closest("#" + openid);
         }
-        // Check if the element is opened or closed
-        if (elOpen === null || $(elOpen).hasClass("hidden")) {
-          // It is closed: open it up
-          // Make an AJAX call to get an existing or new specification element HTML code
-          $.ajax({
-            url: ajaxurl,
-            type: "POST",
-            data: data,
-            dataType: 'json',
-            success: function (data) {
-              var sOkay = "<div class='row'>Saved at "+ru.cesar.seeker.nowTime()+"</div>";
-
-              if (data.status && data.status === 'ok') {
-                if (elOpen !== null) {
-                  $(elOpen).html(data.html);
-                  // Unhide it
-                  $(elOpen).removeClass("hidden");
-                }
-                // Other action depends on the calltype
-                switch (callType) {
-                  case "button":
-                    // Add message below the button
-                    $(elCall).after(sOkay);
-                    break;
-                }
-              }
-            },
-            failure: function () {
-              var iStop = 1;
+        // Make an AJAX call to get an existing or new specification element HTML code
+        $.ajax({
+          url: ajaxurl,
+          type: "POST",
+          data: data,
+          async: false,
+          dataType: 'json',
+          success: function (data) {
+            if (data.status && data.status === 'ok') {
+              $(elOpen).html(data.html);
             }
-          });
-        } else {
-          // Hide it
-          if (elOpen !== null) { $(elOpen).addClass("hidden"); }
-        }
+            // Make sure events are set again
+            ru.cesar.seeker.init_events();
+          },
+          failure: function () {
+            var iStop = 1;
+          }
+        });
+        // Bind the click event to all class="ajaxform" elements
+        $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
       },
 
       /**
@@ -525,7 +571,30 @@ var ru = (function ($, ru) {
           // Add it
           $(sId).addClass("hidden");
         }
+      },
+
+      init_events: function () {
+        $('tr.add-row a').click(ru.cesar.seeker.tabular_addrow);
+        $('.inline-group > div > a.btn').click(function () {
+          var elGroup = null,
+              elTabular = null,
+              sStatus = "";
+
+          // Get the tabular
+          elTabular = $(this).parent().next(".tabular");
+          if (elTabular !== null) {
+            // Get the status of this one
+            if ($(elTabular).hasClass("hidden")) {
+              $(elTabular).removeClass("hidden");
+            } else {
+              $(elTabular).addClass("hidden");
+            }
+          }
+        });
+        $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
+        $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
       }
+
 
     };
   }($, ru.config));

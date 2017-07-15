@@ -58,8 +58,6 @@ class ConstructionWrdForm(ModelForm):
         fields = ['name']
 
     def __init__(self, *args, **kwargs):
-        # First get the user out of the way
-        self.user = kwargs.pop('user', None)
         # Start by executing the standard handling
         super(ConstructionWrdForm, self).__init__(*args, **kwargs)
         # Get the instance
@@ -76,34 +74,12 @@ class ConstructionWrdForm(ModelForm):
             # Set the initial value
 
             self.fields['value'].initial = sValue
-            # Compare the owner with the current user
-            if instance.gateway.research.owner != self.user:
-                self.fields['name'].disabled = True
-                self.fields['value'].disabled = True
 
     def is_valid(self):
         # Do default is valid
         valid = super(ConstructionWrdForm, self).is_valid()
         return valid
             
-    #def save(self, *args, **kwargs):
-    #    # Create a search for this one
-    #    value=self.value
-    #    search = SearchMain.create_item('word-group', value, 'groupmatches')
-
-    #    # Get the gateway we are under
-    #    gateway = None
-
-    #    # Make sure the construction gets the correct search and gateway
-    #    self.instance.search = search
-    #    self.instance.gateway = gateway
-
-    #    # Now save the construciotn
-    #    constructionwrd = super(ConstructionWrdForm, self).save( *args, **kwargs)
-
-    #    # Return what we have
-    #    return constructionwrd
-
 
 class ConstructionCnsForm(ModelForm):
     function_sc = forms.ChoiceField(choices=SEARCHMAIN_CNS_FUNCTIONS, required = True)
@@ -117,6 +93,7 @@ class ConstructionCnsForm(ModelForm):
         instance = getattr(self, 'instance', None)
         if instance:
             owner = instance.gateway
+
 
 class GvarForm(ModelForm):
     """The definition and value of global variables"""
@@ -214,68 +191,52 @@ class SeekerResearchForm(ModelForm):
         # Start by executing the standard handling
         super(SeekerResearchForm, self).__init__(*args, **kwargs)
 
-        # get the post-data
-        data = args[0] if args else kwargs.get('data', None)
+        ## get the post-data
+        #data = args[0] if args else kwargs.get('data', None)
 
-        # Do we have data?
-        if data:
-            # There is POST data, so fill the forms with the required information
-            self.gateway_data = {key: data[key] for key in data if key.startswith('gateway-')}
-            if hasattr(self.instance, 'gateway'):
-                gw = self.instance.gateway
-            else:
-                gw = Gateway(name=self.gateway_data['gateway-name'], description=self.gateway_data['gateway-description'])
-                gw.save()
-            self.gateway_form = GatewayForm(
-                instance = gw,
-                prefix='gateway',
-                data=self.gateway_data
-            )
-        else:
-            # Didn't get any POST data: process the GET instance
-            # Fill the form with the gateway data, or create a blank form
-            if hasattr(self.instance, 'gateway') and  self.instance.gateway:
-                # There is a gateway, so use it
-                self.gateway_form = GatewayForm(
-                    instance = self.instance.gateway,
-                    prefix='gateway'
-                )
-            else:
-                # Create a new form
-                self.gateway_form = GatewayForm(prefix='gateway')
+        ## Do we have data?
+        #gw = None
+        #if data:
+        #    # There is POST data, so fill the forms with the required information
+        #    self.gateway_data = {key: data[key] for key in data if key.startswith('gateway-')}
+        #    if hasattr(self.instance, 'gateway'):
+        #        gw = self.instance.gateway
+        #    elif 'gateway-name' in self.gateway_data:
+        #        gw = Gateway(name=self.gateway_data['gateway-name'], description=self.gateway_data['gateway-description'])
+        #        gw.save()
+        #    if gw == None:
+        #        self.gateway_form = GatewayForm(prefix='gateway', data=self.gateway_data)
+        #    else:
+        #        self.gateway_form = GatewayForm(
+        #            instance = gw,
+        #            prefix='gateway',
+        #            data=self.gateway_data
+        #    )
+        #else:
+        #    # Didn't get any POST data: process the GET instance
+        #    # Fill the form with the gateway data, or create a blank form
+        #    if hasattr(self.instance, 'gateway') and  self.instance.gateway:
+        #        # There is a gateway, so use it
+        #        self.gateway_form = GatewayForm(
+        #            instance = self.instance.gateway,
+        #            prefix='gateway'
+        #        )
+        #    else:
+        #        # Create a new form
+        #        self.gateway_form = GatewayForm(prefix='gateway')
 
     def is_valid(self):
-        if not self.gateway_form.is_valid():
-            return False
+        #if not self.gateway_form.is_valid():
+        #    return False
         return super(SeekerResearchForm, self).is_valid()
 
-    def clean(self):
-        if not self.gateway_form.is_valid():
-            raise forms.ValidationError("Gateway not valid")
+    #def clean(self):
+    #    if not self.gateway_form.is_valid():
+    #        raise forms.ValidationError("Gateway not valid")
 
-    #def save(self, *args, **kwargs):
-    #    # Save the gateway form first
-    #    gateway = self.gateway_form.save()
 
-    #    # now make sure the SeekerResearchForm has the gateway
-    #    self.instance.gateway = gateway
 
-    #    # Also make sure that all Constructions get the link to this gateway
-
-    #    # Now save the larger form
-    #    research = super(SeekerResearchForm, self).save( *args, **kwargs)
-
-    #    # THIS IS NOT NEEDED ANYMORE:
-    #    ## Get the correct gateway
-    #    #research.gateway = gateway
-
-    #    # Now save the research object
-    #    research.save()
-
-    #    # And return it
-    #    return research
-
-    def has_changed(self):
-        return super(SeekerResearchForm,self).has_changed() or self.gateway_form.has_changed()
+    #def has_changed(self):
+    #    return super(SeekerResearchForm,self).has_changed() or self.gateway_form.has_changed()
 
 
