@@ -170,6 +170,8 @@ class ResearchPart(View):
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
             context['error_list'] = error_list
+            # Standard: add request user to context
+            context['requestuser'] = request.user
             # Get the HTML response
             self.data['html'] = render_to_string(self.template_name, context, request)
         else:
@@ -222,6 +224,8 @@ class ResearchPart(View):
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
             context['error_list'] = error_list
+            # Standard: add request user to context
+            context['requestuser'] = request.user
             
             # Get the HTML response
             self.data['html'] = render_to_string(self.template_name, context, request)
@@ -299,8 +303,8 @@ class ResearchPart2(ResearchPart):
     template_name = 'seeker/research_part_2.html'
     MainModel = Research
     ConstructionFormSet = inlineformset_factory(Gateway, Construction, 
-                                                    form=ConstructionWrdForm, min_num=1, 
-                                                    extra=0, can_delete=True, can_order=True)
+                                                form=ConstructionWrdForm, min_num=1, 
+                                                extra=0, can_delete=True, can_order=True)
     formset_objects = [{'formsetClass': ConstructionFormSet, 'prefix': 'construction'}]
              
     def get_instance(self, prefix):
@@ -334,217 +338,49 @@ class ResearchPart2(ResearchPart):
                 if owner != currentuser:
                     form.fields['name'].disabled = True
                     form.fields['value'].disabled = True
+
+
+class ResearchPart3(ResearchPart):
+    template_name = 'seeker/research_part_3.html'
+    MainModel = Research
+    GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, 
+                                        form=GvarForm, min_num=1, 
+                                        extra=0, can_delete=True, can_order=True)
+    formset_objects = [{'formsetClass': GvarFormSet, 'prefix': 'gvar'}]
                 
+    def get_instance(self, prefix):
+        if prefix == 'gvar':
+            return self.obj.gateway
 
-
-def research_part_1(request, object_id=None):
-    """Entry point for processing part #1 of a research project"""
-
-    # Initialisations:     
-    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
-    arErr = []                                # errors   
-    template = 'seeker/research_part_1.html'  # Template
-    form_validated = True                     # Used for POST form validation
-    savedate = None
-
-    # Do we need adding?
-    if object_id == None:
-        if request.GET and 'object_id' in request.GET and request.GET.get('object_id') != 'None':
-            object_id = request.GET.get('object_id')
-    add = object_id is None
-
-    # Find out what the REsearch instance is, if any
-    if add:
-        obj = None
-    else:
-        # Get the instance of this research object
-        obj = Research.objects.get(pk=object_id)
-
-    # first check for authentication
-    if not request.user.is_authenticated:
-        # Simply redirect to the home page
-        data['html'] = "Please log in to work on a research project"
-    else:
-        # User is authenticated
-        # Further action depends on POST or GET
-        if request.POST:
-
-            # Load the FORM information from the POST request
-            if add:
-                # Used when saving a NEW item
-                researchForm = SeekerResearchForm(request.POST, prefix="research")
-                # Also load the gateway from from the POST request
-                gatewayForm = GatewayForm(request.POST, prefix="gateway")
-            else:
-                # Used when saving an EXISTING item
-                researchForm = SeekerResearchForm(request.POST, prefix="research", instance=obj)
-                # Also load the gateway from from the POST request
-                gatewayForm = GatewayForm(request.POST, prefix="gateway", instance=obj.gateway)
-            if researchForm.is_valid():
-                # Do a preliminary saving
-                research = researchForm.save(commit=False)
-                # Check if we have a gateway
-                if research.gateway_id == None:
-                    if gatewayForm.is_valid():
-                        gateway = gatewayForm.save(commit=False)
-                        # TODO: possible changes to the gateway in the future...
-
-                        # Save the gateway instance...
-                        gateway.save()
-                    else:
-                        arErr.append(gatewayForm.errors)
-                        form_validated = False
-                    research.gateway = gateway
-                # Check for the owner
-                if research.owner_id == None:
-                    research.owner = request.user
-                # Now save the object
-                obj = research.save()
-                # Confirm correct saving by supplying the savedate
-                savedate = "saved at {}".format(datetime.now().strftime("%X"))
-            else:
-                arErr.append(researchForm.errors)
-                form_validated = False
+    def add_to_context(self, context):
+        if self.obj == None:
+            currentowner = None
         else:
-            # This is a GET request, so it is a request for NEW or for EXISTING information
-            if add:
-                # Used to populate a NEW research project
-                # - CREATE a NEW research form, populating it with any initial data in the request
-                initial = dict(request.GET.items())
-                # researchForm = SeekerResearchForm(initial=get_changeform_initial_data(SeekerResearchForm, request))
-                researchForm = SeekerResearchForm(initial=initial, prefix="research")
-                # - CREATE a new gateway form
-                # gatewayForm = GatewayForm(initial=get_changeform_initial_data(GatewayForm, request))
-                gatewayForm = GatewayForm(initial=initial, prefix="gateway")
-            else:
-                # Used to show an EXISTING research project
-                # We should show the data belonging to the current Research [obj]
-                researchForm = SeekerResearchForm(instance=obj, prefix="research")
-                gatewayForm = GatewayForm(instance=obj.gateway, prefix="gateway")
-
-        # Make sure we have a list of any errors
-        error_list = [str(item) for item in arErr]
-        # Build the context
-        context = dict(
-            object_id = object_id,
-            researchForm = researchForm,
-            gatewayForm = gatewayForm,
-            savedate = savedate,
-            error_list = error_list,)
-        # Get the HTML response
-        data['html'] = render_to_string(template, context, request)
+            currentowner = self.obj.owner
+        context['currentowner'] = currentowner
+        return context
 
 
-    # Return the information
-    return JsonResponse(data)
+class ResearchPart4(ResearchPart):
+    template_name = 'seeker/research_part_4.html'
+    MainModel = Research
+    VardefFormSet = inlineformset_factory(Gateway, VarDef, 
+                                          form=VarDefForm, min_num=1, extra=0, 
+                                          can_delete=True, can_order=True)
+    formset_objects = [{'formsetClass': VardefFormSet, 'prefix': 'vardef'}]
+                
+    def get_instance(self, prefix):
+        if prefix == 'vardef':
+            return self.obj.gateway
 
-
-def research_part_2(request, object_id=None):
-    """Entry point for processing part #2 of a research project"""
-
-    # Initialisations:     
-    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
-    arErr = []                                # errors   
-    template = 'seeker/research_part_2.html'  # Template
-    form_validated = True                     # Used for POST form validation
-    savedate = None
-    construction_formset = None
-
-    BaseConstructionFormSet = inlineformset_factory(Gateway, Construction, 
-                                                    form=ConstructionWrdForm, min_num=1, 
-                                                    extra=0, can_delete=True, can_order=True)
-
-    class ConstructionFormSet(BaseConstructionFormSet):
-        #def __init__(self, *args, **kwargs):
-        #    self.user = 
-        #    super(ConstructionFormSet, self).__init__(*args, **kwargs)
-
-        def _construct_form(self, *args, **kwargs):
-            kwargs['user'] = request.user
-            return super(ConstructionFormSet, self)._construct_form(*args, **kwargs)
-
-    # Do we need adding?
-    if object_id == None:
-        if request.GET and 'object_id' in request.GET and request.GET.get('object_id') != 'None':
-            object_id = request.GET.get('object_id')
-    add = object_id is None
-
-    # Find out what the REsearch instance is, if any
-    if add:
-        obj = None
-        gateway = None
-        currentowner = None
-        targettype = ""
-    else:
-        # Get the instance of this research object
-        obj = Research.objects.get(pk=object_id)
-        gateway = obj.gateway
-        currentowner = obj.owner
-        targettype = obj.targetType
-
-    # first check for authentication
-    if not request.user.is_authenticated:
-        # Simply redirect to the home page
-        data['html'] = "Please log in to work on a research project"
-    else:
-        # User is authenticated
-
-        # Further action depends on POST or GET
-        if request.POST:
-
-            # Load the FORM information from the POST request
-            if add:
-                construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction')
-            else:
-                # Also get all required formsets
-                construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction', instance=gateway)
-            # Are all the formsets valid?
-            if construction_formset.is_valid() :
-
-                # Walk the construction formset, in order to add more information per construction
-                for cns_form in construction_formset:
-                    # Check if this form is valid
-                    if cns_form.is_valid():
-                        # Save it preliminarily
-                        cns = cns_form.save(commit=False)
-                        # Add the correct search item
-                        cns.search = SearchMain.create_item("word-group", cns_form.cleaned_data['value'], 'groupmatches')
-                        # Save this construction
-                        cns.save()
-                    else:
-                        arErr.append(construction_formset.errors)
-                # Confirm correct saving by supplying the savedate
-                savedate = "saved at {}".format(datetime.now().strftime("%X"))
-            else:
-                arErr.append(construction_formset.errors)
-                form_validated = False
+    def add_to_context(self, context):
+        if self.obj == None:
+            currentowner = None
         else:
-            # This is a GET request, so it is a request for NEW or for EXISTING information
-            if add:
-                # Apparently this is a request for a NEW research project
-                # - CREATE a NEW research form, populating it with any initial data in the request
-                initial = dict(request.GET.items())
-                construction_formset = ConstructionFormSet(initial=initial, prefix="construction")
-            else:
-                # We should show the data belonging to the current Research [obj]
-                construction_formset = ConstructionFormSet(prefix='construction', instance=gateway)
+            currentowner = self.obj.owner
+        context['currentowner'] = currentowner
+        return context
 
-        # Make sure we have a list of any errors
-        error_list = [str(item) for item in arErr]
-        # Build the context
-        context = dict(
-            object_id = object_id,
-            construction_formset = construction_formset,
-            savedate = savedate,
-            targettype = targettype,
-            currentowner = currentowner,
-            error_list = error_list,)
-        # Get the HTML response
-        data['html'] = render_to_string(template, context, request)
-
-
-    # Return the information
-    return JsonResponse(data)
 
 
 def get_spec_el(request):

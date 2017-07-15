@@ -76,6 +76,8 @@ var ru = (function ($, ru) {
           switch (sPart) {
             case "1":
             case "2":
+            case "3":
+            case "4":
               // Fetch the corr
               var response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
               if (response.status && response.status === "ok") {

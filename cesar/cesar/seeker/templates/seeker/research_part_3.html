@@ -1,0 +1,67 @@
+﻿{% load i18n %}
+
+<form action="" method="post">
+    {% csrf_token %}
+    <!-- Part 3: Global variables -->
+    <div id="research_part_3"
+         class="row js-inline-formset inline-group"
+         data-inline-type="tabular"
+         data-inline-formset="{{gvar_formset.inline_formset_data}}">
+        <!-- GLOBAL VARIABLE specification -->
+        <div id="research_gvar" class="tabular inline-related">
+          {{gvar_formset.management_form}}
+            <fieldset class="module {{gvar_formset.classes}}">
+              <p>Provide the names and values of static, global variables (if there are any)</p>
+              <table>
+                <thead><tr><th>Name</th><th>Description</th><th>Value</th><th>DELETE?</th></tr></thead>
+                <tbody>
+                  {% for gvar_this in gvar_formset %}
+                  <tr class="form-row">
+                    <td class="hidden">{{gvar_this.variable_ptr}}</td>
+                    <td valign="top">{{gvar_this.name}}</td>
+                    <td valign="top">{{gvar_this.description}}</td>
+                    <td valign="top">{{gvar_this.value}}</td>
+                    <td valign="top">{{gvar_this.DELETE}}</td>
+                  </tr>
+                  {% endfor %}
+                  {% if currentowner == user %}
+                  <tr id="arguments-empty" class="form-row empty-form row1">
+                    <td class="hidden">{{gvar_formset.empty_form.variable_ptr}}</td>
+                    <td valign="top">{{gvar_formset.empty_form.name}}</td>
+                    <td valign="top">{{gvar_formset.empty_form.description}}</td>
+                    <td valign="top">{{gvar_formset.empty_form.value}}</td>
+                    <td valign="top" align="center">{{gvar_formset.empty_form.DELETE}}</td>
+                  </tr>
+                  <tr class="add-row">
+                    <td colspan="4">
+                      <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another global variable</a>
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </fieldset>
+        </div>
+
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        <code>{% for item in error_list %}{{item}}{% endfor %}</code>
+      </div>
+
+      <!-- Show the buttons to save, cancel, delete and so forth -->
+      <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary ajaxform"
+                instanceid="{{object_id}}"
+                openid="research_container_3" 
+                ajaxurl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+      </div>
+      {% if savedate %}<div class="row">{{savedate}}</div>{% endif %}
+
+    </div>
+
+
+</form>
