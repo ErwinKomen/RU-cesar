@@ -78,6 +78,9 @@ var ru = (function ($, ru) {
             case "2":
             case "3":
             case "4":
+            case "42":
+              // CHeck if we need to take another instance id instead of #researchid
+              if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid");}
               // Fetch the corr
               var response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
               if (response.status && response.status === "ok") {
@@ -94,6 +97,7 @@ var ru = (function ($, ru) {
           // Some actions depend on the particular page we are going to visit
           switch (sPart) {
             case "4": // Page 4=Calculation
+            case "42":
               // Specify the function to be called when the user presses [Calculation...]
               $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
               // Specify the function to be called when the user presses [Calculation...]
@@ -268,7 +272,7 @@ var ru = (function ($, ru) {
         // Initial response
         response['status'] = "none";
         // Store the instanceid
-        data.push({ 'name': 'object_id', 'value': instanceid });
+        // data.push({ 'name': 'object_id', 'value': instanceid });
         // NOTE: the form data will be fetched in the Python Server part
         // Make an AJAX GET call to get the correct HTML code
         $.ajax({

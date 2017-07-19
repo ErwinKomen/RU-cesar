@@ -60,34 +60,20 @@
         <!-- Part 3: Global variables -->
         <div id="research_container_3"  class="row research-part" ></div>
 
-        <!-- Part 3: Construction variables -->
+        <!-- Part 4: Construction variables -->
         <div id="research_container_4"  class="row research-part" ></div>
 
-        <!-- The form for the remaining pars 2-7, divided per content element -->
-        <form action="" method="post">
-            {% csrf_token %}
-          <!-- The hidden elements we work with -->
-          <div class="hidden">
-            <input name='research_part' class='form-control' value='wrd' >
-            <input id="submit_type" name='submit_type' class='form-control' value='simple'>
-          </div>
+        <!-- Part 4-2: Construction variable per search element -->
+        <div id="research_container_42"  class="row research-part" ></div>
 
+        <!-- Part 4-3: Function specification for one cvar -->
+        <div id="research_container_43"  class="row research-part" ></div>
 
-          <!-- Part 5: Conditions -->
-          <div id="research_part_6" class="row research-part hidden">
-              Specifying hit conditions
-            <!-- Show the buttons to save, cancel, delete and so forth -->
-            {% include "submit_row.html" with currentowner=form.instance.owner %}
-          </div>
+        <!-- Part 6: Conditions -->
+        <div id="research_container_6"  class="row research-part" ></div>
 
-          <!-- Part 6: Features -->
-          <div id="research_part_7" class="row research-part hidden">
-              Feature calculation
-            <!-- Show the buttons to save, cancel, delete and so forth -->
-            {% include "submit_row.html" with currentowner=form.instance.owner %}
-          </div>
-
-        </form>  
+        <!-- Part 7: Features -->
+        <div id="research_container_7"  class="row research-part" ></div>
         
       </div>
 
@@ -96,25 +82,6 @@
   </div>
 
 <script>
-  $('tr.add-row a').click(ru.cesar.seeker.tabular_addrow);
-  $('.inline-group > div > a.btn').click(function () {
-    var elGroup = null,
-        elTabular = null,
-        sStatus = "";
-
-    // Get the tabular
-    elTabular = $(this).parent().next(".tabular");
-    if (elTabular !== null) {
-      // Get the status of this one
-      if ($(elTabular).hasClass("hidden")) {
-        $(elTabular).removeClass("hidden");
-      } else {
-        $(elTabular).addClass("hidden");
-      }
-    }
-  });
-  $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
-  $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
   ru.cesar.seeker.init_events();
   ru.cesar.seeker.research_wizard($("#button_part_1"), '1');
 </script>

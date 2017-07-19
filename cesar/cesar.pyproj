@@ -124,6 +124,8 @@
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_part_43.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_part_42.html" />
     <Content Include="cesar\seeker\templates\seeker\part4sub.html" />
     <Content Include="cesar\seeker\templates\seeker\research_edit_ORG.html" />
     <Content Include="cesar\seeker\templates\seeker\research_list.html" />

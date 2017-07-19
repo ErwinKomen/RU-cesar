@@ -1,0 +1,84 @@
+﻿{% load i18n %}
+
+<form action="" method="post">
+    {% csrf_token %}
+    <!-- Part 4-2: One Construction Variable for all available Search Elements -->
+    <div id="research_part_42" 
+         class="js-inline-formset inline-group panel panel-default"
+         data-inline-type="tabular"
+         data-inline-formset="{{cvar_formset.inline_formset_data}}">
+      <div class="col-md-1">
+          <button type="button" class="btn btn-primary" 
+                  id="button_part_4_return"
+                  targeturl="{% if research_id %}{% url 'research_part_4' research_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
+                  targetid="research_part_4"
+                  onclick="ru.cesar.seeker.research_wizard(this, '4');"><<</button>
+      </div>
+      <div id="research_cvar" class="col-md-11 tabular inline-related">
+        {{cvar_formset.management_form}}
+        <fieldset class="module {{cvar_formset.classes}}">
+          <p>Specify how variable <code>{{vardef_this.name}}</code> should be calculated for each search element</p>
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Value</th></tr></thead>
+            <tbody>
+              {% for cvar_form in cvar_formset %}
+                <tr class="form-row cvar-item">
+                  <td class="hidden">{{cvar_form.id}}</td>
+                  <td valign="top">{{forloop.counter}}</td>
+                  <td valign="top">{{cvar_form.instance.construction.name}}</td>
+                  <td valign="top" class="cvar-type">{{cvar_form.type}}</td>
+                  <td valign="top" class="cvar-val-exp">
+                    <div>
+                      <!-- option 0: fixed value -->
+                      <span class="cvar-value">{{cvar_form.svalue}}</span>
+                      <!-- option 1: function/expression -->
+                      <span class="cvar-expression">
+                        <span class="cvar-fundef">{{cvar_form.functiondef}}</span>
+                        <span id="cvar-functionid" class="hidden"><input id="id_cvar-function-__id__-id" type="hidden" value="" /></span>
+                        <a class="btn btn-xs btn-default" role="button" 
+                            targeturl="{% if vardef_this.instance.id %}{% url 'research_part_43' vardef_this.instance.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
+                            targetid="research_part_43"
+                            instanceid="{{cvar_form.instance.id}}"
+                            onclick="ru.cesar.seeker.research_wizard(this, '43');" >
+                          {% if cvar_form.function_id %}
+                          {% trans 'edit' %}
+                          {% else %}
+                          {% trans 'create' %}
+                          {% endif %}
+                        </a>
+                        <a class="cvar-summary">{% trans 'summary' %}</a>
+                        ...
+                      </span>
+                      <!-- option 2: global variable -->
+                      <span class="cvar-gvar">{{cvar_form.gvar}}</span>
+                      <!-- Room to provide a summary of the function-calculation -->
+                      <div class="cvar-expression-summary hidden"></div>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </fieldset>
+      </div>
+
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        <code>{% for item in error_list %}{{item}}{% endfor %}</code>
+      </div>
+
+      <!-- Show the buttons to save, cancel, delete and so forth -->
+      <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary ajaxform"
+                instanceid="{{object_id}}"
+                openid="research_container_42" 
+                ajaxurl="{% if object_id %}{% url 'research_part_42' object_id %}{% else %}{% url 'research_part_42' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+      </div>
+      {% if savedate %}<div class="row">{{savedate}}</div>{% endif %}
+    </div>
+</form>
+

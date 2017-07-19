@@ -247,10 +247,8 @@ class ResearchPart(View):
     def initializations(self, request, object_id):
         # COpy the request
         self.request = request
-        # Do we need adding?
-        if object_id == None:
-            if request.GET and 'object_id' in request.GET and request.GET.get('object_id') != 'None':
-                object_id = request.GET.get('object_id')
+        # Copy any object id
+        self.object_id = object_id
         self.add = object_id is None
 
         # Find out what the Main Model instance is, if any
@@ -259,6 +257,8 @@ class ResearchPart(View):
         else:
             # Get the instance of the Main Model object
             self.obj =  self.MainModel.objects.get(pk=object_id)
+            # Perform some custom initialisations
+            self.custom_init()
 
     def get_instance(self, prefix):
         return self.obj
@@ -270,6 +270,9 @@ class ResearchPart(View):
         return context
 
     def process_formset(self, prefix, request, formset):
+        pass
+
+    def custom_init(self):
         pass
 
 
@@ -297,6 +300,13 @@ class ResearchPart1(ResearchPart):
                 # Check for the owner
                 if research.owner_id == None:
                     research.owner = request.user
+
+    def custom_init(self):
+        if self.obj:
+            gw = self.obj.gateway
+            if gw:
+                gw.check_cvar()
+        return True
 
 
 class ResearchPart2(ResearchPart):
@@ -376,9 +386,66 @@ class ResearchPart4(ResearchPart):
     def add_to_context(self, context):
         if self.obj == None:
             currentowner = None
+            context['research_id'] = None
         else:
             currentowner = self.obj.owner
+            context['research_id'] = self.obj.gateway.research.id
         context['currentowner'] = currentowner
+        # We also need to make the object_id available
+        context['object_id'] = self.object_id
+        return context
+
+
+class ResearchPart42(ResearchPart):
+    template_name = 'seeker/research_part_42.html'
+    MainModel = VarDef
+    CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, 
+                                          form=CvarForm, min_num=1, extra=0)
+    formset_objects = [{'formsetClass': CvarFormSet, 'prefix': 'cvar'}]
+                
+    def get_instance(self, prefix):
+        if prefix == 'cvar':
+            return self.obj
+
+    def add_to_context(self, context):
+        if self.obj == None:
+            currentowner = None
+        else:
+            currentowner = self.obj.gateway.research.owner
+        context['currentowner'] = currentowner
+        # We also need to make the object_id available
+        context['object_id'] = self.object_id
+        context['research_id'] = self.obj.gateway.research.id
+        context['vardef_this'] = self.obj
+        return context
+
+
+class ResearchPart43(ResearchPart):
+    template_name = 'seeker/research_part_43.html'
+    MainModel = ConstructionVariable
+    FunctionFormSet = inlineformset_factory(Function, Argument, 
+                                          form=FunctionForm, min_num=1, extra=0)
+    formset_objects = [{'formsetClass': FunctionFormSet, 'prefix': 'function'}]
+                
+    def get_instance(self, prefix):
+        if prefix == 'function':
+            # This returns the CVAR object we are linked to
+            return self.obj
+
+    def add_to_context(self, context):
+        if self.obj == None:
+            currentowner = None
+            context['research_id'] = None
+            context['vardef_this'] = None
+            context['construction_this'] = None
+        else:
+            currentowner = self.obj.gateway.research.owner
+            context['research_id'] = self.obj.variable.gateway.research.id
+            context['vardef_this'] = self.obj.variable
+            context['construction_this'] = self.obj.construction
+        context['currentowner'] = currentowner
+        # We also need to make the object_id available
+        context['object_id'] = self.object_id
         return context
 
 
