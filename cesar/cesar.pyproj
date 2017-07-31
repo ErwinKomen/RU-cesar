@@ -123,6 +123,7 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
+    <Content Include="cesar\seeker\templates\seeker\function_if_equals_else.html" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_43.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_42.html" />

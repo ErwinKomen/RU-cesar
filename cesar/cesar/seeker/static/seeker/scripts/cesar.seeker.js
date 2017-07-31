@@ -49,6 +49,9 @@ var ru = (function ($, ru) {
             sTargetType = "",
             sObjectId = "",
             html = "",
+            data = {},
+            frm = null,
+            response = null,
             elListItem = null,
             elList = null;
 
@@ -74,6 +77,23 @@ var ru = (function ($, ru) {
           }
           // Some of these need to be loaded through an ajax call
           switch (sPart) {
+            case "43":
+              // Get all the information in this form and store it
+              frm = $(el).closest("form");
+              if (frm !== undefined) {
+                data = $(frm).serializeArray();
+                var button = $(frm).find(".submit-row .ajaxform");
+                if (button !== undefined) {
+                  data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
+                  // Process this information: save the data!
+                  response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
+                  // Check the response
+                  if (response.status === undefined || response.status !== "ok") {
+                    // Action to undertake if we have not been successfull
+                    private_methods.errMsg("research_wizard[43]: could not save the data for this construction variable");
+                  }
+                }
+              }
             case "1":
             case "2":
             case "3":
@@ -82,7 +102,7 @@ var ru = (function ($, ru) {
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid");}
               // Fetch the corr
-              var response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
+              response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
               if (response.status && response.status === "ok") {
                 // Make the HTML response visible
                 $(sTargetId).html(response.html);
@@ -112,7 +132,14 @@ var ru = (function ($, ru) {
               // Specify the function to be called when the user presses "summary"
               $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
               break;
-            case "5": // Page 4=Calculation
+            case "43":
+              // TODO: add any event handlers for wizard part '43'
+
+              break;
+            case "5": // Page 5=Conditions
+
+              // TODO: this still needs to be specified
+
               // Make sure the 'Type' field values are processed everywhere
               $(".cvar-item").each(function () {
                 // Perform the same function as if we were clicking it
@@ -264,13 +291,16 @@ var ru = (function ($, ru) {
        *   General way to load an ajax form for 'New' or 'Edit' purposes
        *
        */
-      ajaxform_load: function (ajaxurl, instanceid) {
-        var data = [],      // Array to store the POST data
-            response = {},
+      ajaxform_load: function (ajaxurl, instanceid, data) {
+        var response = {},
             html = "";      // The HTML code to be put
 
         // Initial response
         response['status'] = "none";
+        // See if data needs to be initialized
+        if (data === undefined) {
+          data = [];      // Array to store the POST data
+        }
         // Store the instanceid
         // data.push({ 'name': 'object_id', 'value': instanceid });
         // NOTE: the form data will be fetched in the Python Server part
@@ -295,6 +325,43 @@ var ru = (function ($, ru) {
         });
         // REturn the response
         return response;
+      },
+
+      /**
+       * ajaxcall
+       *   Make an AJAX call to the URL with the data
+       *   Use the method specified: POST or GET
+       *
+       */
+      ajaxcall: function (sUrl, data, sMethod) {
+        var response = {};
+
+        try {
+          if (sUrl === undefined || sUrl === "" || data === undefined) {
+            // Cannot do anything with this, so respond with a bad status
+            response['status'] = "error";
+            response['msg'] = "Missing obligatory parameter(s): URL, data";
+            return response;
+          }
+          // There is valid information, continue
+          $.ajax({
+            url: sUrl,
+            type: sMethod,
+            data: data,
+            async: false,
+            dataType: 'json',
+            success: function (data) {
+              response = data;
+            },
+            failure: function () {
+              var iStop = 1;
+            }
+          });
+          // Return the response
+          return response;
+        } catch (ex) {
+          private_methods.errMsg("ajaxcall", ex);
+        }
       },
 
       /**

@@ -148,6 +148,10 @@ class CvarForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+        # make sure only the 'gvar' elements under this particular gateway are shown
+        gateway = kwargs['instance'].construction.gateway
+        self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway)
+        # make sure all the available function-definitions are shown
         self.fields['functiondef'].queryset = FunctionDef.objects.all()
 
 
@@ -169,17 +173,44 @@ class FunctionForm(ModelForm):
 class ArgumentDefForm(ModelForm):
     """The specification of an argument to a function"""
 
+    argtype = forms.ChoiceField(choices=SEARCH_ARGTYPE, required=True)
+
     class Meta:
         model = ArgumentDef
-        fields = ['name', 'text']
+        fields = ['name', 'text', 'order', 'argtype']
+        widgets={
+          'text': Textarea(attrs={'rows': 1, 'cols': 100})
+          }
+
+    def __init__(self, *args, **kwargs):
+        super(ArgumentDefForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'argtype', SEARCH_ARGTYPE)
 
 
 class ArgumentForm(ModelForm):
     """The argument to a function"""
 
+    argtype = forms.ChoiceField(choices=SEARCH_ARGTYPE, required=True)
+
     class Meta:
         model = Argument
         fields = ['argtype', 'argval', 'gvar', 'cvar', 'function']
+        widgets={
+          'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 100})
+          }
+
+    def __init__(self, *args, **kwargs):
+        super(ArgumentForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'argtype', SEARCH_ARGTYPE)
+        # Set required and optional fields
+        self.fields['argtype'].required = True
+        self.fields['cvar'].required = False
+        self.fields['gvar'].required = False
+        self.fields['function'].required = False
+        # Do we have an instance?
+        if 'instance' in kwargs:
+            # Make sure all the querysets are in order
+            inst = kwargs['instance']
 
 
 class SeekerResearchForm(ModelForm):

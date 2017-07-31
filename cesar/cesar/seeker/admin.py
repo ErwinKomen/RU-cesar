@@ -24,7 +24,7 @@ class ResearchAdmin(admin.ModelAdmin):
 
 class ArgumentDefInline(admin.TabularInline):
     model = ArgumentDef
-    form = ArgumentForm
+    form = ArgumentDefForm
     extra = 0
 
 

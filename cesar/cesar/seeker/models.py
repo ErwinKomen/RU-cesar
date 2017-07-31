@@ -242,8 +242,13 @@ class ArgumentDef(models.Model):
 
     # [1] The descriptive name of this argument
     name = models.CharField("Descriptive name", max_length=MAX_TEXT_LEN)
-    # [1] The text to preced this argument within the specification element
+    # [1] The text to precede this argument within the specification element
     text = models.CharField("Preceding text", blank=True, max_length=MAX_TEXT_LEN)
+    # [1] The numerical order of this argument
+    order = models.IntegerField("Order", blank=False, default=0)
+    # [1] The value can be of type: fixed, global variable, construction variable, function-output
+    argtype = models.CharField("Variable type", choices=build_choice_list(SEARCH_ARGTYPE), 
+                              max_length=5, help_text=get_help(SEARCH_ARGTYPE))
     # [1] The value that is the outcome of this function: 
     #     This is a JSON list, it can contain any number of bool, int, string
     argval = models.TextField("JSON value", blank=True, default="[]")
@@ -292,6 +297,9 @@ class ConstructionVariable(models.Model):
         sConstruction = self.construction.name
         sVariable = self.variable.name
         return "C:{}-{}=[{}]".format(sConstruction, sVariable, self.svalue)
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        return super().save(force_insert, force_update, using, update_fields)
 
 
 class SearchItem(models.Model):

@@ -340,12 +340,15 @@ class ResearchPart2(ResearchPart):
     def process_formset(self, prefix, request, formset):
         if prefix == 'construction':
             # Get the owner of the research project
-            owner = self.obj.owner
+            if self.obj == None:
+                owner = None
+            else:
+                owner = self.obj.owner
             currentuser = request.user
             # Need to process all the forms here
             for form in formset:
                 # Compare the owner with the current user
-                if owner != currentuser:
+                if owner != None and owner != currentuser:
                     form.fields['name'].disabled = True
                     form.fields['value'].disabled = True
 
@@ -410,43 +413,93 @@ class ResearchPart42(ResearchPart):
     def add_to_context(self, context):
         if self.obj == None:
             currentowner = None
+            researchid = None
         else:
             currentowner = self.obj.gateway.research.owner
+            researchid = self.obj.gateway.research.id
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id
-        context['research_id'] = self.obj.gateway.research.id
+        context['research_id'] = researchid
         context['vardef_this'] = self.obj
         return context
 
 
 class ResearchPart43(ResearchPart):
     template_name = 'seeker/research_part_43.html'
-    MainModel = Function
+    MainModel = ConstructionVariable
     form_objects = [{'form': FunctionForm, 'prefix': 'function'}]
     ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=1, extra=0)
     formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'}]
                 
     def get_instance(self, prefix):
-        if prefix == 'function':
+        if prefix == 'function' or prefix == 'arg':
             # This returns the FUNCTION object we are linked to
-            return self.obj
-        elif prefix == 'arg':
-            # Return the CVAR this function is part of
-            return self.obj
+            cvar = self.obj
+            if cvar.function_id == None or cvar.function == None:
+                # Check the function definition
+                if cvar.functiondef_id == None:
+                    # There is an error: we need to have a function definition here
+                    return None
+                # Create a new function 
+                function = Function(functiondef = cvar.functiondef)
+                function.save()
+                cvar.function = function
+                # Make sure we save the CVAR object
+                cvar.save()
+            return cvar.function
+
+    def custom_init(self):
+        """Make sure the formset gets the correct number of arguments"""
+
+        # Check if we have a CVAR object
+        if self.obj:
+            # Check if the object type is Calculate
+            if self.obj.type == str(choice_value(SEARCH_VARIABLE_TYPE,"Calculate")):
+                # Get the function definition
+                functiondef = self.obj.functiondef
+                if functiondef != None:
+                    # Get the number of arguments
+                    argnum = functiondef.argnum
+                    # Adapt the minimum number of items in the argument formset
+                    self.ArgFormSet = inlineformset_factory(Function, Argument, 
+                                          form=ArgumentForm, min_num=argnum, extra=0)
+                    self.formset_objects[0]['formsetClass'] = self.ArgFormSet
+
+        return True
 
     def add_to_context(self, context):
+        context['function_template'] = ''
         if self.obj == None:
             currentowner = None
             context['research_id'] = None
             context['vardef_this'] = None
             context['construction_this'] = None
         else:
-            currentowner = self.obj.gateway.research.owner
+            currentowner = self.obj.variable.gateway.research.owner
             context['research_id'] = self.obj.variable.gateway.research.id
             context['vardef_this'] = self.obj.variable
             context['construction_this'] = self.obj.construction
+            if self.obj.type == str(choice_value(SEARCH_VARIABLE_TYPE,"Calculate")):
+                # Need to specify the template for the function
+                functiondef = self.obj.functiondef
+                functionName = functiondef.name
+                context['function_template'] = "seeker/function_" + functionName + ".html"
+                # Adapt the arguments for this form
+                arg_formset = context['arg_formset']
+                arg_defs = ArgumentDef.objects.filter(function=functiondef)
+                for index, arg_form in enumerate(arg_formset):
+                    # Get the instance from this form
+                    arg = arg_form.save(commit=False)
+                    # Check if the argument definition is set
+                    if arg.id == None or arg.argumentdef_id == None:
+                        # Get the argument definition for this particular argument
+                        arg.argumentdef = arg_defs[index]
+                        arg_form.save(commit=False)
+                # Put the results back again
+                context['arg_formset'] = arg_formset
+
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id

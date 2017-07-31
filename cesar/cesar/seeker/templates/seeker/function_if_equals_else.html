@@ -1,0 +1,14 @@
+﻿{% load i18n %}
+<div class="row">
+  <div class="col-md-3 panel panel-default">
+    <h3>{{functionForm.instance.functiondef.title}}</h3>
+    <table>
+    {% for arg_this in arg_formset %}
+      <tr>
+        <td>{{arg_this.instance.argumentdef.text}}</td>
+        <td>{{arg_this.argtype}}</td>
+      </tr>
+    {% endfor %}
+    </table>
+  </div>
+</div>
