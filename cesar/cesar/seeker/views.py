@@ -16,7 +16,7 @@ from django.views.generic import ListView, View
 
 # from formtools.wizard.views import SessionWizardView
 
-from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm, GvarForm, VarDefForm, CvarForm, FunctionForm
+from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm, GvarForm, VarDefForm, CvarForm, FunctionForm, ArgumentForm
 from cesar.seeker.models import *
 from cesar.settings import APP_PREFIX
 
@@ -422,14 +422,18 @@ class ResearchPart42(ResearchPart):
 
 class ResearchPart43(ResearchPart):
     template_name = 'seeker/research_part_43.html'
-    MainModel = ConstructionVariable
-    FunctionFormSet = inlineformset_factory(Function, Argument, 
-                                          form=FunctionForm, min_num=1, extra=0)
-    formset_objects = [{'formsetClass': FunctionFormSet, 'prefix': 'function'}]
+    MainModel = Function
+    form_objects = [{'form': FunctionForm, 'prefix': 'function'}]
+    ArgFormSet = inlineformset_factory(Function, Argument, 
+                                          form=ArgumentForm, min_num=1, extra=0)
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'}]
                 
     def get_instance(self, prefix):
         if prefix == 'function':
-            # This returns the CVAR object we are linked to
+            # This returns the FUNCTION object we are linked to
+            return self.obj
+        elif prefix == 'arg':
+            # Return the CVAR this function is part of
             return self.obj
 
     def add_to_context(self, context):

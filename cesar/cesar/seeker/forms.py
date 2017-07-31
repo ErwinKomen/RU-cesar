@@ -166,12 +166,20 @@ class FunctionForm(ModelForm):
         self.fields['functiondef'].queryset=FunctionDef.objects.all()
 
 
-class ArgumentForm(ModelForm):
+class ArgumentDefForm(ModelForm):
     """The specification of an argument to a function"""
 
     class Meta:
         model = ArgumentDef
         fields = ['name', 'text']
+
+
+class ArgumentForm(ModelForm):
+    """The argument to a function"""
+
+    class Meta:
+        model = Argument
+        fields = ['argtype', 'argval', 'gvar', 'cvar', 'function']
 
 
 class SeekerResearchForm(ModelForm):
