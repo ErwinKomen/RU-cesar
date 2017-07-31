@@ -4,6 +4,7 @@ Definition of forms for the SEEKER app.
 
 from django import forms
 from django.forms import ModelForm, formset_factory, modelformset_factory
+from django.forms.widgets import Textarea
 from cesar.seeker.widgets import SeekerTextarea
 from cesar.seeker.models import *
 from cesar.browser.models import build_choice_list, get_help
