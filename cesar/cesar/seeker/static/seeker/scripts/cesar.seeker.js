@@ -665,7 +665,7 @@ var ru = (function ($, ru) {
           }
         });
         $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
-        $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
+        // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
       }
 
 

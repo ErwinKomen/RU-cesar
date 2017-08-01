@@ -195,7 +195,7 @@ class ArgumentForm(ModelForm):
 
     class Meta:
         model = Argument
-        fields = ['argtype', 'argval', 'gvar', 'cvar', 'function']
+        fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'function']
         widgets={
           'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 100})
           }
@@ -204,6 +204,7 @@ class ArgumentForm(ModelForm):
         super(ArgumentForm, self).__init__(*args, **kwargs)
         init_choices(self, 'argtype', SEARCH_ARGTYPE)
         # Set required and optional fields
+        self.fields['argumentdef'].required = True
         self.fields['argtype'].required = True
         self.fields['cvar'].required = False
         self.fields['gvar'].required = False

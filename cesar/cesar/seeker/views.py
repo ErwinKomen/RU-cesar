@@ -116,7 +116,7 @@ class ResearchPart(View):
                     # The instance must be made available (even though it is only 'preliminary')
                     formObj['instance'] = instance
                     # Perform actions to this form BEFORE FINAL saving
-                    self.before_save(formObj['prefix'], request)
+                    self.before_save(formObj['prefix'], request, instance=instance)
                     # Perform the saving
                     instance.save()
                     # Put the instance in the form object
@@ -145,18 +145,24 @@ class ResearchPart(View):
                 formsetObj['formsetinstance'] = formset
                 # Is the formset valid?
                 if formset.is_valid():
-                    # Walk all the forms in the formset
-                    for form in formset:
-                        # Check if this form is valid
-                        if form.is_valid():
-                            # Save it preliminarily
-                            instance = form.save(commit=False)
-                            # Any actions before saving
-                            self.before_save(prefix, request, instance, form)
-                            # Save this construction
-                            instance.save()
-                        else:
-                            arErr.append(form.errors)
+                    # Make sure all changes are saved in one database-go
+                    with transaction.atomic():
+                        # Walk all the forms in the formset
+                        for form in formset:
+                            # Check if this form is valid
+                            if form.is_valid():
+                                # Check if anything has changed so far
+                                has_changed = form.has_changed()
+                                # Save it preliminarily
+                                instance = form.save(commit=False)
+                                # Any actions before saving
+                                if self.before_save(prefix, request, instance, form):
+                                    has_changed = True
+                                # Save this construction
+                                if has_changed: 
+                                    instance.save()
+                            else:
+                                arErr.append(form.errors)
                 else:
                     arErr.append(formset.errors)
                 # Add the formset to the context
@@ -264,7 +270,7 @@ class ResearchPart(View):
         return self.obj
 
     def before_save(self, prefix, request, instance=None, form=None):
-        pass
+        return False
 
     def add_to_context(self, context):
         return context
@@ -289,6 +295,7 @@ class ResearchPart1(ResearchPart):
             return self.obj.gateway
 
     def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
         if prefix == 'research':
             research = None
             gateway = None
@@ -297,9 +304,11 @@ class ResearchPart1(ResearchPart):
                 if formObj['prefix'] == 'research': research = formObj['instance']
             if research != None:
                 research.gateway = gateway
+                has_changed = True
                 # Check for the owner
                 if research.owner_id == None:
                     research.owner = request.user
+        return has_changed
 
     def custom_init(self):
         if self.obj:
@@ -322,9 +331,12 @@ class ResearchPart2(ResearchPart):
             return self.obj.gateway
 
     def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
         if prefix == 'construction':
             # Add the correct search item
             instance.search = SearchMain.create_item("word-group", form.cleaned_data['value'], 'groupmatches')
+            has_changed = True
+        return has_changed
 
     def add_to_context(self, context):
         if self.obj == None:
@@ -486,6 +498,7 @@ class ResearchPart43(ResearchPart):
                 functiondef = self.obj.functiondef
                 functionName = functiondef.name
                 context['function_template'] = "seeker/function_" + functionName + ".html"
+
                 # Adapt the arguments for this form
                 arg_formset = context['arg_formset']
                 arg_defs = ArgumentDef.objects.filter(function=functiondef)
@@ -496,6 +509,7 @@ class ResearchPart43(ResearchPart):
                     if arg.id == None or arg.argumentdef_id == None:
                         # Get the argument definition for this particular argument
                         arg.argumentdef = arg_defs[index]
+                        arg_form.initial['argumentdef'] = arg_defs[index]
                         arg_form.save(commit=False)
                 # Put the results back again
                 context['arg_formset'] = arg_formset
@@ -504,6 +518,29 @@ class ResearchPart43(ResearchPart):
         # We also need to make the object_id available
         context['object_id'] = self.object_id
         return context
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        # When we save an ARG, we need to add a link to the Function it belongs to
+        if prefix == 'arg':
+            # Get the 'function' instance
+            function = None
+            for formObj in self.form_objects:
+                if formObj['prefix'] == 'function': 
+                    function = formObj['instance']
+                    has_changed = True
+            # Link to this function
+            if function != None:
+                instance.function = function
+                has_changed = True
+        elif prefix == 'function':
+            if instance != None:
+                # Link the function-instance to the  CVAR instance
+                self.obj.function = instance
+                # Save the adapted CVAR instance
+                self.obj.save()
+        return has_changed
+
 
 
 
