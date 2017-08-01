@@ -118,19 +118,7 @@ var ru = (function ($, ru) {
           switch (sPart) {
             case "4": // Page 4=Calculation
             case "42":
-              // Specify the function to be called when the user presses [Calculation...]
-              $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
-              // Specify the function to be called when the user presses [Calculation...]
-              $(".cvar-specify").click(ru.cesar.seeker.cvarspecify_click);
-              // Make sure the 'Type' field values are processed everywhere
-              $(".cvar-item").each(function () {
-                // Perform the same function as if we were clicking it
-                ru.cesar.seeker.cvartype_click(this);
-              });
-              // Specify the change reaction function
-              $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
-              // Specify the function to be called when the user presses "summary"
-              $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
+              ru.cesar.seeker.init_cvar_events();
               break;
             case "43":
               // TODO: add any event handlers for wizard part '43'
@@ -411,6 +399,11 @@ var ru = (function ($, ru) {
             }
             // Make sure events are set again
             ru.cesar.seeker.init_events();
+            switch (openid) {
+              case "research_container_42":
+                ru.cesar.seeker.init_cvar_events();
+                break;
+            }
           },
           failure: function () {
             var iStop = 1;
@@ -644,6 +637,22 @@ var ru = (function ($, ru) {
           // Add it
           $(sId).addClass("hidden");
         }
+      },
+
+      init_cvar_events: function() {
+        // Specify the function to be called when the user presses [Calculation...]
+        $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
+        // Specify the function to be called when the user presses [Calculation...]
+        $(".cvar-specify").click(ru.cesar.seeker.cvarspecify_click);
+        // Make sure the 'Type' field values are processed everywhere
+        $(".cvar-item").each(function () {
+          // Perform the same function as if we were clicking it
+          ru.cesar.seeker.cvartype_click(this);
+        });
+        // Specify the change reaction function
+        $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
+        // Specify the function to be called when the user presses "summary"
+        $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
       },
 
       init_events: function () {
