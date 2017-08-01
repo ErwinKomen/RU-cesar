@@ -272,6 +272,9 @@ class Argument(models.Model):
     cvar = models.ForeignKey("ConstructionVariable", null=True)
     # [0-1] This argument may link to a Function (not its definition)
     function = models.ForeignKey("Function", null=True)
+    # [0-1] If a function is needed, we need to have a link to its definition
+    functiondef = models.ForeignKey(FunctionDef, null=True)
+
 
 
 class ConstructionVariable(models.Model):

@@ -195,7 +195,7 @@ class ArgumentForm(ModelForm):
 
     class Meta:
         model = Argument
-        fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'function']
+        fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'function', 'functiondef']
         widgets={
           'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 100})
           }
@@ -209,6 +209,7 @@ class ArgumentForm(ModelForm):
         self.fields['cvar'].required = False
         self.fields['gvar'].required = False
         self.fields['function'].required = False
+        self.fields['functiondef'].required = False
         # Do we have an instance?
         if 'instance' in kwargs:
             # Make sure all the querysets are in order

@@ -190,6 +190,45 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * argtype_click
+       *   Set the type of argument: fixed value, select or  calculate
+       *
+       *   Assumptions:
+       *    0 = fixed value
+       *    1 = global variable
+       *    2 = construction variable
+       *    3 = expression (function)
+       *
+       */
+      argtype_click: function (el) {
+        var elRow = (el.target === undefined) ? el : $(this).closest("tr");
+        var elType = $(elRow).find(".arg-type").first();
+        var elVal = $(elRow).find(".arg-val-exp").first();
+        // Find the type element
+        var elCvarType = $(elType).find("select").first();
+        // Get its value
+        var elCvarTypeVal = $(elCvarType).val();
+        // Hide/show, depending on the value
+        switch (elCvarTypeVal) {
+          case "0": // Fixed value
+            $(elVal).find(".arg-value").removeClass("hidden");
+            $(elVal).find(".arg-expression").addClass("hidden");
+            $(elVal).find(".arg-gvar").addClass("hidden");
+            break;
+          case "1": // Expression
+            $(elVal).find(".arg-value").addClass("hidden");
+            $(elVal).find(".arg-expression").removeClass("hidden");
+            $(elVal).find(".arg-gvar").addClass("hidden");
+            break;
+          case "2": // Global variable
+            $(elVal).find(".arg-value").addClass("hidden");
+            $(elVal).find(".arg-expression").addClass("hidden");
+            $(elVal).find(".arg-gvar").removeClass("hidden");
+            break;
+        }
+      },
+
+      /**
        * cvartype_click
        *   Set the type of construction variable: fixed value or calculate
        *
@@ -653,6 +692,16 @@ var ru = (function ($, ru) {
         $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
         // Specify the function to be called when the user presses "summary"
         $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
+      },
+
+      init_arg_events: function () {
+        // Make sure the 'Type' field values are processed everywhere
+        $(".arg-item").each(function () {
+          // Perform the same function as if we were clicking it
+          ru.cesar.seeker.argtype_click(this);
+        });
+        // Specify the change reaction function
+        $(".arg-type select").change(ru.cesar.seeker.argtype_click);
       },
 
       init_events: function () {
