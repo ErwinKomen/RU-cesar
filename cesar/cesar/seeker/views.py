@@ -438,6 +438,8 @@ class ResearchPart42(ResearchPart):
         return context
 
     def before_save(self, prefix, request, instance=None, form=None):
+        # NOTE: the 'instance' here is the CVAR instance
+
         has_changed = False
         # When saving a CVAR, we need to check that the functions are okay
         if prefix == 'cvar':
@@ -457,7 +459,7 @@ class ResearchPart42(ResearchPart):
                     # Remove the existing function
                     instance.function.delete()
                     # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
-                    instance.function = Function.create(instance.functiondef)
+                    instance.function = Function.create(instance.functiondef, instance)
                     # Indicate that changes have been made
                     has_changed = True
         # Return the changed flag
@@ -466,7 +468,8 @@ class ResearchPart42(ResearchPart):
 class ResearchPart43(ResearchPart):
     template_name = 'seeker/research_part_43.html'
     MainModel = ConstructionVariable
-    form_objects = [{'form': FunctionForm, 'prefix': 'function'}]
+    form_objects = [{'form': FunctionForm, 'prefix': 'function'},
+                    {'form': FunctionForm, 'prefix': 'parent'}]
     ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=1, extra=0)
     formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'}]
@@ -483,7 +486,7 @@ class ResearchPart43(ResearchPart):
                 # Make sure both changes are saved in one database-go
                 with transaction.atomic():
                     # Create a new function 
-                    function = Function(functiondef = cvar.functiondef)
+                    function = Function(functiondef = cvar.functiondef, root = cvar)
                     # Make sure the function instance gets saved
                     function.save()
                     # Acc a link to this function from the CVAR object
@@ -523,7 +526,7 @@ class ResearchPart43(ResearchPart):
             context['research_id'] = self.obj.variable.gateway.research.id
             context['vardef_this'] = self.obj.variable
             context['construction_this'] = self.obj.construction
-            # if self.obj.type == str(choice_value(SEARCH_VARIABLE_TYPE,"Calculate")):
+            # Further action if this is a calculation
             if self.obj.type == "calc":
                 # Need to specify the template for the function
                 functiondef = self.obj.functiondef
@@ -566,15 +569,17 @@ class ResearchPart43(ResearchPart):
         return context
 
     def before_save(self, prefix, request, instance=None, form=None):
+        # NOTE: the 'instance' is the CVAR instance
+
         has_changed = False
         # When we save an ARG, we need to add a link to the Function it belongs to
         if prefix == 'arg':
             # Get the 'function' instance
             function = None
             for formObj in self.form_objects:
-                if formObj['prefix'] == 'function': 
+                if formObj['prefix'] == 'function':
+                    # Get the function object 
                     function = formObj['instance']
-                    has_changed = True
             # Link to this function
             if function != None:
                 instance.function = function

@@ -229,6 +229,10 @@ class Function(models.Model):
 
     # [1] Must point to a definition
     functiondef = models.ForeignKey(FunctionDef, null=False)
+    # [1] A function belongs to a construction variable - but this is not necessarily the parent
+    root = models.ForeignKey("ConstructionVariable", null=False, related_name="functionroot")
+    # [0-1] A function MAY belong to a particular ARGUMENT, which then is its parent
+    parent = models.ForeignKey("Argument", null=True, blank=True, related_name="functionparent")
     # [1] The value that is the outcome of this function
     #     This is a JSON list, so can be bool, int, string of any number
     output = models.TextField("JSON value", null=False, blank=True, default="[]")
@@ -247,15 +251,16 @@ class Function(models.Model):
         return result
 
     @classmethod
-    def create(cls, functiondef):
-        """Create a new instance of a function based on a 'function definition'"""
+    def create(cls, functiondef, functionroot):
+        """Create a new instance of a function based on a 'function definition', binding it to a cvar"""
         with transaction.atomic():
-            inst = cls(functiondef=functiondef)
+            inst = cls(functiondef=functiondef, root=functionroot)
             # Save this function
             inst.save()
             # Add all the arguments that are needed
             for argdef in functiondef.arguments.all():
-                arg = Argument(argumentdef=argdef, argtype=argdef.argtype, functiondef=functiondef, function=inst)
+                arg = Argument(argumentdef=argdef, argtype=argdef.argtype, 
+                               functiondef=functiondef, function=inst)
                 # Save this argument
                 arg.save()
         return inst
