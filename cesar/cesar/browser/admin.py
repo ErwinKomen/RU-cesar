@@ -6,7 +6,7 @@ from cesar.browser.forms import *
 
 class FieldChoiceAdmin(admin.ModelAdmin):
     readonly_fields=['machine_value']
-    list_display = ['english_name','dutch_name','machine_value','field']
+    list_display = ['english_name','dutch_name','abbr', 'machine_value','field']
     list_filter = ['field']
 
     def save_model(self, request, obj, form, change):

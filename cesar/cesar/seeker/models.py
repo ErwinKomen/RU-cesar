@@ -8,7 +8,7 @@ from django.contrib.auth.models import User, Group
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
-from cesar.browser.models import build_choice_list, get_help, choice_value
+from cesar.browser.models import build_choice_list, build_abbr_list, get_help, choice_value
 import sys
 import copy
 import json
@@ -236,6 +236,31 @@ class Function(models.Model):
     def __str__(self):
         return self.output
 
+    def delete(self, using = None, keep_parents = False):
+        # First delete any ARG elements pointing to me
+        for arg in self.argument_set.all():
+            arg.delete()
+        # Now delete myself
+        result = super().delete(using, keep_parents)
+        # Save the changes
+        self.save()
+        return result
+
+    @classmethod
+    def create(cls, functiondef):
+        """Create a new instance of a function based on a 'function definition'"""
+        with transaction.atomic():
+            inst = cls(functiondef=functiondef)
+            # Save this function
+            inst.save()
+            # Add all the arguments that are needed
+            for argdef in functiondef.arguments.all():
+                arg = Argument(argumentdef=argdef, argtype=argdef.argtype, functiondef=functiondef, function=inst)
+                # Save this argument
+                arg.save()
+        return inst
+
+
       
 class ArgumentDef(models.Model):
     """Definition of one argument for a function"""
@@ -247,7 +272,7 @@ class ArgumentDef(models.Model):
     # [1] The numerical order of this argument
     order = models.IntegerField("Order", blank=False, default=0)
     # [1] The value can be of type: fixed, global variable, construction variable, function-output
-    argtype = models.CharField("Variable type", choices=build_choice_list(SEARCH_ARGTYPE), 
+    argtype = models.CharField("Variable type", choices=build_abbr_list(SEARCH_ARGTYPE), 
                               max_length=5, help_text=get_help(SEARCH_ARGTYPE))
     # [1] The value that is the outcome of this function: 
     #     This is a JSON list, it can contain any number of bool, int, string
@@ -262,7 +287,7 @@ class Argument(models.Model):
     # [1] Must point to a definition
     argumentdef = models.ForeignKey(ArgumentDef, null=False)
     # [1] The value can be of type: fixed, global variable, construction variable, function-output
-    argtype = models.CharField("Variable type", choices=build_choice_list(SEARCH_ARGTYPE), 
+    argtype = models.CharField("Variable type", choices=build_abbr_list(SEARCH_ARGTYPE), 
                               max_length=5, help_text=get_help(SEARCH_ARGTYPE))
     # [1] In the end, the value is calculated and appears here
     argval = models.TextField("JSON value", blank=True, default="[]")
@@ -285,7 +310,7 @@ class ConstructionVariable(models.Model):
     # [1] Link to the name of this variable
     variable = models.ForeignKey(VarDef,  blank=False, null=False, on_delete=models.CASCADE, related_name="variablenames")
     # [1] Type of value: string or expression
-    type = models.CharField("Variable type", choices=build_choice_list(SEARCH_VARIABLE_TYPE), 
+    type = models.CharField("Variable type", choices=build_abbr_list(SEARCH_VARIABLE_TYPE), 
                               max_length=5, help_text=get_help(SEARCH_VARIABLE_TYPE))
     # [1] String value of the variable for this combination of Gateway/Construction
     svalue = models.TextField("Value", blank=True)
@@ -299,7 +324,7 @@ class ConstructionVariable(models.Model):
     def __str__(self):
         sConstruction = self.construction.name
         sVariable = self.variable.name
-        return "C:{}-{}=[{}]".format(sConstruction, sVariable, self.svalue)
+        return "C:[{}|{}]=[{}]".format(sConstruction, sVariable, self.svalue)
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         return super().save(force_insert, force_update, using, update_fields)

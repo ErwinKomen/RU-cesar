@@ -3,6 +3,7 @@ Definition of forms for the SEEKER app.
 """
 
 from django import forms
+from django.db.models import Q
 from django.forms import ModelForm, formset_factory, modelformset_factory
 from django.forms.widgets import Textarea
 from cesar.seeker.widgets import SeekerTextarea
@@ -18,9 +19,12 @@ SEARCHMAIN_CNS_FUNCTIONS = (
         ('c--m', 'Child category matches'),
     )
 
-def init_choices(obj, sFieldName, sSet, maybe_empty=False):
+def init_choices(obj, sFieldName, sSet, maybe_empty=False, bUseAbbr=False):
     if (obj.fields != None and sFieldName in obj.fields):
-        obj.fields[sFieldName].choices = build_choice_list(sSet, maybe_empty=maybe_empty)
+        if bUseAbbr:
+            obj.fields[sFieldName].choices = build_abbr_list(sSet, maybe_empty=maybe_empty)
+        else:
+            obj.fields[sFieldName].choices = build_choice_list(sSet, maybe_empty=maybe_empty)
         obj.fields[sFieldName].help_text = get_help(sSet)
 
 
@@ -143,7 +147,7 @@ class CvarForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CvarForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'type', SEARCH_VARIABLE_TYPE)
+        init_choices(self, 'type', SEARCH_VARIABLE_TYPE, bUseAbbr=True)
         # Set required and optional fields
         self.fields['type'].required = True
         self.fields['gvar'].required = False
@@ -185,7 +189,7 @@ class ArgumentDefForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ArgumentDefForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'argtype', SEARCH_ARGTYPE)
+        init_choices(self, 'argtype', SEARCH_ARGTYPE, bUseAbbr=True)
 
 
 class ArgumentForm(ModelForm):
@@ -197,12 +201,12 @@ class ArgumentForm(ModelForm):
         model = Argument
         fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'function', 'functiondef']
         widgets={
-          'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 100, 'style': 'height: 30px;'})
+          'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
           }
 
     def __init__(self, *args, **kwargs):
         super(ArgumentForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'argtype', SEARCH_ARGTYPE)
+        init_choices(self, 'argtype', SEARCH_ARGTYPE, bUseAbbr=True)
         # Set required and optional fields
         self.fields['argumentdef'].required = True
         self.fields['argtype'].required = True
@@ -210,10 +214,6 @@ class ArgumentForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
-        # Do we have an instance?
-        if 'instance' in kwargs:
-            # Make sure all the querysets are in order
-            inst = kwargs['instance']
 
 
 class SeekerResearchForm(ModelForm):

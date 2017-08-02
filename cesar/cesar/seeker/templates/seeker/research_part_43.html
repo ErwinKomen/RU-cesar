@@ -1,12 +1,12 @@
 ﻿{% load i18n %}
 
-<form action="" method="post">
-    {% csrf_token %}
-    <!-- Part 4-3: Build a function for one combination of [Construction Variable + Search Element] -->
-    <div id="research_part_43" 
-         class="js-inline-formset inline-group panel panel-default"
-         data-inline-type="tabular"
-         data-inline-formset="{{arg_formset.inline_formset_data}}">
+<!-- Part 4-3: Build a function for one combination of [Construction Variable + Search Element] -->
+<div id="research_part_43" 
+      class="js-inline-formset inline-group panel panel-default"
+      data-inline-type="tabular"
+      data-inline-formset="{{arg_formset.inline_formset_data}}">
+    <form action="" method="post">
+        {% csrf_token %}
       <div class="col-md-1">
           <button type="button" class="btn btn-primary" 
                   id="button_part_42_return"
@@ -23,7 +23,7 @@
           <!-- Show the template of the main function -->
           <div class="row">
             <!-- OLD: col-md-6 (but the variable names and the textarea's don't always fit) -->
-            <div class="panel panel-default panel-function">
+            <div class="col-md-10 panel panel-default panel-function">
               <h3>{{functionForm.instance.functiondef.title}}</h3>
               <div class="hidden">{{functionForm}}</div>
               <table>
@@ -31,33 +31,42 @@
                 <tr class="form-row arg-item">
                   <td class="hidden">{{arg_this.argumentdef}}</td>
                   <td class="hidden">{{arg_this.id}}</td>
-                  <td valign="top">{{arg_this.instance.argumentdef.text}}</td>
-                  <td valign="top" class="arg-type">{{arg_this.argtype}}</td>
-                  <!-- Provide the possible values of the argument, as chosen by argtype -->
-                  <td valign="top" class="arg-val-exp">
-                    <div>
-                      <!-- option 0: fixed value -->
-                      <span class="arg-value">{{arg_this.argval}}</span>
-                      <!-- option 1: global variable -->
-                      <span class="arg-gvar">{{arg_this.gvar}}</span>
-                      <!-- option 2: construction variable -->
-                      <span class="arg-cvar">{{arg_this.cvar}}</span>
-                      <!-- option 3: function/expression -->
-                      <span class="arg-expression">
-                        <span class="arg-fundef">{{arg_this.functiondef}}</span>
-                        <span class="hidden">{{arg_this.function}}</span>
-                        <a class="btn btn-xs btn-default" role="button" 
-                            targeturl="{% if arg_this.instance.id %}{% url 'research_part_43' arg_this.instance.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
-                            targetid="research_part_43"
-                            instanceid="{{arg_this.instance.id}}"
-                            onclick="ru.cesar.seeker.research_wizard(this, '43');" >
-                          {% if arg_this.instance.function_id %}
-                          {% trans 'edit' %}
-                          {% else %}
-                          {% trans 'create' %}
-                          {% endif %}
-                        </a>
-                      </span>
+                  <td valign="bottom" class="arg-intro">{{arg_this.instance.argumentdef.text}}</td>
+                  <td valign="bottom">
+                    <div  class="arg-value">
+                      <div class="arg-type">{{arg_this.argtype}}</div>
+                      <!-- Provide the possible values of the argument, as chosen by argtype -->
+                      <div class="arg-val-exp">
+                        <!-- option 0: fixed value -->
+                        <span class="arg-value">{{arg_this.argval}}</span>
+                        <!-- option 1: global variable -->
+                        <span class="arg-gvar">{{arg_this.gvar}}</span>
+                        <!-- option 2: construction variable -->
+                        <span class="arg-cvar">{{arg_this.cvar}}</span>
+                        <!-- option 3: function/expression -->
+                        <span class="arg-expression">
+                          <span class="arg-fundef">{{arg_this.functiondef}}</span>
+                          <span class="hidden">{{arg_this.function}}</span>
+                          <a class="btn btn-xs btn-default" role="button" 
+                              targeturl="{% if arg_this.function.id %}{% url 'research_part_43' arg_this.function.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
+                              targetid="research_part_43"
+                              instanceid="{{arg_this.instance.id}}"
+                              onclick="ru.cesar.seeker.research_wizard(this, '43');" >
+                            {% if arg_this.instance.function_id %}
+                            {% trans 'edit' %}
+                            {% else %}
+                            {% trans 'create' %}
+                            {% endif %}
+                          </a>
+                        </span>
+                        <!-- option 4: constituent -->
+                        <span class="arg-cnst">CONSTITUENT-LIST
+                        </span>
+                        <!-- option 5: axis -->
+                        <span class="arg-axis">
+                          RELATION-LIST
+                        </span>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -74,8 +83,6 @@
         <code>{% for item in error_list %}{{item}}{% endfor %}</code>
       </div>
 
-      <!-- Show the buttons to save, cancel, delete and so forth -->
-      <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
         <button type="button" class="btn btn-primary ajaxform"
@@ -83,8 +90,8 @@
                 openid="research_container_43" 
                 ajaxurl="{% if object_id %}{% url 'research_part_43' object_id %}{% else %}{% url 'research_part_43' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
-      {% if savedate %}<div class="row">{{savedate}}</div>{% endif %}
-    </div>
-</form>
+    </form>
+</div>
 

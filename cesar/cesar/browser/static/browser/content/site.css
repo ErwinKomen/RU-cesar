@@ -347,3 +347,23 @@ svg g.lithium-node:hover > text {
 .td-textarea {
     font-family: monospace;
 }
+
+.arg-type select {
+  font-size: 11px;
+  height: 25px;
+  color: darkblue;
+  /* border: none;*/
+  background-color: whitesmoke;
+}
+
+.arg-intro {
+  font-size: 15px;
+  width: 1%;
+  white-space:nowrap;
+}
+div.arg-value {
+  margin: 2px;
+  border: 1px solid #ddd;
+  border-radius: 3px; 
+  background-color: whitesmoke;
+}

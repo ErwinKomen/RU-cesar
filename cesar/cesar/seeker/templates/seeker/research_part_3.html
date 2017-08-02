@@ -58,8 +58,8 @@
                 openid="research_container_3" 
                 ajaxurl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
-      {% if savedate %}<div class="row">{{savedate}}</div>{% endif %}
 
     </div>
 

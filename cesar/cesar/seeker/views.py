@@ -2,6 +2,7 @@
 Definition of views for the SEEKER app.
 """
 
+from django.db.models import Q
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django.http import JsonResponse
@@ -436,6 +437,31 @@ class ResearchPart42(ResearchPart):
         context['vardef_this'] = self.obj
         return context
 
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        # When saving a CVAR, we need to check that the functions are okay
+        if prefix == 'cvar':
+            # Find all functions that are not pointed to from any of the construction variables
+            lstCvarFun = [item.function.id for item in ConstructionVariable.objects.exclude(function=None)]
+            lstFunDel = Function.objects.exclude(id__in=lstCvarFun)
+            # Now delete those that need deleting (cascading is done in the function model itself)
+            with transaction.atomic():
+                for fun_this in lstFunDel:
+                    fun_this.delete()
+                    # Make sure that deletions get saved
+                    has_changed = True
+            # Find the function attached to me
+            if instance.function != None:
+                # Do the functiondef values match?
+                if instance.functiondef != instance.function.functiondef:
+                    # Remove the existing function
+                    instance.function.delete()
+                    # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
+                    instance.function = Function.create(instance.functiondef)
+                    # Indicate that changes have been made
+                    has_changed = True
+        # Return the changed flag
+        return has_changed
 
 class ResearchPart43(ResearchPart):
     template_name = 'seeker/research_part_43.html'
@@ -454,12 +480,16 @@ class ResearchPart43(ResearchPart):
                 if cvar.functiondef_id == None:
                     # There is an error: we need to have a function definition here
                     return None
-                # Create a new function 
-                function = Function(functiondef = cvar.functiondef)
-                function.save()
-                cvar.function = function
-                # Make sure we save the CVAR object
-                cvar.save()
+                # Make sure both changes are saved in one database-go
+                with transaction.atomic():
+                    # Create a new function 
+                    function = Function(functiondef = cvar.functiondef)
+                    # Make sure the function instance gets saved
+                    function.save()
+                    # Acc a link to this function from the CVAR object
+                    cvar.function = function
+                    # Make sure we save the CVAR object
+                    cvar.save()
             return cvar.function
 
     def custom_init(self):
@@ -493,7 +523,8 @@ class ResearchPart43(ResearchPart):
             context['research_id'] = self.obj.variable.gateway.research.id
             context['vardef_this'] = self.obj.variable
             context['construction_this'] = self.obj.construction
-            if self.obj.type == str(choice_value(SEARCH_VARIABLE_TYPE,"Calculate")):
+            # if self.obj.type == str(choice_value(SEARCH_VARIABLE_TYPE,"Calculate")):
+            if self.obj.type == "calc":
                 # Need to specify the template for the function
                 functiondef = self.obj.functiondef
                 functionName = functiondef.name
@@ -502,7 +533,20 @@ class ResearchPart43(ResearchPart):
                 # Adapt the arguments for this form
                 arg_formset = context['arg_formset']
                 arg_defs = ArgumentDef.objects.filter(function=functiondef)
+
+                # Calculate the initial queryset for 'gvar'
+                qs_gvar = GlobalVariable.objects.filter(gateway=self.obj.construction.gateway)
+
+                # Calculate the initial queryset for 'cvar'
+                lstQ = []
+                lstQ.append(Q(construction=self.obj.construction))
+                lstQ.append(Q(variable_id__lt=self.obj.variable.id))
+                qs_cvar = ConstructionVariable.objects.filter(*lstQ)
+
                 for index, arg_form in enumerate(arg_formset):
+                    # Initialise the querysets
+                    arg_form.fields['gvar'].queryset = qs_gvar
+                    arg_form.fields['cvar'].queryset = qs_cvar
                     # Get the instance from this form
                     arg = arg_form.save(commit=False)
                     # Check if the argument definition is set
@@ -510,7 +554,9 @@ class ResearchPart43(ResearchPart):
                         # Get the argument definition for this particular argument
                         arg.argumentdef = arg_defs[index]
                         arg_form.initial['argumentdef'] = arg_defs[index]
+                        # Preliminarily save
                         arg_form.save(commit=False)
+
                 # Put the results back again
                 context['arg_formset'] = arg_formset
 
@@ -535,10 +581,13 @@ class ResearchPart43(ResearchPart):
                 has_changed = True
         elif prefix == 'function':
             if instance != None:
-                # Link the function-instance to the  CVAR instance
-                self.obj.function = instance
-                # Save the adapted CVAR instance
-                self.obj.save()
+                if self.obj.function != instance:
+                    # Link the function-instance to the  CVAR instance
+                    self.obj.function = instance
+                    # Save the adapted CVAR instance
+                    self.obj.save()
+                    # We have already saved the above, so 'has_changed' does not need to be touched
+        # Return the change-indicator to trigger saving
         return has_changed
 
 
