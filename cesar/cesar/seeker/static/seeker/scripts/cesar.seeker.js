@@ -122,7 +122,7 @@ var ru = (function ($, ru) {
               break;
             case "43":
               // TODO: add any event handlers for wizard part '43'
-
+              ru.cesar.seeker.init_arg_events();
               break;
             case "5": // Page 5=Conditions
 
@@ -205,25 +205,34 @@ var ru = (function ($, ru) {
         var elType = $(elRow).find(".arg-type").first();
         var elVal = $(elRow).find(".arg-val-exp").first();
         // Find the type element
-        var elCvarType = $(elType).find("select").first();
+        var elArgType = $(elType).find("select").first();
         // Get its value
-        var elCvarTypeVal = $(elCvarType).val();
+        var elArgTypeVal = $(elArgType).val();
         // Hide/show, depending on the value
-        switch (elCvarTypeVal) {
+        switch (elArgTypeVal) {
           case "0": // Fixed value
             $(elVal).find(".arg-value").removeClass("hidden");
             $(elVal).find(".arg-expression").addClass("hidden");
             $(elVal).find(".arg-gvar").addClass("hidden");
+            $(elVal).find(".arg-cvar").addClass("hidden");
             break;
-          case "1": // Expression
-            $(elVal).find(".arg-value").addClass("hidden");
-            $(elVal).find(".arg-expression").removeClass("hidden");
-            $(elVal).find(".arg-gvar").addClass("hidden");
-            break;
-          case "2": // Global variable
+          case "1": // Global variable
             $(elVal).find(".arg-value").addClass("hidden");
             $(elVal).find(".arg-expression").addClass("hidden");
             $(elVal).find(".arg-gvar").removeClass("hidden");
+            $(elVal).find(".arg-cvar").addClass("hidden");
+            break;
+          case "2": // Constructuion variable
+            $(elVal).find(".arg-value").addClass("hidden");
+            $(elVal).find(".arg-expression").addClass("hidden");
+            $(elVal).find(".arg-gvar").addClass("hidden");
+            $(elVal).find(".arg-cvar").removeClass("hidden");
+            break;
+          case "3": // Expression
+            $(elVal).find(".arg-value").addClass("hidden");
+            $(elVal).find(".arg-expression").removeClass("hidden");
+            $(elVal).find(".arg-gvar").addClass("hidden");
+            $(elVal).find(".arg-cvar").addClass("hidden");
             break;
         }
       },
@@ -678,7 +687,12 @@ var ru = (function ($, ru) {
         }
       },
 
-      init_cvar_events: function() {
+      /**
+       *  init_cvar_events
+       *      Bind events to work with constituent variables
+       *
+       */
+      init_cvar_events: function () {
         // Specify the function to be called when the user presses [Calculation...]
         $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
         // Specify the function to be called when the user presses [Calculation...]
@@ -694,6 +708,11 @@ var ru = (function ($, ru) {
         $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
       },
 
+      /**
+       *  init_arg_events
+       *      Bind events to work with function arguments
+       *
+       */
       init_arg_events: function () {
         // Make sure the 'Type' field values are processed everywhere
         $(".arg-item").each(function () {
@@ -704,6 +723,11 @@ var ru = (function ($, ru) {
         $(".arg-type select").change(ru.cesar.seeker.argtype_click);
       },
 
+      /**
+       *  init_events
+       *      Bind main necessary events
+       *
+       */
       init_events: function () {
         $('tr.add-row a').click(ru.cesar.seeker.tabular_addrow);
         $('.inline-group > div > a.btn').click(function () {
@@ -723,6 +747,7 @@ var ru = (function ($, ru) {
           }
         });
         $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
+        // NOTE: do not use the following mouseout event--it is too weird to work with
         // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
       }
 

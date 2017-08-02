@@ -72,6 +72,11 @@ div.inline-group a.add-related {
     margin-top: 5px;
 }
 
+.panel-function {
+    margin-right: 10px;
+    background-color: lightyellow;
+}
+
 /* navbar */
 .navbar-custom {
     background-color: goldenrod;

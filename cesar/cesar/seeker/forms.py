@@ -53,7 +53,7 @@ class GatewayForm(ModelForm):
 
 class ConstructionWrdForm(ModelForm):
     # function_sc = forms.ChoiceField(choices=SEARCHMAIN_WRD_FUNCTIONS, required = True)
-    value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40}))
+    value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}))
     class Meta:
         model = Construction
         fields = ['name']
@@ -84,7 +84,7 @@ class ConstructionWrdForm(ModelForm):
 
 class ConstructionCnsForm(ModelForm):
     function_sc = forms.ChoiceField(choices=SEARCHMAIN_CNS_FUNCTIONS, required = True)
-    value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40}))
+    value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}))
     class Meta:
         model = Construction
         fields = ['name']
@@ -103,8 +103,8 @@ class GvarForm(ModelForm):
         model = GlobalVariable
         fields = ['name', 'description', 'value']
         widgets={
-          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40}),
-          'value': SeekerTextarea(attrs={'rows': 2, 'cols': 40})
+          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}),
+          'value': SeekerTextarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 30px;'})
           }
 
     def is_valid(self):
@@ -120,7 +120,7 @@ class VarDefForm(ModelForm):
         model = VarDef
         fields = ['name', 'description']
         widgets={
-          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 70})
+          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 70, 'style': 'height: 30px;'})
           }
 
     def is_valid(self):
@@ -137,7 +137,7 @@ class CvarForm(ModelForm):
         model = ConstructionVariable
         fields = ['type', 'svalue', 'gvar', 'function', 'functiondef']
         widgets={
-          'svalue': SeekerTextarea(attrs={'rows': 1, 'cols': 70}),
+          'svalue': SeekerTextarea(attrs={'rows': 1, 'cols': 70, 'style': 'height: 30px;'}),
           'functiondef': forms.Select()
           }
 
@@ -180,7 +180,7 @@ class ArgumentDefForm(ModelForm):
         model = ArgumentDef
         fields = ['name', 'text', 'order', 'argtype']
         widgets={
-          'text': Textarea(attrs={'rows': 1, 'cols': 100})
+          'text': Textarea(attrs={'rows': 1, 'cols': 100, 'style': 'height: 30px;'})
           }
 
     def __init__(self, *args, **kwargs):
@@ -197,7 +197,7 @@ class ArgumentForm(ModelForm):
         model = Argument
         fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'function', 'functiondef']
         widgets={
-          'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 100})
+          'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 100, 'style': 'height: 30px;'})
           }
 
     def __init__(self, *args, **kwargs):
@@ -226,7 +226,7 @@ class SeekerResearchForm(ModelForm):
         model = Research
         fields = ['name', 'purpose', 'targetType']
         widgets={
-          'purpose': SeekerTextarea(attrs={'rows': 1, 'cols': 100})
+          'purpose': SeekerTextarea(attrs={'rows': 1, 'cols': 100, 'style': 'height: 30px;'})
           }
 
     def __init__(self, *args, **kwargs):
