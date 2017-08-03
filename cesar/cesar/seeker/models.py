@@ -223,6 +223,9 @@ class FunctionDef(models.Model):
     def __str__(self):
         return self.name
 
+    #def get_functiondef_display(self):
+    #    return self.name
+
 
 class Function(models.Model):
     """Realization of one function based on a definition"""
@@ -304,6 +307,12 @@ class Argument(models.Model):
     function = models.ForeignKey("Function", null=True)
     # [0-1] If a function is needed, we need to have a link to its definition
     functiondef = models.ForeignKey(FunctionDef, null=True)
+
+    #def get_argtype_display(self):
+    #    return self.get_argtype_display()
+
+    #def get_functiondef_display(self):
+    #    return self.functiondef.name
 
 
 

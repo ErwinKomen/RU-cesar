@@ -108,6 +108,10 @@ class ResearchPart(View):
                     formObj['instance'] = instance
                     # Get an instance of the form
                     formObj['forminstance'] = formObj['form'](request.POST, prefix=formObj['prefix'], instance=instance)
+
+            # Initially we are assuming this just is a review
+            context['savedate']="reviewed at {}".format(datetime.now().strftime("%X"))
+
             # Iterate again
             for formObj in self.form_objects:
                 # Check validity of form
@@ -117,12 +121,13 @@ class ResearchPart(View):
                     # The instance must be made available (even though it is only 'preliminary')
                     formObj['instance'] = instance
                     # Perform actions to this form BEFORE FINAL saving
-                    self.before_save(formObj['prefix'], request, instance=instance)
-                    # Perform the saving
-                    instance.save()
-                    # Put the instance in the form object
-                    formObj['instance'] = instance
-                    context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                    if formObj['forminstance'].has_changed() or self.before_save(formObj['prefix'], request, instance=instance):
+                        # Perform the saving
+                        instance.save()
+                        # Set the context
+                        context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                        # Put the instance in the form object
+                        formObj['instance'] = instance
                 else:
                     self.arErr.append(formObj['forminstance'].errors)
                     self.form_validated = False
@@ -162,14 +167,14 @@ class ResearchPart(View):
                                 # Save this construction
                                 if has_changed: 
                                     instance.save()
+                                    # Adapt the last save time
+                                    context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
                             else:
-                                arErr.append(form.errors)
+                                self.arErr.append(form.errors)
                 else:
-                    arErr.append(formset.errors)
+                    self.arErr.append(formset.errors)
                 # Add the formset to the context
                 context[prefix + "_formset"] = formset
-                # Adapt the last save time
-                context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
 
             # Allow user to add to the context
             context = self.add_to_context(context)
@@ -502,7 +507,7 @@ class ResearchPart43(ResearchPart):
         # Check if we have a CVAR object
         if self.obj:
             # Check if the object type is Calculate
-            if self.obj.type == str(choice_value(SEARCH_VARIABLE_TYPE,"Calculate")):
+            if self.obj.type == "calc":
                 # Get the function definition
                 functiondef = self.obj.functiondef
                 if functiondef != None:
@@ -558,6 +563,7 @@ class ResearchPart43(ResearchPart):
                         # Get the argument definition for this particular argument
                         arg.argumentdef = arg_defs[index]
                         arg_form.initial['argumentdef'] = arg_defs[index]
+                        arg_form.initial['argtype'] = arg_defs[index].argtype
                         # Preliminarily save
                         arg_form.save(commit=False)
 
@@ -582,7 +588,7 @@ class ResearchPart43(ResearchPart):
                     # Get the function object 
                     function = formObj['instance']
             # Link to this function
-            if function != None:
+            if function != None and instance.function != function:
                 instance.function = function
                 has_changed = True
         elif prefix == 'function':
@@ -602,11 +608,18 @@ class ResearchPart44(ResearchPart):
 
     MainModel = Argument
     template_name = 'seeker/research_part_44.html'
-    form_objects = [{'form': FunctionForm, 'prefix': 'parent'},
-                    {'form': FunctionForm, 'prefix': 'function'}]
     ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=1, extra=0)
-    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'}]
+    # Two forms:
+    # - the 'parent' form is view-only and contains the argument we are supplying a function for
+    # - the 'function' form is editable and contains the function for the argument 
+    form_objects = [{'form': FunctionForm, 'prefix': 'parent'},
+                    {'form': FunctionForm, 'prefix': 'function'}]
+    # Two formsets:
+    # - the 'arg'  formset belongs to the 'function' (see above)
+    # - the 'parg' formset belongs to the 'parent'
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'},
+                       {'formsetClass': ArgFormSet, 'prefix': 'parg'}]
                 
     def get_instance(self, prefix):
         # NOTE: For '44' the self.obj is an Argument!!
@@ -629,9 +642,94 @@ class ResearchPart44(ResearchPart):
                 # It exists, so assign it
                 function = qs[0]
             return function
-        elif prefix == 'parent':
+        elif prefix == 'parent' or prefix == 'parg':
             # This returns the PARENT function object the argument belongs to
             return self.obj.function
+
+    def custom_init(self):
+        """Make sure the ARG formset gets the correct number of arguments"""
+
+        # Check if we have a FUNCTION object
+        fun_this = self.get_instance('function')
+        if fun_this:
+            # Get the function definition
+            functiondef = fun_this.functiondef
+            if functiondef != None:
+                # Get the number of arguments
+                argnum = functiondef.argnum
+                # Adapt the minimum number of items in the argument formset
+                self.ArgFormSet = inlineformset_factory(Function, Argument, 
+                                        form=ArgumentForm, min_num=argnum, extra=0)
+                # The 'arg' object is the one with index '0'
+                self.formset_objects[0]['formsetClass'] = self.ArgFormSet
+
+        return True
+
+    def add_to_context(self, context):
+        # NOTE: the instance (self.obj) for the '44' form is an ARGUMENT
+        pfun_this = self.get_instance('parent')
+        if pfun_this == None:
+            currentowner = None
+            context['research_id'] = None
+            context['vardef_this'] = None
+            context['construction_this'] = None
+        else:
+            # Get to the CVAR instance
+            cvar = pfun_this.root
+            gateway = cvar.construction.gateway
+            currentowner = gateway.research.owner
+            context['research_id'] = gateway.research.id
+            context['vardef_this'] = cvar.variable
+            context['construction_this'] = cvar.construction
+
+            # Since this is a '44' form, we know this is a calculation
+
+            # Calculate the initial queryset for 'gvar'
+            #   (These are the variables available for this GATEWAY)
+            qs_gvar = GlobalVariable.objects.filter(gateway=gateway)
+
+            # Calculate the initial queryset for 'cvar'
+            lstQ = []
+            lstQ.append(Q(construction=cvar.construction))
+            lstQ.append(Q(variable_id__lt=cvar.variable.id))
+            qs_cvar = ConstructionVariable.objects.filter(*lstQ)
+
+            # - adapting the 'parg_formset' for the 'parent' form (view-only)
+            context['parg_formset'] = self.check_arguments(context['parg_formset'], pfun_this.functiondef, qs_gvar, qs_cvar)
+
+            # - adapting the 'arg_formset' for the 'function' form (editable)
+            fun_this = self.get_instance('function')
+            if fun_this != None:
+                context['arg_formset'] = self.check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, qs_cvar)
+
+        context['currentowner'] = currentowner
+        # We also need to make the object_id available
+        context['object_id'] = self.object_id
+        return context
+
+    def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar):
+        # Take the functiondef as available in this argument
+        arg_defs = functiondef.arguments.all()
+
+        for index, arg_form in enumerate(arg_formset):
+            # Initialise the querysets
+            arg_form.fields['gvar'].queryset = qs_gvar
+            arg_form.fields['cvar'].queryset = qs_cvar
+            # Get the instance from this form
+            arg = arg_form.save(commit=False)
+            # Check if the argument definition is set
+            if arg.id == None or arg.argumentdef_id == None:
+                # Get the argument definition for this particular argument
+                arg.argumentdef = arg_defs[index]
+                arg_form.initial['argumentdef'] = arg_defs[index]
+                arg_form.initial['argtype'] = arg_defs[index].argtype
+                # Preliminarily save
+                arg_form.save(commit=False)
+
+        # Return the adatpted formset
+        return arg_formset
+
+
 
 
 

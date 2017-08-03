@@ -355,6 +355,12 @@ svg g.lithium-node:hover > text {
   /* border: none;*/
   background-color: whitesmoke;
 }
+.arg-type {
+  color: darkblue;
+}
+.arg-val-exp {
+  color: darkred;
+}
 
 .arg-intro {
   font-size: 15px;

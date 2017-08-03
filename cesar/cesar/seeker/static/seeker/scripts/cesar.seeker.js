@@ -75,9 +75,30 @@ var ru = (function ($, ru) {
                 return;
             }
           }
-          // Some of these need to be loaded through an ajax call
+          // [1] Some (increasingly many) calls require FIRST saving of the currently loaded informatino
           switch (sPart) {
+            case "44":
+              // A '44' call requires prior processing of the current '43' form
+              frm = $(el).closest("form");
+              if (frm !== undefined) {
+                data = $(frm).serializeArray();
+                var button = $(frm).find(".submit-row .ajaxform");
+                if (button !== undefined) {
+                  // Indicate we are saving
+                  $(".save-warning").html("Processing... 43-before-44");
+                  data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
+                  // Process this information: save the data!
+                  response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
+                  // Check the response
+                  if (response.status === undefined || response.status !== "ok") {
+                    // Action to undertake if we have not been successfull
+                    private_methods.errMsg("research_wizard[44]: could not save the data for this function");
+                  }
+                }
+              }
+              break;
             case "43":
+              // A '43' call requires prior processing of the current '42' form
               // Get all the information in this form and store it
               frm = $(el).closest("form");
               if (frm !== undefined) {
@@ -96,11 +117,18 @@ var ru = (function ($, ru) {
                   }
                 }
               }
+              break;
+          }
+
+          // [2] Load the new form through an AJAX call
+          switch (sPart) {
             case "1":
             case "2":
             case "3":
             case "4":
             case "42":
+            case "43":
+            case "44":
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
               // Indicate we are saving/preparing
@@ -126,7 +154,8 @@ var ru = (function ($, ru) {
               ru.cesar.seeker.init_cvar_events();
               break;
             case "43":
-              // add any event handlers for wizard part '43'
+            case "44":
+              // add any event handlers for wizard part '43' and part '44'
               ru.cesar.seeker.init_arg_events();
               break;
             case "5": // Page 5=Conditions
