@@ -60,6 +60,7 @@ urlpatterns = [
     url(r'^ajax/researchpart4(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart4.as_view(), name='research_part_4'),
     url(r'^ajax/researchpart42(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart42.as_view(), name='research_part_42'),
     url(r'^ajax/researchpart43(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart43.as_view(), name='research_part_43'),
+    url(r'^ajax/researchpart44(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart44.as_view(), name='research_part_44'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^signup/$', cesar.browser.views.signup, name='signup'),
 

@@ -48,11 +48,11 @@
                           <span class="arg-fundef">{{arg_this.functiondef}}</span>
                           <span class="hidden">{{arg_this.function}}</span>
                           <a class="btn btn-xs btn-default" role="button" 
-                              targeturl="{% if arg_this.function.id %}{% url 'research_part_43' arg_this.function.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
-                              targetid="research_part_43"
+                              targeturl="{% if arg_this.instance.id %}{% url 'research_part_44' arg_this.instance.id %}{% else %}{% url 'research_part_44' %}{% endif %}"
+                              targetid="research_part_44"
                               instanceid="{{arg_this.instance.id}}"
-                              onclick="ru.cesar.seeker.research_wizard(this, '43');" >
-                            {% if arg_this.instance.function_id %}
+                              onclick="ru.cesar.seeker.research_wizard(this, '44');" >
+                            {% if arg_this.instance.functionparent.parent_id %}
                             {% trans 'edit' %}
                             {% else %}
                             {% trans 'create' %}

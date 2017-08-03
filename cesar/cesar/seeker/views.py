@@ -466,10 +466,11 @@ class ResearchPart42(ResearchPart):
         return has_changed
 
 class ResearchPart43(ResearchPart):
-    template_name = 'seeker/research_part_43.html'
+    """Starting from a CVAR of type 'function', allow defining that function"""
+
     MainModel = ConstructionVariable
-    form_objects = [{'form': FunctionForm, 'prefix': 'function'},
-                    {'form': FunctionForm, 'prefix': 'parent'}]
+    template_name = 'seeker/research_part_43.html'
+    form_objects = [{'form': FunctionForm, 'prefix': 'function'}]
     ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=1, extra=0)
     formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'}]
@@ -595,6 +596,42 @@ class ResearchPart43(ResearchPart):
         # Return the change-indicator to trigger saving
         return has_changed
 
+
+class ResearchPart44(ResearchPart):
+    """Starting from an Argument of type 'function', allow defining that function"""
+
+    MainModel = Argument
+    template_name = 'seeker/research_part_44.html'
+    form_objects = [{'form': FunctionForm, 'prefix': 'parent'},
+                    {'form': FunctionForm, 'prefix': 'function'}]
+    ArgFormSet = inlineformset_factory(Function, Argument, 
+                                          form=ArgumentForm, min_num=1, extra=0)
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'}]
+                
+    def get_instance(self, prefix):
+        # NOTE: For '44' the self.obj is an Argument!!
+
+        if prefix == 'function' or prefix == 'arg':
+            # This returns the NEW/EDITABLE function object belonging to the argument
+            qs = Function.objects.filter(parent=self.obj)
+            # Does it exist?
+            if qs.count() == 0:
+                # It does not yet exist: create it
+                # Make sure both changes are saved in one database-go
+                with transaction.atomic():
+                    # Create a new function 
+                    function = Function(functiondef = self.obj.functiondef, 
+                                        root = self.obj.function.root,
+                                        parent = self.obj)
+                    # Make sure the function instance gets saved
+                    function.save()
+            else:
+                # It exists, so assign it
+                function = qs[0]
+            return function
+        elif prefix == 'parent':
+            # This returns the PARENT function object the argument belongs to
+            return self.obj.function
 
 
 
