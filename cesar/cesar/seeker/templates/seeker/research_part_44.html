@@ -1,123 +1,156 @@
 ﻿{% load i18n %}
 
-<!-- Part 4-4: Starting from one function's ARG, allow building the function pointing to that ARG -->
-<div id="research_part_43" 
+<div class="research_part">
+  <span><a role="button" class="btn btn-default btn-xs" 
+            id="button_part_4_return"
+            targeturl="{% if research_id %}{% url 'research_part_4' research_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
+            targetid="research_part_4"
+            onclick="ru.cesar.seeker.research_wizard(this, '4');"><< All Variables
+  </a></span>
+  <span><a role="button" class="btn btn-default btn-xs" 
+                    id="button_part_42_return"
+                    targeturl="{% if vardef_this.id %}{% url 'research_part_42' vardef_this.id %}{% else %}{% url 'research_part_42' %}{% endif %}"
+                    targetid="research_part_42"
+                    onclick="ru.cesar.seeker.research_wizard(this, '42');"><< All search elements
+  </a></span>
+  <span><a role="button" class="btn btn-success btn-xs" 
+                    id="button_part_43_return"
+                    targeturl="{% if cvar_this.id %}{% url 'research_part_43' cvar_this.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
+                    targetid="research_part_43"
+                    onclick="ru.cesar.seeker.research_wizard(this, '43');"><< Start
+  </a></span>
+
+  <!-- Part 4-4: Starting from one function's ARG, allow building the function pointing to that ARG -->
+  <div id="research_part_43" 
       class="js-inline-formset inline-group panel panel-default"
       data-inline-type="tabular"
       data-inline-formset="{{arg_formset.inline_formset_data}}">
     <form action="" method="post">
       {% csrf_token %}
-      <div class="col-md-1">
-          <!-- Provide a button to return to the '43' part, which is the CVAR's main function -->
-          <button type="button" class="btn btn-primary" 
-                  id="button_part_43_return"
-                  targeturl="{% if vardef_this.id %}{% url 'research_part_43' vardef_this.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
-                  targetid="research_part_43"
-                  onclick="ru.cesar.seeker.research_wizard(this, '43');"><< cvar</button>
-      </div>
-      <div id="research_cvar" class="col-md-11 tabular inline-related">
-        {{parg_formset.management_form}}
-        {{arg_formset.management_form}}
-        <fieldset class="module {{arg_formset.classes}}">
 
-          <p>Specify how to calculate variable <code>{{vardef_this.name}}</code> for search element <code>{{construction_this.name}}</code></p>
+      <div class="row">
+        <div id="research_cvar" class="col-md-offset-1 col-md-11 tabular inline-related">
+          {{parg_formset.management_form}}
+          {{arg_formset.management_form}}
+          <fieldset class="module {{arg_formset.classes}}">
 
-          <!-- First form: the parent-form that is only available for viewing (no editing) -->
-          <div class="row">
-            <div class="col-md-8 panel panel-default panel-function">
-              <h3>{{parentForm.instance.functiondef.title}}</h3>
-              <div class="hidden">{{parentForm}}</div>
-              <table>
-              {% for parg_this in parg_formset %}
-                <tr class="form-row arg-item">
-                  <td class="hidden">{{parg_this.argumentdef}}</td>
-                  <td class="hidden">{{parg_this.id}}</td>
-                  <td valign="bottom" class="arg-intro">{{parg_this.instance.argumentdef.text}}</td>
-                  <td valign="bottom">
-                    <div  class="arg-value">
-                      <div class="arg-type">{{parg_this.instance.get_argtype_display }}</div>
-                      <!-- Provide the possible values of the argument, as chosen by argtype -->
-                      <div class="arg-val-exp">
-                        {% if parg_this.argtype.value == "func" %}{{parg_this.instance.functiondef.name }}
-                        {% elif parg_this.argtype.value == "fixed" %}{{parg_this.argval.value}}
-                        {% elif parg_this.argtype.value == "gvar" %}{{parg_this.gvar.name}}
-                        {% elif parg_this.argtype.value == "cvar" %}{{parg_this.cvar.name}}
-                        {% elif parg_this.argtype.value == "const" %}constituent
-                        {% elif parg_this.argtype.value == "axis" %}axis
-                        {% else %}(unknown)
-                        {% endif %}
+            <p>Specify how to calculate variable <code>{{vardef_this.name}}</code> for search element <code>{{construction_this.name}}</code></p>
+
+            <!-- Provide a 'one-level-up' button if this is deeper -->
+            {% if cvar_this.function.id != parentForm.instance.id %}
+              <div>
+                  <button type="button" class="btn btn-success btn-xs"
+                          id="button_part_44_up"
+                          targeturl ="{% url 'research_part_44' parentForm.instance.parent.id %}"
+                          targetid="research_part_44"
+                          onclick="ru.cesar.seeker.research_wizard(this, '44');">Up one level</button>
+              </div>
+            {% endif %}
+
+            <!-- First form: the parent-form that is only available for viewing (no editing) -->
+            <div class="row">
+              <div class="col-md-8 panel panel-default panel-function">
+                <h3>{{parentForm.instance.functiondef.title}}</h3>
+                <div class="hidden">{{parentForm}}</div>
+                <table>
+                {% for parg_this in parg_formset %}
+                  <tr class="form-row arg-item">
+                    <td class="hidden">{{parg_this.argumentdef}}</td>
+                    <td class="hidden">{{parg_this.id}}</td>
+                    <td valign="bottom" class="arg-intro">
+                      <span>{{parg_this.instance.argumentdef.text}}</span>
+                    </td>
+                    <td valign="bottom">
+                      <div  class="arg-value {% if parg_this.instance.id|stringformat:"i" == object_id  %}arg-selected{% endif %}">
+                        <div class="arg-type">
+                          <span>{{parg_this.instance.get_argtype_display }}</span>
+                          {% if parg_this.instance.id|stringformat:"i" == object_id  %}<span class="arg-parent">(see below)</span>{% endif %}
+                        </div>
+                        <!-- Provide the possible values of the argument, as chosen by argtype -->
+                        <div class="arg-val-exp">
+                          {% if parg_this.argtype.value == "func" %}{{parg_this.instance.functiondef.name }}
+                          {% elif parg_this.argtype.value == "fixed" %}{{parg_this.argval.value}}
+                          {% elif parg_this.argtype.value == "gvar" %}{{parg_this.gvar.name}}
+                          {% elif parg_this.argtype.value == "cvar" %}{{parg_this.cvar.name}}
+                          {% elif parg_this.argtype.value == "const" %}constituent
+                          {% elif parg_this.argtype.value == "axis" %}axis
+                          {% else %}(unknown)
+                          {% endif %}
+                        </div>
+                        <div class="hidden">
+                          <span class="hidden">{{parg_this.argtype}}</span>
+                          <span class="hidden">{{parg_this.argval}}</span>
+                          <span class="hidden">{{parg_this.gvar}}</span>
+                          <span class="hidden">{{parg_this.cvar}}</span>
+                          <span class="hidden">{{parg_this.functiondef}}</span>
+                          <span class="hidden">{{parg_this.function}}</span>
+                        </div>
                       </div>
-                      <div class="hidden">
-                        <span class="hidden">{{parg_this.argtype}}</span>
-                        <span class="hidden">{{parg_this.argval}}</span>
-                        <span class="hidden">{{parg_this.gvar}}</span>
-                        <span class="hidden">{{parg_this.cvar}}</span>
-                        <span class="hidden">{{parg_this.functiondef}}</span>
-                        <span class="hidden">{{parg_this.function}}</span>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-              </table>
+                    </td>
+                  </tr>
+                {% endfor %}
+                </table>
+              </div>
             </div>
-          </div>
 
-          <!-- Second form: the one that can be edited -->
-          <div class="row">
-            <!-- This second form is offset 2 columns to the right -->
-            <div class="col-md-offset-2 col-md-8 panel panel-default panel-function">
-              <h3>{{functionForm.instance.functiondef.title}}</h3>
-              <div class="hidden">{{functionForm}}</div>
-              <table>
-              {% for arg_this in arg_formset %}
-                <tr class="form-row arg-item">
-                  <td class="hidden">{{arg_this.argumentdef}}</td>
-                  <td class="hidden">{{arg_this.id}}</td>
-                  <td valign="bottom" class="arg-intro">{{arg_this.instance.argumentdef.text}}</td>
-                  <td valign="bottom">
-                    <div  class="arg-value">
-                      <div class="arg-type">{{arg_this.argtype}}</div>
-                      <!-- Provide the possible values of the argument, as chosen by argtype -->
-                      <div class="arg-val-exp">
-                        <!-- option 0: fixed value -->
-                        <span class="arg-value">{{arg_this.argval}}</span>
-                        <!-- option 1: global variable -->
-                        <span class="arg-gvar">{{arg_this.gvar}}</span>
-                        <!-- option 2: construction variable -->
-                        <span class="arg-cvar">{{arg_this.cvar}}</span>
-                        <!-- option 3: function/expression -->
-                        <span class="arg-expression">
-                          <span class="arg-fundef">{{arg_this.functiondef}}</span>
-                          <span class="hidden">{{arg_this.function}}</span>
-                          <a class="btn btn-xs btn-default" role="button" 
-                              targeturl="{% if arg_this.instance.id %}{% url 'research_part_44' arg_this.instance.id %}{% else %}{% url 'research_part_44' %}{% endif %}"
-                              targetid="research_part_44"
-                              instanceid="{{arg_this.instance.id}}"
-                              onclick="ru.cesar.seeker.research_wizard(this, '44');" >
-                            {% if arg_this.instance.functionparent.parent_id %}
-                            {% trans 'edit' %}
-                            {% else %}
-                            {% trans 'create' %}
-                            {% endif %}
-                          </a>
-                        </span>
-                        <!-- option 4: constituent -->
-                        <span class="arg-cnst">CONSTITUENT-LIST
-                        </span>
-                        <!-- option 5: axis -->
-                        <span class="arg-axis">
-                          RELATION-LIST
-                        </span>
+            <!-- Second form: the one that can be edited -->
+            <div class="row">
+              <!-- This second form is offset 2 columns to the right -->
+              <div class="col-md-offset-2 col-md-8 panel panel-default panel-function">
+                <h3>{{functionForm.instance.functiondef.title}}</h3>
+                <div class="hidden">{{functionForm}}</div>
+                <table>
+                {% for arg_this in arg_formset %}
+                  <tr class="form-row arg-item">
+                    <td class="hidden">{{arg_this.argumentdef}}</td>
+                    <td class="hidden">{{arg_this.id}}</td>
+                    <td valign="bottom" class="arg-intro">{{arg_this.instance.argumentdef.text}}</td>
+                    <td valign="bottom">
+                      <div  class="arg-value">
+                        <div class="arg-type">{{arg_this.argtype}}</div>
+                        <!-- Provide the possible values of the argument, as chosen by argtype -->
+                        <div class="arg-val-exp">
+                          <!-- option 0: fixed value -->
+                          <span class="arg-value">{{arg_this.argval}}</span>
+                          <!-- option 1: global variable -->
+                          <span class="arg-gvar">{{arg_this.gvar}}</span>
+                          <!-- option 2: construction variable -->
+                          <span class="arg-cvar">{{arg_this.cvar}}</span>
+                          <!-- option 3: function/expression -->
+                          <span class="arg-expression">
+                            <span class="arg-fundef">{{arg_this.functiondef}}</span>
+                            <span class="hidden">{{arg_this.function}}</span>
+                            <a class="btn btn-xs btn-default" role="button" 
+                                targeturl="{% if arg_this.instance.id %}{% url 'research_part_44' arg_this.instance.id %}{% else %}{% url 'research_part_44' %}{% endif %}"
+                                targetid="research_part_44"
+                                instanceid="{{arg_this.instance.id}}"
+                                onclick="ru.cesar.seeker.research_wizard(this, '44');" >
+                              <!-- Check if the FUNCTION pointing to this ARG exists -->
+                              {% if arg_this.instance.functionparent.first.id %}
+                              {% trans 'edit' %}
+                                <span>{{arg_this.instance.functionparent.first.id}}</span>
+                              {% else %}
+                              {% trans 'create' %}
+                              {% endif %}
+                            </a>
+                          </span>
+                          <!-- option 4: constituent -->
+                          <span class="arg-cnst">CONSTITUENT-LIST
+                          </span>
+                          <!-- option 5: axis -->
+                          <span class="arg-axis">
+                            RELATION-LIST
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-              </table>
+                    </td>
+                  </tr>
+                {% endfor %}
+                </table>
+              </div>
             </div>
-          </div>
-        </fieldset>
+          </fieldset>
+        </div>
       </div>
 
 
@@ -136,5 +169,6 @@
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </form>
+  </div>
 </div>
 

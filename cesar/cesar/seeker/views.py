@@ -94,7 +94,7 @@ class ResearchPart(View):
         if self.checkAuthentication(request):
             # Build the context
             context = dict(object_id = object_id, savedate=None)
-            # Walk all the forms
+            # Walk all the forms for preparation of the formObj contents
             for formObj in self.form_objects:
                 # Are we SAVING a NEW item?
                 if self.add:
@@ -114,23 +114,25 @@ class ResearchPart(View):
 
             # Iterate again
             for formObj in self.form_objects:
-                # Check validity of form
-                if formObj['forminstance'].is_valid():
-                    # Save it preliminarily
-                    instance = formObj['forminstance'].save(commit=False)
-                    # The instance must be made available (even though it is only 'preliminary')
-                    formObj['instance'] = instance
-                    # Perform actions to this form BEFORE FINAL saving
-                    if formObj['forminstance'].has_changed() or self.before_save(formObj['prefix'], request, instance=instance):
-                        # Perform the saving
-                        instance.save()
-                        # Set the context
-                        context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
-                        # Put the instance in the form object
+                # Adapt if it is not readonly
+                if not formObj['readonly']:
+                    # Check validity of form
+                    if formObj['forminstance'].is_valid():
+                        # Save it preliminarily
+                        instance = formObj['forminstance'].save(commit=False)
+                        # The instance must be made available (even though it is only 'preliminary')
                         formObj['instance'] = instance
-                else:
-                    self.arErr.append(formObj['forminstance'].errors)
-                    self.form_validated = False
+                        # Perform actions to this form BEFORE FINAL saving
+                        if formObj['forminstance'].has_changed() or self.before_save(formObj['prefix'], request, instance=instance):
+                            # Perform the saving
+                            instance.save()
+                            # Set the context
+                            context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                            # Put the instance in the form object
+                            formObj['instance'] = instance
+                    else:
+                        self.arErr.append(formObj['forminstance'].errors)
+                        self.form_validated = False
 
                 # Add instance to the context object
                 context[formObj['prefix'] + "Form"] = formObj['forminstance']
@@ -149,30 +151,32 @@ class ResearchPart(View):
                 self.process_formset(prefix, request, formset)
                 # Store the instance
                 formsetObj['formsetinstance'] = formset
-                # Is the formset valid?
-                if formset.is_valid():
-                    # Make sure all changes are saved in one database-go
-                    with transaction.atomic():
-                        # Walk all the forms in the formset
-                        for form in formset:
-                            # Check if this form is valid
-                            if form.is_valid():
-                                # Check if anything has changed so far
-                                has_changed = form.has_changed()
-                                # Save it preliminarily
-                                instance = form.save(commit=False)
-                                # Any actions before saving
-                                if self.before_save(prefix, request, instance, form):
-                                    has_changed = True
-                                # Save this construction
-                                if has_changed: 
-                                    instance.save()
-                                    # Adapt the last save time
-                                    context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
-                            else:
-                                self.arErr.append(form.errors)
-                else:
-                    self.arErr.append(formset.errors)
+                # Adapt the formset contents only, when it is NOT READONLY
+                if not formsetObj['readonly']:
+                    # Is the formset valid?
+                    if formset.is_valid():
+                        # Make sure all changes are saved in one database-go
+                        with transaction.atomic():
+                            # Walk all the forms in the formset
+                            for form in formset:
+                                # Check if this form is valid
+                                if form.is_valid():
+                                    # Check if anything has changed so far
+                                    has_changed = form.has_changed()
+                                    # Save it preliminarily
+                                    instance = form.save(commit=False)
+                                    # Any actions before saving
+                                    if self.before_save(prefix, request, instance, form):
+                                        has_changed = True
+                                    # Save this construction
+                                    if has_changed: 
+                                        instance.save()
+                                        # Adapt the last save time
+                                        context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                                else:
+                                    self.arErr.append(form.errors)
+                    else:
+                        self.arErr.append(formset.errors)
                 # Add the formset to the context
                 context[prefix + "_formset"] = formset
 
@@ -241,6 +245,7 @@ class ResearchPart(View):
             
             # Get the HTML response
             self.data['html'] = render_to_string(self.template_name, context, request)
+            # x = context['arg_formset'][0].instance.functionparent.all()[0].parent_id
         else:
             self.data['html'] = "Please log in before continuing"
 
@@ -291,8 +296,8 @@ class ResearchPart(View):
 class ResearchPart1(ResearchPart):
     template_name = 'seeker/research_part_1.html'
     MainModel = Research
-    form_objects = [{'form': GatewayForm, 'prefix': 'gateway'},
-                    {'form': SeekerResearchForm, 'prefix': 'research'}]
+    form_objects = [{'form': GatewayForm, 'prefix': 'gateway', 'readonly': False},
+                    {'form': SeekerResearchForm, 'prefix': 'research', 'readonly': False}]
              
     def get_instance(self, prefix):
         if prefix == 'research':
@@ -330,7 +335,7 @@ class ResearchPart2(ResearchPart):
     ConstructionFormSet = inlineformset_factory(Gateway, Construction, 
                                                 form=ConstructionWrdForm, min_num=1, 
                                                 extra=0, can_delete=True, can_order=True)
-    formset_objects = [{'formsetClass': ConstructionFormSet, 'prefix': 'construction'}]
+    formset_objects = [{'formsetClass': ConstructionFormSet, 'prefix': 'construction', 'readonly': False}]
              
     def get_instance(self, prefix):
         if prefix == 'construction':
@@ -377,7 +382,7 @@ class ResearchPart3(ResearchPart):
     GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, 
                                         form=GvarForm, min_num=1, 
                                         extra=0, can_delete=True, can_order=True)
-    formset_objects = [{'formsetClass': GvarFormSet, 'prefix': 'gvar'}]
+    formset_objects = [{'formsetClass': GvarFormSet, 'prefix': 'gvar', 'readonly': False}]
                 
     def get_instance(self, prefix):
         if prefix == 'gvar':
@@ -398,7 +403,7 @@ class ResearchPart4(ResearchPart):
     VardefFormSet = inlineformset_factory(Gateway, VarDef, 
                                           form=VarDefForm, min_num=1, extra=0, 
                                           can_delete=True, can_order=True)
-    formset_objects = [{'formsetClass': VardefFormSet, 'prefix': 'vardef'}]
+    formset_objects = [{'formsetClass': VardefFormSet, 'prefix': 'vardef', 'readonly': False}]
                 
     def get_instance(self, prefix):
         if prefix == 'vardef':
@@ -422,7 +427,7 @@ class ResearchPart42(ResearchPart):
     MainModel = VarDef
     CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, 
                                           form=CvarForm, min_num=1, extra=0)
-    formset_objects = [{'formsetClass': CvarFormSet, 'prefix': 'cvar'}]
+    formset_objects = [{'formsetClass': CvarFormSet, 'prefix': 'cvar', 'readonly': False}]
                 
     def get_instance(self, prefix):
         if prefix == 'cvar':
@@ -449,8 +454,8 @@ class ResearchPart42(ResearchPart):
         # When saving a CVAR, we need to check that the functions are okay
         if prefix == 'cvar':
             # Find all functions that are not pointed to from any of the construction variables
-            lstCvarFun = [item.function.id for item in ConstructionVariable.objects.exclude(function=None)]
-            lstFunDel = Function.objects.exclude(id__in=lstCvarFun)
+            lstCvarId = [item.id for item in ConstructionVariable.objects.exclude(function=None)]
+            lstFunDel = Function.objects.exclude(root__in=lstCvarId)
             # Now delete those that need deleting (cascading is done in the function model itself)
             with transaction.atomic():
                 for fun_this in lstFunDel:
@@ -464,7 +469,7 @@ class ResearchPart42(ResearchPart):
                     # Remove the existing function
                     instance.function.delete()
                     # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
-                    instance.function = Function.create(instance.functiondef, instance)
+                    instance.function = Function.create(instance.functiondef, instance, None)
                     # Indicate that changes have been made
                     has_changed = True
         # Return the changed flag
@@ -475,10 +480,10 @@ class ResearchPart43(ResearchPart):
 
     MainModel = ConstructionVariable
     template_name = 'seeker/research_part_43.html'
-    form_objects = [{'form': FunctionForm, 'prefix': 'function'}]
+    form_objects = [{'form': FunctionForm, 'prefix': 'function', 'readonly': False}]
     ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=1, extra=0)
-    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'}]
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False}]
                 
     def get_instance(self, prefix):
         if prefix == 'function' or prefix == 'arg':
@@ -536,8 +541,9 @@ class ResearchPart43(ResearchPart):
             if self.obj.type == "calc":
                 # Need to specify the template for the function
                 functiondef = self.obj.functiondef
-                functionName = functiondef.name
-                context['function_template'] = "seeker/function_" + functionName + ".html"
+                if functiondef == None:
+                    # Provide a break point for debugging
+                    iStop = 1
 
                 # Adapt the arguments for this form
                 arg_formset = context['arg_formset']
@@ -591,6 +597,27 @@ class ResearchPart43(ResearchPart):
             if function != None and instance.function != function:
                 instance.function = function
                 has_changed = True
+            # Check the argtype of this argument: is it NOT a function any more?
+            if instance.argtype != "func":
+                # Then REmove all functions pointing to me
+                func_child = instance.functionparent.first()
+                if func_child != None:
+                    func_child.delete()
+                    has_changed = True
+            else:
+                # THis is a function: check if the function definition has not changed
+                func_child = instance.functionparent.first()
+                if func_child == None or instance.functiondef != func_child.functiondef:
+                    # The function definition changed >> replace the child with a completely NEW version
+                    # [1] remove the child
+                    if func_child != None:
+                        func_child.delete()
+                    # [2] Create a new version
+                    func_child = Function.create(instance.functiondef, instance.root, instance)
+                    # [3] Save it
+                    func_child.save()
+                    # Indicate changes
+                    has_changed = True
         elif prefix == 'function':
             if instance != None:
                 if self.obj.function != instance:
@@ -613,19 +640,19 @@ class ResearchPart44(ResearchPart):
     # Two forms:
     # - the 'parent' form is view-only and contains the argument we are supplying a function for
     # - the 'function' form is editable and contains the function for the argument 
-    form_objects = [{'form': FunctionForm, 'prefix': 'parent'},
-                    {'form': FunctionForm, 'prefix': 'function'}]
+    form_objects = [{'form': FunctionForm, 'prefix': 'parent', 'readonly': True},
+                    {'form': FunctionForm, 'prefix': 'function', 'readonly': False}]
     # Two formsets:
     # - the 'arg'  formset belongs to the 'function' (see above)
     # - the 'parg' formset belongs to the 'parent'
-    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg'},
-                       {'formsetClass': ArgFormSet, 'prefix': 'parg'}]
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False},
+                       {'formsetClass': ArgFormSet, 'prefix': 'parg', 'readonly': True}]
                 
     def get_instance(self, prefix):
         # NOTE: For '44' the self.obj is an Argument!!
 
         if prefix == 'function' or prefix == 'arg':
-            # This returns the NEW/EDITABLE function object belonging to the argument
+            # This returns the EXISTING or NEW function object belonging to the argument
             qs = Function.objects.filter(parent=self.obj)
             # Does it exist?
             if qs.count() == 0:
@@ -673,6 +700,7 @@ class ResearchPart44(ResearchPart):
             context['research_id'] = None
             context['vardef_this'] = None
             context['construction_this'] = None
+            context['cvar_this'] = None
         else:
             # Get to the CVAR instance
             cvar = pfun_this.root
@@ -681,6 +709,7 @@ class ResearchPart44(ResearchPart):
             context['research_id'] = gateway.research.id
             context['vardef_this'] = cvar.variable
             context['construction_this'] = cvar.construction
+            context['cvar_this'] = cvar
 
             # Since this is a '44' form, we know this is a calculation
 
@@ -728,6 +757,37 @@ class ResearchPart44(ResearchPart):
 
         # Return the adatpted formset
         return arg_formset
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        # When we save an ARG, we need to add a link to the Function it belongs to
+        if prefix == 'arg':
+            # The instance is the argument instance
+
+            # Check the argtype of this argument: is it NOT a function any more?
+            if instance.argtype != "func":
+                # Then REmove all functions pointing to me
+                func_child = instance.functionparent.first()
+                if func_child != None:
+                    func_child.delete()
+                    has_changed = True
+            else:
+                # THis is a function: check if the function definition has not changed
+                func_child = instance.functionparent.first()
+                if func_child == None or instance.functiondef != func_child.functiondef:
+                    # The function definition changed >> replace the child with a completely NEW version
+                    # [1] remove the child
+                    if func_child != None:
+                        func_child.delete()
+                    # [2] Create a new version
+                    func_child = Function.create(instance.functiondef, instance.function.root, instance)
+                    # [3] Save it here (or that is done one level up)
+                    func_child.save()
+                    # Indicate changes have been made
+                    has_changed = True
+        # Return the change-indicator to trigger saving
+        return has_changed
+
 
 
 

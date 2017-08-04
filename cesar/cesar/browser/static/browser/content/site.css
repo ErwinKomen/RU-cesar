@@ -349,27 +349,33 @@ svg g.lithium-node:hover > text {
 }
 
 .arg-type select {
-  font-size: 11px;
-  height: 25px;
-  color: darkblue;
-  /* border: none;*/
-  background-color: whitesmoke;
+    font-size: 11px;
+    height: 25px;
+    color: darkblue;
+    /* border: none;*/
+    background-color: whitesmoke;
 }
 .arg-type {
-  color: darkblue;
+    color: darkblue;
 }
 .arg-val-exp {
-  color: darkred;
+    color: darkred;
 }
 
 .arg-intro {
-  font-size: 15px;
-  width: 1%;
-  white-space:nowrap;
+    font-size: 15px;
+    width: 1%;
+    white-space:nowrap;
 }
 div.arg-value {
-  margin: 2px;
-  border: 1px solid #ddd;
-  border-radius: 3px; 
-  background-color: whitesmoke;
+    margin: 2px;
+    border: 1px solid #ddd;
+    border-radius: 3px; 
+    background-color: whitesmoke;
+}
+div.arg-selected {
+    background-color: lightcyan;  
+}
+.arg-parent {
+    color: orange;
 }

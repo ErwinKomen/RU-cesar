@@ -241,23 +241,28 @@ class Function(models.Model):
     output = models.TextField("JSON value", null=False, blank=True, default="[]")
 
     def __str__(self):
-        return self.output
+        return "f_{}:{}".format(self.id,self.output)
 
     def delete(self, using = None, keep_parents = False):
         # First delete any ARG elements pointing to me
-        for arg in self.argument_set.all():
+        # qs = self.argument_set.all()
+        qs = self.functionarguments.all()
+        for arg in qs:
             arg.delete()
         # Now delete myself
         result = super().delete(using, keep_parents)
-        # Save the changes
-        self.save()
+        # # Save the changes
+        # self.save()
         return result
 
     @classmethod
-    def create(cls, functiondef, functionroot):
+    def create(cls, functiondef, functionroot, parentarg):
         """Create a new instance of a function based on a 'function definition', binding it to a cvar"""
         with transaction.atomic():
-            inst = cls(functiondef=functiondef, root=functionroot)
+            if parentarg == None:
+                inst = cls(functiondef=functiondef, root=functionroot)
+            else:
+                inst = cls(functiondef=functiondef, root=functionroot, parent=parentarg)
             # Save this function
             inst.save()
             # Add all the arguments that are needed
@@ -288,6 +293,9 @@ class ArgumentDef(models.Model):
     # Each function may take a number of input arguments
     function = models.ForeignKey(FunctionDef, null=False, related_name = "arguments")
 
+    def __str__(self):
+        return "argdef_{}".format(self.id)
+
 
 class Argument(models.Model):
     """The realization of an argument, based on its definition"""
@@ -304,15 +312,22 @@ class Argument(models.Model):
     # [0-1] This argument may link to a Construction Variable
     cvar = models.ForeignKey("ConstructionVariable", null=True)
     # [0-1] This argument may link to a Function (not its definition)
-    function = models.ForeignKey("Function", null=True)
+    function = models.ForeignKey("Function", null=True, related_name ="functionarguments")
     # [0-1] If a function is needed, we need to have a link to its definition
     functiondef = models.ForeignKey(FunctionDef, null=True)
 
-    #def get_argtype_display(self):
-    #    return self.get_argtype_display()
+    def __str__(self):
+        return "arg_{}".format(self.id)
 
-    #def get_functiondef_display(self):
-    #    return self.functiondef.name
+    def delete(self, using = None, keep_parents = False):
+      # Check if there are any functions pointing to me
+      func_child = self.functionparent.first()
+      if func_child != None:
+          func_child.delete()
+      # Now delete myself
+      result = super().delete(using, keep_parents)
+      # Return the result
+      return result
 
 
 

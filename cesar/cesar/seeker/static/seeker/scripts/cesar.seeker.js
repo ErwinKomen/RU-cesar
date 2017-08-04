@@ -79,7 +79,7 @@ var ru = (function ($, ru) {
           switch (sPart) {
             case "44":
               // A '44' call requires prior processing of the current '43' form
-              frm = $(el).closest("form");
+              frm = $(el).closest(".research_part").find("form");
               if (frm !== undefined) {
                 data = $(frm).serializeArray();
                 var button = $(frm).find(".submit-row .ajaxform");
@@ -100,7 +100,7 @@ var ru = (function ($, ru) {
             case "43":
               // A '43' call requires prior processing of the current '42' form
               // Get all the information in this form and store it
-              frm = $(el).closest("form");
+              frm = $(el).closest(".research_part").find("form");
               if (frm !== undefined) {
                 data = $(frm).serializeArray();
                 var button = $(frm).find(".submit-row .ajaxform");
@@ -541,7 +541,8 @@ var ru = (function ($, ru) {
                   ru.cesar.seeker.init_cvar_events();
                   break;
                 case "research_container_43":
-                  // add any event handlers for wizard part '43'
+                case "research_container_44":
+                  // add any event handlers for wizard part '43' and '44'
                   ru.cesar.seeker.init_arg_events();
                   break;
               }
