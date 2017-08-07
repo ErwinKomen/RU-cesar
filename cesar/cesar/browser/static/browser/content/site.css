@@ -379,3 +379,8 @@ div.arg-selected {
 .arg-parent {
     color: orange;
 }
+
+/* Adjust [row] within forms */
+form .row {
+    margin-left: 0px;
+}

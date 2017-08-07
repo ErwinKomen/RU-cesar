@@ -462,12 +462,16 @@ class ResearchPart42(ResearchPart):
                     fun_this.delete()
                     # Make sure that deletions get saved
                     has_changed = True
-            # Find the function attached to me
-            if instance.function != None:
-                # Do the functiondef values match?
-                if instance.functiondef != instance.function.functiondef:
-                    # Remove the existing function
-                    instance.function.delete()
+            # Find the function attached to me - only if applicable!!
+            if instance.type == "calc" and instance.functiondef != None:
+                # Two situations:
+                # - THere is no function yet
+                # - There is a function, but with the wrong functiondef
+                if instance.function == None or (instance.function != None and instance.functiondef != instance.function.functiondef):
+                    # Does a previous function exist?
+                    if instance.function:
+                        # Remove the existing function
+                        instance.function.delete()
                     # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
                     instance.function = Function.create(instance.functiondef, instance, None)
                     # Indicate that changes have been made
@@ -497,9 +501,10 @@ class ResearchPart43(ResearchPart):
                 # Make sure both changes are saved in one database-go
                 with transaction.atomic():
                     # Create a new function 
-                    function = Function(functiondef = cvar.functiondef, root = cvar)
+                    # function = Function(functiondef = cvar.functiondef, root = cvar)
+                    function = Function.create(cvar.functiondef, cvar, None)
                     # Make sure the function instance gets saved
-                    function.save()
+                    # function.save()
                     # Acc a link to this function from the CVAR object
                     cvar.function = function
                     # Make sure we save the CVAR object
@@ -613,7 +618,7 @@ class ResearchPart43(ResearchPart):
                     if func_child != None:
                         func_child.delete()
                     # [2] Create a new version
-                    func_child = Function.create(instance.functiondef, instance.root, instance)
+                    func_child = Function.create(instance.functiondef, instance.function.root, instance)
                     # [3] Save it
                     func_child.save()
                     # Indicate changes

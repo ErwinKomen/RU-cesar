@@ -13,7 +13,7 @@
                     targetid="research_part_42"
                     onclick="ru.cesar.seeker.research_wizard(this, '42');"><< All search elements</a>
   </span>
-
+  <span>[43]</span>
   <!-- Part 4-3: Build a function for one combination of [Construction Variable + Search Element] -->
   <div id="research_part_43" 
       class="js-inline-formset inline-group panel panel-default"
@@ -22,7 +22,7 @@
     <form action="" method="post">
         {% csrf_token %}
       <div class="row">
-        <div id="research_cvar" class="col-md-offset-1 col-md-11 tabular inline-related">
+        <div id="research_cvar" class="col-md-11 tabular inline-related">
           {{arg_formset.management_form}}
           <fieldset class="module {{arg_formset.classes}}">
 
@@ -56,8 +56,8 @@
                             <span class="arg-fundef">{{arg_this.functiondef}}</span>
                             <span class="hidden">{{arg_this.function}}</span>
                             <a class="btn btn-xs btn-default" role="button" 
-                                targeturl="{% if arg_this.instance.id and arg_this.instance.functionparent.all.0.parent_id %}
-                                           {% url 'research_part_44' arg_this.instance.functionparent.all.0.parent_id %}
+                                targeturl="{% if arg_this.instance.id %}
+                                           {% url 'research_part_44' arg_this.instance.id %}
                                            {% else %}{% url 'research_part_44' %}{% endif %}"
                                 targetid="research_part_44"
                                 instanceid="{{arg_this.instance.id}}"

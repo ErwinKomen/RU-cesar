@@ -48,6 +48,7 @@ var ru = (function ($, ru) {
         var sTargetId = "research_container_",
             sTargetType = "",
             sObjectId = "",
+            sMsg = "",
             html = "",
             data = {},
             frm = null,
@@ -75,45 +76,27 @@ var ru = (function ($, ru) {
                 return;
             }
           }
-          // [1] Some (increasingly many) calls require FIRST saving of the currently loaded informatino
+          // Find the currently shown 'research-part' form
+          frm = $(".research-part").not(".hidden").find("form");
+          // [1] Some (increasingly many) calls require FIRST saving of the currently loaded information
           switch (sPart) {
-            case "44":
-              // A '44' call requires prior processing of the current '43' form
-              frm = $(el).closest(".research_part").find("form");
+            case "42": sMsg = "4-before-42";
+            case "43": sMsg = "42-before-43";
+            case "44": sMsg = "43-before-44";
+              // Opening a new form requires prior processing of the current form
               if (frm !== undefined) {
                 data = $(frm).serializeArray();
                 var button = $(frm).find(".submit-row .ajaxform");
                 if (button !== undefined) {
                   // Indicate we are saving
-                  $(".save-warning").html("Processing... 43-before-44");
+                  $(".save-warning").html("Processing... "+sMsg);
                   data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
                   // Process this information: save the data!
                   response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
                   // Check the response
                   if (response.status === undefined || response.status !== "ok") {
                     // Action to undertake if we have not been successfull
-                    private_methods.errMsg("research_wizard[44]: could not save the data for this function");
-                  }
-                }
-              }
-              break;
-            case "43":
-              // A '43' call requires prior processing of the current '42' form
-              // Get all the information in this form and store it
-              frm = $(el).closest(".research_part").find("form");
-              if (frm !== undefined) {
-                data = $(frm).serializeArray();
-                var button = $(frm).find(".submit-row .ajaxform");
-                if (button !== undefined) {
-                  // Indicate we are saving
-                  $(".save-warning").html("Processing... 42-before-43");
-                  data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
-                  // Process this information: save the data!
-                  response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
-                  // Check the response
-                  if (response.status === undefined || response.status !== "ok") {
-                    // Action to undertake if we have not been successfull
-                    private_methods.errMsg("research_wizard[43]: could not save the data for this construction variable");
+                    private_methods.errMsg("research_wizard["+sPart+"]: could not save the data for this function");
                   }
                 }
               }

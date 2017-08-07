@@ -19,6 +19,7 @@
                     targetid="research_part_43"
                     onclick="ru.cesar.seeker.research_wizard(this, '43');"><< Start
   </a></span>
+  <span>[44]</span>
 
   <!-- Part 4-4: Starting from one function's ARG, allow building the function pointing to that ARG -->
   <div id="research_part_43" 
@@ -29,7 +30,7 @@
       {% csrf_token %}
 
       <div class="row">
-        <div id="research_cvar" class="col-md-offset-1 col-md-11 tabular inline-related">
+        <div id="research_cvar" class="col-md-11 tabular inline-related">
           {{parg_formset.management_form}}
           {{arg_formset.management_form}}
           <fieldset class="module {{arg_formset.classes}}">
@@ -49,7 +50,8 @@
 
             <!-- First form: the parent-form that is only available for viewing (no editing) -->
             <div class="row">
-              <div class="col-md-8 panel panel-default panel-function">
+              <div class="{% if parentForm.instance.get_level > 0 %}col-md-offset-{{parentForm.instance.get_level}} {% endif %}
+                                       col-md-8 panel panel-default panel-function">
                 <h3>{{parentForm.instance.functiondef.title}}</h3>
                 <div class="hidden">{{parentForm}}</div>
                 <table>
@@ -96,7 +98,8 @@
             <!-- Second form: the one that can be edited -->
             <div class="row">
               <!-- This second form is offset 2 columns to the right -->
-              <div class="col-md-offset-2 col-md-8 panel panel-default panel-function">
+              <div class="{% if functionForm.instance.get_level > 0 %}col-md-offset-{{functionForm.instance.get_level}} {% endif %}
+                          col-md-8 panel panel-default panel-function">
                 <h3>{{functionForm.instance.functiondef.title}}</h3>
                 <div class="hidden">{{functionForm}}</div>
                 <table>

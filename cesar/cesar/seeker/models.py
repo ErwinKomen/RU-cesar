@@ -223,9 +223,6 @@ class FunctionDef(models.Model):
     def __str__(self):
         return self.name
 
-    #def get_functiondef_display(self):
-    #    return self.name
-
 
 class Function(models.Model):
     """Realization of one function based on a definition"""
@@ -272,6 +269,16 @@ class Function(models.Model):
                 # Save this argument
                 arg.save()
         return inst
+
+    def get_level(self):
+        """Find out at what level of depth this function is"""
+        iLevel = 0
+        parentarg = self.parent
+        while parentarg != None:
+            iLevel += 1
+            parentarg = parentarg.function.parent
+        return iLevel
+
 
 
       

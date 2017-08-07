@@ -153,9 +153,9 @@ class CvarForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
-        # make sure only the 'gvar' elements under this particular gateway are shown
-        gateway = kwargs['instance'].construction.gateway
-        self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway)
+        ## make sure only the 'gvar' elements under this particular gateway are shown
+        #gateway = kwargs['instance'].construction.gateway
+        #self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway)
         # make sure all the available function-definitions are shown
         self.fields['functiondef'].queryset = FunctionDef.objects.all()
 
