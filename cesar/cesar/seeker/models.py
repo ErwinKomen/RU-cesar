@@ -198,6 +198,15 @@ class VarDef(Variable):
       # Return the result of normal saving
       return save_result
 
+    def delete(self, using = None, keep_parents = False):
+        """Deleting a VarDef means: also delete all the CVAR instances pointing to me"""
+
+        # Delete the CVAR instances under me
+        for var_inst in self.variablenames.all():
+            var_inst.delete()
+        # Now delete myself
+        return super().delete(using, keep_parents)
+
 
 class GlobalVariable(Variable):
     """Each research project may have any number of global (static) variables"""
@@ -208,6 +217,12 @@ class GlobalVariable(Variable):
     def __str__(self):
         # The default string-value of a global variable is its name
         return self.name
+
+    def can_delete(self):
+        # A global variable can only be deleted, if it is not referred to from functions anymore
+        qs = Argument.objects.filter(gvar=self)
+        # The gvar can be deleted if the queryset is empty
+        return qs.count() == 0
 
 
 class FunctionDef(models.Model):
@@ -279,9 +294,38 @@ class Function(models.Model):
             parentarg = parentarg.function.parent
         return iLevel
 
+    def get_ancestors(self):
+        """Provide a list of the most important information of all ancestors above me"""
+        anc_list = []
+        iLevel = 0
+        parentarg = self.parent
+        while parentarg != None:
+            # Adapt the level
+            iLevel += 1
+            if parentarg.function and parentarg.function.parent:
+                arg_id = parentarg.function.parent.id
+            else:
+                arg_id = None
+            # Get the information of this parent-argument
+            info = {'level': iLevel, 
+                    'arginfo': parentarg.get_info(),
+                    'func_id': parentarg.function.id,
+                    'arg_num': parentarg.function.functiondef.argnum,
+                    'arg_order': parentarg.argumentdef.order,
+                    'arg_id': arg_id,
+                    'cvar_id': self.root.id,
+                    'arg': parentarg }
+            # Store it in the ancestor list
+            anc_list.append(info)
+            parentarg = parentarg.function.parent
+        # Adapt the indentation levels
+        num = len(anc_list)
+        for item in anc_list:
+            item['level'] = num - item['level']
+        # Return the list we have made
+        return anc_list
 
-
-      
+          
 class ArgumentDef(models.Model):
     """Definition of one argument for a function"""
 
@@ -336,6 +380,22 @@ class Argument(models.Model):
       # Return the result
       return result
 
+    def get_info(self):
+        """Provide information on this particular argument"""
+        atype = self.get_argtype_display()
+        avalue = ""
+        if self.argtype == "func":
+            avalue = self.function.functiondef.name
+        elif self.argtype == "fixed":
+            avalue = self.argval
+        elif self.argtype == "gvar":
+            avalue = "G["+self.gvar.name+"]"
+        elif self.argtype == "cnst":
+            avalue = "CONSTITUENT"
+        elif self.argtype == "cvar":
+            avalue = "CVAR"
+        return "{}: {}".format(atype, avalue)
+
 
 
 class ConstructionVariable(models.Model):
@@ -364,6 +424,18 @@ class ConstructionVariable(models.Model):
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         return super().save(force_insert, force_update, using, update_fields)
+
+    def delete(self, using = None, keep_parents = False):
+        """Delete a CVAR"""
+
+        # Delete all that is pointing to me
+        # Check if this CVAR can be deleted
+        qs = Argument.objects.filter(cvar=self)
+        for arg_inst in qs:
+            # Delete this argument
+            arg_inst.delete()
+        # Now delete myself
+        return super().delete(using, keep_parents)
 
 
 class SearchItem(models.Model):

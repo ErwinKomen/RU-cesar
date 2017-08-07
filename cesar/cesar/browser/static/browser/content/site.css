@@ -75,6 +75,7 @@ div.inline-group a.add-related {
 .panel-function {
     margin-right: 10px;
     background-color: lightyellow;
+    display: inline-block;
 }
 
 /* navbar */
@@ -372,6 +373,17 @@ div.arg-value {
     border: 1px solid #ddd;
     border-radius: 3px; 
     background-color: whitesmoke;
+}
+/*
+.arg-item > td {
+    width: unset;
+    white-space:nowrap;
+}*/
+.table-fit {
+  width: 1px !important;
+}
+.table-fit td {
+  white-space:nowrap !important;
 }
 div.arg-selected {
     background-color: lightcyan;  

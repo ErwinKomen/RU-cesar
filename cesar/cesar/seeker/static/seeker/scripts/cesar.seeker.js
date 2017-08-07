@@ -470,12 +470,15 @@ var ru = (function ($, ru) {
 
       /**
        * ajaxform_click
-       *   General way to process an ajax form request
+       *   General way to process an ajax form request:
+       *   1 - Issue a POST request to send (and save) data
+       *   2 - Issue a GET request to receive updated data
        *
        */
       ajaxform_click: function () {
         var data = [],      // Array to stor the POST data
             elCall = this,
+            response = null,
             callType = "";  // Type of element that calls us
 
         try {
@@ -506,34 +509,37 @@ var ru = (function ($, ru) {
           // Indicate we are saving/preparing
           $(".save-warning").html("Saving item... " + instanceid.toString());
           // Make an AJAX call to get an existing or new specification element HTML code
-          $.ajax({
-            url: ajaxurl,
-            type: "POST",
-            data: data,
-            async: false,
-            dataType: 'json',
-            success: function (data) {
-              if (data.status && data.status === 'ok') {
-                $(elOpen).html(data.html);
-              }
-              // Make sure events are set again
-              ru.cesar.seeker.init_events();
-              switch (openid) {
-                case "research_container_42":
-                  // add any event handlers for wizard part '42'
-                  ru.cesar.seeker.init_cvar_events();
-                  break;
-                case "research_container_43":
-                case "research_container_44":
-                  // add any event handlers for wizard part '43' and '44'
-                  ru.cesar.seeker.init_arg_events();
-                  break;
-              }
-            },
-            failure: function () {
-              var iStop = 1;
+          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+          if (response.status === undefined || response.status !== 'ok') {
+            // Show an error somewhere
+
+          }
+          // Indicate we are loading
+          $(".save-warning").html("Updating item... " + instanceid.toString());
+          // Make a GET call with fresh data
+          data = [];
+          data.push({ 'name': 'instanceid', 'value': instanceid });
+          // Make an AJAX call to get an existing or new specification element HTML code
+          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "GET");
+          if (response.status && response.status === 'ok') {
+            // Load the new data
+            $(elOpen).html(response.html);
+            // Make sure events are set again
+            ru.cesar.seeker.init_events();
+            switch (openid) {
+              case "research_container_42":
+                // add any event handlers for wizard part '42'
+                ru.cesar.seeker.init_cvar_events();
+                break;
+              case "research_container_43":
+              case "research_container_44":
+                // add any event handlers for wizard part '43' and '44'
+                ru.cesar.seeker.init_arg_events();
+                break;
             }
-          });
+          }
+
+
           // Bind the click event to all class="ajaxform" elements
           $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
         } catch (ex) {

@@ -30,7 +30,7 @@
       {% csrf_token %}
 
       <div class="row">
-        <div id="research_cvar" class="col-md-11 tabular inline-related">
+        <div id="research_cvar" class="tabular inline-related">
           {{parg_formset.management_form}}
           {{arg_formset.management_form}}
           <fieldset class="module {{arg_formset.classes}}">
@@ -47,11 +47,33 @@
                           onclick="ru.cesar.seeker.research_wizard(this, '44');">Up one level</button>
               </div>
             {% endif %}
+            <div class="ancestors">
+            {% for anc_this in anc_list reversed %}
+              <div class="row">
+                <div {% if anc_this.level > 0 %}class="col-md-offset-{{anc_this.level}}"{% endif %}>
+                <span>{{anc_this.func_id}}</span>
+                <span>argument {{anc_this.arg_order}} of {{anc_this.arg_num}}</span>
+                <span>{% if anc_this.arg_id %}
+                        <a targeturl ="{% url 'research_part_44' anc_this.arg_id %}"
+                           targetid ="research_part_44"
+                           onclick="ru.cesar.seeker.research_wizard(this, '44');"
+                          >{{anc_this.arginfo}}</a>
+                      {% else %}
+                        <a targeturl ="{% url 'research_part_43' anc_this.cvar_id %}"
+                           targetid ="research_part_43"
+                           onclick="ru.cesar.seeker.research_wizard(this, '43');"
+                          >{{anc_this.arginfo}}</a>
+                      {% endif %}
+                </span>
+                </div>
+              </div>
+            {% endfor %}
+            </div>
 
             <!-- First form: the parent-form that is only available for viewing (no editing) -->
             <div class="row">
               <div class="{% if parentForm.instance.get_level > 0 %}col-md-offset-{{parentForm.instance.get_level}} {% endif %}
-                                       col-md-8 panel panel-default panel-function">
+                                       panel panel-default panel-function">
                 <h3>{{parentForm.instance.functiondef.title}}</h3>
                 <div class="hidden">{{parentForm}}</div>
                 <table>
@@ -71,7 +93,7 @@
                         <!-- Provide the possible values of the argument, as chosen by argtype -->
                         <div class="arg-val-exp">
                           {% if parg_this.argtype.value == "func" %}{{parg_this.instance.functiondef.name }}
-                          {% elif parg_this.argtype.value == "fixed" %}{{parg_this.argval.value}}
+                          {% elif parg_this.argtype.value == "fixed" %}{{parg_this.argval.value|truncatewords:8}}
                           {% elif parg_this.argtype.value == "gvar" %}{{parg_this.gvar.name}}
                           {% elif parg_this.argtype.value == "cvar" %}{{parg_this.cvar.name}}
                           {% elif parg_this.argtype.value == "const" %}constituent
@@ -99,10 +121,10 @@
             <div class="row">
               <!-- This second form is offset 2 columns to the right -->
               <div class="{% if functionForm.instance.get_level > 0 %}col-md-offset-{{functionForm.instance.get_level}} {% endif %}
-                          col-md-8 panel panel-default panel-function">
+                          panel panel-default panel-function">
                 <h3>{{functionForm.instance.functiondef.title}}</h3>
                 <div class="hidden">{{functionForm}}</div>
-                <table>
+                <table class="table-fit">
                 {% for arg_this in arg_formset %}
                   <tr class="form-row arg-item">
                     <td class="hidden">{{arg_this.argumentdef}}</td>

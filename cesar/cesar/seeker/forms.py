@@ -132,6 +132,10 @@ class VarDefForm(ModelForm):
         valid = super(VarDefForm, self).is_valid()
         return valid
 
+    def clean_variable_ptr(self):
+        data = self.cleaned_data['variable_ptr']
+
+
 
 class CvarForm(ModelForm):
     """The VALUES of construction variables"""

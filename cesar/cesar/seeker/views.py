@@ -159,20 +159,28 @@ class ResearchPart(View):
                         with transaction.atomic():
                             # Walk all the forms in the formset
                             for form in formset:
-                                # Check if this form is valid
+                                # At least check for validity
                                 if form.is_valid():
-                                    # Check if anything has changed so far
-                                    has_changed = form.has_changed()
-                                    # Save it preliminarily
-                                    instance = form.save(commit=False)
-                                    # Any actions before saving
-                                    if self.before_save(prefix, request, instance, form):
-                                        has_changed = True
-                                    # Save this construction
-                                    if has_changed: 
-                                        instance.save()
-                                        # Adapt the last save time
-                                        context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                                    # Should we delete?
+                                    if form.cleaned_data['DELETE']:
+                                        # Delete this one
+                                        form.instance.delete()
+                                        # NOTE: the template knows this one is deleted by looking at form.DELETE
+                                        # form.delete()
+                                    else:
+                                        # Check if anything has changed so far
+                                        has_changed = form.has_changed()
+                                        # Save it preliminarily
+                                        instance = form.save(commit=False)
+                                        # Any actions before saving
+                                        if self.before_save(prefix, request, instance, form):
+                                            has_changed = True
+                                        # Save this construction
+                                        if has_changed: 
+                                            # Save the instance
+                                            instance.save()
+                                            # Adapt the last save time
+                                            context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
                                 else:
                                     self.arErr.append(form.errors)
                     else:
@@ -422,6 +430,7 @@ class ResearchPart4(ResearchPart):
         return context
 
 
+
 class ResearchPart42(ResearchPart):
     template_name = 'seeker/research_part_42.html'
     MainModel = VarDef
@@ -478,6 +487,7 @@ class ResearchPart42(ResearchPart):
                     has_changed = True
         # Return the changed flag
         return has_changed
+
 
 class ResearchPart43(ResearchPart):
     """Starting from a CVAR of type 'function', allow defining that function"""
@@ -735,6 +745,9 @@ class ResearchPart44(ResearchPart):
             fun_this = self.get_instance('function')
             if fun_this != None:
                 context['arg_formset'] = self.check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, qs_cvar)
+
+            # Get a list of all ancestors
+            context['anc_list'] = fun_this.get_ancestors()
 
         context['currentowner'] = currentowner
         # We also need to make the object_id available
