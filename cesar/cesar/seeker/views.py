@@ -123,7 +123,7 @@ class ResearchPart(View):
                         # The instance must be made available (even though it is only 'preliminary')
                         formObj['instance'] = instance
                         # Perform actions to this form BEFORE FINAL saving
-                        if formObj['forminstance'].has_changed() or self.before_save(formObj['prefix'], request, instance=instance):
+                        if formObj['forminstance'].has_changed() or self.before_save(formObj['prefix'], request, instance=instance) or formObj['forminstance'].instance.id == None:
                             # Perform the saving
                             instance.save()
                             # Set the context
