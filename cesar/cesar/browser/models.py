@@ -193,21 +193,44 @@ def m2m_identifier(items):
         sBack = "-".join([thing.identifier for thing in qs])
     return sBack
 
-def get_instance_copy(item):
+def get_instance_copy(item, commit=True):
     new_copy = copy.copy(item)
     new_copy.id = None          # Reset the id
-    new_copy.save()             # Save it preliminarily
+    if commit:
+        try:
+            new_copy.save()             # Save it preliminarily
+        except:
+            e = sys.exc_info()[0]
+            iStop = 1
     return new_copy
 
-def copy_m2m(inst_src, inst_dst, field, lst_m2m = None):
-    # Copy M2M relationship: conversationalType    
-    for item in getattr(inst_src, field).all():
-        newItem = get_instance_copy(item)
+def copy_m2m(inst_src, inst_dst, field, **kwargs):
+    # Copy M2M or one-to-many relationship  
+    item_list = getattr(inst_src, field).all()  
+    back_list = []
+    for item in item_list:
+        newItem = item.get_copy(**kwargs)
+        # x = inst_src.definitionvariables.all()
         # Possibly copy more m2m
-        if lst_m2m != None:
+        if kwargs is not None and 'lst_m2m' in kwargs:
+            # Get the list of stuff
+            lst_m2m = kwargs['lst_m2m']
+            # Remove the field from kwargs
+            del kwargs['lst_m2m']
+            # Walk the list
             for deeper in lst_m2m:
-                copy_m2m(item, newItem, deeper)
+                copy_m2m(item, newItem, deeper, **kwargs)
         getattr(inst_dst, field).add(newItem)
+        back_list.append({'src': item, 'dst': newItem})
+    return back_list
+
+def copy_fk(inst_src, inst_dst, field):
+    # Copy foreign-key relationship
+    instSource = getattr(inst_src, field)
+    if instSource != None:
+        # instCopy = get_instance_copy(instSource)
+        instCopy = instSource.get_copy()
+        setattr(inst_dst, field, instCopy)
 
 def get_ident(qs):
     if qs == None:

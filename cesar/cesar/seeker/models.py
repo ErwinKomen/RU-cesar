@@ -8,7 +8,7 @@ from django.contrib.auth.models import User, Group
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
-from cesar.browser.models import build_choice_list, build_abbr_list, get_help, choice_value
+from cesar.browser.models import build_choice_list, build_abbr_list, get_help, choice_value, get_instance_copy, copy_m2m, copy_fk
 import sys
 import copy
 import json
@@ -53,6 +53,12 @@ class SearchMain(models.Model):
             self.get_operator_display(),
             self.value)
 
+    def get_copy(self, **kwargs):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
     def create_item(function, value, operator):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
         function_word = choice_value(SEARCH_FUNCTION, function)
@@ -60,8 +66,7 @@ class SearchMain(models.Model):
                                         operator=operator_matches,
                                         value = value)
         return obj
-
-    
+        
 
 class GatewayManager(models.Manager):
 
@@ -97,10 +102,51 @@ class Gateway(models.Model):
     objects = GatewayManager()
 
     def __str__(self):
-        return self.name
+        return "{}:{}".format(self.id, self.name)
+
+    def get_copy(self, **kwargs):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Prepare an object for further processing
+        kwargs = {'gateway': new_copy}
+        # Copy all 'VarDef' and 'GlobavlVariable' instances linked to me
+        dvar_list = copy_m2m(self, new_copy, "definitionvariables", **kwargs)
+        gvar_list = copy_m2m(self, new_copy, "globalvariables", **kwargs)
+
+        # Prepare an object for further processing
+        # kwargs['lst_m2m'] = ["constructionvariables"]
+        # Copy all constructions + all associated construction variables
+        cons_list = copy_m2m(self, new_copy, "constructions", **kwargs)
+        # Now visit all construction variables
+        cvar_list = ConstructionVariable.objects.filter(construction__gateway=self)
+        kwargs['dvar_list'] = dvar_list
+        kwargs['gvar_list'] = gvar_list
+        kwargs['cons_list'] = cons_list
+        for cvar in cvar_list:
+            # determine the correct (new) construction and vardef
+            construction_src = cvar.construction
+            construction = next(x['dst'] for x in cons_list if x['src'] == construction_src)
+            variable_src = cvar.variable
+            variable = next(x['dst'] for x in dvar_list if x['src'] == variable_src)
+            kwargs['construction'] = construction
+            kwargs['variable'] = variable
+            # Create a new cvar using the correspondence lists
+            cvar_new = cvar.get_copy(**kwargs)
+        # Return the new copy
+        return new_copy
 
     def delete(self, using = None, keep_parents = False):
-        """Delete all the Construction items pointing to me"""
+        """Delete all items pointing to me, then delete myself"""
+
+        # Delete the global variables
+        gvar_set = self.globalvariables.all()
+        for gvar in gvar_set:
+            gvar.delete()
+        # Delete the definition variables
+        dvar_set = self.definitionvariables.all()
+        for dvar in dvar_set:
+            dvar.delete()
+        # Delete the constructions (and what is under them)
         cns_set = self.constructions.all()
         for cns_this in cns_set:
             cns_this.delete()
@@ -109,9 +155,10 @@ class Gateway(models.Model):
 
     def get_vardef_list(self):
         # Get a list of all variables for this gateway
-        var_pk_list = [var.pk for var in self.gatewayvariables.all()]
-        # Now get the list of vardef variables coinciding with this
-        vardef_list = [var for var in VarDef.objects.filter(pk__in=var_pk_list)]
+        #var_pk_list = [var.pk for var in self.gatewayvariables.all()]
+        ## Now get the list of vardef variables coinciding with this
+        #vardef_list = [var for var in VarDef.objects.filter(pk__in=var_pk_list)]
+        vardef_list = self.definitionvariables.all()
         return vardef_list
 
     def get_construction_list(self):
@@ -158,7 +205,27 @@ class Construction(models.Model):
     def __str__(self):
         return self.name
 
+    def get_copy(self, **kwargs):
+        # Test
+        if kwargs == None or 'gateway' not in kwargs:
+            return None
+        # Possibly copy the search element
+        new_search = self.search
+        if new_search != None:
+            new_search = new_search.get_copy(**kwargs)
+        # Make a clean copy
+        new_copy = Construction(name=self.name, search=new_search, gateway=kwargs['gateway'])
+        new_copy.save()
+        # Return the new copy
+        return new_copy
+
     def delete(self, using = None, keep_parents = False):
+        """Delete all items pointing to me, then delete myself"""
+
+        # Delete the global variables
+        cvar_set = self.constructionvariables.all()
+        for cvar in cvar_set:
+            cvar.delete()
         # Also delete the searchMain
         self.search.delete()
         # And then delete myself
@@ -179,8 +246,6 @@ class Variable(models.Model):
     name = models.CharField("Name of this variable", max_length=MAX_NAME_LEN)
     # [0-1] Description/explanation for this variable
     description = models.TextField("Description of this variable")
-    # [1] Link to the Gateway the variable belongs to
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="gatewayvariables")
 
     def __str__(self):
         return self.name
@@ -188,7 +253,9 @@ class Variable(models.Model):
 
 class VarDef(Variable):
     """Each research project may have a number of variables that are construction-specific"""
-    pass
+
+    # [1] Link to the Gateway the variable belongs to
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="definitionvariables")
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Perform the normal saving
@@ -197,6 +264,16 @@ class VarDef(Variable):
       Gateway.check_cvar(self.gateway)
       # Return the result of normal saving
       return save_result
+
+    def get_copy(self, **kwargs):
+        # Test
+        if kwargs == None or 'gateway' not in kwargs:
+            return None
+        # Make a clean copy
+        new_copy = VarDef(name=self.name, description=self.description, gateway=kwargs['gateway'])
+        new_copy.save()
+        # Return the new copy
+        return new_copy
 
     def delete(self, using = None, keep_parents = False):
         """Deleting a VarDef means: also delete all the CVAR instances pointing to me"""
@@ -213,10 +290,22 @@ class GlobalVariable(Variable):
 
     # [1] Value of the variable
     value = models.TextField("Value")
+    # [1] Link to the Gateway the variable belongs to
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="globalvariables")
 
     def __str__(self):
         # The default string-value of a global variable is its name
         return self.name
+
+    def get_copy(self, **kwargs):
+        # Test
+        if kwargs == None or 'gateway' not in kwargs:
+            return None
+        # Make a clean copy
+        new_copy = GlobalVariable(name=self.name, description=self.description, value=self.value, gateway=kwargs['gateway'])
+        new_copy.save()
+        # Return the new copy
+        return new_copy
 
     def can_delete(self):
         # A global variable can only be deleted, if it is not referred to from functions anymore
@@ -254,6 +343,15 @@ class Function(models.Model):
 
     def __str__(self):
         return "f_{}:{}".format(self.id,self.output)
+
+    def get_copy(self, **kwargs):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Skip FK fields: functiondef, root
+        # Copy all 12m fields
+        copy_m2m(self, new_copy, "functionarguments")    # Argument
+        # Return the new copy
+        return new_copy
 
     def delete(self, using = None, keep_parents = False):
         # First delete any ARG elements pointing to me
@@ -370,6 +468,16 @@ class Argument(models.Model):
     def __str__(self):
         return "arg_{}".format(self.id)
 
+    def get_copy(self, **kwargs):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Skip FK fields: argumentdef, functiondef
+        # TODO: how to properly process: gvar, cvar??
+        # Copy a potential function pointing to me
+        copy_m2m(self, new_copy, "functionparent")    # Function
+        # Return the new copy
+        return new_copy
+
     def delete(self, using = None, keep_parents = False):
       # Check if there are any functions pointing to me
       func_child = self.functionparent.first()
@@ -397,7 +505,6 @@ class Argument(models.Model):
         return "{}: {}".format(atype, avalue)
 
 
-
 class ConstructionVariable(models.Model):
     """Each construction may provide its own value to the variables belonging to the gateway"""
 
@@ -421,6 +528,36 @@ class ConstructionVariable(models.Model):
         sConstruction = self.construction.name
         sVariable = self.variable.name
         return "C:[{}|{}]=[{}]".format(sConstruction, sVariable, self.svalue)
+
+    def get_copy(self, **kwargs):
+        # Make a clean copy of the CVAR, but don't save it yet
+        new_copy = get_instance_copy(self, commit=False)
+        # Set the construction and the variable correctly
+        new_copy.construction = kwargs['construction']
+        new_copy.variable = kwargs['variable']
+        # Copy the function associated with the current CVAR
+        if self.function != None:
+            function = self.function.get_copy()
+            # Set the function 
+            new_copy.function = function
+        # Only now save it
+        try:
+            new_copy.save()
+        except:
+            sMsg = sys.exc_info()[0]
+        # FK fields: do NOT copy 'construction', 'vardef', 'functiondef'
+        # Get a pointer to the 'gateway' of the new copy
+        gateway = new_copy.variable.gateway
+        # Prepare an object for further processing
+        kwargs = {'lst_m2m': ["constructionvariables"],
+                  'cvar_list': ConstructionVariable.objects.filter(construction=new_copy.construction, construction__gateway=gateway),
+                  'gvar_list': GlobalVariable.objects.filter(gateway=gateway)}
+        ## Copy all 12m fields
+        #copy_m2m(self, new_copy, "definitionvariables") # VarDef
+        ## Copy all constructions + all associated construction variables
+        #copy_m2m(self, new_copy, "constructions", **kwargs)
+        # Return the new copy
+        return new_copy
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         return super().save(force_insert, force_update, using, update_fields)
@@ -491,6 +628,17 @@ class Research(models.Model):
     def username(self):
         return self.owner.username
 
+    def get_copy(self, **kwargs):
+        # Make a clean copy
+        new_copy = get_instance_copy(self, commit=False)
+        # Copy the FK contents
+        copy_fk(self, new_copy, "gateway")
+        # Now save it
+        new_copy.save()
+        # Note: the 'owner' needs no additional copying, since the user remains the same
+        # Return the new copy
+        return new_copy
+    
 
 class ShareGroup(models.Model):
     """Group witch which a project is shared"""

@@ -5,7 +5,7 @@ Definition of views for the SEEKER app.
 from django.db.models import Q
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
@@ -39,11 +39,50 @@ class GatewayCreateView(CreateView):
 
 
 class SeekerListView(ListView):
+    """List all the research projects available"""
+
     model = Research
     template_name = 'seeker/research_list.html'
     paginate_by = paginateEntries
     entrycount = 0
     qs = None
+
+    def render_to_response(self, context, **response_kwargs):
+        sType = self.request.GET.get('listtype', '')
+        if 'copyerror' not in context:
+            if 'copyerror' in response_kwargs:
+                context['copyerror'] = response_kwargs['copyerror']
+            else:
+                context['copyerror'] = None
+        if sType == 'copy':
+            # Can we change the path?
+            self.request.path = reverse('seeker_list')
+            # Need to make a copy
+            if 'object_id' in self.kwargs:
+                object_id = self.kwargs['object_id']
+                sMsg = research_copy(object_id)
+            else:
+                sMsg = "The [object_id] is not passed along in the HTML call"
+            # If needed, adapt the context
+            if sMsg != None and sMsg != '':
+                context['copyerror'] = sMsg
+            ## Redirect appropriately
+            #return HttpResponseRedirect(reverse('seeker_list', kwargs={'copyerror': sMsg}))
+        elif sType == 'del':
+            # We can delete this one
+            if 'object_id' in self.kwargs:
+                object_id = self.kwargs['object_id']
+                # Try to delete it
+                sMsg = research_del(object_id)
+            else:
+                sMsg = "The [object_id] is not passed along in the HTML call"
+
+        # Get the correct list of research projects
+        research_list = Research.objects.filter(owner=self.request.user)
+        context['research_list'] = research_list
+        context['object_list'] = research_list
+        # Make sure the correct URL is being displayed
+        return super(SeekerListView, self).render_to_response(context, **response_kwargs)
 
 
 def get_changeform_initial_data(model, request):
@@ -428,8 +467,7 @@ class ResearchPart4(ResearchPart):
         # We also need to make the object_id available
         context['object_id'] = self.object_id
         return context
-
-
+    
 
 class ResearchPart42(ResearchPart):
     template_name = 'seeker/research_part_42.html'
@@ -808,36 +846,43 @@ class ResearchPart44(ResearchPart):
 
 
 
+def research_copy(object_id=None):
+    """Make a copy of the research project"""
 
+    # Prepare initial message
+    sMsg = ""
+    # Try to get the object
+    original_obj = Research.objects.get(pk=object_id)
+    if original_obj != None:
+        # Make a copy of this item
+        copy_obj = original_obj.get_copy()
+        if copy_obj != None:
+            # Save the new copy
+            copy_obj.save()
+        else:
+            sMsg = "There was a problem copying the object"
+    else:
+        sMsg = "Could not find the original object with id={}".format(object_id)
+    # Go to the seeker_list page, possibly with adapted context
+    return sMsg
 
+def research_del(object_id=None):
+    """Remove this research project"""
 
-def get_spec_el(request):
-    """Entry point for the creation/updating of a Specification Element construction"""
-
-    # Specify the template to be used
-    template = 'seeker/specel.html'
-
-    # Get any information from the request
-    instanceid = request.GET.get('instanceid', None)
-
-    # Specific processing
-    cvar = ConstructionVariable.objects.get(id=instanceid)
-  
-    # Specify the context
-    context= {}
-    context['instance'] = cvar
-    context['vardef'] = cvar.variable
-    context['construction'] = cvar.construction
-
-    # Create HTML
-    # sHtml = render_to_string(request, template, context)
-    sHtml = render_to_string(template, context)
-
-    # Create data to be returned
-    data = {'status': 'ok', 'specelform': sHtml}
-    # Return the information
-    return JsonResponse(data)
-
+    # TODO: first ask the user...
+    # Prepare initial message
+    sMsg = ""
+    # Try to get the object
+    original_obj = Research.objects.get(pk=object_id)
+    if original_obj != None:
+        # Make a copy of this item
+        response = original_obj.delete()
+        if response == None:
+            sMsg = "There was a problem deleting the object"
+    else:
+        sMsg = "Could not find the original object with id={}".format(object_id)
+    # Go to the seeker_list page, possibly with adapted context
+    return sMsg
 
 
 

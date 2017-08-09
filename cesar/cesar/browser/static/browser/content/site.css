@@ -385,6 +385,9 @@ div.arg-value {
 .table-fit td {
   white-space:nowrap !important;
 }
+.tdnowrap {
+  white-space:nowrap !important;
+}
 div.arg-selected {
     background-color: lightcyan;  
 }
