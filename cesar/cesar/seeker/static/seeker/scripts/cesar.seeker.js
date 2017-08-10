@@ -804,6 +804,32 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  toggle_del
+       *      Toggle research item
+       *
+       */
+      toggle_del: function (el) {
+        var elTr = null;
+
+        try {
+          // Get to the nearest <tr>
+          elTr = $(el).closest("tr");
+          // Is this .part-del?
+          if ($(elTr).is(".part-del")) {
+            // Hide it
+            $(elTr).addClass("hidden");
+          } else {
+            // Get to the next .part-del
+            elTr = $(elTr).next(".part-del");
+            // Show it
+            $(elTr).removeClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("toggle_del", ex);
+        }
+      },
+
+      /**
        *  init_cvar_events
        *      Bind events to work with constituent variables
        *

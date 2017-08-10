@@ -44,12 +44,27 @@
                   <a class="btn btn-default btn-xs" href="{% url 'seeker_copy' object_id=item.id %}?listtype=copy">copy</a>
                 </span>
                 <span class="research-item-copy">
-                  <a class="btn btn-warning btn-xs" href="{% url 'seeker_copy' object_id=item.id %}?listtype=del">delete</a>
+                  <a class="btn btn-warning btn-xs" href="{% url 'seeker_copy' object_id=item.id %}?listtype=del">old</a>
+                  <a class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">delete</a>
                 </span>
               </div>
               {% if copyerror %}
               <div><code>{{copyerror}}</code></div>
               {% endif %}
+            </td>
+          </tr>
+          <!-- Provide a form row for deletion -->
+          <tr class="part-del hidden">
+            <td colspan="5">
+              <div>
+                <form action="{{item.get_delete_url}}" method="post">
+                  {% csrf_token %}
+                    <p>Are you sure you want to delete the research project named <code>{{item.name}}</code>?
+                    <a class="btn btn-success btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">Cancel</a>
+                    <a class="btn btn-warning btn-xs" href="{% url 'seeker_delete' object_id=item.id %}">Delete</a>
+                    </p>
+                </form>
+              </div>
             </td>
           </tr>
         {% endfor %}
