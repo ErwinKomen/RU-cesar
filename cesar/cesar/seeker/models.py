@@ -5,6 +5,7 @@ are available at the back end
 """
 from django.db import models, transaction
 from django.contrib.auth.models import User, Group
+from django.urls import reverse
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
@@ -617,8 +618,15 @@ class Research(models.Model):
         return self.gateway.name
 
     def delete(self, using = None, keep_parents = False):
-        # Delete the gateway
-        self.gateway.delete()
+        # Look for the gateway
+        try:
+            gateway = self.gateway
+            gateway.delete()
+        except:
+            if self.gateway_id:
+                gateway = Gateway.objects.filter(id=self.gateway_id)
+                if gateway:
+                    gateway.delete()
         # Delete all the sharegroup instances pointing to this research instance
         for grp in self.sharegroups.all():
             grp.delete()
@@ -638,6 +646,16 @@ class Research(models.Model):
         # Note: the 'owner' needs no additional copying, since the user remains the same
         # Return the new copy
         return new_copy
+
+    def get_copy_url(self):
+        """Produce an URL to be called when requesting to copy [self]"""
+
+        return reverse('seeker_copy', kwargs={'object_id': self.id})
+
+    def get_delete_url(self):
+        """Produce an URL to be called when requesting to delete [self]"""
+
+        return reverse('seeker_delete', kwargs={'object_id': self.id})
     
 
 class ShareGroup(models.Model):

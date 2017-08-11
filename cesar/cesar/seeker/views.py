@@ -9,7 +9,7 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
@@ -845,6 +845,35 @@ class ResearchPart44(ResearchPart):
         return has_changed
 
 
+class ObjectCopyMixin:
+    model = None
+    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
+
+    def post(self, request, object_id=None):
+        # Copying is only possible through a POST request
+        obj = get_object_or_404(self.model, id=object_id)
+        # Create a copy of the object
+        copy_obj = obj.get_copy()
+        sMsg = ""
+        # Check result
+        if copy_obj == None:
+            sMsg = "There was a problem copying the object"
+            self.data['html'] = sMsg
+            self.data['status'] = "error" 
+        else:
+            # Save the new object
+            copy_obj.save()
+        # Return the information
+        return JsonResponse(self.data)
+
+
+class ResearchCopy(ObjectCopyMixin, View):
+    """Copy one 'Research' object"""
+    model = Research
+    success_url = reverse_lazy('seeker_list')
+
+
+
 
 def research_copy(object_id=None):
     """Make a copy of the research project"""
@@ -866,23 +895,31 @@ def research_copy(object_id=None):
     # Go to the seeker_list page, possibly with adapted context
     return sMsg
 
-def research_del(object_id=None):
-    """Remove this research project"""
 
-    # TODO: first ask the user...
-    # Prepare initial message
-    sMsg = ""
-    # Try to get the object
-    original_obj = Research.objects.get(pk=object_id)
-    if original_obj != None:
-        # Make a copy of this item
-        response = original_obj.delete()
-        if response == None:
-            sMsg = "There was a problem deleting the object"
-    else:
-        sMsg = "Could not find the original object with id={}".format(object_id)
-    # Go to the seeker_list page, possibly with adapted context
-    return sMsg
+class ObjectDeleteMixin:
+    model = None
+    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
+
+    def post(self, request, object_id=None):
+        # Note: deleting is only possible through a POST request
+        obj = get_object_or_404(self.model, id=object_id)
+        try:
+            obj.delete()
+        except:
+            lInfo = sys.exc_info()
+            if len(lInfo) == 1:
+                sMsg = lInfo[0]
+            else:
+                sMsg = "{}<br>{}".format(lInfo[0], lInfo[1])
+            self.data['html'] = sMsg
+            self.data['status'] = "error" 
+        # Return the information
+        return JsonResponse(self.data)
+
+
+class ResearchDelete(ObjectDeleteMixin, View):
+    """Delete one 'Research' object"""
+    model = Research
 
 
 

@@ -30,6 +30,7 @@ var ru = (function ($, ru) {
         } else {
           sHtml = "Error in [" + sMsg + "]<br>" + ex.message;
         }
+        sHtml = "<code>" + sHtml + "</code>";
         $("#" + loc_divErr).html(sHtml);
       },
       errClear: function () {
@@ -823,9 +824,59 @@ var ru = (function ($, ru) {
             elTr = $(elTr).next(".part-del");
             // Show it
             $(elTr).removeClass("hidden");
+            // Also make sure the correct contents is shown
+            $(elTr).find(".part-del").removeClass("hidden");
+            $(elTr).find(".part-process").addClass("hidden");
           }
         } catch (ex) {
           private_methods.errMsg("toggle_del", ex);
+        }
+      },
+
+      /**
+       *  process_item
+       *      Make a POST request to copy or delete an item
+       *      Also show the waiting symbol by un-hiding a particular row
+       *
+       */
+      process_item: function (el) {
+        var elDiv = null,
+            elNext = null,
+            response = null,
+            sUrl = "",
+            frm = null,
+            data = [];
+
+        try {
+          // Get to the nearest <div>
+          elDiv = $(el).closest("div");
+          // Get its second following sibling div
+          elNext = $(elDiv).next(".part-process");
+          if (elNext !== null) {
+            //  We now have the correct row: open it
+            $(elNext).removeClass("hidden");
+            $(elDiv).addClass("hidden");
+          }
+          frm = $(el).closest("form");
+          if (frm !== undefined) {
+            data = $(frm).serializeArray();
+            sUrl = $(el).attr("url");
+            data.push({ 'name': 'caller', 'value': sUrl });
+            // Anyway, start off an ajax call to request deletion
+            response = ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
+            if (response !== undefined) {
+              if (response.status === "ok") {
+                // Continue through to the 'success' url
+                sUrl = $(el).attr("success");
+                window.location.href = sUrl;
+              } else {
+                // SOme kind of error was returned
+                $(elNext).html(response.html);
+              }
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("process_item", ex);
         }
       },
 

@@ -24,6 +24,8 @@
 
     {% if object_list %}
       <h3>Research project overview</h3>
+      <!-- Room for errors -->
+      <div id="research_err"></div>
       <!-- The contents as a table -->
       <table class="table table-hover">
         <thead><tr><th class="hidden">id</th><th>Owner</th><th>Type</th><th>Name</th><th>Purpose</th><th>Action</th></tr></thead>
@@ -36,35 +38,42 @@
             <td><span class="research-item-name">{{item.name}}</span></td>
             <td><span class="research-item-purpose">{{item.purpose}}</span></td>
             <td class="tdnowrap">
-              <div>
-                <span class="research-item-name">
-                  <a class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=item.id %}">edit</a>
-                </span>
-                <span class="research-item-copy">
-                  <a class="btn btn-default btn-xs" href="{% url 'seeker_copy' object_id=item.id %}?listtype=copy">copy</a>
-                </span>
-                <span class="research-item-copy">
-                  <a class="btn btn-warning btn-xs" href="{% url 'seeker_copy' object_id=item.id %}?listtype=del">old</a>
-                  <a class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">delete</a>
-                </span>
+              <div class="part-buttons">
+                <form>
+                  {% csrf_token %}
+                  <span class="research-item-name">
+                    <a class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=item.id %}">edit</a>
+                  </span>
+                  <span class="research-item-copy">
+                    <a class="btn btn-default btn-xs" 
+                       url="{{item.get_copy_url}}" 
+                       success="{% url 'seeker_list' %}"
+                       onclick="ru.cesar.seeker.process_item(this);">copy</a>
+                  </span>
+                  <span class="research-item-copy">
+                    <a class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">delete</a>
+                  </span>
+                </form>
               </div>
-              {% if copyerror %}
-              <div><code>{{copyerror}}</code></div>
-              {% endif %}
+              <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
             </td>
           </tr>
           <!-- Provide a form row for deletion -->
           <tr class="part-del hidden">
-            <td colspan="5">
-              <div>
+            <td colspan="3"></td>
+            <td>Are you sure you want to delete the research project named <code>{{item.name}}</code>?</td>
+            <td>
+              <div class="part-del">
                 <form action="{{item.get_delete_url}}" method="post">
                   {% csrf_token %}
-                    <p>Are you sure you want to delete the research project named <code>{{item.name}}</code>?
-                    <a class="btn btn-success btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">Cancel</a>
-                    <a class="btn btn-warning btn-xs" href="{% url 'seeker_delete' object_id=item.id %}">Delete</a>
-                    </p>
+                    <a class="btn btn-success btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
+                    <a class="btn btn-warning btn-xs" 
+                       url="{{item.get_delete_url}}" 
+                       success="{% url 'seeker_list' %}"
+                       onclick="ru.cesar.seeker.process_item(this);">delete</a>
                 </form>
               </div>
+              <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
             </td>
           </tr>
         {% endfor %}
