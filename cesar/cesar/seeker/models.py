@@ -169,16 +169,16 @@ class Gateway(models.Model):
         """Check all the CVAR connected to me, adding/deleting where needed"""
 
         with transaction.atomic():
-            # Step 1: add CVAR for all Construction/Vardef combinations
-            for vardef in self.get_vardef_list():
-                # Walk all constructions
-                for construction in self.constructions.all():
-                    # Check if a cvar exists
-                    qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
-                    if qs.count() == 0:
-                        # Doesn't exist: create it
-                        cvar = ConstructionVariable(variable=vardef, construction=construction)
-                        cvar.save()
+            ## Step 1: add CVAR for all Construction/Vardef combinations
+            #for vardef in self.get_vardef_list():
+            #    # Walk all constructions
+            #    for construction in self.constructions.all():
+            #        # Check if a cvar exists
+            #        qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
+            #        if qs.count() == 0:
+            #            # Doesn't exist: create it
+            #            cvar = ConstructionVariable(variable=vardef, construction=construction)
+            #            cvar.save()
             # Step 2: Find CVAR that do not belong to a gateway
             gateway_pk_list = [item.pk for item in Gateway.objects.all()]
             cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list)]
@@ -199,9 +199,9 @@ class Construction(models.Model):
     # [1] Construction name
     name = models.CharField("Name of this search construction", max_length=MAX_TEXT_LEN)
     # [1] Main search item
-    search = models.ForeignKey(SearchMain, blank=False, null=False, on_delete=models.CASCADE)
+    search = models.ForeignKey(SearchMain, blank=False, null=False)
     # [1] Every gateway has one or more constructions it may look for
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="constructions", on_delete=models.CASCADE)
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="constructions")
 
     def __str__(self):
         return self.name
@@ -512,7 +512,7 @@ class ConstructionVariable(models.Model):
     # [1] Link to the Construction the variable value belongs to
     construction = models.ForeignKey(Construction, blank=False, null=False, related_name="constructionvariables")
     # [1] Link to the name of this variable
-    variable = models.ForeignKey(VarDef,  blank=False, null=False, on_delete=models.CASCADE, related_name="variablenames")
+    variable = models.ForeignKey(VarDef,  blank=False, null=False, related_name="variablenames")
     # [1] Type of value: string or expression
     type = models.CharField("Variable type", choices=build_abbr_list(SEARCH_VARIABLE_TYPE), 
                               max_length=5, help_text=get_help(SEARCH_VARIABLE_TYPE))
@@ -607,7 +607,7 @@ class Research(models.Model):
     targetType = models.CharField("Main element type", choices=TARGET_TYPE_CHOICES, 
                               max_length=5)
     # [1] Each research project has a 'gateway': a specification for the $search element
-    gateway = models.OneToOneField(Gateway, blank=False, null=False, on_delete=models.CASCADE)
+    gateway = models.OneToOneField(Gateway, blank=False, null=False)
     # [1] Each research project has its owner: obligatory, but not to be selected by the user himself
     owner = models.ForeignKey(User, editable=False)
 
