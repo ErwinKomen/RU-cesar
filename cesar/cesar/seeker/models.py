@@ -169,16 +169,16 @@ class Gateway(models.Model):
         """Check all the CVAR connected to me, adding/deleting where needed"""
 
         with transaction.atomic():
-            ## Step 1: add CVAR for all Construction/Vardef combinations
-            #for vardef in self.get_vardef_list():
-            #    # Walk all constructions
-            #    for construction in self.constructions.all():
-            #        # Check if a cvar exists
-            #        qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
-            #        if qs.count() == 0:
-            #            # Doesn't exist: create it
-            #            cvar = ConstructionVariable(variable=vardef, construction=construction)
-            #            cvar.save()
+            # Step 1: add CVAR for all Construction/Vardef combinations
+            for vardef in self.get_vardef_list():
+                # Walk all constructions
+                for construction in self.constructions.all():
+                    # Check if a cvar exists
+                    qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
+                    if qs.count() == 0:
+                        # Doesn't exist: create it
+                        cvar = ConstructionVariable(variable=vardef, construction=construction)
+                        cvar.save()
             # Step 2: Find CVAR that do not belong to a gateway
             gateway_pk_list = [item.pk for item in Gateway.objects.all()]
             cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list)]
@@ -216,7 +216,7 @@ class Construction(models.Model):
             new_search = new_search.get_copy(**kwargs)
         # Make a clean copy
         new_copy = Construction(name=self.name, search=new_search, gateway=kwargs['gateway'])
-        new_copy.save()
+        new_copy.save(check_cvar = False)
         # Return the new copy
         return new_copy
 
@@ -232,10 +232,11 @@ class Construction(models.Model):
         # And then delete myself
         return super().delete(using, keep_parents)
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None, check_cvar = True):
       save_result = super().save(force_insert, force_update, using, update_fields)
       # Check and add/delete CVAR instances for this gateway
-      Gateway.check_cvar(self.gateway)
+      if check_cvar:
+          Gateway.check_cvar(self.gateway)
       # Return the result of normal saving
       return save_result
 
