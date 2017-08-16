@@ -15,14 +15,19 @@
           <fieldset class="module {{vardef_formset.classes}}">
             <p>Provide the names and descriptions of the data-dependant variables</p>
             <table>
-              <thead><tr><th>Name</th><th>Description</th><th></th><th>Order</th><th>DELETE?</th></tr></thead>
+              <thead><tr><th>Name</th><th>Order</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
               <tbody>
-                {% for vardef_this in vardef_formset %}
+                {% for vardef_this in vardef_ordered %}
                   {% if not vardef_this.DELETE.value %}
                     <tr id="arguments-{{forloop.counter0}}" class="form-row row{{forloop.counter}}">
                       <td class="hidden">{{vardef_this.variable_ptr}}</td>
                       <td id="vardefid" class="hidden">{{vardef_this.instance.id}}</td>
                       <td valign="top">{{vardef_this.name}}</td>
+                      <td valign="top" align="left">
+                        <span class="var-order hidden">{{vardef_this.ORDER}}</span>
+                        <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
+                        <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up {% if forloop.first %}hidden{% endif%}"></span>
+                      </td>
                       <td valign="top">{{vardef_this.description}}</td>
                       <td valign="top" align="left">
                         <a class="btn btn-xs btn-default" 
@@ -33,11 +38,6 @@
                            onclick="ru.cesar.seeker.research_wizard(this, '42');"
                            loopid="research_calc_{{forloop.counter}}" >Specify for search elements...</a>
                       </td>
-                      <td valign="top" align="left">
-                        <span class="hidden">{{vardef_this.ORDER}}</span>
-                        <span class="btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
-                        <span class="btn btn-xs glyphicon glyphicon-chevron-up {% if forloop.first %}hidden{% endif%}"></span>
-                      </td>
                       <td valign="top" align="center">{{vardef_this.DELETE}}</td>
                     </tr>
                   {% endif %}
@@ -46,13 +46,13 @@
                 <tr id="arguments-empty" class="form-row empty-form row1">
                   <td class="hidden">{{vardef_formset.empty_form.variable_ptr}}</td>
                   <td valign="top">{{vardef_formset.empty_form.name}}</td>
+                  <td valign="top" align="left">
+                    <span class="var-order hidden">{{vardef_this.ORDER}}</span>
+                    <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
+                    <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up"></span>
+                  </td>
                   <td valign="top">{{vardef_formset.empty_form.description}}</td>
                   <td valign="top" align="left"><!-- no button here unless saved--></td>
-                  <td valign="top" align="left">
-                      <span class="hidden">{{vardef_this.ORDER}}</span>
-                      <span class="btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
-                      <span class="btn btn-xs glyphicon glyphicon-chevron-up"></span>
-                    </td>
                   <td valign="top" align="center">{{vardef_formset.empty_form.DELETE}}</td>
                 </tr>
                 <tr class="add-row">

@@ -23,6 +23,56 @@ var ru = (function ($, ru) {
       methodNotVisibleFromOutside: function () {
         return "something";
       },
+      /**
+       *  var_move
+       *      Move variable row one step down or up
+       *      This means the 'order' attribute changes
+       */
+      var_move: function (el, sDirection) {
+        var elRow = null,
+            rowSet = null,
+            iLen = 0;
+
+        try {
+          // Find the current row
+          elRow = $(el).closest("tr");
+          switch (sDirection) {
+            case "down":
+              // Put the 'other' (=next) row before me
+              $(elRow).next().after($(elRow));
+              break;
+            case "up":
+              // Put the 'other' (=next) row before me
+              $(elRow).prev().before($(elRow));
+              break;
+            default:
+              return;
+          }
+          // Now iterate over all rows in this table
+          rowSet = $(elRow).parent().children(".form-row").not(".empty-form");
+          iLen = $(rowSet).length;
+          $(rowSet).each(function (index, el) {
+            var elInput = $(el).find(".var-order input");
+            var sOrder = $(elInput).val();
+            // Set the order of this element
+            if (parseInt(sOrder, 10) !== index + 1) {
+              $(elInput).attr("value", index + 1);
+              $(elInput).val(index + 1);
+            }
+            // Check visibility of up and down
+            $(el).find(".var-down").removeClass("hidden");
+            $(el).find(".var-up").removeClass("hidden");
+            if (index === 0) {
+              $(el).find(".var-up").addClass("hidden");
+            }
+            if (index === iLen - 1) {
+              $(el).find(".var-down").addClass("hidden");
+            }
+          });
+        } catch (ex) {
+          private_methods.errMsg("var_move", ex);
+        }
+      },
       errMsg: function (sMsg, ex) {
         var sHtml = "";
         if (ex === undefined) {
@@ -235,6 +285,7 @@ var ru = (function ($, ru) {
               $(elVal).find(".arg-gvar").addClass("hidden");
               $(elVal).find(".arg-cvar").addClass("hidden");
               $(elVal).find(".arg-cnst").addClass("hidden");
+              $(elVal).find(".arg-search").addClass("hidden");
               $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "gvar": // Global variable
@@ -243,6 +294,7 @@ var ru = (function ($, ru) {
               $(elVal).find(".arg-gvar").removeClass("hidden");
               $(elVal).find(".arg-cvar").addClass("hidden");
               $(elVal).find(".arg-cnst").addClass("hidden");
+              $(elVal).find(".arg-search").addClass("hidden");
               $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "cvar": // Constructuion variable
@@ -251,6 +303,7 @@ var ru = (function ($, ru) {
               $(elVal).find(".arg-gvar").addClass("hidden");
               $(elVal).find(".arg-cvar").removeClass("hidden");
               $(elVal).find(".arg-cnst").addClass("hidden");
+              $(elVal).find(".arg-search").addClass("hidden");
               $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "func": // Expression
@@ -259,6 +312,7 @@ var ru = (function ($, ru) {
               $(elVal).find(".arg-gvar").addClass("hidden");
               $(elVal).find(".arg-cvar").addClass("hidden");
               $(elVal).find(".arg-cnst").addClass("hidden");
+              $(elVal).find(".arg-search").addClass("hidden");
               $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "cnst":  // Constituent
@@ -267,6 +321,7 @@ var ru = (function ($, ru) {
               $(elVal).find(".arg-gvar").addClass("hidden");
               $(elVal).find(".arg-cvar").addClass("hidden");
               $(elVal).find(".arg-cnst").removeClass("hidden");
+              $(elVal).find(".arg-search").addClass("hidden");
               $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "axis":  // Axis
@@ -275,7 +330,17 @@ var ru = (function ($, ru) {
               $(elVal).find(".arg-gvar").addClass("hidden");
               $(elVal).find(".arg-cvar").addClass("hidden");
               $(elVal).find(".arg-cnst").addClass("hidden");
+              $(elVal).find(".arg-search").addClass("hidden");
               $(elVal).find(".arg-axis").removeClass("hidden");
+              break;
+            case "hit":  // Search hit
+              $(elVal).find(".arg-value").addClass("hidden");
+              $(elVal).find(".arg-expression").addClass("hidden");
+              $(elVal).find(".arg-gvar").addClass("hidden");
+              $(elVal).find(".arg-cvar").addClass("hidden");
+              $(elVal).find(".arg-cnst").addClass("hidden");
+              $(elVal).find(".arg-search").removeClass("hidden");
+              $(elVal).find(".arg-axis").addClass("hidden");
               break;
           }
         } catch (ex) {
@@ -833,6 +898,11 @@ var ru = (function ($, ru) {
         }
       },
 
+      var_down: function() {private_methods.var_move(this, 'down');},
+      var_up: function () { private_methods.var_move(this, 'up'); },
+
+
+
       /**
        *  process_item
        *      Make a POST request to copy or delete an item
@@ -956,6 +1026,9 @@ var ru = (function ($, ru) {
             }
           });
           $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
+          // Make sure variable ordering is supported
+          $('td span.var-down').click(ru.cesar.seeker.var_down);
+          $('td span.var-up').click(ru.cesar.seeker.var_up);
           // NOTE: do not use the following mouseout event--it is too weird to work with
           // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
         } catch (ex) {

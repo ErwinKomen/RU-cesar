@@ -277,7 +277,9 @@ class ResearchPart(View):
                     instance = self.get_instance(prefix)
                     formset = formsetClass(prefix=prefix, instance=instance)
                 # Process all the forms in the formset
-                self.process_formset(prefix, request, formset)
+                ordered_forms = self.process_formset(prefix, request, formset)
+                if ordered_forms:
+                    context[prefix + "_ordered"] = ordered_forms
                 # Store the instance
                 formsetObj['formsetinstance'] = formset
                 # Add the formset to the context
@@ -334,7 +336,7 @@ class ResearchPart(View):
         return context
 
     def process_formset(self, prefix, request, formset):
-        pass
+        return None
 
     def custom_init(self):
         pass
@@ -372,7 +374,12 @@ class ResearchPart1(ResearchPart):
         if self.obj:
             gw = self.obj.gateway
             if gw:
+                # Check and repair CVAR instances
                 gw.check_cvar()
+                # Make sure DVAR instances are ordered
+                gw.order_dvar()
+                # Make sure GVAR instances are ordered
+                gw.order_gvar()
         return True
 
 
@@ -421,6 +428,7 @@ class ResearchPart2(ResearchPart):
                 if owner != None and owner != currentuser:
                     form.fields['name'].disabled = True
                     form.fields['value'].disabled = True
+        return None
 
 
 class ResearchPart3(ResearchPart):
@@ -467,6 +475,27 @@ class ResearchPart4(ResearchPart):
         # We also need to make the object_id available
         context['object_id'] = self.object_id
         return context
+
+    def process_formset(self, prefix, request, formset):
+        if prefix == 'vardef':
+            # Sorting: see https://wiki.python.org/moin/HowTo/Sorting
+            ordered_forms = sorted(formset.forms, key=lambda item: item.instance.order)
+            # Make sure the initial values of the 'order' in the forms are set correctly
+            for form in ordered_forms:
+                form.fields['ORDER'].initial = form.instance.order
+            return ordered_forms
+        else:
+            return None
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        if prefix == 'vardef':
+            # Retrieve the 'order' field
+            if instance.order != form.cleaned_data['ORDER']:
+                instance.order = form.cleaned_data['ORDER']
+                has_changed = True
+        return has_changed
+
     
 
 class ResearchPart42(ResearchPart):
@@ -606,9 +635,10 @@ class ResearchPart43(ResearchPart):
                 qs_gvar = GlobalVariable.objects.filter(gateway=self.obj.construction.gateway)
 
                 # Calculate the initial queryset for 'cvar'
+                # NOTE: we take into account the 'order' field, which must have been defined properly...
                 lstQ = []
                 lstQ.append(Q(construction=self.obj.construction))
-                lstQ.append(Q(variable_id__lt=self.obj.variable.id))
+                lstQ.append(Q(variable__order__lt=self.obj.variable.order))
                 qs_cvar = ConstructionVariable.objects.filter(*lstQ)
 
                 for index, arg_form in enumerate(arg_formset):
@@ -773,7 +803,7 @@ class ResearchPart44(ResearchPart):
             # Calculate the initial queryset for 'cvar'
             lstQ = []
             lstQ.append(Q(construction=cvar.construction))
-            lstQ.append(Q(variable_id__lt=cvar.variable.id))
+            lstQ.append(Q(variable__order__lt=cvar.variable.order))
             qs_cvar = ConstructionVariable.objects.filter(*lstQ)
 
             # - adapting the 'parg_formset' for the 'parent' form (view-only)

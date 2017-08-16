@@ -162,6 +162,30 @@ class Gateway(models.Model):
         vardef_list = self.definitionvariables.all()
         return vardef_list
 
+    def order_dvar(self):
+        """Order the VarDef instances under me"""
+        qs = self.definitionvariables.order_by('order', 'id')
+        iOrder = 1
+        with transaction.atomic():
+            for dvar in qs:
+                if dvar.order != iOrder:
+                    dvar.order = iOrder
+                    dvar.save()
+                iOrder += 1
+        return True
+
+    def order_gvar(self):
+        """Order the GlobalVariable instances under me"""
+        qs = self.globalvariables.order_by('order', 'id')
+        iOrder = 1
+        with transaction.atomic():
+            for gvar in qs:
+                if gvar.order != iOrder:
+                    gvar.order = iOrder
+                    gvar.save()
+                iOrder += 1
+        return True
+
     def get_construction_list(self):
         return [cns for cns in self.constructions.all()]
 
@@ -246,6 +270,8 @@ class Variable(models.Model):
 
     # [1] Variable obligatory name
     name = models.CharField("Name of this variable", max_length=MAX_NAME_LEN)
+    # [1] The numerical order of this argument
+    order = models.IntegerField("Order", blank=False, default=0)
     # [0-1] Description/explanation for this variable
     description = models.TextField("Description of this variable")
 
@@ -284,7 +310,11 @@ class VarDef(Variable):
         for var_inst in self.variablenames.all():
             var_inst.delete()
         # Now delete myself
-        return super().delete(using, keep_parents)
+        result = super().delete(using, keep_parents)
+        # re-order the dvar collection under this gateway
+        gateway.order_dvar()
+        # Return the result
+        return result
 
 
 class GlobalVariable(Variable):
@@ -314,6 +344,14 @@ class GlobalVariable(Variable):
         qs = Argument.objects.filter(gvar=self)
         # The gvar can be deleted if the queryset is empty
         return qs.count() == 0
+
+    def delete(self, using = None, keep_parents = False):
+        # Delete myself
+        result = super().delete(using, keep_parents)
+        # TODO: re-order the gvar collection
+        gateway.order_gvar()
+        # Return the deletion result
+        return result
 
 
 class FunctionDef(models.Model):
@@ -462,6 +500,10 @@ class Argument(models.Model):
     gvar = models.ForeignKey("GlobalVariable", null=True)
     # [0-1] This argument may link to a Construction Variable
     cvar = models.ForeignKey("ConstructionVariable", null=True)
+    ## [0-1] This argument may link to a Constituent
+    #constituent = models.ForeignKey("Constituent", null=True)
+    # [0-1] This argument may link to a Hierarchical Relation
+    relation = models.ForeignKey("Relation", null=True)
     # [0-1] This argument may link to a Function (not its definition)
     function = models.ForeignKey("Function", null=True, related_name ="functionarguments")
     # [0-1] If a function is needed, we need to have a link to its definition
@@ -502,9 +544,26 @@ class Argument(models.Model):
             avalue = "G["+self.gvar.name+"]"
         elif self.argtype == "cnst":
             avalue = "CONSTITUENT"
+        elif self.argtype == "hit":
+            avalue = "Search hit"
         elif self.argtype == "cvar":
             avalue = "CVAR"
+        elif self.argtype == "axis":
+            avalue = self.relation.name
         return "{}: {}".format(atype, avalue)
+
+
+class Relation(models.Model):
+    """Hierarchical relation such as the Xpath axes"""
+
+    # [1] The descriptive name of this argument
+    name = models.CharField("Name", max_length=MAX_TEXT_LEN)
+    # [1] Xpath implementation
+    xpath = models.TextField("Implementation", null=False, blank=False, default=".")
+
+    def __str__(self):
+        return "{}".format(self.name)
+
 
 
 class ConstructionVariable(models.Model):
@@ -529,7 +588,7 @@ class ConstructionVariable(models.Model):
     def __str__(self):
         sConstruction = self.construction.name
         sVariable = self.variable.name
-        return "C:[{}|{}]=[{}]".format(sConstruction, sVariable, self.svalue)
+        return "[{}|{}]".format(sConstruction, sVariable)
 
     def get_copy(self, **kwargs):
         # Make a clean copy of the CVAR, but don't save it yet
@@ -554,10 +613,6 @@ class ConstructionVariable(models.Model):
         kwargs = {'lst_m2m': ["constructionvariables"],
                   'cvar_list': ConstructionVariable.objects.filter(construction=new_copy.construction, construction__gateway=gateway),
                   'gvar_list': GlobalVariable.objects.filter(gateway=gateway)}
-        ## Copy all 12m fields
-        #copy_m2m(self, new_copy, "definitionvariables") # VarDef
-        ## Copy all constructions + all associated construction variables
-        #copy_m2m(self, new_copy, "constructions", **kwargs)
         # Return the new copy
         return new_copy
 
