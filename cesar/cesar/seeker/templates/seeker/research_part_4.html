@@ -15,7 +15,7 @@
           <fieldset class="module {{vardef_formset.classes}}">
             <p>Provide the names and descriptions of the data-dependant variables</p>
             <table>
-              <thead><tr><th>Name</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
+              <thead><tr><th>Name</th><th>Description</th><th></th><th>Order</th><th>DELETE?</th></tr></thead>
               <tbody>
                 {% for vardef_this in vardef_formset %}
                   {% if not vardef_this.DELETE.value %}
@@ -33,7 +33,11 @@
                            onclick="ru.cesar.seeker.research_wizard(this, '42');"
                            loopid="research_calc_{{forloop.counter}}" >Specify for search elements...</a>
                       </td>
-                      <td valign="top" align="center" class="hidden">{{vardef_this.ORDER}}</td>
+                      <td valign="top" align="left">
+                        <span class="hidden">{{vardef_this.ORDER}}</span>
+                        <span class="btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
+                        <span class="btn btn-xs glyphicon glyphicon-chevron-up {% if forloop.first %}hidden{% endif%}"></span>
+                      </td>
                       <td valign="top" align="center">{{vardef_this.DELETE}}</td>
                     </tr>
                   {% endif %}
@@ -44,7 +48,11 @@
                   <td valign="top">{{vardef_formset.empty_form.name}}</td>
                   <td valign="top">{{vardef_formset.empty_form.description}}</td>
                   <td valign="top" align="left"><!-- no button here unless saved--></td>
-                  <td valign="top" align="center" class="hidden">{{vardef_this.ORDER}}</td>
+                  <td valign="top" align="left">
+                      <span class="hidden">{{vardef_this.ORDER}}</span>
+                      <span class="btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
+                      <span class="btn btn-xs glyphicon glyphicon-chevron-up"></span>
+                    </td>
                   <td valign="top" align="center">{{vardef_formset.empty_form.DELETE}}</td>
                 </tr>
                 <tr class="add-row">
