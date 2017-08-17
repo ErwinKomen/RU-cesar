@@ -36,9 +36,18 @@ class FunctionDefAdmin(admin.ModelAdmin):
     fields = ['name', 'title', 'argnum']
     inlines = [ArgumentDefInline]
 
+class RelationAdmin(admin.ModelAdmin):
+    """Display and edit [Relation] definitions"""
+
+    list_display = ['name', 'xpath']
+    search_fields = ['name', 'xpath']
+    fields = ['name', 'xpath']
+
+
 
 # Models for Cesar Browser
 admin.site.register(Research, ResearchAdmin)
 admin.site.register(Gateway)
 admin.site.register(Construction)
 admin.site.register(FunctionDef, FunctionDefAdmin)
+admin.site.register(Relation, RelationAdmin)

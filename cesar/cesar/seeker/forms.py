@@ -203,7 +203,7 @@ class ArgumentForm(ModelForm):
 
     class Meta:
         model = Argument
-        fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'function', 'functiondef']
+        fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'relation', 'function', 'functiondef']
         widgets={
           'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
           }
@@ -216,6 +216,7 @@ class ArgumentForm(ModelForm):
         self.fields['argtype'].required = True
         self.fields['cvar'].required = False
         self.fields['gvar'].required = False
+        self.fields['relation'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
 
