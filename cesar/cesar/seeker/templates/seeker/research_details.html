@@ -1,0 +1,189 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">
+    <h3>Search specification</h3>
+    <p>{{intro_message|safe}}</p>
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+    <div class="hidden" id="researchid">{{object_id}}</div>
+    <div class="hidden" id="targettype">{{targettype}}</div>
+    <div class="xpanel xpanel-default">
+
+      <div id="research_tiles" class="row container">
+        <div class="row container">
+          <div class="col-md-4 jumbotron jumbo-1">
+            <h2>About</h2>
+            <p>Information on this project</p>
+            <button type="button" class="btn btn-primary pull-left"
+                    id="button_part_1"
+                    targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
+                    targetid="research_part_1"
+                    onclick="ru.cesar.seeker.research_wizard(this, '1');">Edit</button>
+            {% if object_id  %}<button type="button" class="btn btn-primary pull-right">Show</button>{% endif %}
+          </div>
+          {% if object_id  %}
+          <div class="col-md-4  col-md-offset-1 jumbotron jumbo-2">
+            <h2>Search</h2>
+            <p>What is being searched?</p>
+            <button type="button" class="btn btn-primary pull-left"
+                    id="button_part_2"
+                    targeturl="{% if object_id %}{% url 'research_part_2' object_id %}{% else %}{% url 'research_part_2' %}{% endif %}"
+                    targetid="research_part_2"
+                    onclick="ru.cesar.seeker.research_wizard(this, '2');">Edit</button>
+            <button type="button" class="btn btn-primary pull-right">Show</button>
+          </div>
+          {% endif %}
+        </div>
+        {% if object_id %}
+        <div class="row container">
+          <div class="col-md-4 jumbotron jumbo-3">
+            <h2>Fine-tune</h2>
+            <p>What makes a search hit?</p>
+            <button type="button" class="btn btn-primary pull-left"
+                    id="button_part_345"
+                    onclick="ru.cesar.seeker.research_finetune(this);">Edit</button>
+            <button type="button" class="btn btn-primary pull-right">Show</button>
+          </div>
+          <div class="col-md-4  col-md-offset-1 jumbotron jumbo-4">
+            <h2>Features</h2>
+            <p>Information per search hit</p>
+            <button type="button" class="btn btn-primary pull-left">Edit</button>
+            <button type="button" class="btn btn-primary pull-right">Show</button>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- allow returning back to the tiles -->
+      <div id="goto_overview" class="row container hidden">
+          <button type="button" class="btn btn-primary pull-left" 
+                  targeturl="{% if object_id %}{% url 'seeker_edit' object_id=object_id  %}{% else %}{% url 'seeker_define' %}{% endif %}"
+                  onclick="ru.cesar.seeker.research_overview(this);"><< Overview</button>
+      </div>
+      <!-- allow returning back to the tiles -->
+      <div id="goto_finetune" class="row container hidden">
+          <button type="button" class="btn btn-primary pull-left" 
+                  onclick="ru.cesar.seeker.research_finetune(this);"><< Fine-tune</button>
+      </div>
+      <div id="research_conditions" class="row container hidden">
+        <div class="explanation row container">
+          <p>The search program will attempt to find the words or constituents specified in <kw>Search</kw> (see <kw>Overview</kw>).</p>
+          <p>But if there are additional <kw>conditions</kw> before the results are of interest, these conditions need to be specified.</p>
+          <p>The <kw>conditions</kw> may make use of:
+            <ul>
+              <li>Fixed <kw>global</kw> variables.</li>
+              A global variable is a piece of text. 
+              Whenever a particular word or clause is used several times in the <kw>data-dependant</kw> variables or in the <kw>conditions</kw>, 
+              think of replacing that text by defining a global variable.
+              
+              <li>Variables that are <kw>data-dependant</kw>.</li>
+              The value of data-dependant variables is defined separately for each word or constituent that is being searched.
+              Data-dependent variables can be of any kind, e.g.: boolean, string, constituent.
+              
+            </ul>
+          </p>
+        </div>
+        <div class="row container">
+          <div class="col-md-3 jumbotron jumbo-1">
+            <h2>Fixed</h2>
+            <p>Global variables</p>
+            <button type="button" class="btn btn-primary" 
+                    id="button_part_3"
+                    targeturl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
+                    targetid="research_part_3"
+                    onclick="ru.cesar.seeker.research_wizard(this, '3');">Edit</button>
+          </div>
+          <div class="col-md-3 col-md-offset-1 jumbotron jumbo-2">
+            <h2>Variables</h2>
+            <p>Data-dependant</p>
+            <button type="button" class="btn btn-primary" 
+                    id="button_part_4"
+                    targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
+                    targetid="research_part_4"
+                    onclick="ru.cesar.seeker.research_wizard(this, '4');">Edit</button>
+          </div>
+          <div class="col-md-3 col-md-offset-1 jumbotron jumbo-3">
+            <h2>Conditions</h2>
+            <p>When is it a hit?</p>
+            <button type="button" class="btn btn-primary" 
+                    id="button_part_6"
+                    targeturl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
+                    targetid="research_part_6"
+                    onclick="ru.cesar.seeker.research_wizard(this, '6');">Edit</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="research_conditions_old" class="hidden col-md-offset-3 col-md-6 pull-right" aria-label="Research specification">
+        <button type="button" class="btn btn-primary" 
+                id="button_part_3"
+                targeturl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
+                targetid="research_part_3"
+                onclick="ru.cesar.seeker.research_wizard(this, '3');">Global >></button>
+        <button type="button" class="btn btn-primary" 
+                id="button_part_4"
+                targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
+                targetid="research_part_4"
+                onclick="ru.cesar.seeker.research_wizard(this, '4');">Variables >></button>
+        <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '6');">Conditions >></button>
+      </div>
+
+      <div id="research_contents" class="panel panel-default hidden">
+
+        <!-- Part 1: Research + Gateway -->
+        <div id="research_container_1"  class="row research-part" ></div>
+
+        <!-- Part 2: Search elements -->
+        <div id="research_container_2"  class="row research-part" ></div>
+
+        <!-- Part 3: Global variables -->
+        <div id="research_container_3"  class="row research-part" ></div>
+
+        <!-- Part 4: Construction variables -->
+        <div id="research_container_4"  class="row research-part" ></div>
+
+        <!-- Part 4-2: Construction variable per search element -->
+        <div id="research_container_42"  class="row research-part" ></div>
+
+        <!-- Part 4-3: Function specification for one cvar -->
+        <div id="research_container_43"  class="row research-part" ></div>
+
+        <!-- Part 4-4: Function specification for one function argument -->
+        <div id="research_container_44"  class="row research-part" ></div>
+
+        <!-- Part 6: Conditions -->
+        <div id="research_container_6"  class="row research-part" ></div>
+
+        <!-- Part 7: Features -->
+        <div id="research_container_7"  class="row research-part" ></div>
+        
+      </div>
+
+
+    </div>
+  </div>
+
+<script>
+  ru.cesar.seeker.init_events();
+  // ru.cesar.seeker.research_wizard($("#button_part_1"), '1');
+</script>
+
+{% endblock content %}
+
+{% block script %}
+{% endblock %}

@@ -112,6 +112,10 @@ var ru = (function ($, ru) {
           sTargetId = "#" + sTargetId + sPart;
           sObjectId = $("#researchid").text().trim();
           sTargetType = $("#id_research-targetType").val();
+          // If it is undefined, try to get the target type from the input
+          if (sTargetType === undefined || sTargetType === "") {
+            sTargetType = $("#targettype").text().trim();
+          }
           // Before continuing: has the targettype been chosen?
           if (sPart !== "1") {
             // Sanity check          
@@ -163,6 +167,7 @@ var ru = (function ($, ru) {
             case "42":
             case "43":
             case "44":
+            case "6":
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
               // Indicate we are saving/preparing
@@ -252,8 +257,64 @@ var ru = (function ($, ru) {
               });
               break;
           }
+          // Hide the tiles and show the contents
+          $("#research_tiles").addClass("hidden");
+          $("#research_contents").removeClass("hidden");
+          $("#research_conditions").addClass("hidden");
+          switch (sPart) {
+            case "1": case "2": case "7":
+              $("#goto_overview").removeClass("hidden");
+              $("#goto_finetune").addClass("hidden");
+              break;
+            case "3": case "4": case "42": case "43":
+            case "44": case "6":
+              $("#goto_overview").addClass("hidden");
+              $("#goto_finetune").removeClass("hidden");
+              break;
+          }
         } catch (ex) {
           private_methods.errMsg("research_wizard", ex);
+        }
+      },
+
+      /**
+       * research_conditions
+       *   Show the 'conditions' part and hide the remainder
+       *
+       */
+      research_finetune(el) {
+        try {
+          // Hide the contents and show the tiles
+          $("#research_tiles").addClass("hidden");
+          $("#research_contents").addClass("hidden");
+          $("#goto_overview").removeClass("hidden");
+          $("#goto_finetune").addClass("hidden");
+          $("#research_conditions").removeClass("hidden");
+        } catch (ex) {
+          private_methods.errMsg("research_conditions", ex);
+        }
+      },
+
+      /**
+       * research_overview
+       *   Show the tiles-overview
+       *
+       */
+      research_overview(el) {
+        var sTargetUrl = "";
+
+        try {
+          // Try get the target url
+          sTargetUrl = $(el).attr("targeturl");
+          // Open this page
+          window.location.href = sTargetUrl;
+          /*
+          // Hide the contents and show the tiles
+          $("#research_tiles").removeClass("hidden");
+          $("#research_contents").addClass("hidden");
+          $("#research_overview").addClass("hidden");*/
+        } catch (ex) {
+          private_methods.errMsg("research_overview", ex);
         }
       },
 
@@ -554,6 +615,7 @@ var ru = (function ($, ru) {
           // obligatory parameter: ajaxurl
           var ajaxurl = $(this).attr("ajaxurl");
           var instanceid = $(this).attr("instanceid");
+          var bNew = (instanceid.toString() === "None");
 
           // Derive the data
           if ($(this).attr("data")) {
@@ -579,6 +641,18 @@ var ru = (function ($, ru) {
           if (response.status === undefined || response.status !== 'ok') {
             // Show an error somewhere
 
+          } else if (bNew && 'instanceid' in response) {
+            // A new item has been created, and now we receive its 'instanceid'
+            instanceid = response['instanceid'];
+            // Add the instanceid to the URL, so that the new item gets opened
+            ajaxurl = ajaxurl + instanceid + "/";
+            // Also find the 'research_overview' and adpat its @targeturl property
+            var elOview = $("#research_overview").children("button").first();
+            if (elOview !== undefined && elOview != - null) {
+              var sOviewUrl = $(elOview).attr("targeturl");
+              sOviewUrl = sOviewUrl + instanceid + "/";
+              $(elOview).attr("targeturl", sOviewUrl);
+            }
           }
           // Indicate we are loading
           $(".save-warning").html("Updating item... " + instanceid.toString());
@@ -587,7 +661,7 @@ var ru = (function ($, ru) {
           data.push({ 'name': 'instanceid', 'value': instanceid });
           // Make an AJAX call to get an existing or new specification element HTML code
           response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "GET");
-          if (response.status && response.status === 'ok') {
+          if (response !== undefined && response.status && response.status === 'ok') {
             // Load the new data
             $(elOpen).html(response.html);
             // Make sure events are set again
@@ -729,8 +803,8 @@ var ru = (function ($, ru) {
        *
        */
       tabular_addrow: function () {
-        var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec'],
-            arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'function'],
+        var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec', 'research_cond'],
+            arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'function', 'cond'],
             arNumber = [true, true, false, false, false],
             elTable = null,
             iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)

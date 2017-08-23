@@ -399,3 +399,36 @@ div.arg-selected {
 form .row {
     margin-left: 0px;
 }
+
+/* Colors of jumbo parts */
+.jumbo-1 {
+  background-color: lightblue;
+}
+.jumbo-2 {
+  background-color: lightgreen;
+}
+.jumbo-3 {
+  background-color: lightcoral;
+}
+.jumbo-4 {
+  background-color: lightsalmon;
+}
+
+/* Specify how a keyword should be shown */
+kw {
+  font-family: monospace;
+  color: darkblue;
+  background-color: whitesmoke;
+}
+
+div.explanation {
+  background-color: lightyellow;
+  border-radius: 5px;
+  border: 1px solid gold;
+  padding: 4px 4px 4px 4px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+div.up {
+  margin-top: -10px !important;
+}

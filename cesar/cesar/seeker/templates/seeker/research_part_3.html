@@ -11,7 +11,12 @@
         <div id="research_gvar" class="tabular inline-related">
           {{gvar_formset.management_form}}
             <fieldset class="module {{gvar_formset.classes}}">
-              <p>Provide the names and values of static, global variables (if there are any)</p>
+              <div class="explanation up">
+                <p>A global variable is a piece of text. 
+                  Whenever a particular word or clause is used several times in the data-dependant variables or in the conditions, 
+                  think of replacing that text by defining a global variable.</p>
+                <p>Specify the fixed global variables (if there are any) here below. </p>
+              </div>
               <table>
                 <thead><tr><th>Name</th><th>Description</th><th>Value</th><th>DELETE?</th></tr></thead>
                 <tbody>
@@ -46,7 +51,7 @@
 
       <!-- Show ERRORS if needed -->
       <div id="research_err">
-        <code>{% for item in error_list %}{{item}}{% endfor %}</code>
+        {% for item in error_list %}{{item}}{% endfor %}
       </div>
 
       <!-- Show the buttons to save, cancel, delete and so forth -->

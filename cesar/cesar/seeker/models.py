@@ -22,6 +22,7 @@ SEARCH_OPERATOR = "search.operator"
 SEARCH_PERMISSION = "search.permission"
 SEARCH_VARIABLE_TYPE = "search.variabletype"
 SEARCH_ARGTYPE = "search.argtype"
+SEARCH_CONDTYPE = "search.condtype"
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -215,8 +216,8 @@ class Gateway(models.Model):
                 cvar.delete()
         # Make sure we are happy
         return True
-      
-      
+
+
 class Construction(models.Model):
     """A search construction consists of a [search] element and one or more search items"""
 
@@ -563,8 +564,7 @@ class Relation(models.Model):
 
     def __str__(self):
         return "{}".format(self.name)
-
-
+    
 
 class ConstructionVariable(models.Model):
     """Each construction may provide its own value to the variables belonging to the gateway"""
@@ -632,6 +632,58 @@ class ConstructionVariable(models.Model):
         return super().delete(using, keep_parents)
 
 
+class Condition(models.Model):
+    """Each research project may contain any number of conditions defining a search hit"""
+
+    # [1] Condition name
+    name = models.CharField("Name", max_length=MAX_TEXT_LEN)
+    # [0-1] Description of the condition
+    description = models.TextField("Description", blank=True)
+    # [1] A condition is a boolean, and can be of two types: Function or Cvar
+    condtype = models.CharField("Condition type", choices=build_abbr_list(SEARCH_CONDTYPE), 
+                              max_length=5, help_text=get_help(SEARCH_CONDTYPE))
+    # [0-1] One option for a condition is to be equal to the value of a construction variable
+    cvar = models.ForeignKey(ConstructionVariable, null=True, related_name ="cvarcondition")
+
+    # [0-1] Another option for a condition is to be defined in a function
+    function = models.ForeignKey(Function, null=True, related_name ="functioncondition")
+    # [0-1] If a function is needed, we need to have a link to its definition
+    functiondef = models.ForeignKey(FunctionDef, null=True, related_name ="functiondefcondition")
+
+    # [1] Every gateway has zero or more conditions it may look for
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="conditions")
+
+    def __str__(self):
+        return self.name
+
+    def get_copy(self, **kwargs):
+        """Make a copy of this condition"""
+
+        # Test for the existence of 'gateway'
+        if kwargs == None or 'gateway' not in kwargs:
+            return None
+        # If there is a function, copy it
+        new_function = None
+        if self.function != None:
+            new_function = self.function.get_copy()
+        new_copy = Condition(name=self.name, description=self.description,
+                             condtype=self.condtype, cvar=self.cvar,
+                             functiondef=self.functiondef,
+                             function=new_function, gateway=kwargs['gateway'])
+        # Return the new copy
+        return new_copy
+      
+    def delete(self, using = None, keep_parents = False):
+        """Delete all items pointing to me, then delete myself"""
+
+        # Delete the function(s) pointing to me
+        if self.function != None:
+            self.function.delete()
+        # NOTE: do not delete the functiondef, gateway or cvar -- those are independant of me
+        # And then delete myself
+        return super().delete(using, keep_parents)
+
+      
 class SearchItem(models.Model):
     """A search item is one 'search' variable specification for a gateway"""
 

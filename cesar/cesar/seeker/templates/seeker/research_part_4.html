@@ -1,93 +1,98 @@
 ﻿{% load i18n %}
-  <span>[4]</span>
+  <span class="hidden">[4]</span>
 
 <form action="" method="post">
-    {% csrf_token %}
-    <!-- Part 4: Construction Variables -->
-    <div id="research_part_4" 
-         class="js-inline-formset inline-group"
-         data-inline-type="tabular"
-         data-inline-formset="{{vardef_formset.inline_formset_data}}">
+  {% csrf_token %}
+  <!-- Part 4: Construction Variables -->
+  <div id="research_part_4" 
+        class="js-inline-formset inline-group"
+        data-inline-type="tabular"
+        data-inline-formset="{{vardef_formset.inline_formset_data}}">
 
-      <!-- VARIABLE definition specification -->
-      <div id="research_vardef" class="tabular inline-related">
-        {{vardef_formset.management_form}}
-          <fieldset class="module {{vardef_formset.classes}}">
-            <p>Provide the names and descriptions of the data-dependant variables</p>
-            <table>
-              <thead><tr><th>Name</th><th>Order</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
-              <tbody>
-                {% for vardef_this in vardef_ordered %}
-                  {% if not vardef_this.DELETE.value %}
-                    <tr id="arguments-{{forloop.counter0}}" class="form-row row{{forloop.counter}}">
-                      <td class="hidden">{{vardef_this.variable_ptr}}</td>
-                      <td id="vardefid" class="hidden">{{vardef_this.instance.id}}</td>
-                      <td valign="top">{{vardef_this.name}}</td>
-                      <td valign="top" align="left">
-                        <span class="var-order hidden">{{vardef_this.ORDER}}</span>
-                        <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
-                        <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up {% if forloop.first %}hidden{% endif%}"></span>
-                      </td>
-                      <td valign="top">{{vardef_this.description}}</td>
-                      <td valign="top" align="left">
-                        <a class="btn btn-xs btn-default" 
-                           targeturl="{% if vardef_this.instance.id %}{% url 'research_part_42' vardef_this.instance.id %}{% else %}{% url 'research_part_42' %}{% endif %}"
-                           targetid="research_part_42"
-                           instanceid="{{vardef_this.instance.id}}"
-                           role="button" 
-                           onclick="ru.cesar.seeker.research_wizard(this, '42');"
-                           loopid="research_calc_{{forloop.counter}}" >Specify for search elements...</a>
-                      </td>
-                      <td valign="top" align="center">{{vardef_this.DELETE}}</td>
-                    </tr>
-                  {% endif %}
-                {% endfor %}
-                {% if currentowner == user %}
-                <tr id="arguments-empty" class="form-row empty-form row1">
-                  <td class="hidden">{{vardef_formset.empty_form.variable_ptr}}</td>
-                  <td valign="top">{{vardef_formset.empty_form.name}}</td>
-                  <td valign="top" align="left">
-                    <span class="var-order hidden">{{vardef_this.ORDER}}</span>
-                    <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
-                    <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up"></span>
-                  </td>
-                  <td valign="top">{{vardef_formset.empty_form.description}}</td>
-                  <td valign="top" align="left"><!-- no button here unless saved--></td>
-                  <td valign="top" align="center">{{vardef_formset.empty_form.DELETE}}</td>
-                </tr>
-                <tr class="add-row">
-                  <td colspan="4">
-                    <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another construction variable definition</a>
-                  </td>
-                </tr>
+    <!-- VARIABLE definition specification -->
+    <div id="research_vardef" class="tabular inline-related">
+      {{vardef_formset.management_form}}
+        <fieldset class="module {{vardef_formset.classes}}">
+          <div class="explanation up">
+            <p>The value of data-dependant variables is defined separately for each word or constituent that is being searched. 
+            Data-dependent variables can be of any kind, e.g.: boolean, string, constituent. </p>
+            <p>Provide the names and descriptions of the data-dependant variables here below. 
+            Make sure they are defined in the right <b>order</b>: any variable can only make use of other variables that are <em>above</em> it.</p>
+          </div>
+          <table>
+            <thead><tr><th>Name</th><th>Order</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
+            <tbody>
+              {% for vardef_this in vardef_ordered %}
+                {% if not vardef_this.DELETE.value %}
+                  <tr id="arguments-{{forloop.counter0}}" class="form-row row{{forloop.counter}}">
+                    <td class="hidden">{{vardef_this.variable_ptr}}</td>
+                    <td id="vardefid" class="hidden">{{vardef_this.instance.id}}</td>
+                    <td valign="top">{{vardef_this.name}}</td>
+                    <td valign="top" align="left">
+                      <span class="var-order hidden">{{vardef_this.ORDER}}</span>
+                      <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
+                      <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up {% if forloop.first %}hidden{% endif%}"></span>
+                    </td>
+                    <td valign="top">{{vardef_this.description}}</td>
+                    <td valign="top" align="left">
+                      <a class="btn btn-xs btn-default" 
+                          targeturl="{% if vardef_this.instance.id %}{% url 'research_part_42' vardef_this.instance.id %}{% else %}{% url 'research_part_42' %}{% endif %}"
+                          targetid="research_part_42"
+                          instanceid="{{vardef_this.instance.id}}"
+                          role="button" 
+                          onclick="ru.cesar.seeker.research_wizard(this, '42');"
+                          loopid="research_calc_{{forloop.counter}}" >Specify for search elements...</a>
+                    </td>
+                    <td valign="top" align="center">{{vardef_this.DELETE}}</td>
+                  </tr>
                 {% endif %}
-              </tbody>
-            </table>
-          </fieldset>
-      </div>
-
-      <!-- CONSTITUENT search elements -->
-      <div id="research_intro-cns" class="hidden research-cns">
-        <p>Provide one or more options for the search construction.</p>
-        <p>Each search construction starts out with one constituent, which can be further specified by e.g. children or siblings.</p>
-      </div>
-
-      <!-- Show ERRORS if needed -->
-      <div id="research_err">
-        <code>{% for item in error_list %}{{item}}{% endfor %}</code>
-      </div>
-
-      <!-- Show the buttons to save, cancel, delete and so forth -->
-      <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
-      <!-- Provide SAVE button (verification is done on the server) -->
-      <div class="submit-row">
-        <button type="button" class="btn btn-primary ajaxform"
-                instanceid="{{object_id}}"
-                openid="research_container_4" 
-                ajaxurl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
-                data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
-      </div>
-
+              {% endfor %}
+              {% if currentowner == user %}
+              <tr id="arguments-empty" class="form-row empty-form row1">
+                <td class="hidden">{{vardef_formset.empty_form.variable_ptr}}</td>
+                <td valign="top">{{vardef_formset.empty_form.name}}</td>
+                <td valign="top" align="left">
+                  <span class="var-order hidden">{{vardef_this.ORDER}}</span>
+                  <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
+                  <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up"></span>
+                </td>
+                <td valign="top">{{vardef_formset.empty_form.description}}</td>
+                <td valign="top" align="left"><!-- no button here unless saved--></td>
+                <td valign="top" align="center">{{vardef_formset.empty_form.DELETE}}</td>
+              </tr>
+              <tr class="add-row">
+                <td colspan="4">
+                  <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another construction variable definition</a>
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </fieldset>
     </div>
+
+    <!-- CONSTITUENT search elements -->
+    <div id="research_intro-cns" class="hidden research-cns">
+      <p>Provide one or more options for the search construction.</p>
+      <p>Each search construction starts out with one constituent, which can be further specified by e.g. children or siblings.</p>
+    </div>
+
+    <!-- Show ERRORS if needed -->
+    <div id="research_err">
+      {% for item in error_list %}{{item}}{% endfor %}
+    </div>
+
+    <!-- Show the buttons to save, cancel, delete and so forth -->
+    <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
+    <!-- Provide SAVE button (verification is done on the server) -->
+    <div class="submit-row">
+      <button type="button" class="btn btn-primary ajaxform"
+              instanceid="{{object_id}}"
+              openid="research_container_4" 
+              ajaxurl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
+              data="">{% trans 'Save' %}</button>
+      <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
+    </div>
+
+  </div>
 </form>

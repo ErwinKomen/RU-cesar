@@ -4,6 +4,7 @@
     {% csrf_token %}
     <!-- Part 1: select the TYPE of the construction's main element -->
     <div id="research_part_1">
+      <p><b>About:</b> Provide essential information on this search project.</p>
       <table>
         <tr><td>Project name:</td><td>{{researchForm.name}}</td></tr>
         <tr><td>Purpose:</td><td>{{researchForm.purpose}}</td></tr>
@@ -18,18 +19,16 @@
 
       <!-- Show ERRORS if needed -->
       <div id="research_err">
-        <code>
-            {% for item in error_list %}
-            {{item}}
-            {% endfor %}
-        </code>
+        {% for item in error_list %}
+        {{item}}
+        {% endfor %}
       </div>
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{researchForm.instance.id}}"
-                openid="research_part_1" 
+                openid="research_container_1" 
                 ajaxurl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>

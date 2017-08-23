@@ -220,6 +220,30 @@ class ArgumentForm(ModelForm):
         self.fields['functiondef'].required = False
 
 
+class ConditionForm(ModelForm):
+    """The argument to a function"""
+
+    condtype = forms.ChoiceField(choices=SEARCH_CONDTYPE, required=True)
+
+    class Meta:
+        model = Condition
+        fields = ['name', 'description', 'condtype', 'cvar', 'function', 'functiondef']
+        widgets={
+          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
+          }
+
+    def __init__(self, *args, **kwargs):
+        super(ConditionForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'condtype', SEARCH_CONDTYPE, bUseAbbr=True)
+        # Set required and optional fields
+        self.fields['name'].required = True
+        self.fields['description'].required = False
+        self.fields['condtype'].required = True
+        self.fields['cvar'].required = False
+        self.fields['function'].required = False
+        self.fields['functiondef'].required = False
+
+
 class SeekerResearchForm(ModelForm):
     # A research form should also have the Word/Constituent choice
     targetType = forms.ChoiceField(choices=TARGET_TYPE_CHOICES, required=True)

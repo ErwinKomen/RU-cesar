@@ -5,7 +5,7 @@
   <div class="breadcrumbs">
       <a href="{% url 'home' %}">Home</a>
       &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
-      &rsaquo; Define
+      &rsaquo; {{intro_breadcrumb}}
   </div>
 {% endblock %}
 
@@ -13,13 +13,12 @@
 
   <!-- Contents -->
   <div class="container body-content">
-    <h2>Research project</h2>
+    <h3>Search specification</h3>
+    <p>{{intro_message|safe}}</p>
     <div id="research_err">
-      <code>
-          {% for item in error_list %}
-          {{item}}
-          {% endfor %}
-      </code>
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
     </div>
     <div class="hidden" id="researchid">{{object_id}}</div>
     <div class="xpanel xpanel-default">

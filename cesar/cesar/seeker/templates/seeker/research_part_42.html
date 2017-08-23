@@ -19,7 +19,9 @@
         <div id="research_cvar" class="col-md-11 tabular inline-related">
           {{cvar_formset.management_form}}
           <fieldset class="module {{cvar_formset.classes}}">
-            <p>Specify how variable <code>{{vardef_this.name}}</code> should be calculated for each search element</p>
+            <div class="explanation">
+              <p>Specify how variable <code>{{vardef_this.name}}</code> should be calculated for each search element</p>
+            </div>
             <table>
               <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Value</th></tr></thead>
               <tbody>
@@ -69,7 +71,7 @@
 
       <!-- Show ERRORS if needed -->
       <div id="research_err">
-        <code>{% for item in error_list %}{{item}}{% endfor %}</code>
+        {% for item in error_list %}{{item}}{% endfor %}
       </div>
 
       <!-- Show the buttons to save, cancel, delete and so forth -->

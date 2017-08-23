@@ -17,7 +17,7 @@ from django.views.generic import ListView, View
 
 # from formtools.wizard.views import SessionWizardView
 
-from cesar.seeker.forms import GatewayForm, VariableForm, SeekerResearchForm, ConstructionWrdForm, GvarForm, VarDefForm, CvarForm, FunctionForm, ArgumentForm
+from cesar.seeker.forms import *
 from cesar.seeker.models import *
 from cesar.settings import APP_PREFIX
 
@@ -153,6 +153,7 @@ class ResearchPart(View):
 
             # Iterate again
             for formObj in self.form_objects:
+                prefix = formObj['prefix']
                 # Adapt if it is not readonly
                 if not formObj['readonly']:
                     # Check validity of form
@@ -162,19 +163,24 @@ class ResearchPart(View):
                         # The instance must be made available (even though it is only 'preliminary')
                         formObj['instance'] = instance
                         # Perform actions to this form BEFORE FINAL saving
-                        if formObj['forminstance'].has_changed() or self.before_save(formObj['prefix'], request, instance=instance) or formObj['forminstance'].instance.id == None:
+                        bNeedSaving = formObj['forminstance'].has_changed()
+                        if self.before_save(prefix, request, instance=instance): bNeedSaving = True
+                        if formObj['forminstance'].instance.id == None: bNeedSaving = True
+                        if bNeedSaving:
                             # Perform the saving
                             instance.save()
                             # Set the context
                             context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
                             # Put the instance in the form object
                             formObj['instance'] = instance
+                            # Any action after saving this form
+                            self.after_save(prefix, instance)
                     else:
                         self.arErr.append(formObj['forminstance'].errors)
                         self.form_validated = False
 
                 # Add instance to the context object
-                context[formObj['prefix'] + "Form"] = formObj['forminstance']
+                context[prefix + "Form"] = formObj['forminstance']
             # Walk all the formset objects
             for formsetObj in self.formset_objects:
                 formsetClass = formsetObj['formsetClass']
@@ -332,6 +338,9 @@ class ResearchPart(View):
     def before_save(self, prefix, request, instance=None, form=None):
         return False
 
+    def after_save(self, prefix, instance=None):
+        return True
+
     def add_to_context(self, context):
         return context
 
@@ -369,6 +378,20 @@ class ResearchPart1(ResearchPart):
                 if research.owner_id == None:
                     research.owner = request.user
         return has_changed
+
+    def after_save(self, prefix, instance=None):
+        if prefix == 'research' and self.obj == None:
+            # Capture the object
+            self.obj = instance
+            # Adapt the instanceid and the ajaxurl
+            object_id = "{}".format(instance.id)
+            self.data['instanceid'] = object_id
+
+    def add_to_context(self, context):
+        if context['object_id'] == None:
+            if self.obj != None:
+                context['object_id'] = "{}".format(self.obj.id)
+        return context
 
     def custom_init(self):
         if self.obj:
@@ -446,9 +469,12 @@ class ResearchPart3(ResearchPart):
     def add_to_context(self, context):
         if self.obj == None:
             currentowner = None
+            targettype = ""
         else:
             currentowner = self.obj.owner
+            targettype = self.obj.targetType
         context['currentowner'] = currentowner
+        context['targettype'] = targettype
         return context
 
 
@@ -468,10 +494,13 @@ class ResearchPart4(ResearchPart):
         if self.obj == None:
             currentowner = None
             context['research_id'] = None
+            targettype = ""
         else:
             currentowner = self.obj.owner
             context['research_id'] = self.obj.gateway.research.id
+            targettype = self.obj.targetType
         context['currentowner'] = currentowner
+        context['targettype'] = targettype
         # We also need to make the object_id available
         context['object_id'] = self.object_id
         return context
@@ -495,7 +524,6 @@ class ResearchPart4(ResearchPart):
                 instance.order = form.cleaned_data['ORDER']
                 has_changed = True
         return has_changed
-
     
 
 class ResearchPart42(ResearchPart):
@@ -513,14 +541,17 @@ class ResearchPart42(ResearchPart):
         if self.obj == None:
             currentowner = None
             researchid = None
+            targettype = ""
         else:
             currentowner = self.obj.gateway.research.owner
             researchid = self.obj.gateway.research.id
+            targettype = self.obj.gateway.research.targetType
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id
         context['research_id'] = researchid
         context['vardef_this'] = self.obj
+        context['targettype'] = targettype
         return context
 
     def before_save(self, prefix, request, instance=None, form=None):
@@ -614,11 +645,13 @@ class ResearchPart43(ResearchPart):
             context['research_id'] = None
             context['vardef_this'] = None
             context['construction_this'] = None
+            targettype = ""
         else:
             currentowner = self.obj.variable.gateway.research.owner
             context['research_id'] = self.obj.variable.gateway.research.id
             context['vardef_this'] = self.obj.variable
             context['construction_this'] = self.obj.construction
+            targettype = self.obj.variable.gateway.research.targetType
             # Further action if this is a calculation
             if self.obj.type == "calc":
                 # Need to specify the template for the function
@@ -662,6 +695,7 @@ class ResearchPart43(ResearchPart):
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id
+        context['targettype'] = targettype
         return context
 
     def before_save(self, prefix, request, instance=None, form=None):
@@ -784,6 +818,7 @@ class ResearchPart44(ResearchPart):
             context['vardef_this'] = None
             context['construction_this'] = None
             context['cvar_this'] = None
+            targettype = ""
         else:
             # Get to the CVAR instance
             cvar = pfun_this.root
@@ -793,6 +828,7 @@ class ResearchPart44(ResearchPart):
             context['vardef_this'] = cvar.variable
             context['construction_this'] = cvar.construction
             context['cvar_this'] = cvar
+            targettype = gateway.research.targetType
 
             # Since this is a '44' form, we know this is a calculation
 
@@ -820,6 +856,7 @@ class ResearchPart44(ResearchPart):
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id
+        context['targettype'] = targettype
         return context
 
     def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar):
@@ -874,6 +911,36 @@ class ResearchPart44(ResearchPart):
         # Return the change-indicator to trigger saving
         return has_changed
 
+
+class ResearchPart6(ResearchPart):
+    template_name = 'seeker/research_part_6.html'
+    MainModel = Research
+    CondFormSet = inlineformset_factory(Gateway, Condition, 
+                                        form=ConditionForm, min_num=0, 
+                                        extra=0, can_delete=True, can_order=True)
+    formset_objects = [{'formsetClass': CondFormSet, 'prefix': 'cond', 'readonly': False}]
+
+    def get_instance(self, prefix):
+        if prefix == 'cond':
+            # We need to have the gateway
+            return self.obj.gateway
+
+
+class ResearchPart62(ResearchPart):
+    template_name = 'seeker/research_part_62.html'
+    MainModel = Research
+    CondFormSet = inlineformset_factory(Gateway, Condition, 
+                                        form=ConditionForm, min_num=0, 
+                                        extra=0, can_delete=True, can_order=True)
+    formset_objects = [{'formsetClass': CondFormSet, 'prefix': 'cond', 'readonly': False}]
+
+    def get_instance(self, prefix):
+        if prefix == 'cond':
+            # We need to have the gateway
+            return self.obj.gateway
+
+                
+                
 
 class ObjectCopyMixin:
     model = None
@@ -1109,25 +1176,6 @@ def research_main(request, object_id=None):
                             arErr.append(cvar_form.errors)
                             break
 
-                ## New method: one formset for each combination of cns/var
-                #vardef_list = gateway.get_vardef_list()
-                #cns_list = gateway.get_construction_list()
-                #for cns in cns_list:
-                #    for var in vardef_list:
-                #        # Determine the prefix for this cns/var formset
-                #        pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
-                #        # Get the formset for this cns/var formset
-                #        fs = CvarFormSet(request.POST, request.FILES, prefix=pfx)
-                #        # Walk the forms in this formset
-                #        for cvar_form in fs:
-                #            # Check if this form is valid
-                #            if cvar_form.is_valid():
-                #                # Save the model instance by calling the save method of the formset
-                #                cvar = cvar_form.save(commit=False)
-                #                cvar.construction = cns
-                #                cvar.variable = var
-                #                cvar.save()
-
                 # Prepare and save the RESEARCH
                 research = form.save(commit=False)
                 # Add the correct gateway
@@ -1269,3 +1317,46 @@ def research_main(request, object_id=None):
     # Open the template that allows Creating a new research project
     #   or editing the existing project
     return render(request, template, context)
+
+def research_edit(request, object_id=None):
+    """Main entry point for the specification of a seeker research project"""
+
+    # Initialisations
+    template = 'seeker/research_details.html'
+    arErr = []         # Start out with no errors
+
+    # Check if the user is authenticated
+    if not request.user.is_authenticated:
+        # Simply redirect to the home page
+        return redirect('home')
+
+    # Get the 'obj' to this project (or 'None' if it is a new one)
+    if object_id is None:
+        obj = None
+        intro_message = "Create a new project"
+        intro_breadcrumb = "New Project"
+        sTargetType = ""
+    else:
+        # Get the instance of this research object
+        obj = Research.objects.get(pk=object_id)
+        intro_message = "Research project: <b>{}</b>".format(obj.name)
+        intro_breadcrumb = "[{}]".format(obj.name)
+        sTargetType = obj.targetType
+
+    # Get a list of errors
+    error_list = [str(item) for item in arErr]
+
+    # Create the context
+    context = dict(
+        object_id = object_id,
+        original=obj,
+        intro_message=intro_message,
+        intro_breadcrumb=intro_breadcrumb,
+        targettype=sTargetType,
+        error_list=error_list
+        )
+
+    # Open the template that allows Editing an existing or Creating a new research project
+    #   or editing the existing project
+    return render(request, template, context)
+

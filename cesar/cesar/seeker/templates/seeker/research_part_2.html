@@ -8,17 +8,21 @@
           data-inline-type="tabular"
           data-inline-formset="{{construction_formset.inline_formset_data}}">
 
+      <div class="explanation">
+        <p><b>Search: </b>Which words need to be found?</p>
+        <p>Provide one or more word-based search element(s):</p>
+        <ul class="list-unstyled">
+          <li><span>&bull; &nbsp;</span>If a search element consists of more words, put them on one line.</li>
+          <li><span>&bull; &nbsp;</span>If a search element can be one of a set of words,
+          put those words on separate lines.</li>
+        </ul>
+      </div>
+
       <!-- WORD search elements -->
       <div id="research_intro-wrd" 
             class="{% if targettype != 'w' %}hidden{% endif %} research-wrd tabular inline-related">
           {{ construction_formset.management_form }}
           <fieldset class="module {{construction_formset.classes}}">
-          <p>Provide one or more word-based search element(s)</p>
-          <ul class="list-unstyled">
-            <li><span>&bull; &nbsp;</span>If a search element consists of more words, put them on one line.</li>
-            <li><span>&bull; &nbsp;</span>If a search element can be one of a set of words,
-            put those words on separate lines.</li>
-          </ul>
           <table>
             <thead><tr><th>#</th><th>Name</th><th>Word(s)</th>{% if currentowner == user %}<th>DELETE?</th>{% endif %}</tr></thead>
             <tbody>
@@ -60,11 +64,9 @@
 
       <!-- Show ERRORS if needed -->
       <div id="research_err">
-        <code>
-            {% for item in error_list %}
-            {{item}}
-            {% endfor %}
-        </code>
+        {% for item in error_list %}
+        {{item}}
+        {% endfor %}
       </div>
 
       <!-- Show the buttons to save, cancel, delete and so forth -->

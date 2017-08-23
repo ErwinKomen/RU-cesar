@@ -25,9 +25,9 @@
         <div id="research_cvar" class="col-md-11 tabular inline-related">
           {{arg_formset.management_form}}
           <fieldset class="module {{arg_formset.classes}}">
-
-            <p>Specify how to calculate variable <code>{{vardef_this.name}}</code> for search element <code>{{construction_this.name}}</code></p>
-
+            <div class="explanation">
+              <p>Specify how to calculate variable <code>{{vardef_this.name}}</code> for search element <code>{{construction_this.name}}</code></p>
+            </div>
             <!-- Show the template of the main function -->
             <div class="row">
               <!-- OLD: col-md-6 (but the variable names and the textarea's don't always fit) -->
@@ -90,7 +90,7 @@
 
       <!-- Show ERRORS if needed -->
       <div id="research_err">
-        <code>{% for item in error_list %}{{item}}{% endfor %}</code>
+        {% for item in error_list %}{{item}}{% endfor %}
       </div>
 
       <!-- Provide SAVE button (verification is done on the server) -->
