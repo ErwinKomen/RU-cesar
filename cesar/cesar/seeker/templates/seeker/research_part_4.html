@@ -31,7 +31,7 @@
                     <td valign="top" align="left">
                       <span class="var-order hidden">{{vardef_this.ORDER}}</span>
                       <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
-                      <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up {% if forloop.first %}hidden{% endif%}"></span>
+                      <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right {% if forloop.first %}hidden{% endif%}"></span>
                     </td>
                     <td valign="top">{{vardef_this.description}}</td>
                     <td valign="top" align="left">
@@ -54,7 +54,7 @@
                 <td valign="top" align="left">
                   <span class="var-order hidden">{{vardef_this.ORDER}}</span>
                   <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
-                  <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up"></span>
+                  <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right"></span>
                 </td>
                 <td valign="top">{{vardef_formset.empty_form.description}}</td>
                 <td valign="top" align="left"><!-- no button here unless saved--></td>
