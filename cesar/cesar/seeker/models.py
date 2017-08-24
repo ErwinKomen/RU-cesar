@@ -642,8 +642,8 @@ class Condition(models.Model):
     # [1] A condition is a boolean, and can be of two types: Function or Cvar
     condtype = models.CharField("Condition type", choices=build_abbr_list(SEARCH_CONDTYPE), 
                               max_length=5, help_text=get_help(SEARCH_CONDTYPE))
-    # [0-1] One option for a condition is to be equal to the value of a construction variable
-    cvar = models.ForeignKey(ConstructionVariable, null=True, related_name ="cvarcondition")
+    # [0-1] One option for a condition is to be equal to the value of a data-dependant variable
+    variable = models.ForeignKey(VarDef, null=True, related_name ="variablecondition")
 
     # [0-1] Another option for a condition is to be defined in a function
     function = models.ForeignKey(Function, null=True, related_name ="functioncondition")

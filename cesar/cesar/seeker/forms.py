@@ -233,9 +233,11 @@ class ConditionForm(ModelForm):
           'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
           }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, gateway, *args, **kwargs):
         super(ConditionForm, self).__init__(*args, **kwargs)
         init_choices(self, 'condtype', SEARCH_CONDTYPE, bUseAbbr=True)
+        # Initialise the cvar choices
+        self.fields['cvar'].queryset = ConstructionVariable.objects.filter(gateway=gateway)
         # Set required and optional fields
         self.fields['name'].required = True
         self.fields['description'].required = False

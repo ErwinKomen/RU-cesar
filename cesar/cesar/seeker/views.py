@@ -925,6 +925,36 @@ class ResearchPart6(ResearchPart):
             # We need to have the gateway
             return self.obj.gateway
 
+    def add_to_context(self, context):
+        # Note: the self.obj is the Research project
+        if self.obj == None:
+            currentowner = None
+            targettype = ""
+        else:
+            gateway = self.obj.gateway
+            currentowner = self.obj.owner
+            targettype = self.obj.targetType
+
+            # Calculate the initial queryset for 'dvar'
+            # NOTE: we take into account the 'order' field, which must have been defined properly...
+            lstQ = []
+            lstQ.append(Q(gateway=gateway))
+            qs_dvar = gateway.definitionvariables.filter(*lstQ).order_by('order')
+
+            # Determine the possible functiondefs
+            qs_fdef = FunctionDef.objects.all().order_by('name')
+
+            # Walk all the forms in the formset
+            cond_formset = context['cond_formset']
+            for cond_form in cond_formset:
+                # Initialise the querysets
+                cond_form.fields['variable'].queryset = qs_dvar
+                cond_form.fields['functiondef'].queryset = qs_fdef
+            # Put the formset back again
+            context['cond_formset'] = cond_formset
+
+
+
 
 class ResearchPart62(ResearchPart):
     template_name = 'seeker/research_part_62.html'
