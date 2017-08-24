@@ -11,7 +11,15 @@ var ru = (function ($, ru) {
     // Define variables for ru.collbank here
     var loc_example = "",
         loc_divErr = "research_err",
-        oSyncTimer = null;
+        oSyncTimer = null,
+        lAddTableRow = [
+          { "table": "research_intro-wrd", "prefix": "construction", "counter": true, "events": null},
+          { "table": "research_intro-cns", "prefix": "construction", "counter": true, "events": null },
+          { "table": "research_gvar", "prefix": "gvar", "counter": false, "events": null },
+          { "table": "research_vardef", "prefix": "vardef", "counter": false, "events": null },
+          { "table": "research_spec", "prefix": "function", "counter": false, "events": null },
+          { "table": "research_cond", "prefix": "cond", "counter": true, "events": function () { ru.cesar.seeker.init_cond_events(); } }
+        ];
 
 
     // Private methods specification
@@ -196,6 +204,10 @@ var ru = (function ($, ru) {
             case "44":
               // add any event handlers for wizard part '43' and part '44'
               ru.cesar.seeker.init_arg_events();
+              break;
+            case "6":
+              // add any event handlers for wizard part '46'
+              ru.cesar.seeker.init_cond_events();
               break;
             case "5": // Page 5=Conditions
 
@@ -406,6 +418,36 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("argtyp_click", ex);
+        }
+      },
+
+      /**
+       * condtype_click
+       *   Set the type of condition: dvar versus func
+       *
+       */
+      condtype_click: function (el) {
+        try {
+          var elRow = (el.target === undefined) ? el : $(this).closest("tr");
+          var elType = $(elRow).find(".cond-type").first();
+          var elVal = $(elRow).find(".cond-val-exp").first();
+          // Find the type element
+          var elcondtype = $(elType).find("select").first();
+          // Get its value
+          var elcondtypeVal = $(elcondtype).val();
+          // Hide/show, depending on the value
+          switch (elcondtypeVal) {
+            case "dvar": // Data-dependant variable
+              $(elVal).find(".cond-dvar").removeClass("hidden");
+              $(elVal).find(".cond-expression").addClass("hidden");
+              break;
+            case "func": // Function
+              $(elVal).find(".cond-dvar").addClass("hidden");
+              $(elVal).find(".cond-expression").removeClass("hidden");
+              break;
+          }
+        } catch (ex) {
+          private_methods.errMsg("condtype_click", ex);
         }
       },
 
@@ -676,6 +718,10 @@ var ru = (function ($, ru) {
                 // add any event handlers for wizard part '43' and '44'
                 ru.cesar.seeker.init_arg_events();
                 break;
+              case "research_container_6":
+                // add any event handlers for wizard part '46'
+                ru.cesar.seeker.init_cond_events();
+                break;
             }
           }
 
@@ -803,9 +849,11 @@ var ru = (function ($, ru) {
        *
        */
       tabular_addrow: function () {
-        var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec', 'research_cond'],
-            arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'function', 'cond'],
-            arNumber = [true, true, false, false, false],
+        //var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec', 'research_cond'],
+        //    arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'function', 'cond'],
+        //    arNumber = [true, true, false, false, false, true],
+        var arTdef = lAddTableRow,
+            oTdef = {},
             elTable = null,
             iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)
             sId = "",
@@ -815,13 +863,17 @@ var ru = (function ($, ru) {
           // Find out just where we are
           sId = $(this).closest("div").attr("id");
           // Walk all tables
-          for (i = 0; i < arTable.length; i++) {
-            if (sId === arTable[i] || sId.indexOf(arTable[i]) >= 0) {
+          for (i = 0; i < arTdef.length; i++) {
+            // Get the definition
+            oTdef = arTdef[i];
+            if (sId === oTdef.table || sId.indexOf(oTdef.table) >= 0) {
               // Go to the <tbody> and find the last form-row
               elTable = $(this).closest("tbody").children("tr.form-row.empty-form")
 
               // Perform the cloneMore function to this <tr>
-              ru.cesar.seeker.cloneMore(elTable, arPrefix[i], arNumber[i]);
+              ru.cesar.seeker.cloneMore(elTable, oTdef.prefix, oTdef.counter);
+              // Call the event initialisation again
+              oTdef.events();
               // We are done...
               break;
             }
@@ -875,7 +927,12 @@ var ru = (function ($, ru) {
           newElement.find('td').each(function () {
             var elText = $(this).children().first();
             if (elText !== undefined) {
-              $(elText).text($(elText).text().replace("__counter__", total.toString()));
+              var sHtml = $(elText).html();
+              if (sHtml !== undefined  && sHtml !== "") {
+                sHtml = sHtml.replace("__counter__", total.toString());
+                $(elText).html(sHtml);
+              }
+              // $(elText).html($(elText).html().replace("__counter__", total.toString()));
             }
           });
           // Look at the attributes of <a>
@@ -1072,6 +1129,25 @@ var ru = (function ($, ru) {
           $(".arg-type select").change(ru.cesar.seeker.argtype_click);
         } catch (ex) {
           private_methods.errMsg("init_arg_events", ex);
+        }
+      },
+
+      /**
+       *  init_cond_events
+       *      Bind events to work with conditions
+       *
+       */
+      init_cond_events: function () {
+        try {
+          // Make sure the 'Type' field values are processed everywhere
+          $(".cond-item").each(function () {
+            // Perform the same function as if we were clicking it
+            ru.cesar.seeker.condtype_click(this);
+          });
+          // Specify the change reaction function
+          $(".cond-type select").change(ru.cesar.seeker.condtype_click);
+        } catch (ex) {
+          private_methods.errMsg("init_cond_events", ex);
         }
       },
 

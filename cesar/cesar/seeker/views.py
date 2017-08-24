@@ -185,13 +185,14 @@ class ResearchPart(View):
             for formsetObj in self.formset_objects:
                 formsetClass = formsetObj['formsetClass']
                 prefix  = formsetObj['prefix']
+                form_kwargs = self.get_form_kwargs(prefix)
                 if self.add:
                     # Saving a NEW item
-                    formset = formsetClass(request.POST, request.FILES, prefix=prefix)
+                    formset = formsetClass(request.POST, request.FILES, prefix=prefix, form_kwargs = form_kwargs)
                 else:
                     # Saving an EXISTING item
                     instance = self.get_instance(prefix)
-                    formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance)
+                    formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, form_kwargs = form_kwargs)
                 # Process all the forms in the formset
                 self.process_formset(prefix, request, formset)
                 # Store the instance
@@ -273,15 +274,16 @@ class ResearchPart(View):
             for formsetObj in self.formset_objects:
                 formsetClass = formsetObj['formsetClass']
                 prefix  = formsetObj['prefix']
+                form_kwargs = self.get_form_kwargs(prefix)
                 if self.add:
                     # - CREATE a NEW formset, populating it with any initial data in the request
                     initial = dict(request.GET.items())
                     # Saving a NEW item
-                    formset = formsetClass(initial=initial, prefix=prefix)
+                    formset = formsetClass(initial=initial, prefix=prefix, form_kwargs=form_kwargs)
                 else:
                     # show the data belonging to the current [obj]
                     instance = self.get_instance(prefix)
-                    formset = formsetClass(prefix=prefix, instance=instance)
+                    formset = formsetClass(prefix=prefix, instance=instance, form_kwargs=form_kwargs)
                 # Process all the forms in the formset
                 ordered_forms = self.process_formset(prefix, request, formset)
                 if ordered_forms:
@@ -334,6 +336,9 @@ class ResearchPart(View):
 
     def get_instance(self, prefix):
         return self.obj
+
+    def get_form_kwargs(self, prefix):
+        return None
 
     def before_save(self, prefix, request, instance=None, form=None):
         return False
@@ -916,7 +921,7 @@ class ResearchPart6(ResearchPart):
     template_name = 'seeker/research_part_6.html'
     MainModel = Research
     CondFormSet = inlineformset_factory(Gateway, Condition, 
-                                        form=ConditionForm, min_num=0, 
+                                        form=ConditionForm, min_num=1, 
                                         extra=0, can_delete=True, can_order=True)
     formset_objects = [{'formsetClass': CondFormSet, 'prefix': 'cond', 'readonly': False}]
 
@@ -925,34 +930,58 @@ class ResearchPart6(ResearchPart):
             # We need to have the gateway
             return self.obj.gateway
 
+    def get_form_kwargs(self, prefix):
+        if prefix == 'cond':
+            return {"gateway":  self.obj.gateway}
+        else:
+            return None
+
+
     def add_to_context(self, context):
         # Note: the self.obj is the Research project
         if self.obj == None:
             currentowner = None
             targettype = ""
         else:
-            gateway = self.obj.gateway
+            # gateway = self.obj.gateway
             currentowner = self.obj.owner
             targettype = self.obj.targetType
 
-            # Calculate the initial queryset for 'dvar'
-            # NOTE: we take into account the 'order' field, which must have been defined properly...
-            lstQ = []
-            lstQ.append(Q(gateway=gateway))
-            qs_dvar = gateway.definitionvariables.filter(*lstQ).order_by('order')
+            #try:
+            #    # Calculate the initial queryset for 'dvar'
+            #    # NOTE: we take into account the 'order' field, which must have been defined properly...
+            #    lstQ = []
+            #    lstQ.append(Q(gateway=gateway))
+            #    qs_dvar = gateway.definitionvariables.filter(*lstQ).order_by('order')
 
-            # Determine the possible functiondefs
-            qs_fdef = FunctionDef.objects.all().order_by('name')
+            #    # Determine the possible functiondefs
+            #    qs_fdef = FunctionDef.objects.all().order_by('name')
 
-            # Walk all the forms in the formset
-            cond_formset = context['cond_formset']
-            for cond_form in cond_formset:
-                # Initialise the querysets
-                cond_form.fields['variable'].queryset = qs_dvar
-                cond_form.fields['functiondef'].queryset = qs_fdef
-            # Put the formset back again
-            context['cond_formset'] = cond_formset
+            #    # Walk all the forms in the formset
+            #    cond_formset = context['cond_formset']
+            #    for cond_form in cond_formset:
+            #        # Initialise the querysets
+            #        cond_form.fields['variable'].queryset = qs_dvar
+            #        cond_form.fields['functiondef'].queryset = qs_fdef
+            #    # Also set the values for the empty-form
+            #    # eform = cond_formset.empty_form
+            #    cond_formset.empty_form.fields['variable'].queryset = qs_dvar
+            #    cond_formset.empty_form.fields['functiondef'].queryset = qs_fdef
+            #    # Replace the empty form
+            #    # cond_formset.empty_form = eform
+            #    # Put the formset back again
+            #    context['cond_formset'] = cond_formset
+            #except:
+            #    lInfo = sys.exc_info()
+            #    if len(lInfo) == 1:
+            #        sMsg = lInfo[0]
+            #    else:
+            #        sMsg = "{}<br>{}".format(lInfo[0], lInfo[1])
 
+            context['currentowner'] = currentowner
+            context['targettype'] = targettype
+        # Return the context
+        return context
 
 
 

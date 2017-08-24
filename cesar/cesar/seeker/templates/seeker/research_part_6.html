@@ -18,7 +18,7 @@
             <p>Specify the conditions that <em>all</em> need to be met before the found word or constituent can be regarded as an actual search hit.</p>
           </div>
           <table>
-            <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Value</th><th>DELETE</th></tr></thead>
+            <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Condition type</th><th>Value</th><th>DELETE</th></tr></thead>
             <tbody>
               {% for cond_form in cond_formset %}
                 <tr class="form-row cond-item">
@@ -29,17 +29,17 @@
                   <td valign="top" class="cond-type">{{cond_form.condtype}}</td>
                   <td valign="top" class="cond-val-exp">
                     <div>
-                      <!-- option 0: construction variable -->
-                      <span class="cond-cvar">{{cond_form.cvar}}</span>
+                      <!-- option 0: data-dependant variable -->
+                      <span class="cond-dvar">{{cond_form.variable}}</span>
                       <!-- option 1: function/expression -->
                       <span class="cond-expression">
                         <span class="cond-fundef">{{cond_form.functiondef}}</span>
                         <span class="hidden">{{cond_form.function}}</span>
                         <a class="btn btn-xs btn-default" role="button" 
-                            targeturl="{% if cond_form.instance.id %}{% url 'research_part_43' cond_form.instance.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
-                            targetid="research_part_43"
+                            targeturl="{% if cond_form.instance.id %}{% url 'research_part_62' cond_form.instance.id %}{% else %}{% url 'research_part_62' %}{% endif %}"
+                            targetid="research_part_62"
                             instanceid="{{cond_form.instance.id}}"
-                            onclick="ru.cesar.seeker.research_wizard(this, '43');" >
+                            onclick="ru.cesar.seeker.research_wizard(this, '62');" >
                           {% if cond_form.instance.function_id %}
                           {% trans 'edit' %}
                           {% else %}
@@ -57,7 +57,7 @@
                 </tr>
               {% endfor %}
 
-              <tr id="condition-empty" class="form-row empty-form row1">
+              <tr id="condition-empty" class="form-row empty-form cond-item row1">
                 <td class="hidden">{{cond_formset.empty_form.id}}</td>
                 <td valign="top">__counter__</td>
                 <td valign="top">{{cond_formset.empty_form.name}}</td>
@@ -65,8 +65,8 @@
                 <td valign="top" class="cond-type">{{cond_formset.empty_form.condtype}}</td>
                 <td valign="top" class="cond-val-exp">
                     <div>
-                      <!-- option 0: construction variable -->
-                      <span class="cond-cvar">{{cond_formset.empty_form.cvar}}</span>
+                      <!-- option 0: data-dependant variable -->
+                      <span class="cond-dvar">{{cond_formset.empty_form.variable}}</span>
                       <!-- option 1: function/expression -->
                       <span class="cond-expression">
                         <span class="cond-fundef">{{cond_formset.empty_form.functiondef}}</span>

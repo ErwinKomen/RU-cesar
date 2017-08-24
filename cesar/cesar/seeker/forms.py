@@ -228,7 +228,7 @@ class ConditionForm(ModelForm):
 
     class Meta:
         model = Condition
-        fields = ['name', 'description', 'condtype', 'cvar', 'function', 'functiondef']
+        fields = ['name', 'description', 'condtype', 'variable', 'function', 'functiondef']
         widgets={
           'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
           }
@@ -236,13 +236,14 @@ class ConditionForm(ModelForm):
     def __init__(self, gateway, *args, **kwargs):
         super(ConditionForm, self).__init__(*args, **kwargs)
         init_choices(self, 'condtype', SEARCH_CONDTYPE, bUseAbbr=True)
-        # Initialise the cvar choices
-        self.fields['cvar'].queryset = ConstructionVariable.objects.filter(gateway=gateway)
+        # Set the initial querysets
+        self.fields['variable'].queryset = gateway.get_vardef_list()
+        self.fields['functiondef'].queryset = FunctionDef.get_list()
         # Set required and optional fields
         self.fields['name'].required = True
         self.fields['description'].required = False
         self.fields['condtype'].required = True
-        self.fields['cvar'].required = False
+        self.fields['variable'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
 

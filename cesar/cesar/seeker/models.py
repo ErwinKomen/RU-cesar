@@ -16,13 +16,14 @@ import json
 
 MAX_NAME_LEN = 50
 MAX_TEXT_LEN = 200
-
-SEARCH_FUNCTION = "search.function"
-SEARCH_OPERATOR = "search.operator"
+    
+SEARCH_FUNCTION = "search.function"                 # woordgroep
+SEARCH_OPERATOR = "search.operator"                 # groeplijktop
 SEARCH_PERMISSION = "search.permission"
-SEARCH_VARIABLE_TYPE = "search.variabletype"
-SEARCH_ARGTYPE = "search.argtype"
-SEARCH_CONDTYPE = "search.condtype"
+SEARCH_VARIABLE_TYPE = "search.variabletype"        # fixed, calc, gvar
+SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, func, cnst, axis, hit
+SEARCH_CONDTYPE = "search.condtype"                 # func, dvar
+SEARCH_TYPE = "search.type"                         # str, int, bool, cnst
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -160,7 +161,7 @@ class Gateway(models.Model):
         #var_pk_list = [var.pk for var in self.gatewayvariables.all()]
         ## Now get the list of vardef variables coinciding with this
         #vardef_list = [var for var in VarDef.objects.filter(pk__in=var_pk_list)]
-        vardef_list = self.definitionvariables.all()
+        vardef_list = self.definitionvariables.all().order_by('order')
         return vardef_list
 
     def order_dvar(self):
@@ -270,11 +271,14 @@ class Variable(models.Model):
     """A variable has a name and a value, possibly combined with a function and a condition"""
 
     # [1] Variable obligatory name
-    name = models.CharField("Name of this variable", max_length=MAX_NAME_LEN)
+    name = models.CharField("Name", max_length=MAX_NAME_LEN)
     # [1] The numerical order of this argument
     order = models.IntegerField("Order", blank=False, default=0)
     # [0-1] Description/explanation for this variable
-    description = models.TextField("Description of this variable")
+    description = models.TextField("Description")
+    # [0-1] The type of the variable. May be unknown initially and then calculated
+    type = models.CharField("Type", blank=True, choices=build_choice_list(SEARCH_TYPE), 
+                              max_length=5, help_text=get_help(SEARCH_TYPE))
 
     def __str__(self):
         return self.name
@@ -364,9 +368,15 @@ class FunctionDef(models.Model):
     title = models.CharField("Function title", max_length=MAX_TEXT_LEN)
     # [1] Each function must have one or more arguments
     argnum = models.IntegerField("Number of arguments", default=1)
+    # [0-1] The output type of the function. May be unknown initially and then calculated
+    type = models.CharField("Type", blank=True, choices=build_choice_list(SEARCH_TYPE), 
+                              max_length=5, help_text=get_help(SEARCH_TYPE))
 
     def __str__(self):
         return self.name
+
+    def get_list():
+        return FunctionDef.objects.all().order_by('name')
 
 
 class Function(models.Model):
@@ -378,6 +388,9 @@ class Function(models.Model):
     root = models.ForeignKey("ConstructionVariable", null=False, related_name="functionroot")
     # [0-1] A function MAY belong to a particular ARGUMENT, which then is its parent
     parent = models.ForeignKey("Argument", null=True, blank=True, related_name="functionparent")
+    # [0-1] The output type of the function. May be unknown initially and then calculated
+    type = models.CharField("Type", blank=True, choices=build_choice_list(SEARCH_TYPE), 
+                              max_length=5, help_text=get_help(SEARCH_TYPE))
     # [1] The value that is the outcome of this function
     #     This is a JSON list, so can be bool, int, string of any number
     output = models.TextField("JSON value", null=False, blank=True, default="[]")

@@ -31,9 +31,9 @@ class ArgumentDefInline(admin.TabularInline):
 class FunctionDefAdmin(admin.ModelAdmin):
     """Display and edit of [Function] definitions"""
 
-    list_display = ['name', 'title', 'argnum']
-    search_fields = ['name', 'title', 'argnum']
-    fields = ['name', 'title', 'argnum']
+    list_display = ['name', 'title', 'type', 'argnum']
+    search_fields = ['name', 'title','type', 'argnum']
+    fields = ['name', 'title', 'type', 'argnum']
     inlines = [ArgumentDefInline]
 
 class RelationAdmin(admin.ModelAdmin):
