@@ -4,7 +4,9 @@
     {% csrf_token %}
     <!-- Part 1: select the TYPE of the construction's main element -->
     <div id="research_part_1">
+      <div class="explanation up">
       <p><b>About:</b> Provide essential information on this search project.</p>
+      </div>
       <table>
         <tr><td>Project name:</td><td>{{researchForm.name}}</td></tr>
         <tr><td>Purpose:</td><td>{{researchForm.purpose}}</td></tr>

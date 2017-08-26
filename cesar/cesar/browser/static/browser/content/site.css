@@ -402,16 +402,44 @@ form .row {
 
 /* Colors of jumbo parts */
 .jumbo-1 {
-  background-color: lightblue;
+  background-color: lavender;
+  color: chocolate;
 }
 .jumbo-2 {
-  background-color: lightgreen;
+  background-color: chocolate;
+  color: lavender;
 }
 .jumbo-3 {
-  background-color: lightcoral;
+  background-color: #355e3b;
+  color: lavender;
 }
 .jumbo-4 {
-  background-color: lightsalmon;
+  background-color: #ff2400;
+  color: lavender;
+}
+.jumbo-1:hover {
+    color: black;
+    background-color: goldenrod;
+}
+.jumbo-2:hover {
+    color: white;
+    background-color: goldenrod;
+}
+.jumbo-3:hover {
+    color: white;
+    background-color: goldenrod;
+}
+.jumbo-4:hover {
+    color: white;
+    background-color: goldenrod;
+}
+a.jumbotron:visited {color:inherit;}
+a.jumbotron:hover {
+    text-decoration: none;
+    cursor: pointer; cursor: hand;
+}
+.jumbotron p {
+    font-size: 12px;
 }
 
 /* Specify how a keyword should be shown */

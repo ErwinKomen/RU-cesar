@@ -26,45 +26,37 @@
 
       <div id="research_tiles" class="row container">
         <div class="row container">
-          <div class="col-md-4 jumbotron jumbo-1">
-            <h2>About</h2>
-            <p>Information on this project</p>
-            <button type="button" class="btn btn-primary pull-left"
+          <a class="col-md-4 jumbotron jumbo-1"
                     id="button_part_1"
                     targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
                     targetid="research_part_1"
-                    onclick="ru.cesar.seeker.research_wizard(this, '1');">Edit</button>
-            {% if object_id  %}<button type="button" class="btn btn-primary pull-right">Show</button>{% endif %}
-          </div>
+                    onclick="ru.cesar.seeker.research_wizard(this, '1');">
+            <h2>About</h2>
+            <p>Information on this project</p>
+          </a>
           {% if object_id  %}
-          <div class="col-md-4  col-md-offset-1 jumbotron jumbo-2">
-            <h2>Search</h2>
-            <p>What is being searched?</p>
-            <button type="button" class="btn btn-primary pull-left"
+          <a class="col-md-4  col-md-offset-1 jumbotron jumbo-2"
                     id="button_part_2"
                     targeturl="{% if object_id %}{% url 'research_part_2' object_id %}{% else %}{% url 'research_part_2' %}{% endif %}"
                     targetid="research_part_2"
-                    onclick="ru.cesar.seeker.research_wizard(this, '2');">Edit</button>
-            <button type="button" class="btn btn-primary pull-right">Show</button>
-          </div>
+                    onclick="ru.cesar.seeker.research_wizard(this, '2');">
+            <h2>Define</h2>
+            <p>Indicate what elements we are interested in</p>
+          </a>
           {% endif %}
         </div>
         {% if object_id %}
         <div class="row container">
-          <div class="col-md-4 jumbotron jumbo-3">
-            <h2>Fine-tune</h2>
-            <p>What makes a search hit?</p>
-            <button type="button" class="btn btn-primary pull-left"
+          <a class="col-md-4 jumbotron jumbo-3"
                     id="button_part_345"
-                    onclick="ru.cesar.seeker.research_finetune(this);">Edit</button>
-            <button type="button" class="btn btn-primary pull-right">Show</button>
-          </div>
-          <div class="col-md-4  col-md-offset-1 jumbotron jumbo-4">
-            <h2>Features</h2>
-            <p>Information per search hit</p>
-            <button type="button" class="btn btn-primary pull-left">Edit</button>
-            <button type="button" class="btn btn-primary pull-right">Show</button>
-          </div>
+                    onclick="ru.cesar.seeker.research_finetune(this);">
+            <h2>Fine-tune</h2>
+            <p>Specify detailed requirements of a hit</p>
+          </a>
+          <a class="col-md-4  col-md-offset-1 jumbotron jumbo-4">
+            <h2>Add features</h2>
+            <p>Specify the features to be added to a search hit</p>
+          </a>
         </div>
         {% endif %}
       </div>
@@ -99,33 +91,30 @@
           </p>
         </div>
         <div class="row container">
-          <div class="col-md-3 jumbotron jumbo-1">
+          <a class="col-md-3 jumbotron jumbo-1"
+             id="button_part_3"
+             targeturl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
+             targetid="research_part_3"
+             onclick="ru.cesar.seeker.research_wizard(this, '3');">
             <h2>Fixed</h2>
             <p>Global variables</p>
-            <button type="button" class="btn btn-primary" 
-                    id="button_part_3"
-                    targeturl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
-                    targetid="research_part_3"
-                    onclick="ru.cesar.seeker.research_wizard(this, '3');">Edit</button>
-          </div>
-          <div class="col-md-3 col-md-offset-1 jumbotron jumbo-2">
+          </a>
+          <a class="col-md-3 col-md-offset-1 jumbotron jumbo-2"
+             id="button_part_4"
+             targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
+             targetid="research_part_4"
+             onclick="ru.cesar.seeker.research_wizard(this, '4');">
             <h2>Variables</h2>
             <p>Data-dependant</p>
-            <button type="button" class="btn btn-primary" 
-                    id="button_part_4"
-                    targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
-                    targetid="research_part_4"
-                    onclick="ru.cesar.seeker.research_wizard(this, '4');">Edit</button>
-          </div>
-          <div class="col-md-3 col-md-offset-1 jumbotron jumbo-3">
-            <h2>Conditions</h2>
-            <p>When is it a hit?</p>
-            <button type="button" class="btn btn-primary" 
+          </a>
+          <a class="col-md-3 col-md-offset-1 jumbotron jumbo-3"
                     id="button_part_6"
                     targeturl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
                     targetid="research_part_6"
-                    onclick="ru.cesar.seeker.research_wizard(this, '6');">Edit</button>
-          </div>
+                    onclick="ru.cesar.seeker.research_wizard(this, '6');">
+            <h2>Conditions</h2>
+            <p>When is it a hit?</p>
+          </a>
         </div>
       </div>
 
