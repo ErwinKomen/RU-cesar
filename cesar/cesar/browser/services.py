@@ -150,7 +150,7 @@ def get_crpp_text(sLng, sPart, sFormat, sName):
         oBack['status'] = 'ok'
     else:
         oBack['status'] = 'error'
-        oBack['code'] = r.status_code
+        oBack['code'] = "The server returns error {}: {}".format(r.status_code, r.reason)
     # REturn what we have
     return oBack
 
@@ -174,7 +174,7 @@ def get_crpp_sent_info(options):
             oBack['status'] = 'ok'
         else:
             oBack['status'] = 'error'
-            oBack['code'] = r.status_code
+            oBack['code'] = "The server returns error {}: {}".format(r.status_code, r.reason)
     except:
         oBack = None
     

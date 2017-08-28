@@ -982,6 +982,8 @@ class Text(models.Model):
     def get_sentences(self):
         """Get the sentences belonging to this text"""
 
+        # Initialize return object
+        oBack = {'status': 'ok'}
         # Check if they have been fetched
         if self.sentences.count() == 0:
             # Need to fetch them
@@ -991,7 +993,7 @@ class Text(models.Model):
                                   self.fileName)
             # Validate what we receive
             if oBack == None or oBack['status'] == 'error':
-                return None
+                return oBack
             # Process what we received into [Sentence] objects
             lstSent = []
             iOrder = 1
@@ -1009,7 +1011,8 @@ class Text(models.Model):
         # At this point we HAVE all the sentences, so we only need to return the lot together
         # But this needs to be in a QUERYSET
         qs = Sentence.objects.filter(text__id=self.id).distinct().select_related().order_by('order')
-        return qs
+        oBack['qs'] = qs
+        return oBack
 
 
 class Sentence(models.Model):

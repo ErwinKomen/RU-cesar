@@ -51,6 +51,10 @@
       </div>
     {% else %}
       <p>No text is available.</p>
+      {% if error_msg %}
+      <p>There is no text, because there is an error:</p>
+      <code>{{error_msg}}</code>
+      {% endif %}
     {% endif %}
 
     {% if is_paginated %}

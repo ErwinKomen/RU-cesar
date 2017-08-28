@@ -498,6 +498,7 @@ class SentenceListView(ListView):
     line_list = None
     lines = None
     linecount = 0
+    error_msg = ""
     text = None
 
     def get_context_data(self, **kwargs):
@@ -506,6 +507,15 @@ class SentenceListView(ListView):
 
         # Get parameters for the search
         initial = self.request.GET
+
+        # Check for objects
+        if context['object_list'] == None or self.error_msg != "":
+            if self.error_msg != "":
+                context['error_msg'] = self.error_msg
+            else:
+                context['error_msg'] = "No data could be retrieved"
+        else:
+            context['error_msg'] = ""
 
         # Make sure the paginate-values are available
         context['paginateValues'] = paginateValues
@@ -530,16 +540,26 @@ class SentenceListView(ListView):
 
         # Get the parameters passed on with the GET request
         get = self.request.GET
+        self.error_msg = ""
 
         # Get the Text object
         textlist = Text.objects.filter(id=self.kwargs['pk'])
         if textlist != None and textlist.count() >0:
             self.text = textlist[0]
-            self.qs = self.text.get_sentences()
-            # Set the entry count
-            self.entrycount = self.qs.count()
+            oSent = self.text.get_sentences()
+            if oSent == None or oSent['status'] != 'ok' or oSent['qs'] == None:
+                # Something went wrong...
+                self.entrycount = 0
+                if 'code' in oSent:
+                    self.error_msg = oSent['code']
+                return []
+            else:
+                # Set the QS
+                self.qs = oSent['qs']
+                # Set the entry count
+                self.entrycount = self.qs.count()
         else:
-            self.qs = None
+            self.qs = []
             self.entrycount = 0
 
         # Return the resulting filtered and sorted queryset
