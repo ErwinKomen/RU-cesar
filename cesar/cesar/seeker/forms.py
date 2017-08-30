@@ -264,53 +264,20 @@ class SeekerResearchForm(ModelForm):
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling
         super(SeekerResearchForm, self).__init__(*args, **kwargs)
-
-        ## get the post-data
-        #data = args[0] if args else kwargs.get('data', None)
-
-        ## Do we have data?
-        #gw = None
-        #if data:
-        #    # There is POST data, so fill the forms with the required information
-        #    self.gateway_data = {key: data[key] for key in data if key.startswith('gateway-')}
-        #    if hasattr(self.instance, 'gateway'):
-        #        gw = self.instance.gateway
-        #    elif 'gateway-name' in self.gateway_data:
-        #        gw = Gateway(name=self.gateway_data['gateway-name'], description=self.gateway_data['gateway-description'])
-        #        gw.save()
-        #    if gw == None:
-        #        self.gateway_form = GatewayForm(prefix='gateway', data=self.gateway_data)
-        #    else:
-        #        self.gateway_form = GatewayForm(
-        #            instance = gw,
-        #            prefix='gateway',
-        #            data=self.gateway_data
-        #    )
-        #else:
-        #    # Didn't get any POST data: process the GET instance
-        #    # Fill the form with the gateway data, or create a blank form
-        #    if hasattr(self.instance, 'gateway') and  self.instance.gateway:
-        #        # There is a gateway, so use it
-        #        self.gateway_form = GatewayForm(
-        #            instance = self.instance.gateway,
-        #            prefix='gateway'
-        #        )
-        #    else:
-        #        # Create a new form
-        #        self.gateway_form = GatewayForm(prefix='gateway')
-
+        
     def is_valid(self):
         #if not self.gateway_form.is_valid():
         #    return False
         return super(SeekerResearchForm, self).is_valid()
 
-    #def clean(self):
-    #    if not self.gateway_form.is_valid():
-    #        raise forms.ValidationError("Gateway not valid")
+class SharegForm(ModelForm):
+    # A research form should also have the Word/Constituent choice
+    permission = forms.ChoiceField(choices=SEARCH_PERMISSION, required=True)
 
+    class Meta:
+        model = ShareGroup
+        fields = ['group', 'permission']
 
-
-    #def has_changed(self):
-    #    return super(SeekerResearchForm,self).has_changed() or self.gateway_form.has_changed()
-
-
+    def __init__(self, *args, **kwargs):
+        super(SharegForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'permission', SEARCH_PERMISSION, bUseAbbr=True)

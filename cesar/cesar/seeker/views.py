@@ -361,11 +361,20 @@ class ResearchPart1(ResearchPart):
     MainModel = Research
     form_objects = [{'form': GatewayForm, 'prefix': 'gateway', 'readonly': False},
                     {'form': SeekerResearchForm, 'prefix': 'research', 'readonly': False}]
+    SharegFormSet = inlineformset_factory(Research, ShareGroup, 
+                                        form=SharegForm, min_num=1, 
+                                        extra=0, can_delete=True, can_order=False)
+    formset_objects = [{'formsetClass': SharegFormSet, 'prefix': 'shareg', 'readonly': False}]
              
     def get_instance(self, prefix):
         if prefix == 'research':
+            # Return the Research instance
+            return self.obj
+        elif prefix == 'shareg':
+            # A sharegroup is mainly interested in the Research
             return self.obj
         else:
+            # The other option is 'gateway': return the gateway instance
             return self.obj.gateway
 
     def before_save(self, prefix, request, instance=None, form=None):
@@ -396,6 +405,11 @@ class ResearchPart1(ResearchPart):
         if context['object_id'] == None:
             if self.obj != None:
                 context['object_id'] = "{}".format(self.obj.id)
+        if self.obj == None:
+            currentowner = None
+        else:
+            currentowner = self.obj.owner
+        context['currentowner'] = currentowner
         return context
 
     def custom_init(self):
@@ -409,6 +423,15 @@ class ResearchPart1(ResearchPart):
                 # Make sure GVAR instances are ordered
                 gw.order_gvar()
         return True
+
+    def process_formset(self, prefix, request, formset):
+        if prefix == 'shareg':
+            currentuser = request.user
+            # Need to process all the forms here
+            for form in formset:
+                x = form.fields['permission'].help_text
+        return None
+
 
 
 class ResearchPart2(ResearchPart):

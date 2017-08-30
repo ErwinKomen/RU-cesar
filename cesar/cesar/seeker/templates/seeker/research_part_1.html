@@ -19,6 +19,50 @@
         {{gatewayForm.id}}
       </div>
 
+      <!-- SHAREGROUP specification: multiple options -->
+      <div id="research_part_3"
+           class="row js-inline-formset inline-group panel panel-default"
+           data-inline-type="tabular"
+           data-inline-formset="{{shareg_formset.inline_formset_data}}">
+          <!-- GLOBAL VARIABLE specification -->
+          <div id="research_shareg" class="tabular inline-related">
+            {{shareg_formset.management_form}}
+              <fieldset class="module {{shareg_formset.classes}}">
+                <div class="explanation">
+                  <p>Specify which other users you would like to give permission to either view or even edit your projects. </p>
+                </div>
+                <table>
+                  <thead><tr><th>Name</th><th>Description</th><th>DELETE?</th></tr></thead>
+                  <tbody>
+                    {% for shareg_this in shareg_formset %}
+                    <tr class="form-row">
+                      <td class="hidden">{{shareg_this.id}}</td>
+                      <td valign="top">{{shareg_this.group}}</td>
+                      <td valign="top">{{shareg_this.permission}}</td>
+                      <td valign="top">{{shareg_this.DELETE}}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if currentowner == user %}
+                      <tr id="arguments-empty" class="form-row empty-form row1">
+                        <td class="hidden">{{shareg_formset.empty_form.id}}</td>
+                        <td valign="top">{{shareg_formset.empty_form.group}}</td>
+                        <td valign="top">{{shareg_formset.empty_form.permission}}</td>
+                        <td valign="top" align="center">{{shareg_formset.empty_form.DELETE}}</td>
+                      </tr>
+                      <tr class="add-row">
+                        <td colspan="4">
+                          <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Share with another group</a>
+                        </td>
+                      </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </fieldset>
+          </div>
+      </div>
+
+
+
       <!-- Show ERRORS if needed -->
       <div id="research_err">
         {% for item in error_list %}
