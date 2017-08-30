@@ -47,7 +47,7 @@ class RelationAdmin(admin.ModelAdmin):
 
 # Models for Cesar Browser
 admin.site.register(Research, ResearchAdmin)
-admin.site.register(Gateway)
-admin.site.register(Construction)
+# admin.site.register(Gateway)
+# admin.site.register(Construction)
 admin.site.register(FunctionDef, FunctionDefAdmin)
 admin.site.register(Relation, RelationAdmin)

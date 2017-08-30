@@ -15,6 +15,7 @@ var ru = (function ($, ru) {
         lAddTableRow = [
           { "table": "research_intro-wrd", "prefix": "construction", "counter": true, "events": null},
           { "table": "research_intro-cns", "prefix": "construction", "counter": true, "events": null },
+          { "table": "research_shareg", "prefix": "shareg", "counter": false, "events": null },
           { "table": "research_gvar", "prefix": "gvar", "counter": false, "events": null },
           { "table": "research_vardef", "prefix": "vardef", "counter": false, "events": null },
           { "table": "research_spec", "prefix": "function", "counter": false, "events": null },
@@ -873,7 +874,9 @@ var ru = (function ($, ru) {
               // Perform the cloneMore function to this <tr>
               ru.cesar.seeker.cloneMore(elTable, oTdef.prefix, oTdef.counter);
               // Call the event initialisation again
-              oTdef.events();
+              if (oTdef.events !== null) {
+                oTdef.events();
+              }
               // We are done...
               break;
             }

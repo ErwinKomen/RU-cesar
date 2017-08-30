@@ -785,7 +785,7 @@ class ShareGroup(models.Model):
     # [1] The group a project is shared with
     group = models.OneToOneField(Group, blank=False, null=False)
     # [1] THe permissions granted to this group
-    permission = models.CharField("Permissions", choices=build_choice_list(SEARCH_PERMISSION), 
+    permission = models.CharField("Permissions", choices=build_abbr_list(SEARCH_PERMISSION), 
                               max_length=5, help_text=get_help(SEARCH_PERMISSION))
     # [1] Each Research object can be shared with any number of groups
     research = models.ForeignKey(Research, blank=False, null=False, related_name="sharegroups")
