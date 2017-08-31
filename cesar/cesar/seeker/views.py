@@ -2,7 +2,6 @@
 Definition of views for the SEEKER app.
 """
 
-from django import template
 from django.db.models import Q
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
@@ -15,10 +14,6 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
-
-register = template.Library()
-
-# from formtools.wizard.views import SessionWizardView
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
@@ -80,16 +75,26 @@ class SeekerListView(ListView):
             else:
                 sMsg = "The [object_id] is not passed along in the HTML call"
 
+        currentuser = self.request.user
         # Get the correct list of research projects:
         # - All my own projects
         # - All projects shared with the groups I belong to
-        my_projects = Research.objects.filter(Q(owner=self.request.user))
+        my_projects = Research.objects.filter(Q(owner=currentuser))
         lstQ = []
-        lstQ.append(~Q(owner=self.request.user))
-        lstQ.append(~Q(sharegroups__group__in=self.request.user.groups.all()))
+        lstQ.append(~Q(owner=currentuser))
+        lstQ.append(~Q(sharegroups__group__in=currentuser.groups.all()))
         # research_list = Research.objects.filter(Q(owner=self.request.user) | Q(sharegroups_group))
         research_list = Research.objects.exclude(*lstQ)
-        context['research_list'] = research_list
+        combi_list = []
+        for item in research_list:
+            may_read = item.has_permission(currentuser, 'r')
+            may_write = item.has_permission(currentuser, 'w')
+            may_delete = item.has_permission(currentuser, 'd')
+            combi_list.append({"project": item, 
+                               "may_read":may_read,
+                               "may_write": may_write,
+                               "may_delete": may_delete})
+        context['combi_list'] = combi_list
         context['object_list'] = research_list
         # Make sure the correct URL is being displayed
         return super(SeekerListView, self).render_to_response(context, **response_kwargs)
@@ -1042,7 +1047,8 @@ class ObjectCopyMixin:
         # Copying is only possible through a POST request
         obj = get_object_or_404(self.model, id=object_id)
         # Create a copy of the object
-        copy_obj = obj.get_copy()
+        kwargs = {'currentuser': request.user}
+        copy_obj = obj.get_copy(**kwargs)
         sMsg = ""
         # Check result
         if copy_obj == None:
@@ -1064,25 +1070,25 @@ class ResearchCopy(ObjectCopyMixin, View):
 
 
 
-def research_copy(object_id=None):
-    """Make a copy of the research project"""
+#def research_copy(object_id=None):
+#    """Make a copy of the research project"""
 
-    # Prepare initial message
-    sMsg = ""
-    # Try to get the object
-    original_obj = Research.objects.get(pk=object_id)
-    if original_obj != None:
-        # Make a copy of this item
-        copy_obj = original_obj.get_copy()
-        if copy_obj != None:
-            # Save the new copy
-            copy_obj.save()
-        else:
-            sMsg = "There was a problem copying the object"
-    else:
-        sMsg = "Could not find the original object with id={}".format(object_id)
-    # Go to the seeker_list page, possibly with adapted context
-    return sMsg
+#    # Prepare initial message
+#    sMsg = ""
+#    # Try to get the object
+#    original_obj = Research.objects.get(pk=object_id)
+#    if original_obj != None:
+#        # Make a copy of this item
+#        copy_obj = original_obj.get_copy()
+#        if copy_obj != None:
+#            # Save the new copy
+#            copy_obj.save()
+#        else:
+#            sMsg = "There was a problem copying the object"
+#    else:
+#        sMsg = "Could not find the original object with id={}".format(object_id)
+#    # Go to the seeker_list page, possibly with adapted context
+#    return sMsg
 
 
 class ObjectDeleteMixin:
@@ -1112,303 +1118,303 @@ class ResearchDelete(ObjectDeleteMixin, View):
 
 
 
-def research_main(request, object_id=None):
-    """Main entry point for the specification of a seeker research project"""
+#def research_main(request, object_id=None):
+#    """Main entry point for the specification of a seeker research project"""
 
-    # Check if the user is authenticated
-    if not request.user.is_authenticated:
-        # Simply redirect to the home page
-        return redirect('home')
+#    # Check if the user is authenticated
+#    if not request.user.is_authenticated:
+#        # Simply redirect to the home page
+#        return redirect('home')
 
-    # FOR FUTURE WORK (using a different method):
-    # Required for any view
-    sForm = SeekerForm()
-    sForm.add_formset(Gateway, Construction, ConstructionWrdForm)
-    sForm.add_formset(Gateway, GlobalVariable, GvarForm)
-    sForm.add_formset(Gateway, VarDef, VarDefForm)
-    # Note: adding CvarFormset needs a different way...
+#    # FOR FUTURE WORK (using a different method):
+#    # Required for any view
+#    sForm = SeekerForm()
+#    sForm.add_formset(Gateway, Construction, ConstructionWrdForm)
+#    sForm.add_formset(Gateway, GlobalVariable, GvarForm)
+#    sForm.add_formset(Gateway, VarDef, VarDefForm)
+#    # Note: adding CvarFormset needs a different way...
 
-    # This is required for any view
-    BaseConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
-    GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, form=GvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
-    VardefFormSet = inlineformset_factory(Gateway, VarDef, form=VarDefForm, min_num=1, extra=0, can_delete=True, can_order=True)
-    CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0)
-    # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0)
-    # FunctionFormSet = inlineformset_factory(ConstructionVariable, Function, form=FunctionForm, min_num=1, extra=0)
-    FunctionFormSet = modelformset_factory(Function, form=FunctionForm, min_num=1, extra=0)
+#    # This is required for any view
+#    BaseConstructionFormSet = inlineformset_factory(Gateway, Construction, form=ConstructionWrdForm, min_num=1, extra=0, can_delete=True, can_order=True)
+#    GvarFormSet = inlineformset_factory(Gateway, GlobalVariable, form=GvarForm, min_num=1, extra=0, can_delete=True, can_order=True)
+#    VardefFormSet = inlineformset_factory(Gateway, VarDef, form=VarDefForm, min_num=1, extra=0, can_delete=True, can_order=True)
+#    CvarFormSet = modelformset_factory(ConstructionVariable, form=CvarForm, min_num=1, extra=0)
+#    # CvarFormSet = inlineformset_factory(VarDef, ConstructionVariable, form=CvarForm, min_num=1, extra=0)
+#    # FunctionFormSet = inlineformset_factory(ConstructionVariable, Function, form=FunctionForm, min_num=1, extra=0)
+#    FunctionFormSet = modelformset_factory(Function, form=FunctionForm, min_num=1, extra=0)
 
-    class ConstructionFormSet(BaseConstructionFormSet):
-        #def __init__(self, *args, **kwargs):
-        #    self.user = 
-        #    super(ConstructionFormSet, self).__init__(*args, **kwargs)
+#    class ConstructionFormSet(BaseConstructionFormSet):
+#        #def __init__(self, *args, **kwargs):
+#        #    self.user = 
+#        #    super(ConstructionFormSet, self).__init__(*args, **kwargs)
 
-        def _construct_form(self, *args, **kwargs):
-            kwargs['user'] = request.user
-            return super(ConstructionFormSet, self)._construct_form(*args, **kwargs)
+#        def _construct_form(self, *args, **kwargs):
+#            kwargs['user'] = request.user
+#            return super(ConstructionFormSet, self)._construct_form(*args, **kwargs)
 
-    # Initialisation
-    construction_formset = None
-    gvar_formset = None
-    vardef_formset = None
-    cvar_form_list = []
-    cvar_formset_list = []
-    function_formset = []
-    template = 'seeker/research_edit.html'
-    delete_url = ''
-    arErr = []         # Start out with no errors
+#    # Initialisation
+#    construction_formset = None
+#    gvar_formset = None
+#    vardef_formset = None
+#    cvar_form_list = []
+#    cvar_formset_list = []
+#    function_formset = []
+#    template = 'seeker/research_edit.html'
+#    delete_url = ''
+#    arErr = []         # Start out with no errors
 
-    # check for 'save-as-new'
-    if request.method == "POST" and '_saveasnew' in request.POST:
-        object_id = None
+#    # check for 'save-as-new'
+#    if request.method == "POST" and '_saveasnew' in request.POST:
+#        object_id = None
 
-    # Do we need adding?
-    add = object_id is None
+#    # Do we need adding?
+#    add = object_id is None
 
-    # Check if user has permission to add
-    if add:
-        obj = None
-    else:
-        # Get the instance of this research object
-        obj = Research.objects.get(pk=object_id)
-        # Create a delete url for this object
-        delete_url = reverse('seeker_delete', args=[object_id])
-        # TODO: act if this object does not exist
+#    # Check if user has permission to add
+#    if add:
+#        obj = None
+#    else:
+#        # Get the instance of this research object
+#        obj = Research.objects.get(pk=object_id)
+#        # Create a delete url for this object
+#        delete_url = reverse('seeker_delete', args=[object_id])
+#        # TODO: act if this object does not exist
 
-    # Some initialisations
-    ModelForm = SeekerResearchForm
-    form_validated = False
+#    # Some initialisations
+#    ModelForm = SeekerResearchForm
+#    form_validated = False
 
-    # If POST, we need to SAVE data
-    if request.method == 'POST':
+#    # If POST, we need to SAVE data
+#    if request.method == 'POST':
 
-        # First check the research form
-        form = ModelForm(request.POST, request.FILES, instance=obj)
-        if form.is_valid():
+#        # First check the research form
+#        form = ModelForm(request.POST, request.FILES, instance=obj)
+#        if form.is_valid():
 
-            # First create and save a gateway (no form needed)
-            if obj != None and obj.gateway != None:
-                gateway = obj.gateway
-            else:
-                gatewayForm = GatewayForm(request.POST)
-                if gatewayForm.is_valid():
-                    gateway = gatewayForm.save(commit=False)
-                    # TODO: possible changes to the gateway in the future...
+#            # First create and save a gateway (no form needed)
+#            if obj != None and obj.gateway != None:
+#                gateway = obj.gateway
+#            else:
+#                gatewayForm = GatewayForm(request.POST)
+#                if gatewayForm.is_valid():
+#                    gateway = gatewayForm.save(commit=False)
+#                    # TODO: possible changes to the gateway in the future...
 
-                    # Save the gateway instance...
-                    gateway.save()
-            # NOTE: should add an ELSE statement
+#                    # Save the gateway instance...
+#                    gateway.save()
+#            # NOTE: should add an ELSE statement
 
-            # New method: one formset for each combination of cns/var
-            vardef_list = gateway.get_vardef_list()
-            cns_list = gateway.get_construction_list()
-            for cns in cns_list:
-                for var in vardef_list:
-                    # Determine the prefix for this cns/var formset
-                    pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
-                    # Get the formset for this cns/var formset
-                    fs = CvarFormSet(request.POST, request.FILES, prefix=pfx)
-                    # Walk the forms in this formset
-                    for cvar_form in fs:
-                        # Check if this form is valid
-                        if cvar_form.is_valid():
-                            # Save the model instance by calling the save method of the formset
-                            cvar = cvar_form.save(commit=False)
-                            cvar.construction = cns
-                            cvar.variable = var
-                            cvar.save()
-                        else:
-                            arErr.append(cvar_form.errors)
-
-
-            # Also get all required formsets
-            construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction', instance=gateway)
-
-            # Are all the formsets valid?
-            if construction_formset.is_valid() :
-
-                # Walk the construction formset, in order to add more information per construction
-                for cns_form in construction_formset:
-                    # Check if this form is valid
-                    if cns_form.is_valid():
-                        # Save it preliminarily
-                        cns = cns_form.save(commit=False)
-                        # Add the correct search item
-                        cns.search = SearchMain.create_item("word-group", cns_form.cleaned_data['value'], 'groupmatches')
-                        # Save this construction
-                        cns.save()
-                       #  cns_form.save()
-                    else:
-                        arErr.append(construction_formset.errors)
-
-                # Deal with the formset for global variables
-                gvar_formset = GvarFormSet(request.POST, request.FILES, prefix='gvar', instance=gateway)
-                if gvar_formset.is_valid():
-                    # The global-variable formset can be saved just like that
-                    gvar_formset.save()
-                else:
-                    arErr.append(gvar_formset.errors)
-
-                # Deal with the formset for construction variable definitions
-                vardef_formset = VardefFormSet(request.POST, request.FILES, prefix='vardef', instance=gateway)
-                if vardef_formset.is_valid():
-                    # The contruction-variable formset can be saved just like that
-                    vardef_formset.save()
-                else:
-                    arErr.append(vardef_formset.errors)
-
-                # Process the [ConstructionVariable] instances for
-                #    each [Contruction] in the current Gateway that is connected with
-                #    each [VarDef]      in the current Gateway
-                for cvar_form_row in cvar_form_list:
-                    for cvar_form_obj in cvar_form_row:
-                        cvar_form = cvar_form_obj['fm']
-                        if cvar_form.is_valid():
-                            cvar = cvar_form.save()
-                        else:
-                            arErr.append(cvar_form.errors)
-                            break
-
-                # Prepare and save the RESEARCH
-                research = form.save(commit=False)
-                # Add the correct gateway
-                research.gateway = gateway
-                # Add the current user as the user
-                research.owner = User.objects.get(id=request.user.id)
-                research.save()
-
-                # If the form is valid and the user pressed 'save' then show a summary
-                if add:
-                    # This is a new instance that is being added
-                    # TODO: Show a summary
-                    # Redirect to the list of projects
-                    return redirect('seeker_list')
-                else:
-                    # This is an existing instance
-                    # Redirect to the list of projects
-                    return redirect('seeker_list')
-            else:
-                # Get the formset errors string
-                arErr.append(construction_formset.errors)
-                # Delete the gateway we created
-                gateway.delete()
-        else:
-            arErr.append(form.errors)
-
-    else:
-        # This is a GET request
-        if add:
-            # We should CREATE a NEW form
-            initial = get_changeform_initial_data(ModelForm, request)
-            # form = SeekerResearchForm()
-            form = ModelForm(initial=initial)
-            # Create a completely new formset
-            construction_formset = ConstructionFormSet(prefix='construction')
-            gvar_formset = GvarFormSet(prefix='gvar')
-            vardef_formset = VardefFormSet(prefix='vardef')
-            # Sorry, for a totally new form, this is just not possible yet
-            # Reason: the gateway is not known
-            # Besides: there are no constructions or variables yet for this project
-            if False:
-                # Create a table of forms for each ConstructionVariable
-                vardef_list = gateway.get_vardef_list()
-                cns_list = gateway.get_construction_list()
-                # Walk the vardef formset
-                for vardef_fs in vardef_formset:
-                    var = vardef_fs.instance
-                    cvar_formset_list = []
-                    for cns in cns_list:
-                        # Create a variable
-                        cvar = ConstructionVariable(construction=cns, variable=var)
-                        # Determine the prefix for this cns/var formset
-                        pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
-                        # Create a formset for this cns/var formset
-                        fs = CvarFormSet(prefix=pfx)
-                        fs.construction = cns
-                        # Add the formset to the list of formsets for this vardef
-                        cvar_formset_list.append(fs)
-                    # Add the list of formset to this vardef
-                    vardef_fs.cvar_formset_list = cvar_formset_list
-
-        elif '/delete/' in request.path:
-            # We need to delete
-            # TODO: ask for confirmation
-
-            # Perform the deletion of the Research object
-            obj.delete()
-            # Redirect to the list of projects
-            return redirect('seeker_list')
-        else:
-            # We should show the data belonging to the current Research [obj]
-            form = ModelForm(instance=obj)
-            # create a formset for this particular instance
-            construction_formset = ConstructionFormSet(prefix='construction', instance=obj.gateway)
-            gvar_formset = GvarFormSet(prefix='gvar', instance=obj.gateway)
-            vardef_formset = VardefFormSet(prefix='vardef', instance=obj.gateway)
-            function_formset = FunctionFormSet(prefix='function')
-            # Create a table of forms for each ConstructionVariable
-            vardef_list = obj.gateway.get_vardef_list()
-            cns_list = obj.gateway.get_construction_list()
-            # Walk the vardef formset
-            for vardef_fs in vardef_formset:
-                var = vardef_fs.instance
-                cvar_formset_list = []
-                for cns in cns_list:
-                    # Get or create cvar as instance for cns/var formset
-                    cvar_qs = ConstructionVariable.objects.filter(construction=cns).filter(variable=var)
-                    if cvar_qs.count() == 0:
-                        # Doesn't exist: create a variable
-                        cvar = ConstructionVariable(construction=cns, variable=var)
-                    else:
-                        cvar = cvar_qs[0]
-                    # Determine the prefix for this cns/var formset
-                    pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
-                    # Create a formset for this cns/var formset
-                    fs = CvarFormSet(prefix=pfx, queryset=cvar_qs)
-                    fs.construction = cns
-                    ## Create and add a Cvar-Function formset
-                    #fs.fun_formset = FunctionFormSet(instance=cvar)
-                    ## Add a Function form
-                    #fs.funform = FunctionForm(instance=cvar)
-                    # Add the formset to the list of formsets for this vardef
-                    cvar_formset_list.append(fs)
-                # Add the list of formset to this vardef
-                vardef_fs.cvar_formset_list = cvar_formset_list
+#            # New method: one formset for each combination of cns/var
+#            vardef_list = gateway.get_vardef_list()
+#            cns_list = gateway.get_construction_list()
+#            for cns in cns_list:
+#                for var in vardef_list:
+#                    # Determine the prefix for this cns/var formset
+#                    pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+#                    # Get the formset for this cns/var formset
+#                    fs = CvarFormSet(request.POST, request.FILES, prefix=pfx)
+#                    # Walk the forms in this formset
+#                    for cvar_form in fs:
+#                        # Check if this form is valid
+#                        if cvar_form.is_valid():
+#                            # Save the model instance by calling the save method of the formset
+#                            cvar = cvar_form.save(commit=False)
+#                            cvar.construction = cns
+#                            cvar.variable = var
+#                            cvar.save()
+#                        else:
+#                            arErr.append(cvar_form.errors)
 
 
-    # COnvert all lists of errors to a string
-    # sErr = '\n'.join([str(item) for item in arErr]).strip()
-    # error_list = [item for item in arErr]
-    error_list = [str(item) for item in arErr]
+#            # Also get all required formsets
+#            construction_formset = ConstructionFormSet(request.POST, request.FILES, prefix='construction', instance=gateway)
+
+#            # Are all the formsets valid?
+#            if construction_formset.is_valid() :
+
+#                # Walk the construction formset, in order to add more information per construction
+#                for cns_form in construction_formset:
+#                    # Check if this form is valid
+#                    if cns_form.is_valid():
+#                        # Save it preliminarily
+#                        cns = cns_form.save(commit=False)
+#                        # Add the correct search item
+#                        cns.search = SearchMain.create_item("word-group", cns_form.cleaned_data['value'], 'groupmatches')
+#                        # Save this construction
+#                        cns.save()
+#                       #  cns_form.save()
+#                    else:
+#                        arErr.append(construction_formset.errors)
+
+#                # Deal with the formset for global variables
+#                gvar_formset = GvarFormSet(request.POST, request.FILES, prefix='gvar', instance=gateway)
+#                if gvar_formset.is_valid():
+#                    # The global-variable formset can be saved just like that
+#                    gvar_formset.save()
+#                else:
+#                    arErr.append(gvar_formset.errors)
+
+#                # Deal with the formset for construction variable definitions
+#                vardef_formset = VardefFormSet(request.POST, request.FILES, prefix='vardef', instance=gateway)
+#                if vardef_formset.is_valid():
+#                    # The contruction-variable formset can be saved just like that
+#                    vardef_formset.save()
+#                else:
+#                    arErr.append(vardef_formset.errors)
+
+#                # Process the [ConstructionVariable] instances for
+#                #    each [Contruction] in the current Gateway that is connected with
+#                #    each [VarDef]      in the current Gateway
+#                for cvar_form_row in cvar_form_list:
+#                    for cvar_form_obj in cvar_form_row:
+#                        cvar_form = cvar_form_obj['fm']
+#                        if cvar_form.is_valid():
+#                            cvar = cvar_form.save()
+#                        else:
+#                            arErr.append(cvar_form.errors)
+#                            break
+
+#                # Prepare and save the RESEARCH
+#                research = form.save(commit=False)
+#                # Add the correct gateway
+#                research.gateway = gateway
+#                # Add the current user as the user
+#                research.owner = User.objects.get(id=request.user.id)
+#                research.save()
+
+#                # If the form is valid and the user pressed 'save' then show a summary
+#                if add:
+#                    # This is a new instance that is being added
+#                    # TODO: Show a summary
+#                    # Redirect to the list of projects
+#                    return redirect('seeker_list')
+#                else:
+#                    # This is an existing instance
+#                    # Redirect to the list of projects
+#                    return redirect('seeker_list')
+#            else:
+#                # Get the formset errors string
+#                arErr.append(construction_formset.errors)
+#                # Delete the gateway we created
+#                gateway.delete()
+#        else:
+#            arErr.append(form.errors)
+
+#    else:
+#        # This is a GET request
+#        if add:
+#            # We should CREATE a NEW form
+#            initial = get_changeform_initial_data(ModelForm, request)
+#            # form = SeekerResearchForm()
+#            form = ModelForm(initial=initial)
+#            # Create a completely new formset
+#            construction_formset = ConstructionFormSet(prefix='construction')
+#            gvar_formset = GvarFormSet(prefix='gvar')
+#            vardef_formset = VardefFormSet(prefix='vardef')
+#            # Sorry, for a totally new form, this is just not possible yet
+#            # Reason: the gateway is not known
+#            # Besides: there are no constructions or variables yet for this project
+#            if False:
+#                # Create a table of forms for each ConstructionVariable
+#                vardef_list = gateway.get_vardef_list()
+#                cns_list = gateway.get_construction_list()
+#                # Walk the vardef formset
+#                for vardef_fs in vardef_formset:
+#                    var = vardef_fs.instance
+#                    cvar_formset_list = []
+#                    for cns in cns_list:
+#                        # Create a variable
+#                        cvar = ConstructionVariable(construction=cns, variable=var)
+#                        # Determine the prefix for this cns/var formset
+#                        pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+#                        # Create a formset for this cns/var formset
+#                        fs = CvarFormSet(prefix=pfx)
+#                        fs.construction = cns
+#                        # Add the formset to the list of formsets for this vardef
+#                        cvar_formset_list.append(fs)
+#                    # Add the list of formset to this vardef
+#                    vardef_fs.cvar_formset_list = cvar_formset_list
+
+#        elif '/delete/' in request.path:
+#            # We need to delete
+#            # TODO: ask for confirmation
+
+#            # Perform the deletion of the Research object
+#            obj.delete()
+#            # Redirect to the list of projects
+#            return redirect('seeker_list')
+#        else:
+#            # We should show the data belonging to the current Research [obj]
+#            form = ModelForm(instance=obj)
+#            # create a formset for this particular instance
+#            construction_formset = ConstructionFormSet(prefix='construction', instance=obj.gateway)
+#            gvar_formset = GvarFormSet(prefix='gvar', instance=obj.gateway)
+#            vardef_formset = VardefFormSet(prefix='vardef', instance=obj.gateway)
+#            function_formset = FunctionFormSet(prefix='function')
+#            # Create a table of forms for each ConstructionVariable
+#            vardef_list = obj.gateway.get_vardef_list()
+#            cns_list = obj.gateway.get_construction_list()
+#            # Walk the vardef formset
+#            for vardef_fs in vardef_formset:
+#                var = vardef_fs.instance
+#                cvar_formset_list = []
+#                for cns in cns_list:
+#                    # Get or create cvar as instance for cns/var formset
+#                    cvar_qs = ConstructionVariable.objects.filter(construction=cns).filter(variable=var)
+#                    if cvar_qs.count() == 0:
+#                        # Doesn't exist: create a variable
+#                        cvar = ConstructionVariable(construction=cns, variable=var)
+#                    else:
+#                        cvar = cvar_qs[0]
+#                    # Determine the prefix for this cns/var formset
+#                    pfx = "cvar_cns{}_var{}".format(cns.id, var.id)
+#                    # Create a formset for this cns/var formset
+#                    fs = CvarFormSet(prefix=pfx, queryset=cvar_qs)
+#                    fs.construction = cns
+#                    ## Create and add a Cvar-Function formset
+#                    #fs.fun_formset = FunctionFormSet(instance=cvar)
+#                    ## Add a Function form
+#                    #fs.funform = FunctionForm(instance=cvar)
+#                    # Add the formset to the list of formsets for this vardef
+#                    cvar_formset_list.append(fs)
+#                # Add the list of formset to this vardef
+#                vardef_fs.cvar_formset_list = cvar_formset_list
 
 
-    # Start setting the context
-    context = dict(
-        object_id = object_id,
-        original=obj,
-        form = form,
-        construction_formset = construction_formset,
-        gvar_formset = gvar_formset,
-        vardef_formset = vardef_formset,
-        function_formset = function_formset,
-        show_save = True,
-        show_save_and_continue = True,
-        show_save_and_add_another = True,
-        show_delete_link = not add,
-        delete_url=delete_url,
-        error_list=error_list, #sErr,
-        )
+#    # COnvert all lists of errors to a string
+#    # sErr = '\n'.join([str(item) for item in arErr]).strip()
+#    # error_list = [item for item in arErr]
+#    error_list = [str(item) for item in arErr]
 
-    # Hide the "Save" and "Save and continue" buttons if "Save as New" was
-    # previously chosen to prevent the interface from getting confusing.
-    if request.method == 'POST' and not form_validated and "_saveasnew" in request.POST:
-        context['show_save'] = False
-        context['show_save_and_continue'] = False
-        # Use the change template instead of the add template.
-        add = False
 
-    # Open the template that allows Creating a new research project
-    #   or editing the existing project
-    return render(request, template, context)
+#    # Start setting the context
+#    context = dict(
+#        object_id = object_id,
+#        original=obj,
+#        form = form,
+#        construction_formset = construction_formset,
+#        gvar_formset = gvar_formset,
+#        vardef_formset = vardef_formset,
+#        function_formset = function_formset,
+#        show_save = True,
+#        show_save_and_continue = True,
+#        show_save_and_add_another = True,
+#        show_delete_link = not add,
+#        delete_url=delete_url,
+#        error_list=error_list, #sErr,
+#        )
+
+#    # Hide the "Save" and "Save and continue" buttons if "Save as New" was
+#    # previously chosen to prevent the interface from getting confusing.
+#    if request.method == 'POST' and not form_validated and "_saveasnew" in request.POST:
+#        context['show_save'] = False
+#        context['show_save_and_continue'] = False
+#        # Use the change template instead of the add template.
+#        add = False
+
+#    # Open the template that allows Creating a new research project
+#    #   or editing the existing project
+#    return render(request, template, context)
 
 def research_edit(request, object_id=None):
     """Main entry point for the specification of a seeker research project"""
@@ -1451,7 +1457,3 @@ def research_edit(request, object_id=None):
     # Open the template that allows Editing an existing or Creating a new research project
     #   or editing the existing project
     return render(request, template, context)
-
-@register.simple_tag
-def has_permission(obj, usr, permission):
-    return obj.has_permission(usr, permission)

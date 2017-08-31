@@ -763,6 +763,16 @@ class Research(models.Model):
         new_copy = get_instance_copy(self, commit=False)
         # Copy the FK contents
         copy_fk(self, new_copy, "gateway")
+        # Adapt the name of the project to reflect that this is a copy
+        lstQ = []
+        # Make it user-independent...
+        # lstQ.append(Q(owner=self.owner))
+        lstQ.append(Q(name=self.name))
+        iCount = Research.objects.filter(*lstQ).count()
+        new_copy.name = "{}_{}".format(self.name, iCount+1)
+        # Make sure that "I", the current user, am the owner of this new copy
+        if 'currentuser' in kwargs:
+            new_copy.owner = kwargs['currentuser']
         # Now save it
         new_copy.save()
         # Note: the 'owner' needs no additional copying, since the user remains the same
@@ -794,7 +804,7 @@ class Research(models.Model):
                 lstQ.append(Q(group__in=usr.groups.all()))
                 lstQ.append(Q(permission__contains=permission))
                 qs = self.sharegroups.filter(*lstQ)
-                bMay = (qs.Count() > 0)
+                bMay = (qs.count() > 0)
         return bMay
    
 
