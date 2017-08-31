@@ -41,18 +41,24 @@
               <div class="part-buttons">
                 <form>
                   {% csrf_token %}
+                  {% if has_permission item currentuser 'w' %}
                   <span class="research-item-name">
                     <a class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=item.id %}">edit</a>
                   </span>
+                  {% endif %}
+                  {% if has_permission item currentuser 'r' %}
                   <span class="research-item-copy">
                     <a class="btn btn-default btn-xs" 
                        url="{{item.get_copy_url}}" 
                        success="{% url 'seeker_list' %}"
                        onclick="ru.cesar.seeker.process_item(this);">copy</a>
                   </span>
+                  {% endif %}
+                  {% if has_permission item currentuser 'd' %}
                   <span class="research-item-copy">
                     <a class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">delete</a>
                   </span>
+                  {% endif %}
                 </form>
               </div>
               <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>

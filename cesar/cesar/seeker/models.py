@@ -4,6 +4,7 @@ The seeker helps users define and execute searches through the texts that
 are available at the back end
 """
 from django.db import models, transaction
+from django.db.models import Q
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
 from datetime import datetime
@@ -777,7 +778,25 @@ class Research(models.Model):
         """Produce an URL to be called when requesting to delete [self]"""
 
         return reverse('seeker_delete', kwargs={'object_id': self.id})
-    
+
+    def has_permission(self, usr, permission):
+        """CHeck if this user has the indicated permission"""
+
+        # Is this me?
+        if usr == None:
+            bMay = False
+        else:
+            bMay = (usr == self.owner)
+            # Is this not me?
+            if not bMay:
+                # Visit all the sharegroups we share
+                lstQ = []
+                lstQ.append(Q(group__in=usr.groups.all()))
+                lstQ.append(Q(permission__contains=permission))
+                qs = self.sharegroups.filter(*lstQ)
+                bMay = (qs.Count() > 0)
+        return bMay
+   
 
 class ShareGroup(models.Model):
     """Group witch which a project is shared"""

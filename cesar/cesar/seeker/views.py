@@ -2,6 +2,7 @@
 Definition of views for the SEEKER app.
 """
 
+from django import template
 from django.db.models import Q
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
@@ -14,6 +15,8 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
+
+register = template.Library()
 
 # from formtools.wizard.views import SessionWizardView
 
@@ -77,8 +80,15 @@ class SeekerListView(ListView):
             else:
                 sMsg = "The [object_id] is not passed along in the HTML call"
 
-        # Get the correct list of research projects
-        research_list = Research.objects.filter(owner=self.request.user)
+        # Get the correct list of research projects:
+        # - All my own projects
+        # - All projects shared with the groups I belong to
+        my_projects = Research.objects.filter(Q(owner=self.request.user))
+        lstQ = []
+        lstQ.append(~Q(owner=self.request.user))
+        lstQ.append(~Q(sharegroups__group__in=self.request.user.groups.all()))
+        # research_list = Research.objects.filter(Q(owner=self.request.user) | Q(sharegroups_group))
+        research_list = Research.objects.exclude(*lstQ)
         context['research_list'] = research_list
         context['object_list'] = research_list
         # Make sure the correct URL is being displayed
@@ -1442,3 +1452,6 @@ def research_edit(request, object_id=None):
     #   or editing the existing project
     return render(request, template, context)
 
+@register.simple_tag
+def has_permission(obj, usr, permission):
+    return obj.has_permission(usr, permission)
