@@ -22,7 +22,7 @@ SEARCH_FUNCTION = "search.function"                 # woordgroep
 SEARCH_OPERATOR = "search.operator"                 # groeplijktop
 SEARCH_PERMISSION = "search.permission"
 SEARCH_VARIABLE_TYPE = "search.variabletype"        # fixed, calc, gvar
-SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, func, cnst, axis, hit
+SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, dvar, func, cnst, axis, hit
 SEARCH_CONDTYPE = "search.condtype"                 # func, dvar
 SEARCH_TYPE = "search.type"                         # str, int, bool, cnst
 
@@ -385,8 +385,10 @@ class Function(models.Model):
 
     # [1] Must point to a definition
     functiondef = models.ForeignKey(FunctionDef, null=False)
-    # [1] A function belongs to a construction variable - but this is not necessarily the parent
-    root = models.ForeignKey("ConstructionVariable", null=False, related_name="functionroot")
+    # [0-1] A function belongs to a construction variable - but this is not necessarily the parent
+    root = models.ForeignKey("ConstructionVariable", null=True, related_name="functionroot")
+    # [0-1] Alternatively, a function belongs to a condition
+    rootcond = models.ForeignKey("Condition", null=True, related_name="functioncondroot")
     # [0-1] A function MAY belong to a particular ARGUMENT, which then is its parent
     parent = models.ForeignKey("Argument", null=True, blank=True, related_name="functionparent")
     # [0-1] The output type of the function. May be unknown initially and then calculated
@@ -421,13 +423,26 @@ class Function(models.Model):
         return result
 
     @classmethod
-    def create(cls, functiondef, functionroot, parentarg):
-        """Create a new instance of a function based on a 'function definition', binding it to a cvar"""
+    def create(cls, functiondef, functionroot, functioncondroot, parentarg):
+        """Create a new instance of a function based on a 'function definition', binding it to a cvar or a condition"""
         with transaction.atomic():
             if parentarg == None:
-                inst = cls(functiondef=functiondef, root=functionroot)
+                if functionroot != None:
+                    inst = cls(functiondef=functiondef, root=functionroot)
+                elif functioncondroot != None:
+                    inst = cls(functiondef=functiondef, rootcond=functioncondroot)
+                else:
+                    # This should actually create an error...
+                    inst = cls(functiondef=functiondef)
             else:
-                inst = cls(functiondef=functiondef, root=functionroot, parent=parentarg)
+                # There is a parentarg
+                if functionroot != None:
+                    inst = cls(functiondef=functiondef, root=functionroot, parent=parentarg)
+                elif functioncondroot != None:
+                    inst = cls(functiondef=functiondef, rootcond=functioncondroot, parent=parentarg)
+                else:
+                    # This should actually create an error...
+                    inst = cls(functiondef=functiondef, parent=parentarg)
             # Save this function
             inst.save()
             # Add all the arguments that are needed
@@ -515,6 +530,8 @@ class Argument(models.Model):
     gvar = models.ForeignKey("GlobalVariable", null=True)
     # [0-1] This argument may link to a Construction Variable
     cvar = models.ForeignKey("ConstructionVariable", null=True)
+    # [0-1] This argument may link to a Data-dependant Variable
+    dvar = models.ForeignKey("VarDef", null=True)
     ## [0-1] This argument may link to a Constituent
     #constituent = models.ForeignKey("Constituent", null=True)
     # [0-1] This argument may link to a Hierarchical Relation
@@ -563,6 +580,8 @@ class Argument(models.Model):
             avalue = "Search hit"
         elif self.argtype == "cvar":
             avalue = "CVAR"
+        elif self.argtype == "dvar":
+            avalue = "DVAR"
         elif self.argtype == "axis":
             avalue = self.relation.name
         return "{}: {}".format(atype, avalue)
@@ -660,7 +679,7 @@ class Condition(models.Model):
     variable = models.ForeignKey(VarDef, null=True, related_name ="variablecondition")
 
     # [0-1] Another option for a condition is to be defined in a function
-    function = models.ForeignKey(Function, null=True, related_name ="functioncondition")
+    function = models.OneToOneField(Function, null=True)
     # [0-1] If a function is needed, we need to have a link to its definition
     functiondef = models.ForeignKey(FunctionDef, null=True, related_name ="functiondefcondition")
 
@@ -812,7 +831,7 @@ class ShareGroup(models.Model):
     """Group witch which a project is shared"""
 
     # [1] The group a project is shared with
-    group = models.OneToOneField(Group, blank=False, null=False)
+    group = models.ForeignKey(Group, blank=False, null=False)
     # [1] THe permissions granted to this group
     permission = models.CharField("Permissions", choices=build_abbr_list(SEARCH_PERMISSION), 
                               max_length=5, help_text=get_help(SEARCH_PERMISSION))

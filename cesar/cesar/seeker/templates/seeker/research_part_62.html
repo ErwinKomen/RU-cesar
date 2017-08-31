@@ -1,0 +1,102 @@
+﻿{% load i18n %}
+
+<div class="research_part">
+  <span><a role="button" class="btn btn-default btn-xs" 
+            id="button_part_6_return"
+            targeturl="{% if research_id %}{% url 'research_part_6' research_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
+            targetid="research_part_6"
+            onclick="ru.cesar.seeker.research_wizard(this, '6');"><< All Conditions
+  </a></span>
+  <span>[62]</span>
+  <!-- Part 6-2: Define conditions for a research project -->
+  <div id="research_part_62" 
+      class="js-inline-formset inline-group panel panel-default"
+      data-inline-type="tabular"
+      data-inline-formset="{{arg_formset.inline_formset_data}}">
+    <form action="" method="post">
+        {% csrf_token %}
+      <div class="row">
+        <div id="research_cvar" class="col-md-11 tabular inline-related">
+          {{arg_formset.management_form}}
+          <fieldset class="module {{arg_formset.classes}}">
+            <div class="explanation">
+              <p>Specify how to calculate condition <code>{{condition_this.name}}</code></p>
+            </div>
+            <!-- Show the template of the main function -->
+            <div class="row">
+              <!-- OLD: col-md-6 (but the variable names and the textarea's don't always fit) -->
+              <div class="panel panel-default panel-function">
+                <h3>{{functionForm.instance.functiondef.title}}</h3>
+                <div class="hidden">{{functionForm}}</div>
+                <table class="table-fit">
+                {% for arg_this in arg_formset %}
+                  <tr class="form-row arg-item">
+                    <td class="hidden">{{arg_this.argumentdef}}</td>
+                    <td class="hidden">{{arg_this.id}}</td>
+                    <td valign="bottom" class="arg-intro">{{arg_this.instance.argumentdef.text}}</td>
+                    <td valign="bottom">
+                      <div  class="arg-value">
+                        <div class="arg-type">{{arg_this.argtype}}</div>
+                        <!-- Provide the possible values of the argument, as chosen by argtype -->
+                        <div class="arg-val-exp">
+                          <!-- option 0: fixed value -->
+                          <span class="arg-value">{{arg_this.argval}}</span>
+                          <!-- option 1: global variable -->
+                          <span class="arg-gvar">{{arg_this.gvar}}</span>
+                          <!-- option 2: data-dependant variable -->
+                          <span class="arg-dvar">{{arg_this.dvar}}</span>
+                          <!-- option 3: function/expression -->
+                          <span class="arg-expression">
+                            <span class="arg-fundef">{{arg_this.functiondef}}</span>
+                            <span class="hidden">{{arg_this.function}}</span>
+                            <a class="btn btn-xs btn-default" role="button" 
+                                targeturl="{% if arg_this.instance.id %}
+                                           {% url 'research_part_63' arg_this.instance.id %}
+                                           {% else %}{% url 'research_part_63' %}{% endif %}"
+                                targetid="research_part_63"
+                                instanceid="{{arg_this.instance.id}}"
+                                onclick="ru.cesar.seeker.research_wizard(this, '63');" >
+                              {% if arg_this.instance.functionparent.all.0.parent_id %}
+                              {% trans 'edit' %}
+                              {% else %}
+                              {% trans 'create' %}
+                              {% endif %}
+                            </a>
+                          </span>
+                          <!-- option 4: constituent -->
+                          <span class="arg-cnst">CONSTITUENT-LIST</span>
+                          <!-- option 5: axis -->
+                          <span class="arg-axis">{{arg_this.relation}}</span>
+                          <!-- option 6: search hit -->
+                          <span class="arg-search">Search hit</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+                </table>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        {% for item in error_list %}{{item}}{% endfor %}
+      </div>
+
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary ajaxform"
+                instanceid="{{object_id}}"
+                openid="research_container_62" 
+                ajaxurl="{% if object_id %}{% url 'research_part_62' object_id %}{% else %}{% url 'research_part_62' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
+      </div>
+    </form>
+  </div>
+</div>
+

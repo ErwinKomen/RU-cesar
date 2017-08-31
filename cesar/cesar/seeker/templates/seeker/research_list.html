@@ -22,77 +22,90 @@
       </form>
     </div>
 
-    {% if combi_list %}
-      <h3>Research project overview</h3>
-      <!-- Room for errors -->
-      <div id="research_err"></div>
-      <!-- The contents as a table -->
-      <table class="table table-hover">
-        <thead><tr><th class="hidden">id</th><th>Owner</th><th>Type</th><th>Name</th><th>Purpose</th><th>Action</th></tr></thead>
-        <tbody>
-        {% for item in combi_list %}
-          <tr class="part-item">
-            <td class="hidden">{{item.project.id}}</td>
-            <td><span class="research-item-user">{{item.project.username}}</span></td>
-            <td><span class="research-item-type">{{item.project.get_targetType_display}}</span></td>
-            <td><span class="research-item-name">{{item.project.name}}</span></td>
-            <td><span class="research-item-purpose">{{item.project.purpose}}</span></td>
-            <td class="tdnowrap">
-              <div class="part-buttons">
-                <form>
-                  {% csrf_token %}
-                  {% if item.may_write %}
-                  <span class="research-item-name">
-                    <button type="button" title="edit" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=item.project.id %}">
-                      <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                    </button>
-                  </span>
-                  {% endif %}
-                  {% if item.may_read %}
-                  <span class="research-item-copy">
-                    <button type="button" title="copy" class="btn btn-default btn-xs" 
-                       url="{{item.project.get_copy_url}}" 
-                       success="{% url 'seeker_list' %}"
-                       onclick="ru.cesar.seeker.process_item(this);">
-                      <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
-                    </button>
-                  </span>
-                  {% endif %}
-                  {% if item.may_delete %}
-                  <span class="research-item-del">
-                    <button type="button" title="delete" class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">
-                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                    </button>
-                  </span>
-                  {% endif %}
-                </form>
-              </div>
-              <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
-            </td>
-          </tr>
-          <!-- Provide a form row for deletion -->
-          <tr class="part-del hidden">
-            <td colspan="3"></td>
-            <td>Are you sure you want to delete the research project named <code>{{item.project.name}}</code>?</td>
-            <td>
-              <div class="part-del">
-                <form action="{{item.project.get_delete_url}}" method="post">
-                  {% csrf_token %}
-                    <a class="btn btn-info btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
-                    <a class="btn btn-danger btn-xs" 
-                       url="{{item.project.get_delete_url}}" 
-                       success="{% url 'seeker_list' %}"
-                       onclick="ru.cesar.seeker.process_item(this);">delete</a>
-                </form>
-              </div>
-              <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
-            </td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+    {% if authenticated %}
+      {% if combi_list %}
+        <h3>Research project overview</h3>
+        <!-- Room for errors -->
+        <div id="research_err"></div>
+        <!-- The contents as a table -->
+        <table class="table table-hover">
+          <thead><tr><th class="hidden">id</th><th>Owner</th><th>Type</th><th>Name</th><th>Purpose</th><th>Action</th></tr></thead>
+          <tbody>
+          {% for item in combi_list %}
+            <tr class="part-item">
+              <td class="hidden">{{item.project.id}}</td>
+              <td><span class="research-item-user">{{item.project.username}}</span></td>
+              <td><span class="research-item-type">{{item.project.get_targetType_display}}</span></td>
+              <td><span class="research-item-name">{{item.project.name}}</span></td>
+              <td><span class="research-item-purpose">{{item.project.purpose}}</span></td>
+              <td class="tdnowrap">
+                <div class="part-buttons">
+                  <form>
+                    {% csrf_token %}
+                    {% if item.may_write %}
+                    <span class="research-item-name">
+                      <a type="button" title="edit" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=item.project.id %}">
+                        <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                      </a>
+                    </span>
+                    {% endif %}
+                    {% if item.may_read %}
+                    <span class="research-item-copy">
+                      <a title="copy" class="btn btn-default btn-xs" 
+                         url="{{item.project.get_copy_url}}" 
+                         success="{% url 'seeker_list' %}"
+                         onclick="ru.cesar.seeker.process_item(this);">
+                        <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+                      </a>
+                    </span>
+                    {% endif %}
+                    {% if item.may_delete %}
+                    <span class="research-item-del">
+                      <a title="delete" class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                      </a>
+                    </span>
+                    {% endif %}
+                  </form>
+                </div>
+                <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+              </td>
+            </tr>
+            <!-- Provide a form row for deletion -->
+            <tr class="part-del hidden">
+              <td colspan="3"></td>
+              <td>Are you sure you want to delete the research project named <code>{{item.project.name}}</code>?</td>
+              <td class="tdnowrap">
+                <div class="part-del">
+                  <form action="{{item.project.get_delete_url}}" method="post">
+                    {% csrf_token %}
+                      <a class="btn btn-info btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
+                      <a class="btn btn-danger btn-xs" 
+                         url="{{item.project.get_delete_url}}" 
+                         success="{% url 'seeker_list' %}"
+                         onclick="ru.cesar.seeker.process_item(this);">delete</a>
+                  </form>
+                </div>
+                <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>{% trans "No research projects are available" %}.</p>
+      {% endif %}
     {% else %}
-      <p>{% trans "No research projects are available" %}.</p>
+    <div class="explanation">
+      <p>Dear user, you are <b>not</b> logged in.</p>
+      <p>Unfortunately this means that you will not be able to see any of the searches created by the users of Cesar.</p>
+      <p>Should you want to work with Cesar, then here are your options:
+        <ul>
+          <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
+          <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>
+        </ul>
+      </p>
+    </div>
     {% endif %}
 
   </div>

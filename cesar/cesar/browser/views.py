@@ -116,7 +116,7 @@ def contact(request):
         'contact.html',
         {
             'title':'Contact',
-            'message':'Erwin Komen (E.komen@Let.ru.nl)',
+            'message':'Henk van den Heuvel',
             'year':datetime.now().year,
         }
     )
@@ -141,6 +141,19 @@ def about(request):
         'about.html',
         {
             'title':'About',
+            'message':'Radboud University CESAR utility.',
+            'year':datetime.now().year,
+        }
+    )
+
+def nlogin(request):
+    """Renders the not-logged-in page."""
+    assert isinstance(request, HttpRequest)
+    return render(
+        request,
+        'nlogin.html',
+        {
+            'title':'Not logged in',
             'message':'Radboud University CESAR utility.',
             'year':datetime.now().year,
         }

@@ -147,6 +147,7 @@ var ru = (function ($, ru) {
             case "42": sMsg = "4-before-42";
             case "43": sMsg = "42-before-43";
             case "44": sMsg = "43-before-44";
+            case "62": sMsg = "6-before-62";
               // Opening a new form requires prior processing of the current form
               if (frm !== undefined) {
                 data = $(frm).serializeArray();
@@ -177,6 +178,9 @@ var ru = (function ($, ru) {
             case "43":
             case "44":
             case "6":
+            case "62":
+            case "63":
+
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
               // Indicate we are saving/preparing
@@ -203,7 +207,10 @@ var ru = (function ($, ru) {
               break;
             case "43":
             case "44":
+            case "62":
+            case "63":
               // add any event handlers for wizard part '43' and part '44'
+              // As well as for '62' and '63'
               ru.cesar.seeker.init_arg_events();
               break;
             case "6":
@@ -352,69 +359,38 @@ var ru = (function ($, ru) {
           // Get its value
           var elArgTypeVal = $(elArgType).val();
           // Hide/show, depending on the value
+          $(elVal).find(".arg-value").addClass("hidden");
+          $(elVal).find(".arg-expression").addClass("hidden");
+          $(elVal).find(".arg-gvar").addClass("hidden");
+          $(elVal).find(".arg-cvar").addClass("hidden");
+          $(elVal).find(".arg-dvar").addClass("hidden");
+          $(elVal).find(".arg-cnst").addClass("hidden");
+          $(elVal).find(".arg-search").addClass("hidden");
+          $(elVal).find(".arg-axis").addClass("hidden");
           switch (elArgTypeVal) {
             case "fixed": // Fixed value
               $(elVal).find(".arg-value").removeClass("hidden");
-              $(elVal).find(".arg-expression").addClass("hidden");
-              $(elVal).find(".arg-gvar").addClass("hidden");
-              $(elVal).find(".arg-cvar").addClass("hidden");
-              $(elVal).find(".arg-cnst").addClass("hidden");
-              $(elVal).find(".arg-search").addClass("hidden");
-              $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "gvar": // Global variable
-              $(elVal).find(".arg-value").addClass("hidden");
-              $(elVal).find(".arg-expression").addClass("hidden");
               $(elVal).find(".arg-gvar").removeClass("hidden");
-              $(elVal).find(".arg-cvar").addClass("hidden");
-              $(elVal).find(".arg-cnst").addClass("hidden");
-              $(elVal).find(".arg-search").addClass("hidden");
-              $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "cvar": // Constructuion variable
-              $(elVal).find(".arg-value").addClass("hidden");
-              $(elVal).find(".arg-expression").addClass("hidden");
-              $(elVal).find(".arg-gvar").addClass("hidden");
               $(elVal).find(".arg-cvar").removeClass("hidden");
-              $(elVal).find(".arg-cnst").addClass("hidden");
-              $(elVal).find(".arg-search").addClass("hidden");
-              $(elVal).find(".arg-axis").addClass("hidden");
+              break;
+            case "dvar": // Data-dependant variable
+              $(elVal).find(".arg-dvar").removeClass("hidden");
               break;
             case "func": // Expression
-              $(elVal).find(".arg-value").addClass("hidden");
               $(elVal).find(".arg-expression").removeClass("hidden");
-              $(elVal).find(".arg-gvar").addClass("hidden");
-              $(elVal).find(".arg-cvar").addClass("hidden");
-              $(elVal).find(".arg-cnst").addClass("hidden");
-              $(elVal).find(".arg-search").addClass("hidden");
-              $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "cnst":  // Constituent
-              $(elVal).find(".arg-value").addClass("hidden");
-              $(elVal).find(".arg-expression").addClass("hidden");
-              $(elVal).find(".arg-gvar").addClass("hidden");
-              $(elVal).find(".arg-cvar").addClass("hidden");
               $(elVal).find(".arg-cnst").removeClass("hidden");
-              $(elVal).find(".arg-search").addClass("hidden");
-              $(elVal).find(".arg-axis").addClass("hidden");
               break;
             case "axis":  // Axis
-              $(elVal).find(".arg-value").addClass("hidden");
-              $(elVal).find(".arg-expression").addClass("hidden");
-              $(elVal).find(".arg-gvar").addClass("hidden");
-              $(elVal).find(".arg-cvar").addClass("hidden");
-              $(elVal).find(".arg-cnst").addClass("hidden");
-              $(elVal).find(".arg-search").addClass("hidden");
               $(elVal).find(".arg-axis").removeClass("hidden");
               break;
             case "hit":  // Search hit
-              $(elVal).find(".arg-value").addClass("hidden");
-              $(elVal).find(".arg-expression").addClass("hidden");
-              $(elVal).find(".arg-gvar").addClass("hidden");
-              $(elVal).find(".arg-cvar").addClass("hidden");
-              $(elVal).find(".arg-cnst").addClass("hidden");
               $(elVal).find(".arg-search").removeClass("hidden");
-              $(elVal).find(".arg-axis").addClass("hidden");
               break;
           }
         } catch (ex) {

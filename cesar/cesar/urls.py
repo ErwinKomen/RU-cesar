@@ -39,6 +39,7 @@ urlpatterns = [
     url(r'^contact$', cesar.browser.views.contact, name='contact'),
     url(r'^more$', cesar.browser.views.more, name='more'),
     url(r'^about', cesar.browser.views.about, name='about'),
+    url(r'^nlogin', cesar.browser.views.nlogin, name='nlogin'),
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
     url(r'^text/list/$', cesar.browser.views.TextListView.as_view(), name='text_list'),
@@ -63,6 +64,7 @@ urlpatterns = [
     url(r'^ajax/researchpart44(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart44.as_view(), name='research_part_44'),
     url(r'^ajax/researchpart6(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart6.as_view(), name='research_part_6'),
     url(r'^ajax/researchpart62(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart62.as_view(), name='research_part_62'),
+    url(r'^ajax/researchpart63(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart63.as_view(), name='research_part_63'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^signup/$', cesar.browser.views.signup, name='signup'),
 
