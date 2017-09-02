@@ -418,6 +418,8 @@ class ResearchPart1(ResearchPart):
                 # Check for the owner
                 if research.owner_id == None:
                     research.owner = request.user
+        # Set the 'saved' one
+        self.obj.save()
         return has_changed
 
     def after_save(self, prefix, instance=None):
@@ -460,7 +462,6 @@ class ResearchPart1(ResearchPart):
         return None
 
 
-
 class ResearchPart2(ResearchPart):
     template_name = 'seeker/research_part_2.html'
     MainModel = Research
@@ -479,6 +480,8 @@ class ResearchPart2(ResearchPart):
             # Add the correct search item
             instance.search = SearchMain.create_item("word-group", form.cleaned_data['value'], 'groupmatches')
             has_changed = True
+        # Set the 'saved' one
+        self.obj.save()
         return has_changed
 
     def add_to_context(self, context):
@@ -520,6 +523,11 @@ class ResearchPart3(ResearchPart):
     def get_instance(self, prefix):
         if prefix == 'gvar':
             return self.obj.gateway
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        # Set the 'saved' one
+        self.obj.save()
+        return False
 
     def add_to_context(self, context):
         if self.obj == None:
@@ -578,6 +586,8 @@ class ResearchPart4(ResearchPart):
             if instance.order != form.cleaned_data['ORDER']:
                 instance.order = form.cleaned_data['ORDER']
                 has_changed = True
+        # Set the 'saved' one
+        self.obj.save()
         return has_changed
     
 
@@ -638,6 +648,8 @@ class ResearchPart42(ResearchPart):
                     instance.function = Function.create(instance.functiondef, instance, None, None)
                     # Indicate that changes have been made
                     has_changed = True
+        # Set the 'saved' one
+        self.obj.gateway.research.save()
         # Return the changed flag
         return has_changed
 
@@ -797,6 +809,8 @@ class ResearchPart43(ResearchPart):
                     # Save the adapted CVAR instance
                     self.obj.save()
                     # We have already saved the above, so 'has_changed' does not need to be touched
+        # Save the research object
+        self.obj.variable.gateway.research.save()
         # Return the change-indicator to trigger saving
         return has_changed
 
@@ -969,6 +983,8 @@ class ResearchPart44(ResearchPart):
                     func_child.save()
                     # Indicate changes have been made
                     has_changed = True
+        # Save the related RESEARCH object
+        self.obj.function.root.construction.gateway.research.save()
         # Return the change-indicator to trigger saving
         return has_changed
 

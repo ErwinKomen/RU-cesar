@@ -29,7 +29,7 @@
         <div id="research_err"></div>
         <!-- The contents as a table -->
         <table class="table table-hover">
-          <thead><tr><th class="hidden">id</th><th>Owner</th><th>Type</th><th>Name</th><th>Purpose</th><th>Action</th></tr></thead>
+          <thead><tr><th class="hidden">id</th><th>Owner</th><th>Type</th><th>Name</th><th>Saved</th><th>Purpose</th><th>Action</th></tr></thead>
           <tbody>
           {% for item in combi_list %}
             <tr class="part-item">
@@ -37,6 +37,7 @@
               <td><span class="research-item-user">{{item.project.username}}</span></td>
               <td><span class="research-item-type">{{item.project.get_targetType_display}}</span></td>
               <td><span class="research-item-name">{{item.project.name}}</span></td>
+              <td><span class="research-item-saved">{% if item.project.saved %}{{item.project.saved|date:"j/b/o G:i" }}{% else %}-{% endif %}</span></td>
               <td><span class="research-item-purpose">{{item.project.purpose}}</span></td>
               <td class="tdnowrap">
                 <div class="part-buttons">

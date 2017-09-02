@@ -161,7 +161,7 @@ class CvarForm(ModelForm):
         #gateway = kwargs['instance'].construction.gateway
         #self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway)
         # make sure all the available function-definitions are shown
-        self.fields['functiondef'].queryset = FunctionDef.objects.all()
+        self.fields['functiondef'].queryset = FunctionDef.get_list()
 
 
 class FunctionForm(ModelForm):
@@ -176,7 +176,7 @@ class FunctionForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(FunctionForm, self).__init__(*args, **kwargs)
-        self.fields['functiondef'].queryset=FunctionDef.objects.all()
+        self.fields['functiondef'].queryset=FunctionDef.get_list()
 
 
 class ArgumentDefForm(ModelForm):
@@ -220,6 +220,7 @@ class ArgumentForm(ModelForm):
         self.fields['relation'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+        self.fields['functiondef'].queryset=FunctionDef.get_list()
 
 
 class ConditionForm(ModelForm):

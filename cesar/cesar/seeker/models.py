@@ -7,6 +7,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
+from django.utils import timezone
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
@@ -229,6 +230,13 @@ class Gateway(models.Model):
         # Make sure we are happy
         return True
 
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+      # Save the gateway
+      response = super().save(force_insert, force_update, using, update_fields)
+      # Adapt the saved date of the research project
+      self.research.save()
+      return response
+
 
 class Construction(models.Model):
     """A search construction consists of a [search] element and one or more search items"""
@@ -384,7 +392,7 @@ class FunctionDef(models.Model):
                               max_length=5, help_text=get_help(SEARCH_TYPE))
 
     def __str__(self):
-        return self.name
+        return "{} ({} args)".format(self.name, self.argnum)
 
     def get_list():
         return FunctionDef.objects.all().order_by('name')
@@ -591,7 +599,10 @@ class Argument(models.Model):
         elif self.argtype == "cvar":
             avalue = "CVAR"
         elif self.argtype == "dvar":
+            # Just the name DVAR?
             avalue = "DVAR"
+            # Return the name of the variable
+            avalue = self.dvar.name
         elif self.argtype == "axis":
             avalue = self.relation.name
         return "{}: {}".format(atype, avalue)
@@ -761,9 +772,19 @@ class Research(models.Model):
     gateway = models.OneToOneField(Gateway, blank=False, null=False)
     # [1] Each research project has its owner: obligatory, but not to be selected by the user himself
     owner = models.ForeignKey(User, editable=False)
+    # [0-1] create date and lastsave date
+    created = models.DateTimeField(default=timezone.now)
+    saved = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+      # Adapt the save date
+      # self.saved = datetime.now()
+      self.saved = timezone.now()
+      response = super().save(force_insert, force_update, using, update_fields)
+      return response
 
     def gateway_name(self):
         return self.gateway.name

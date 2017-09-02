@@ -94,11 +94,11 @@
                         <div class="arg-val-exp">
                           {% if parg_this.argtype.value == "func" %}{{parg_this.instance.functiondef.name }}
                           {% elif parg_this.argtype.value == "fixed" %}{{parg_this.argval.value|truncatewords:8}}
-                          {% elif parg_this.argtype.value == "gvar" %}{{parg_this.gvar.name}}
-                          {% elif parg_this.argtype.value == "cvar" %}{{parg_this.cvar.name}}
-                          {% elif parg_this.argtype.value == "dvar" %}{{parg_this.dvar.name}}
+                          {% elif parg_this.argtype.value == "gvar" %}<code>{{parg_this.instance.gvar.name}}</code>
+                          {% elif parg_this.argtype.value == "cvar" %}<code>{{parg_this.instance.cvar.name}}</code>
+                          {% elif parg_this.argtype.value == "dvar" %}<code>{{parg_this.instance.dvar.name}}</code>
                           {% elif parg_this.argtype.value == "const" %}constituent
-                          {% elif parg_this.argtype.value == "axis" %}axis
+                          {% elif parg_this.argtype.value == "axis" %}<code>{{parg_this.instance.relation.name}}</code>
                           {% else %}(unknown)
                           {% endif %}
                         </div>
