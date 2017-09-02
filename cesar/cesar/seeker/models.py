@@ -113,7 +113,7 @@ class Gateway(models.Model):
         new_copy = get_instance_copy(self)
         # Prepare an object for further processing
         kwargs = {'gateway': new_copy}
-        # Copy all 'VarDef' and 'GlobavlVariable' instances linked to me
+        # Copy all 'VarDef' and 'GlobalVariable' instances linked to me
         dvar_list = copy_m2m(self, new_copy, "definitionvariables", **kwargs)
         gvar_list = copy_m2m(self, new_copy, "globalvariables", **kwargs)
 
@@ -134,8 +134,18 @@ class Gateway(models.Model):
             variable = next(x['dst'] for x in dvar_list if x['src'] == variable_src)
             kwargs['construction'] = construction
             kwargs['variable'] = variable
+            # Keep track of Functions linked to the 'old' cvar
+            func_old_id = [item.id for item in cvar.functionroot.all()]
             # Create a new cvar using the correspondence lists
             cvar_new = cvar.get_copy(**kwargs)
+            # Adapt the 'Function.root' of all 'new' FUnction instances 
+            lstQ = []
+            lstQ.append(~Q(id__in=func_old_id))
+            lstQ.append(Q(root=cvar))
+            with transaction.atomic():
+                for function in Function.objects.filter(*lstQ):
+                    function.root = cvar_new
+                    function.save()
         # Return the new copy
         return new_copy
 
@@ -304,7 +314,7 @@ class VarDef(Variable):
         if kwargs == None or 'gateway' not in kwargs:
             return None
         # Make a clean copy
-        new_copy = VarDef(name=self.name, description=self.description, gateway=kwargs['gateway'])
+        new_copy = VarDef(name=self.name, description=self.description, order=self.order, gateway=kwargs['gateway'])
         new_copy.save()
         # Return the new copy
         return new_copy
@@ -340,7 +350,7 @@ class GlobalVariable(Variable):
         if kwargs == None or 'gateway' not in kwargs:
             return None
         # Make a clean copy
-        new_copy = GlobalVariable(name=self.name, description=self.description, value=self.value, gateway=kwargs['gateway'])
+        new_copy = GlobalVariable(name=self.name, description=self.description, order=self.order, value=self.value, gateway=kwargs['gateway'])
         new_copy.save()
         # Return the new copy
         return new_copy
