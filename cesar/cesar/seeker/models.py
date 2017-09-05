@@ -480,6 +480,22 @@ class Function(models.Model):
             parentarg = parentarg.function.parent
         return iLevel
 
+    def get_functions(self):
+        """Get all the functions including myself and those descending under me"""
+
+        func_this = self
+        func_list = [func_this]
+        # Walk all arguments
+        for arg_this in func_this.functionarguments.all():
+            # CHeck if this is a function argument
+            if arg_this.argtype == "func":
+                # Then add the function pointed to by the argument
+                arg_func = arg_this.functionparent.first()
+                arg_func_list = arg_func.get_functions()
+                for func in arg_func_list:
+                    func_list.append(func)
+        return func_list
+
     def get_ancestors(self):
         """Provide a list of the most important information of all ancestors above me"""
         anc_list = []
@@ -684,6 +700,27 @@ class ConstructionVariable(models.Model):
             arg_inst.delete()
         # Now delete myself
         return super().delete(using, keep_parents)
+
+    def get_functions(self):
+        """Get all the functions belonging to this construction variable"""
+
+        func_list = []
+        # Only works for the correct type
+        if self.type == "calc":
+            func_this = self.function
+            # Add function to list
+            func_list.append(func_this)
+            # Walk all arguments
+            for arg_this in func_this.functionarguments.all():
+                # CHeck if this is a function argument
+                if arg_this.argtype == "func":
+                    # Then add the function pointed to by the argument
+                    arg_func = arg_this.functionparent.first()
+                    arg_func_list = arg_func.get_functions()
+                    for func in arg_func_list:
+                        func_list.append(func)
+        return func_list
+
 
 
 class Condition(models.Model):

@@ -87,7 +87,6 @@
         </div>
       </div>
 
-
       <!-- Show ERRORS if needed -->
       <div id="research_err">
         {% for item in error_list %}{{item}}{% endfor %}
@@ -102,6 +101,33 @@
                 data="">{% trans 'Save' %}</button>
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
+
+      <!-- Tabular overview of how this cvar is calculated-->
+      <div class="row">
+        <div id="research_function" class="col-md-11 tabular inline-related">
+          {{function_formset.management_form}}
+          <fieldset class="module {{function_formset.classes}}">
+            <div class="explanation">
+              <p>Overview of calculating variable <code>{{vardef_this.name}}</code> for search element <code>{{construction_this.name}}</code></p>
+            </div>
+            <!-- Show the template of the main function -->
+            <div class="row">
+              <div class="panel panel-default">
+                <table class="">
+                {% for function_this in function_formset %}
+                  <tr class="form-row function-item">
+                    <td class="hidden">{{function_this.id}}</td>
+                    <td valign="top" class="function-intro">{{forloop.counter}}</td>
+                    <td valign="top" class="function-name">{{function_this.functiondef.name}}</td>
+                  </tr>
+                {% endfor %}
+                </table>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
     </form>
   </div>
 </div>

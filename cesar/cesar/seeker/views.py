@@ -662,7 +662,10 @@ class ResearchPart43(ResearchPart):
     form_objects = [{'form': FunctionForm, 'prefix': 'function', 'readonly': False}]
     ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=1, extra=0)
-    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False}]
+    CvarFunctionFormSet = inlineformset_factory(ConstructionVariable, Function, 
+                                          form=FunctionForm, min_num=1, extra=0)
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False},
+                       {'formsetClass': CvarFunctionFormSet, 'prefix': 'cvarfunction', 'readonly': False}]
                 
     def get_instance(self, prefix):
         if prefix == 'function' or prefix == 'arg':
@@ -685,9 +688,12 @@ class ResearchPart43(ResearchPart):
                     # Make sure we save the CVAR object
                     cvar.save()
             return cvar.function
+        elif prefix == "cvarfunction":
+            # The 'instance' of CvarFunction is the Cvar
+            return self.obj
 
     def custom_init(self):
-        """Make sure the formset gets the correct number of arguments"""
+        """Make sure the arg-formset gets the correct number of arguments"""
 
         # Check if we have a CVAR object
         if self.obj:
@@ -702,6 +708,12 @@ class ResearchPart43(ResearchPart):
                     self.ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=argnum, extra=0)
                     self.formset_objects[0]['formsetClass'] = self.ArgFormSet
+                # Prepare the CvarFunction formset by getting the exact number of functions
+                function_list = self.obj.get_functions()
+                funcnum = len(function_list)
+                self.CvarFunctionFormSet = inlineformset_factory(ConstructionVariable, Function, 
+                                          form=FunctionForm, min_num=funcnum, extra=0)
+                self.formset_objects[1]['formsetClass'] = self.CvarFunctionFormSet
 
         return True
 
