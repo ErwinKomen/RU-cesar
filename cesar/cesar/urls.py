@@ -52,6 +52,7 @@ urlpatterns = [
     url(r'^seek/wizard/copy/(?P<object_id>\d+)/$', ResearchCopy.as_view(), name='seeker_copy'),
     url(r'^seek/wizard/delete/(?P<object_id>\d+)/$', ResearchDelete.as_view(), name='seeker_delete'),
     url(r'^seek/list/$', SeekerListView.as_view(), name='seeker_list'),
+    url(r'^function/list/$', FunctionListView.as_view(), name='function_list'),
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),

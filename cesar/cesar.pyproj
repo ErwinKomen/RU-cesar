@@ -6,6 +6,8 @@
     <RootNamespace>cesar</RootNamespace>
     <InterpreterId>{7ba94acf-5e01-4342-84a4-8b03cff7bbb3}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
+    <WebBrowserUrl>erwin</WebBrowserUrl>
+    <WebBrowserPort>80</WebBrowserPort>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -17,7 +19,7 @@
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
-    <LaunchProvider>Django launcher</LaunchProvider>
+    <LaunchProvider>Web launcher</LaunchProvider>
     <OutputPath>.</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -124,6 +126,7 @@
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
+    <Content Include="cesar\seeker\templates\seeker\function_list.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_63.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_62.html" />
     <Content Include="cesar\templates\nlogin.html" />

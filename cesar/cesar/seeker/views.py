@@ -36,6 +36,26 @@ class GatewayCreateView(CreateView):
     model = Gateway
 
 
+class FunctionListView(ListView):
+    """List all the functions that are available"""
+
+    model = FunctionDef
+    template_name = 'seeker/function_list.html'
+    paginate_by = paginateEntries
+    entrycount = 0
+    qs = None
+
+    def render_to_response(self, context, **response_kwargs):
+
+        currentuser = self.request.user
+
+        context['object_list'] = FunctionDef.objects.all().order_by('name')
+        context['authenticated'] = currentuser.is_authenticated()
+        # Make sure the correct URL is being displayed
+        return super(FunctionListView, self).render_to_response(context, **response_kwargs)
+
+
+
 class SeekerListView(ListView):
     """List all the research projects available"""
 
