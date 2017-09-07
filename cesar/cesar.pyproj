@@ -6,8 +6,9 @@
     <RootNamespace>cesar</RootNamespace>
     <InterpreterId>{7ba94acf-5e01-4342-84a4-8b03cff7bbb3}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
-    <WebBrowserUrl>erwin</WebBrowserUrl>
-    <WebBrowserPort>80</WebBrowserPort>
+    <WebBrowserUrl>
+    </WebBrowserUrl>
+    <WebBrowserPort>6500</WebBrowserPort>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>

@@ -295,3 +295,4 @@ ModelManifest.xml
 /cesar/cesar/seeker/migrations/0006_auto_20170705_1414.py
 /cesar/cesar/seeker/__pycache__/widgets.cpython-35.pyc
 /cesar/cesar/seeker/migrations
+/cesar/static
