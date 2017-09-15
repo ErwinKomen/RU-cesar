@@ -1011,7 +1011,35 @@ var ru = (function ($, ru) {
       var_down: function() {private_methods.var_move(this, 'down');},
       var_up: function () { private_methods.var_move(this, 'up'); },
 
+      /**
+       *  funcdefshow
+       *      Show the function definition
+       *
+       */
+      funcdefshow: function (el) {
+        var elTr = null;
 
+        try {
+          // Get to the nearest <tr>
+          elTr = $(el).closest("tr");
+          // Get to the next row
+          elTr = $(elTr).next(".function-details");
+          // Check its status
+          if ($(elTr).hasClass("hidden")) {
+            // Hide all other [function-details]
+            $(elTr).closest("table").find(".function-details").addClass("hidden");
+            // It's hidden, so open it
+            $(elTr).removeClass("hidden");
+          } else {
+            // It's open, so close it
+            $(elTr).addClass("hidden");
+          }
+
+
+        } catch (ex) {
+          private_methods.errMsg("funcdefshow", ex);
+        }
+      },
 
       /**
        *  process_item
