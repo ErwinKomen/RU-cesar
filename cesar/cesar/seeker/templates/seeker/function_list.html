@@ -29,7 +29,7 @@
         <div id="research_err"></div>
         <!-- The contents as a table -->
         <table class="table table-hover">
-          <thead><tr><th class="hidden">id</th><th>Arguments</th><th>Name</th><th>Description</th><th>Template</th></tr></thead>
+          <thead><tr><th class="hidden">id</th><th>Arguments</th><th>Name</th><th>Description</th><th>Output</th><th></th></tr></thead>
           <tbody>
           {% for item in object_list %}
             <tr class="function-item">
@@ -37,21 +37,36 @@
               <td><span class="research-item-user">{{item.argnum}}</span></td>
               <td><span class="research-item-type">{{item.name}}</span></td>
               <td><span class="research-item-name">{{item.title}}</span></td>
-              <td><span class="research-item-saved"></span></td>
               <td><span class="research-item-purpose">{{item.get_type_display}}</span></td>
               <td class="tdnowrap">
                 <div class="part-buttons">
+                    <a title="details" 
+                       class="btn btn-success btn-xs" 
+                       onclick="ru.cesar.seeker.funcdefshow(this);">
+                      <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                    </a>
                 </div>
               </td>
             </tr>
             <!-- Provide a form row for further information -->
-            <tr class="part-del hidden">
-              <td colspan="3"></td>
-              <td>Further info</td>
-              <td class="tdnowrap">
-                <div class="part-info">
+            <tr class="function-details hidden">
+              <td>Structure:</td>
+              <td colspan="3">
+                <div>
+                  <table>
+                    {% for arg in item.arguments.all %}
+                    <tr>
+                      <td>{{forloop.counter}}</td>
+                      <td>
+                        <span>{{arg.text}}</span>
+                        <span><code>{{arg.name}}</code></span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </table>
                 </div>
               </td>
+              <td></td>
             </tr>
           {% endfor %}
           </tbody>
