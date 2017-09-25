@@ -22,13 +22,18 @@ from cesar.settings import APP_PREFIX
 from cesar.browser.services import *
 from cesar.browser.models import *
 from cesar.browser.forms import *
+from cesar.utils import ErrHandle
 import fnmatch
+import sys
 
 # Global variables
 paginateSize = 10
 paginateEntries = 20
 paginateSentences = 30
 paginateValues = (1000, 500, 250, 100, 50, 40, 30, 20, 10, )
+
+# ============================= LOCAL CLASSES ======================================
+errHandle = ErrHandle()
 
 
 def get_item_list(lVar, lFun, qs):
@@ -525,6 +530,7 @@ class SentenceListView(ListView):
         if context['object_list'] == None or self.error_msg != "":
             if self.error_msg != "":
                 context['error_msg'] = self.error_msg
+                errHandle.Status("SentenceListView error: "+self.error_msg)
             else:
                 context['error_msg'] = "No data could be retrieved"
         else:
@@ -555,25 +561,27 @@ class SentenceListView(ListView):
         get = self.request.GET
         self.error_msg = ""
 
+        # Initialize the reply as empty
+        self.entrycount = 0
+        self.qs = []
+
         # Get the Text object
         textlist = Text.objects.filter(id=self.kwargs['pk'])
         if textlist != None and textlist.count() >0:
             self.text = textlist[0]
             oSent = self.text.get_sentences()
-            if oSent == None or oSent['status'] != 'ok' or oSent['qs'] == None:
-                # Something went wrong...
-                self.entrycount = 0
+            if oSent == None:
+                self.error_msg = "The reply from 'get_sentences()' was empty"
+            elif not 'status' in oSent or not 'qs' in oSent:
                 if 'code' in oSent:
                     self.error_msg = oSent['code']
-                return []
+                else:
+                    self.error_msg = "The reply from 'get_sentences()' is no object: {}".format(oSent)
             else:
                 # Set the QS
                 self.qs = oSent['qs']
                 # Set the entry count
                 self.entrycount = self.qs.count()
-        else:
-            self.qs = []
-            self.entrycount = 0
 
         # Return the resulting filtered and sorted queryset
         return self.qs
