@@ -1,5 +1,7 @@
 ﻿{% load i18n %}
 <div class="research_part">
+
+  <!-- Show where we are and provide BACK button(s) -->
   <span>
     <a role="button" class="btn btn-success btn-xs" 
             id="button_part_4_return"
@@ -8,6 +10,8 @@
             onclick="ru.cesar.seeker.research_wizard(this, '4');"><< All Variables</a>
   </span>
   <span>[42]</span>
+
+  <!-- A form to allow specifying and changing variable definitions -->
   <form action="" method="post">
     {% csrf_token %}
     <!-- Part 4-2: One Construction Variable for all available Search Elements -->
@@ -51,7 +55,10 @@
                             {% trans 'create' %}
                             {% endif %}
                           </a>
-                          <a class="cvar-summary">{% trans 'summary' %}</a>
+                          <a class="cvar-summary" 
+                             targeturl="{% if cvar_form.instance.id %}{% url 'variable43' cvar_form.instance.id %}{% endif %}">
+                            {% trans 'summary' %}
+                          </a>
                           ...
                         </span>
                         <!-- option 2: global variable -->
@@ -74,8 +81,6 @@
         {% for item in error_list %}{{item}}{% endfor %}
       </div>
 
-      <!-- Show the buttons to save, cancel, delete and so forth -->
-      <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
         <button type="button" class="btn btn-primary ajaxform"
@@ -86,6 +91,9 @@
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </div>
+
+    <div id="cvar_summary" class="hidden"></div>
   </form>
+
 </div>
 

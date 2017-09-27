@@ -1,0 +1,27 @@
+﻿{% load i18n %}
+
+<!-- Tabular overview of how one particular variable is calculated-->
+<div class="row">
+  <div class="col-md-11 tabular inline-related">
+    <div class="panel panel-default">
+      <table>
+        <thead><tr><th>#</th><th>Function</th><th>Layout</th></tr></thead>
+        <tbody id="variable_definition">
+          <!-- This is where the variable definition table should come -->
+          {% for function_this in function_list %}
+          <tr class="function-item">
+            <td valign="top" class="function-intro">{{forloop.counter}}</td>
+            <td valign="top" class="function-name">{{function_this.functiondef.name}}</td>
+            <td valign="top" class="function-layout">
+              {% for arg_this in function_this.get_arguments %}
+                <span class="function-arg-text">{{arg_this.argumentdef.text}}</span>
+                <span class="function-arg-view"><code>{{arg_this.get_view}}</code></span>
+              {% endfor %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

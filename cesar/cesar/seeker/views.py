@@ -235,7 +235,11 @@ class ResearchPart(View):
                 else:
                     # Saving an EXISTING item
                     instance = self.get_instance(prefix)
-                    formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, form_kwargs = form_kwargs)
+                    qs = self.get_queryset(prefix)
+                    if qs == None:
+                        formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, form_kwargs = form_kwargs)
+                    else:
+                        formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, queryset=qs, form_kwargs = form_kwargs)
                 # Process all the forms in the formset
                 self.process_formset(prefix, request, formset)
                 # Store the instance
@@ -327,7 +331,11 @@ class ResearchPart(View):
                 else:
                     # show the data belonging to the current [obj]
                     instance = self.get_instance(prefix)
-                    formset = formsetClass(prefix=prefix, instance=instance, form_kwargs=form_kwargs)
+                    qs = self.get_queryset(prefix)
+                    if qs == None:
+                        formset = formsetClass(prefix=prefix, instance=instance, form_kwargs=form_kwargs)
+                    else:
+                        formset = formsetClass(prefix=prefix, instance=instance, queryset=qs, form_kwargs=form_kwargs)
                 # Process all the forms in the formset
                 ordered_forms = self.process_formset(prefix, request, formset)
                 if ordered_forms:
@@ -383,6 +391,9 @@ class ResearchPart(View):
 
     def get_instance(self, prefix):
         return self.obj
+
+    def get_queryset(self, prefix):
+        return None
 
     def get_form_kwargs(self, prefix):
         return None
@@ -586,6 +597,8 @@ class ResearchPart4(ResearchPart):
         context['targettype'] = targettype
         # We also need to make the object_id available
         context['object_id'] = self.object_id
+        # Provide a number for the newest item 
+        context['new_order_number'] = len(self.obj.gateway.definitionvariables.all())
         return context
 
     def process_formset(self, prefix, request, formset):
@@ -604,7 +617,10 @@ class ResearchPart4(ResearchPart):
         if prefix == 'vardef':
             # Retrieve the 'order' field
             if instance.order != form.cleaned_data['ORDER']:
-                instance.order = form.cleaned_data['ORDER']
+                if form.cleaned_data['ORDER'] == None:
+                    instance.order = len(instance.gateway.definitionvariables.all())+1
+                else:
+                    instance.order = form.cleaned_data['ORDER']
                 has_changed = True
         # Set the 'saved' one
         self.obj.save()
@@ -674,6 +690,18 @@ class ResearchPart42(ResearchPart):
         return has_changed
 
 
+class Variable43(ResearchPart):
+    """The definition of one particular variable"""
+
+    MainModel = ConstructionVariable
+    template_name = 'seeker/variable_details.html'
+
+    def add_to_context(self, context):
+        # Add a list of functions to the context
+        context['function_list'] = self.obj.get_functions()
+        return context
+
+
 class ResearchPart43(ResearchPart):
     """Starting from a CVAR of type 'function', allow defining that function"""
 
@@ -682,10 +710,7 @@ class ResearchPart43(ResearchPart):
     form_objects = [{'form': FunctionForm, 'prefix': 'function', 'readonly': False}]
     ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=1, extra=0)
-    CvarFunctionFormSet = inlineformset_factory(ConstructionVariable, Function, 
-                                          form=FunctionForm, min_num=1, extra=0)
-    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False},
-                       {'formsetClass': CvarFunctionFormSet, 'prefix': 'cvarfunction', 'readonly': False}]
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False}]
                 
     def get_instance(self, prefix):
         if prefix == 'function' or prefix == 'arg':
@@ -708,9 +733,6 @@ class ResearchPart43(ResearchPart):
                     # Make sure we save the CVAR object
                     cvar.save()
             return cvar.function
-        elif prefix == "cvarfunction":
-            # The 'instance' of CvarFunction is the Cvar
-            return self.obj
 
     def custom_init(self):
         """Make sure the arg-formset gets the correct number of arguments"""
@@ -728,12 +750,6 @@ class ResearchPart43(ResearchPart):
                     self.ArgFormSet = inlineformset_factory(Function, Argument, 
                                           form=ArgumentForm, min_num=argnum, extra=0)
                     self.formset_objects[0]['formsetClass'] = self.ArgFormSet
-                # Prepare the CvarFunction formset by getting the exact number of functions
-                function_list = self.obj.get_functions()
-                funcnum = len(function_list)
-                self.CvarFunctionFormSet = inlineformset_factory(ConstructionVariable, Function, 
-                                          form=FunctionForm, min_num=funcnum, extra=0)
-                self.formset_objects[1]['formsetClass'] = self.CvarFunctionFormSet
 
         return True
 
@@ -789,6 +805,9 @@ class ResearchPart43(ResearchPart):
 
                 # Put the results back again
                 context['arg_formset'] = arg_formset
+
+                # Add a list of functions to the context
+                context['function_list'] = self.obj.get_functions()
 
         context['currentowner'] = currentowner
         # We also need to make the object_id available

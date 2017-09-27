@@ -143,11 +143,12 @@ var ru = (function ($, ru) {
           // Find the currently shown 'research-part' form
           frm = $(".research-part").not(".hidden").find("form");
           // [1] Some (increasingly many) calls require FIRST saving of the currently loaded information
+          sMsg = "";
           switch (sPart) {
             case "42": sMsg = "4-before-42";
-            case "43": sMsg = "42-before-43";
-            case "44": sMsg = "43-before-44";
-            case "62": sMsg = "6-before-62";
+            case "43": if (sMsg ==="") sMsg = "42-before-43";
+            case "44": if (sMsg === "") sMsg = "43-before-44";
+            case "62": if (sMsg === "") sMsg = "6-before-62";
               // Opening a new form requires prior processing of the current form
               if (frm !== undefined) {
                 data = $(frm).serializeArray();
@@ -476,15 +477,28 @@ var ru = (function ($, ru) {
        *
        */
       cvarsummary_click: function () {
+        var response,   // The ID of the current row
+            sTargetId = "#cvar_summary";
+
         try {
           // Get to the row from here
           var elRow = $(this).closest("tr");
           // Find the expression summary
-          var elSum = $(elRow).find(".cvar-expression-summary");
+          // OLD: var elSum = $(elRow).find(".cvar-expression-summary");
+          var elSum = $(sTargetId);
           // Is it closed or opened?
           if ($(elSum).hasClass("hidden")) {
             // Calculate and show the value
-            $(elSum).html("hier komt de waarde");
+            // OLD: $(elSum).html("hier komt de waarde");
+            // sId = $(this).attr("instanceid");
+            // Fetch the corr
+            response = ru.cesar.seeker.ajaxform_load($(this).attr("targeturl"));
+            if (response.status && response.status === "ok") {
+              // Make the HTML response visible
+              $(elSum).html(response.html);
+              // Make sure events are set again
+              ru.cesar.seeker.init_events();
+            }
             // Unhide it
             $(elSum).removeClass("hidden");
           } else {

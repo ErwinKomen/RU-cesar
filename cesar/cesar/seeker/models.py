@@ -480,6 +480,18 @@ class Function(models.Model):
             parentarg = parentarg.function.parent
         return iLevel
 
+    def get_line(self):
+        """Determine which line in the function table this is at"""
+        iLine = 0
+        id = self.id
+        start_function = self.root.function
+        lFunc = start_function.get_functions()
+        for idx in range(len(lFunc)):
+            if lFunc[idx].id == id:
+                iLine = idx+1
+                break
+        return iLine
+
     def get_functions(self):
         """Get all the functions including myself and those descending under me"""
 
@@ -526,6 +538,10 @@ class Function(models.Model):
             item['level'] = num - item['level']
         # Return the list we have made
         return anc_list
+
+    def get_arguments(self):
+        qs = self.functionarguments.all().order_by('argumentdef__order')
+        return qs
 
           
 class ArgumentDef(models.Model):
@@ -622,6 +638,33 @@ class Argument(models.Model):
         elif self.argtype == "axis":
             avalue = self.relation.name
         return "{}: {}".format(atype, avalue)
+
+    def get_view(self):
+        """Provide a viewable representation of this particular argument"""
+        atype = self.get_argtype_display()
+        avalue = ""
+        if self.argtype == "func":
+            argfunction = self.functionparent.all().first()
+            # level = argfunction.get_level()
+            line = argfunction.get_line()
+            # avalue = "f:{}[{}]".format(argfunction.functiondef.name, line)
+            avalue = "line_{}".format(line)
+        elif self.argtype == "fixed":
+            avalue = "'{}'".format(self.argval)
+        elif self.argtype == "gvar":
+            avalue = "$_{}".format(self.gvar.name)
+        elif self.argtype == "cnst":
+            avalue = "CONSTITUENT"
+        elif self.argtype == "hit":
+            avalue = "$search"
+        elif self.argtype == "cvar":
+            avalue = "CVAR"
+        elif self.argtype == "dvar":
+            # Return the name of the variable
+            avalue = "${}".format(self.dvar.name)
+        elif self.argtype == "axis":
+            avalue = "r:{}".format(self.relation.name)
+        return avalue
 
 
 class Relation(models.Model):

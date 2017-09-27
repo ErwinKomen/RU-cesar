@@ -130,6 +130,7 @@
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_63.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_62.html" />
+    <Content Include="cesar\seeker\templates\seeker\variable_details.html" />
     <Content Include="cesar\templates\nlogin.html" />
     <Content Include="cesar\seeker\templates\seeker\research_details.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_6.html" />
