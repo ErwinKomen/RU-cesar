@@ -503,9 +503,10 @@ class Function(models.Model):
             if arg_this.argtype == "func":
                 # Then add the function pointed to by the argument
                 arg_func = arg_this.functionparent.first()
-                arg_func_list = arg_func.get_functions()
-                for func in arg_func_list:
-                    func_list.append(func)
+                if arg_func != None:
+                    arg_func_list = arg_func.get_functions()
+                    for func in arg_func_list:
+                        func_list.append(func)
         return func_list
 
     def get_ancestors(self):
