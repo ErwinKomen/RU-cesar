@@ -51,7 +51,9 @@
                           <span class="arg-gvar">{{arg_this.gvar}}</span>
                           <!-- option 2: construction variable -->
                           <span class="arg-cvar">{{arg_this.cvar}}</span>
-                          <!-- option 3: function/expression -->
+                          <!-- option 3: data-dependant variable -->
+                          <span class="arg-dvar">{{arg_this.dvar}}</span>
+                          <!-- option 4: function/expression -->
                           <span class="arg-expression">
                             <span class="arg-fundef">{{arg_this.functiondef}}</span>
                             <span class="hidden">{{arg_this.function}}</span>
@@ -69,11 +71,11 @@
                               {% endif %}
                             </a>
                           </span>
-                          <!-- option 4: constituent -->
+                          <!-- option 5: constituent -->
                           <span class="arg-cnst">CONSTITUENT-LIST</span>
-                          <!-- option 5: axis -->
+                          <!-- option 6: axis -->
                           <span class="arg-axis">{{arg_this.relation}}</span>
-                          <!-- option 6: search hit -->
+                          <!-- option 7: search hit -->
                           <span class="arg-search">Search hit</span>
                         </div>
                       </div>

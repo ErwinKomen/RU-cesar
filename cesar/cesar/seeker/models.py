@@ -645,14 +645,18 @@ class Argument(models.Model):
         avalue = ""
         if self.argtype == "func":
             argfunction = self.functionparent.all().first()
-            # level = argfunction.get_level()
-            line = argfunction.get_line()
+            if argfunction == None:
+                line = 0
+            else:
+                # level = argfunction.get_level()
+                line = argfunction.get_line()
             # avalue = "f:{}[{}]".format(argfunction.functiondef.name, line)
             avalue = "line_{}".format(line)
         elif self.argtype == "fixed":
             avalue = "'{}'".format(self.argval)
         elif self.argtype == "gvar":
-            avalue = "$_{}".format(self.gvar.name)
+            if self.gvar != None:
+                avalue = "$_{}".format(self.gvar.name)
         elif self.argtype == "cnst":
             avalue = "CONSTITUENT"
         elif self.argtype == "hit":
@@ -660,10 +664,12 @@ class Argument(models.Model):
         elif self.argtype == "cvar":
             avalue = "CVAR"
         elif self.argtype == "dvar":
-            # Return the name of the variable
-            avalue = "${}".format(self.dvar.name)
+            if self.dvar != None:
+                # Return the name of the variable
+                avalue = "${}".format(self.dvar.name)
         elif self.argtype == "axis":
-            avalue = "r:{}".format(self.relation.name)
+            if self.relation != None:
+                avalue = "r:{}".format(self.relation.name)
         return avalue
 
 
@@ -759,9 +765,10 @@ class ConstructionVariable(models.Model):
                 if arg_this.argtype == "func":
                     # Then add the function pointed to by the argument
                     arg_func = arg_this.functionparent.first()
-                    arg_func_list = arg_func.get_functions()
-                    for func in arg_func_list:
-                        func_list.append(func)
+                    if arg_func != None:
+                        arg_func_list = arg_func.get_functions()
+                        for func in arg_func_list:
+                            func_list.append(func)
         return func_list
 
 

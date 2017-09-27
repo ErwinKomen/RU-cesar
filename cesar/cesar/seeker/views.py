@@ -788,10 +788,22 @@ class ResearchPart43(ResearchPart):
                 lstQ.append(Q(variable__order__lt=self.obj.variable.order))
                 qs_cvar = ConstructionVariable.objects.filter(*lstQ)
 
+                # Calculate the initial queryset for 'dvar'
+                lstQ = []
+                lstQ.append(Q(gateway=self.obj.construction.gateway))
+                lstQ.append(Q(order__lt=self.obj.variable.order))
+                qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
+
+                ## - adapting the 'arg_formset' for the 'function' form (editable)
+                #fun_this = self.get_instance('function')
+                #if fun_this != None:
+                #    context['arg_formset'] = self.check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, qs_cvar, qs_dvar)
+
                 for index, arg_form in enumerate(arg_formset):
                     # Initialise the querysets
                     arg_form.fields['gvar'].queryset = qs_gvar
                     arg_form.fields['cvar'].queryset = qs_cvar
+                    arg_form.fields['dvar'].queryset = qs_dvar
                     # Get the instance from this form
                     arg = arg_form.save(commit=False)
                     # Check if the argument definition is set
@@ -814,6 +826,29 @@ class ResearchPart43(ResearchPart):
         context['object_id'] = self.object_id
         context['targettype'] = targettype
         return context
+
+    def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar):
+        # Take the functiondef as available in this argument
+        arg_defs = functiondef.arguments.all()
+
+        for index, arg_form in enumerate(arg_formset):
+            # Initialise the querysets
+            arg_form.fields['gvar'].queryset = qs_gvar
+            arg_form.fields['cvar'].queryset = qs_cvar
+            arg_form.fields['dvar'].queryset = qs_dvar
+            # Get the instance from this form
+            arg = arg_form.save(commit=False)
+            # Check if the argument definition is set
+            if arg.id == None or arg.argumentdef_id == None:
+                # Get the argument definition for this particular argument
+                arg.argumentdef = arg_defs[index]
+                arg_form.initial['argumentdef'] = arg_defs[index]
+                arg_form.initial['argtype'] = arg_defs[index].argtype
+                # Preliminarily save
+                arg_form.save(commit=False)
+
+        # Return the adatpted formset
+        return arg_formset
 
     def before_save(self, prefix, request, instance=None, form=None):
         # NOTE: the 'instance' is the CVAR instance
