@@ -65,6 +65,7 @@ urlpatterns = [
     url(r'^ajax/researchpart44(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart44.as_view(), name='research_part_44'),
     url(r'^ajax/researchpart6(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart6.as_view(), name='research_part_6'),
     url(r'^ajax/researchpart62(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart62.as_view(), name='research_part_62'),
+    url(r'^ajax/researchpart63(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart63.as_view(), name='research_part_63'),
     url(r'^ajax/variable43(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.Variable43.as_view(), name='variable43'),
     url(r'^ajax/researchpart43(?:/(?P<object_id>\d+))?/$', cesar.seeker.views.ResearchPart43.as_view(), name='research_part_43'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),

@@ -2,22 +2,16 @@
 
 <div class="research_part">
   <span><a role="button" class="btn btn-default btn-xs" 
-            id="button_part_4_return"
-            targeturl="{% if research_id %}{% url 'research_part_4' research_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
-            targetid="research_part_4"
-            onclick="ru.cesar.seeker.research_wizard(this, '4');"><< All Variables
+            id="button_part_6_return"
+            targeturl="{% if research_id %}{% url 'research_part_6' research_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
+            targetid="research_part_6"
+            onclick="ru.cesar.seeker.research_wizard(this, '6');"><< All Conditions
   </a></span>
   <span><a role="button" class="btn btn-default btn-xs" 
                     id="button_part_42_return"
                     targeturl="{% if vardef_this.id %}{% url 'research_part_42' vardef_this.id %}{% else %}{% url 'research_part_42' %}{% endif %}"
                     targetid="research_part_42"
                     onclick="ru.cesar.seeker.research_wizard(this, '42');"><< All search elements
-  </a></span>
-  <span><a role="button" class="btn btn-success btn-xs" 
-                    id="button_part_43_return"
-                    targeturl="{% if cvar_this.id %}{% url 'research_part_43' cvar_this.id %}{% else %}{% url 'research_part_43' %}{% endif %}"
-                    targetid="research_part_43"
-                    onclick="ru.cesar.seeker.research_wizard(this, '43');"><< Start
   </a></span>
   <span>[44]</span>
 

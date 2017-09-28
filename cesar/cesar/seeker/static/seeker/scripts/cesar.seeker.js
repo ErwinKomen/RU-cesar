@@ -706,7 +706,8 @@ var ru = (function ($, ru) {
                 break;
               case "research_container_43":
               case "research_container_44":
-                // add any event handlers for wizard part '43' and '44'
+              case "research_container_62":
+                // add any event handlers for wizard part '43' and '44' and '62'
                 ru.cesar.seeker.init_arg_events();
                 break;
               case "research_container_6":
