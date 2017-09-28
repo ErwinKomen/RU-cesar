@@ -26,6 +26,25 @@
 
       <div id="research_tiles" class="row container">
         <div class="row container">
+          <div class="col-md-9 panel panel-default">
+          <table>
+            <tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top'>{{original.purpose}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Main search:</td><td valign='top'>{{original.get_targetType_display}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Created:</td><td valign='top'>{{original.created}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Saved:</td><td valign='top'>{{original.saved}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Shared with:</td>
+              <td valign='top'>
+                {% if original.sharegroups.all %}
+                  {% for share in original.sharegroups.all %}
+                    {{share.group.name}} ({{share.get_permission_display}})
+                  {% endfor %}
+                {% else %}(none){% endif %}
+              </td>
+            </tr>
+          </table>
+            </div>
+        </div>
+        <div class="row container">
           <a class="col-md-4 jumbotron jumbo-1"
                     id="button_part_1"
                     targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
@@ -67,11 +86,13 @@
                   targeturl="{% if object_id %}{% url 'seeker_edit' object_id=object_id  %}{% else %}{% url 'seeker_define' %}{% endif %}"
                   onclick="ru.cesar.seeker.research_overview(this);"><< Overview</button>
       </div>
+
       <!-- allow returning back to the tiles -->
       <div id="goto_finetune" class="row container hidden">
           <button type="button" class="btn btn-primary pull-left" 
                   onclick="ru.cesar.seeker.research_finetune(this);"><< Fine-tune</button>
       </div>
+
       <div id="research_conditions" class="row container hidden">
         <div class="explanation row container">
           <p>The search program will attempt to find the words or constituents specified in <kw>Search</kw> (see <kw>Overview</kw>).</p>

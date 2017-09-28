@@ -1343,6 +1343,13 @@ def research_edit(request, object_id=None):
     else:
         # Get the instance of this research object
         obj = Research.objects.get(pk=object_id)
+        #lIntro = []
+        #lIntro.append("<table>")
+        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Research project:</td><td valign='top'><b>{}</b></td></tr>")
+        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top'>{}</td></tr>")
+        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Created:</td><td valign='top'>{}</td></tr>")
+        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Saved:</td><td valign='top'>{}</td></tr>")
+        #lIntro.append("</table>")
         intro_message = "Research project: <b>{}</b>".format(obj.name)
         intro_breadcrumb = "[{}]".format(obj.name)
         sTargetType = obj.targetType
