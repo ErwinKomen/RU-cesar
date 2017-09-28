@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-base.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-form.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/ru-widgets.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'browser/content/site.css' %}" />
+</head>
+
+<body>
+{% load i18n %}
+    <div class="container-fluid body-content">
+        <!-- Information on this project -->
+        <div class="row">
+          <h3>Project information</h3>
+          <table>
+            <tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top'>{{original.purpose}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Main search:</td><td valign='top'>{{original.get_targetType_display}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Created:</td><td valign='top'>{{original.created}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Saved:</td><td valign='top'>{{original.saved}}</td></tr>
+            <tr><td valign='top' class='tdnowrap'>Shared with:</td>
+              <td valign='top'>
+                {% if original.sharegroups.all %}
+                  {% for share in original.sharegroups.all %}
+                    {{share.group.name}} ({{share.get_permission_display}})
+                  {% endfor %}
+                {% else %}(none){% endif %}
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Global variables -->
+        <div class="row">
+          <h3>Global variables</h3>
+          <table>
+            <thead><tr><th>Name</th><th>Description</th><th>Value</th></tr></thead>
+            <tbody>
+              {% for gvar in gateway.globalvariables.all %}
+              <tr>
+                <td valign='top' class='tdnowrap'>{{gvar.name}}</td>
+                <td valign='top'>{{gvar.description}}</td>
+                <td valign='top' class="gvar-value">{{gvar.value}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Data-dependant variables -->
+        <div class="row">
+          <h3>Data-dependant variables</h3>
+          <h4>List of all variables</h4>
+          <table>
+            <thead><tr><th>Variable</th><th>Description</th></tr></thead>
+            <tbody>
+              {% for gvar in gateway.get_vardef_list %}
+              <tr>
+                <td valign='top' class='tdnowrap'>{{gvar.name}}</td>
+                <td valign='top'>{{gvar.description}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <!-- Walk all search elements = constructions -->
+          <h4>Definitions of variables per search element</h4>
+          {% for cns in gateway.constructions.all %}
+            <!-- Walk all data-dependant variables -->
+            {% for dvar in cns.get_dvars %}
+              <p>Search element <code>{{cns.name}}</code>, variable <code>{{dvar.variable.name}}</code>:
+              {% if dvar.type == "fixed" %}
+                <code>'{{dvar.svalue}}'</code>
+              {% elif dvar.type == "gvar" %}
+                <code>${{dvar.gvar.name}}</code>
+              {% elif dvar.type == "calc" %}
+                {% if dvar.get_functions %}
+                  <div class="panel panel-default">
+                    <table>
+                      <thead><tr><th>#</th><th>Function</th><th>Layout</th></tr></thead>
+                      <tbody id="variable_definition">
+                        <!-- This is where the variable definition table should come -->
+                        {% for function_this in dvar.get_functions %}
+                        <tr class="function-item">
+                          <td valign="top" class="function-intro">{{forloop.counter}}</td>
+                          <td valign="top" class="function-name">{{function_this.functiondef.name}}</td>
+                          <td valign="top" class="function-layout">
+                            {% for arg_this in function_this.get_arguments %}
+                              <span class="function-arg-text">{{arg_this.argumentdef.text}}</span>
+                              <span class="function-arg-view"><code>{{arg_this.get_view}}</code></span>
+                            {% endfor %}
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}<i>(not yet defined)</i>{% endif %}
+              {% else %}
+                <i>(unknown type)</i>
+              {% endif %}
+              </p>
+            {% endfor %}
+          {% endfor %}
+        </div>
+
+        <!-- Conditions -->
+        <div class="row">
+          <h3>Conditions</h3>
+          <table>
+            <thead><tr><th>Condition</th><th>Description</th><th>Definition</th></tr></thead>
+            <tbody>
+              {% for cond in gateway.conditions.all %}
+              <tr>
+                <td valign='top' class='tdnowrap'>{{cond.name}}</td>
+                <td valign='top'>{{cond.description}}</td>
+                <td valign='top'>-</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Ruler and copyright-->
+        <hr/>
+        <footer>
+            <p>&copy; {{ year }} - Cesar</p>
+        </footer>
+    </div>
+
+
+</body>
+</html>

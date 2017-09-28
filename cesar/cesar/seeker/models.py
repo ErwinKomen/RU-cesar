@@ -285,6 +285,11 @@ class Construction(models.Model):
       # Return the result of normal saving
       return save_result
 
+    def get_dvars(self):
+        """Get a list of all data-dependant variables for this construction"""
+        qs = ConstructionVariable.objects.filter(construction=self).order_by('variable__order')
+        return qs
+
       
 class Variable(models.Model):
     """A variable has a name and a value, possibly combined with a function and a condition"""
@@ -758,18 +763,19 @@ class ConstructionVariable(models.Model):
         # Only works for the correct type
         if self.type == "calc":
             func_this = self.function
-            # Add function to list
-            func_list.append(func_this)
-            # Walk all arguments
-            for arg_this in func_this.functionarguments.all():
-                # CHeck if this is a function argument
-                if arg_this.argtype == "func":
-                    # Then add the function pointed to by the argument
-                    arg_func = arg_this.functionparent.first()
-                    if arg_func != None:
-                        arg_func_list = arg_func.get_functions()
-                        for func in arg_func_list:
-                            func_list.append(func)
+            if func_this != None:
+                # Add function to list
+                func_list.append(func_this)
+                # Walk all arguments
+                for arg_this in func_this.functionarguments.all():
+                    # CHeck if this is a function argument
+                    if arg_this.argtype == "func":
+                        # Then add the function pointed to by the argument
+                        arg_func = arg_this.functionparent.first()
+                        if arg_func != None:
+                            arg_func_list = arg_func.get_functions()
+                            for func in arg_func_list:
+                                func_list.append(func)
         return func_list
 
 

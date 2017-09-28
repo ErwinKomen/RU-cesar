@@ -316,6 +316,16 @@ var ru = (function ($, ru) {
         }
       },
 
+      research_open(sDivName) {
+        try {
+          if (sDivName !== undefined && sDivName !== '') {
+            $("#" + sDivName).removeClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("research_open", ex);
+        }
+      },
+
       /**
        * research_overview
        *   Show the tiles-overview

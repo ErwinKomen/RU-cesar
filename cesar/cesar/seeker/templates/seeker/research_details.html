@@ -24,67 +24,100 @@
     <div class="hidden" id="targettype">{{targettype}}</div>
     <div class="xpanel xpanel-default">
 
+      <!-- Short summary of the project -->
       <div id="research_tiles" class="row container">
         <div class="row container">
           <div class="col-md-9 panel panel-default">
-          <table>
-            <tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top'>{{original.purpose}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Main search:</td><td valign='top'>{{original.get_targetType_display}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Created:</td><td valign='top'>{{original.created}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Saved:</td><td valign='top'>{{original.saved}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Shared with:</td>
-              <td valign='top'>
-                {% if original.sharegroups.all %}
-                  {% for share in original.sharegroups.all %}
-                    {{share.group.name}} ({{share.get_permission_display}})
-                  {% endfor %}
-                {% else %}(none){% endif %}
-              </td>
-            </tr>
-          </table>
-            </div>
+            <table>
+              <tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top'>{{original.purpose}}</td></tr>
+              <tr><td valign='top' class='tdnowrap'>Main search:</td><td valign='top'>{{original.get_targetType_display}}</td></tr>
+              <tr><td valign='top' class='tdnowrap'>Created:</td><td valign='top'>{{original.created}}</td></tr>
+              <tr><td valign='top' class='tdnowrap'>Saved:</td><td valign='top'>{{original.saved}}</td></tr>
+              <tr><td valign='top' class='tdnowrap'>Shared with:</td>
+                <td valign='top'>
+                  {% if original.sharegroups.all %}
+                    {% for share in original.sharegroups.all %}
+                      {{share.group.name}} ({{share.get_permission_display}})
+                    {% endfor %}
+                  {% else %}(none){% endif %}
+                </td>
+              </tr>
+            </table>
+          </div>
         </div>
+
+        <!-- Action Button row -->
         <div class="row container">
-          <a class="col-md-4 jumbotron jumbo-1"
-                    id="button_part_1"
-                    targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
-                    targetid="research_part_1"
-                    onclick="ru.cesar.seeker.research_wizard(this, '1');">
-            <h2>About</h2>
-            <p>Information on this project</p>
-          </a>
-          {% if object_id  %}
-          <a class="col-md-4  col-md-offset-1 jumbotron jumbo-2"
-                    id="button_part_2"
-                    targeturl="{% if object_id %}{% url 'research_part_2' object_id %}{% else %}{% url 'research_part_2' %}{% endif %}"
-                    targetid="research_part_2"
-                    onclick="ru.cesar.seeker.research_wizard(this, '2');">
-            <h2>Define</h2>
-            <p>Indicate what elements we are interested in</p>
-          </a>
+          <div class="col-md-9 panel panel-default">
+            <div class="row">&nbsp;</div>
+            <div class="row">
+              <div class="col-md-2 ">
+                <button type="button" class="btn jumbo-1" onclick="ru.cesar.seeker.research_open('edit_buttons');">Edit</button>
+              </div>
+              <div class="col-md-2 ">
+                <a href="{% url 'seeker_oview' object_id=object_id %}" 
+                   role="button" 
+                   class="btn jumbo-2"
+                   target="_blank">Summary</a>
+              </div>
+              <div class="col-md-2 ">
+                <button type="button" class="btn jumbo-3 ">Execute</button>
+              </div>
+            </div>
+            <div class="row">&nbsp;</div>
+          </div>
+        </div>
+        
+        <div id="edit_buttons" class="hidden">
+          <!-- Jumbo buttons to project parts -->
+          <div class="row container">
+            <a class="col-md-4 jumbotron jumbo-1"
+                      id="button_part_1"
+                      targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
+                      targetid="research_part_1"
+                      onclick="ru.cesar.seeker.research_wizard(this, '1');">
+              <h2>About</h2>
+              <p>Information on this project</p>
+            </a>
+            {% if object_id  %}
+            <a class="col-md-4  col-md-offset-1 jumbotron jumbo-2"
+                      id="button_part_2"
+                      targeturl="{% if object_id %}{% url 'research_part_2' object_id %}{% else %}{% url 'research_part_2' %}{% endif %}"
+                      targetid="research_part_2"
+                      onclick="ru.cesar.seeker.research_wizard(this, '2');">
+              <h2>Define</h2>
+              <p>Indicate what elements we are interested in</p>
+            </a>
+            {% endif %}
+          </div>
+          {% if object_id %}
+          <div class="row container">
+            <a class="col-md-4 jumbotron jumbo-3"
+                      id="button_part_345"
+                      onclick="ru.cesar.seeker.research_finetune(this);">
+              <h2>Fine-tune</h2>
+              <p>Specify detailed requirements of a hit</p>
+            </a>
+            <a class="col-md-4  col-md-offset-1 jumbotron jumbo-4">
+              <h2>Add features</h2>
+              <p>Specify the features to be added to a search hit</p>
+            </a>
+          </div>
           {% endif %}
         </div>
-        {% if object_id %}
-        <div class="row container">
-          <a class="col-md-4 jumbotron jumbo-3"
-                    id="button_part_345"
-                    onclick="ru.cesar.seeker.research_finetune(this);">
-            <h2>Fine-tune</h2>
-            <p>Specify detailed requirements of a hit</p>
-          </a>
-          <a class="col-md-4  col-md-offset-1 jumbotron jumbo-4">
-            <h2>Add features</h2>
-            <p>Specify the features to be added to a search hit</p>
-          </a>
-        </div>
-        {% endif %}
       </div>
 
       <!-- allow returning back to the tiles -->
       <div id="goto_overview" class="row container hidden">
+          <!-- Allow user to go back to overview-->
           <button type="button" class="btn btn-primary pull-left" 
                   targeturl="{% if object_id %}{% url 'seeker_edit' object_id=object_id  %}{% else %}{% url 'seeker_define' %}{% endif %}"
                   onclick="ru.cesar.seeker.research_overview(this);"><< Overview</button>
+          <!-- Allow user to create an overview page -->
+          <a href="{% url 'seeker_oview' object_id=object_id %}" 
+             role="button" 
+             class="btn btn-info pull-right"
+             target="_blank">Show summary</a>
       </div>
 
       <!-- allow returning back to the tiles -->

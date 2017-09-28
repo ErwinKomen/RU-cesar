@@ -49,6 +49,7 @@ urlpatterns = [
     url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
     url(r'^seek/wizard/$', cesar.seeker.views.research_edit, name='seeker_define'),
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),
+    url(r'^seek/oview/(?P<object_id>\d+)/$', cesar.seeker.views.research_oview, name='seeker_oview'),
     url(r'^seek/wizard/copy/(?P<object_id>\d+)/$', ResearchCopy.as_view(), name='seeker_copy'),
     url(r'^seek/wizard/delete/(?P<object_id>\d+)/$', ResearchDelete.as_view(), name='seeker_delete'),
     url(r'^seek/list/$', SeekerListView.as_view(), name='seeker_list'),

@@ -1320,7 +1320,40 @@ class ObjectDeleteMixin:
 class ResearchDelete(ObjectDeleteMixin, View):
     """Delete one 'Research' object"""
     model = Research
+
+
+def research_oview(request, object_id=None):
+    """Entry point to show a summary of a search specification"""
     
+    # Initialisations
+    template = 'seeker/research_oview.html'
+    arErr = []      # Start without errors
+    
+    # Check if the user is authenticated
+    if not request.user.is_authenticated:
+        # Simply redirect to the home page
+        return redirect('nlogin')
+
+    # Get the instance of this research object
+    obj = Research.objects.get(pk=object_id)
+    title = "Specifications for project {}".format(obj.name)
+
+    # Get a list of errors
+    error_list = [str(item) for item in arErr]
+
+    # Create the context
+    context = dict(
+        object_id = object_id,
+        title=title,
+        original=obj,
+        gateway=obj.gateway,
+        error_list=error_list
+        )
+
+    # Open the template that allows Editing an existing or Creating a new research project
+    #   or editing the existing project
+    return render(request, template, context)
+
     
 def research_edit(request, object_id=None):
     """Main entry point for the specification of a seeker research project"""

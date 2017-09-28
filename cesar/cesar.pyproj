@@ -128,6 +128,7 @@
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_oview.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_63.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_62.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_details.html" />
