@@ -13,7 +13,13 @@ def get_crpp_info():
     # Default reply
     oBack = {}
     # Get the data from the CRPP api
-    r = requests.get(url)
+    try:
+        r = requests.get(url)
+    except:
+        # Getting an exception here probably means that the back-end is not reachable (down)
+        oBack['status'] = 'error'
+        oBack['code'] = "The back-end server (crpp) cannot be reached. Is it running?"
+        return oBack
     # Action depends on what we receive
     if r.status_code == 200:
         # Convert to JSON
@@ -48,7 +54,13 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
         # Default reply
         oBack = {}
         # Get the data from the CRPP api
-        r = requests.get(url)
+        try:
+            r = requests.get(url)
+        except:
+            # Getting an exception here probably means that the back-end is not reachable (down)
+            oBack['status'] = 'error'
+            oBack['code'] = "The back-end server (crpp) cannot be reached. Is it running?"
+            return oBack
         # Action depends on what we receive
         if r.status_code == 200:
             # Convert to JSON
@@ -137,7 +149,13 @@ def get_crpp_text(sLng, sPart, sFormat, sName):
     # Default reply
     oBack = {}
     # Get the data from the CRPP api
-    r = requests.get(url)
+    try:
+        r = requests.get(url)
+    except:
+        # Getting an exception here probably means that the back-end is not reachable (down)
+        oBack['status'] = 'error'
+        oBack['code'] = "The back-end server (crpp) cannot be reached. Is it running?"
+        return oBack
     # Action depends on what we receive
     if r.status_code == 200:
         # Convert to JSON

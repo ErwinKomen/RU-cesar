@@ -12,7 +12,10 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 import posixpath
+import socket
 from django.contrib import admin
+
+hst = socket.gethostbyname(socket.gethostname())
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,6 +26,10 @@ if "RU-cesar\\writable" in WRITABLE_DIR:
 
 APP_PREFIX = "dd/"
 if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
+    APP_PREFIX = ""
+    admin.site.site_url = '/'
+elif "131.174" in hst:
+    # Configuration within the Radboud University environment
     APP_PREFIX = ""
     admin.site.site_url = '/'
 elif "/var/www" in WRITABLE_DIR:
@@ -46,7 +53,7 @@ SECRET_KEY = '379848c4-ce15-403e-a74a-f994d720554b'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
+ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
 
 CRPP_HOME = 'http://corpus-studio-web.cttnww-meertens.surf-hosted.nl'
 
