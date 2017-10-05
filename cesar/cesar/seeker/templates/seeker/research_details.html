@@ -52,7 +52,7 @@
             <div class="row">&nbsp;</div>
             <div class="row">
               <div class="col-md-2 ">
-                <button type="button" class="btn jumbo-1" onclick="ru.cesar.seeker.research_open('edit_buttons');">Edit</button>
+                <button type="button" class="btn jumbo-1" onclick="ru.cesar.seeker.research_open('edit_buttons', 'exe_dashboard');">Edit</button>
               </div>
               <div class="col-md-2 ">
                 <a href="{% url 'seeker_oview' object_id=object_id %}" 
@@ -61,13 +61,14 @@
                    target="_blank">Summary</a>
               </div>
               <div class="col-md-2 ">
-                <button type="button" class="btn jumbo-3 ">Execute</button>
+                <button type="button" class="btn jumbo-3" onclick="ru.cesar.seeker.research_open('exe_dashboard', 'edit_buttons');">Search...</button>
               </div>
             </div>
             <div class="row">&nbsp;</div>
           </div>
         </div>
         
+        <!-- The buttons to be able to edit the search -->
         <div id="edit_buttons" class="hidden">
           <!-- Jumbo buttons to project parts -->
           <div class="row container">
@@ -104,6 +105,79 @@
             </a>
           </div>
           {% endif %}
+        </div>
+
+        <!-- Dashboard to specify the corpus and then execute the search -->
+        <div id="exe_dashboard" class="hidden">
+          <div class="row container">
+            <form action="" method="post">
+              {% csrf_token %}
+              <div class="col-md-5 panel panel-default">
+                <b>Corpus</b>
+
+                <div class="input-group input-group-sm">
+                  <!-- Storage for chosen corpus part -->
+                  <div class="hidden">
+                    <input name='searchPart' id='searchPart' class='form-control' value='' >
+                    <input name='searchFormat' class='form-control' value='folia' >
+                  </div>
+      
+                  <!-- Let user choose a corpus-part -->
+                  <label class='input-group-addon' for='part'>Search in</label>
+                  <select class="form-control" name="select_part" id="select_part" 
+                          onchange="ru.cesar.seeker.corpus_choice(this, 'select_corpus_choice');">
+                    <option value="">-</option>
+                    {% for opt in part_list %}
+                      {% if opt.corpus_lng.first %}
+                        <optgroup label="{{opt.entry.language}}">
+                      {% endif %}
+                        <option value="{{opt.entry.id}}" {% if opt.entry.id == partchoice %} selected {% endif %}>{{opt.entry.name}}</option>
+                      {% if opt.corpus_lng.last %}
+                        </optgroup>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div id="select_corpus_choice" class="row">
+                  <!-- This is where the details of the chosen corpus will appear-->
+                  <div class="row">&nbsp;</div>
+                </div>
+
+              </div>
+
+              <div class="col-md-3 col-md-offset-1 panel panel-default">
+                <b>Execution</b>
+                <div class="row">
+                  <div class="col-md-2 ">
+                    <button type="button" class="btn jumbo-3" id="research_start" 
+                            ajaxurl="{% url 'search_start' object_id %}"
+                            onclick="ru.cesar.seeker.search_start(this);">Start</button>
+                  </div>
+                  <div class="col-md-offset-4 col-md-2 ">
+                    <button type="button" class="btn jumbo-4 hidden" id="research_stop" 
+                            ajaxurl="{% url 'search_stop' object_id %}"
+                            onclick="ru.cesar.seeker.search_stop(this);">Stop</button>
+                  </div>
+                </div>
+                <div class="row">&nbsp;</div>
+                <div class="row">&nbsp;</div>
+              </div>
+            </form>
+          </div>
+
+          <div class="row container">
+            <div class="col-md-9 panel panel-default">
+              <b>Progress</b>
+              <div class="row">
+                <div id="research_progress" class="col-md-12">
+                  <div class="explanation">Select a corpus and press 'Start'. Progress indications will appear here.</div>
+                </div>
+              </div>
+              <div class="row">&nbsp;</div>
+              <div class="row">&nbsp;</div>
+            </div>
+          </div>
         </div>
       </div>
 

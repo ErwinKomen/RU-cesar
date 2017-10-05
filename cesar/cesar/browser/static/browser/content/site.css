@@ -341,6 +341,22 @@ svg g.lithium-node:hover > text {
     color: mediumseagreen;
 }
 
+.seeker-choice {
+  border: 1px solid gold;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+.seeker-choice td {
+  background-color: lightgoldenrodyellow;
+}
+.seeker-choice td.b {
+  font-family: monospace;
+  font-weight: bold;
+  color: darkblue;
+}
+
 .td-toggle-textarea {
     font-family: monospace;
     color: brown;

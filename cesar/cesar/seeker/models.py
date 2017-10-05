@@ -778,8 +778,7 @@ class ConstructionVariable(models.Model):
                                 func_list.append(func)
         return func_list
 
-
-
+    
 class Condition(models.Model):
     """Each research project may contain any number of conditions defining a search hit"""
 
@@ -950,6 +949,38 @@ class Research(models.Model):
                 qs = self.sharegroups.filter(*lstQ)
                 bMay = (qs.count() > 0)
         return bMay
+
+    def get_status(self):
+        """Get the execution status"""
+        return ""
+
+    def stop(self):
+        """Reset project"""
+        pass
+
+    def to_xquery(self, partId, sFormat):
+        """Translate project into Xquery"""
+        pass
+
+    def execute(self, partId):
+        """Send command to /crpp to start the project"""
+        pass
+
+
+class Basket(models.Model):
+    """A basket of material needed for the transformation and execution of a research project"""
+
+    # [1] Format of the corpus we are going to research
+
+    # [1] The Xquery definitions
+
+    # [1] The Xquery code
+
+    # [1] The status
+    status = models.CharField("Status", max_length=MAX_TEXT_LEN)
+    # [1] Each status is linked to one research project
+    research = models.ForeignKey(Research, blank=False, null=False, related_name="baskets")
+
    
 
 class ShareGroup(models.Model):

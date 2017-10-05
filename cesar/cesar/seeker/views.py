@@ -17,6 +17,8 @@ from django.views.generic import ListView, View
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
+from cesar.browser.models import Part, Corpus
+from cesar.browser.views import get_item_list
 from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
@@ -154,6 +156,121 @@ class SeekerForm():
         FactSet = inlineformset_factory(ModelFrom, ModelTo,form=FormModel, min_num=1, extra=0, can_delete=True, can_order=True)
         oFormset = {'factory': FactSet, 'formset': None}
         self.formset_list.append(oFormset)
+
+
+class ResearchExe(View):
+    """General class to guide the execution of a research project"""
+
+    # Initialisations:     
+    arErr = []              # errors   
+    template_name = None    # The template to be used
+    action = ""             # The action to be undertaken
+    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
+
+    def post(self, request, object_id=None):
+        # A POST request means we are trying to SAVE something
+        self.initializations(request, object_id)
+        if self.checkAuthentication(request):
+            # Action depends on 'action' value
+            if action != "" and self.obj != None:
+                if action == "start":
+                    # Check if this object is not currently being executed
+                    if self.obj.get_status() != "":
+                        # Stop it
+                        self.obj.stop()
+                    if "select_part" in self.qd:
+                        # Find out which corpus/part has been chosen
+                        select_part = self.qd.get("select_part")
+                        select_format = self.qd.get("searchFormat")
+                        # Translate project to Xquery
+                        self.obj.to_xquery(select_part, select_format)
+                        # Start execution
+                        self.obj.execute(select_part)
+                    else:
+                        self.arErr.push("No corpus part to be searched has been selected")
+                elif action == "stop":
+                    # Need to stop the execution of the project
+                    x=2
+                elif action == "status":
+                    # Need to get the status of the project
+                    x=3
+
+            # Make sure we have a list of any errors
+            error_list = [str(item) for item in self.arErr]
+            self.data['error_list'] = error_list
+            self.data['errors'] = self.arErr
+            if len(self.arErr) >0:
+                self.data['status'] = "error"
+            # Get the HTML response
+            self.data['html'] = render_to_string(self.template_name, context, request)
+        else:
+            self.data['html'] = "Please log in before continuing"
+
+        # Return the information
+        return JsonResponse(self.data)
+
+    def get(self, request, object_id=None): 
+        self.initializations(request, object_id)
+        if self.checkAuthentication(request):
+            # Build the context
+
+            # Make sure we have a list of any errors
+            error_list = [str(item) for item in self.arErr]
+            self.data['error_list'] = error_list
+            self.data['errors'] = self.arErr
+            if len(self.arErr) >0:
+                self.data['status'] = "error"
+            # Get the HTML response
+            self.data['html'] = render_to_string(self.template_name, context, request)
+        else:
+            self.data['html'] = "Please log in before continuing"
+
+        # Return the information
+        return JsonResponse(self.data)
+
+    def checkAuthentication(self,request):
+        # first check for authentication
+        if not request.user.is_authenticated:
+            # Simply redirect to the home page
+            self.data['html'] = "Please log in to work on a research project"
+            return False
+        else:
+            return True
+
+    def initializations(self, request, object_id):
+        # Clear errors
+        self.arErr = []
+        # COpy the request
+        self.request = request
+        # Copy any object id
+        self.object_id = object_id
+        # Get the instance of the Main Model object
+        self.obj =  self.MainModel.objects.get(pk=object_id)
+        # Get the parameters
+        if request.POST:
+            self.qd = request.POST
+        else:
+            self.qd = request.GET
+        # Perform some custom initialisations
+        self.custom_init()
+
+    def custom_init(self):
+        pass
+
+        
+
+class ResearchStart(ResearchExe):
+    MainModel = Research
+    action = "start"
+    
+
+class ResearchStop(ResearchExe):
+    action = "stop"
+
+
+class ResearchStatus(ResearchExe):
+    action = "status"
+
 
 
 class ResearchPart(View):
@@ -1354,6 +1471,21 @@ def research_oview(request, object_id=None):
     #   or editing the existing project
     return render(request, template, context)
 
+def get_partlist():
+    """Get a list of Part elements + first/last information"""
+
+    # REtrieve the correct queryset, sorted on the correct levels
+    qs = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
+    # Start the output
+    html = []
+    # Initialize the variables whose changes are important
+    lVars = ["corpus_lng", "corpus_name", "name"]
+    lFuns = [Part.language, ["corpus", "name"], ["name"]]
+    # Get a list of items containing 'first' and 'last' information
+    lItem = get_item_list(lVars, lFuns, qs)
+    # REturn this list
+    return lItem
+      
     
 def research_edit(request, object_id=None):
     """Main entry point for the specification of a seeker research project"""
@@ -1373,19 +1505,15 @@ def research_edit(request, object_id=None):
         intro_message = "Create a new project"
         intro_breadcrumb = "New Project"
         sTargetType = ""
+        part_list = None
     else:
         # Get the instance of this research object
         obj = Research.objects.get(pk=object_id)
-        #lIntro = []
-        #lIntro.append("<table>")
-        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Research project:</td><td valign='top'><b>{}</b></td></tr>")
-        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top'>{}</td></tr>")
-        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Created:</td><td valign='top'>{}</td></tr>")
-        #lIntro.append("<tr><td valign='top' class='tdnowrap'>Saved:</td><td valign='top'>{}</td></tr>")
-        #lIntro.append("</table>")
         intro_message = "Research project: <b>{}</b>".format(obj.name)
         intro_breadcrumb = "[{}]".format(obj.name)
         sTargetType = obj.targetType
+        # Since this has gone well, provide the context to the user with a list of corpora to explore
+        part_list = get_partlist()
 
     # Get a list of errors
     error_list = [str(item) for item in arErr]
@@ -1396,6 +1524,7 @@ def research_edit(request, object_id=None):
         original=obj,
         intro_message=intro_message,
         intro_breadcrumb=intro_breadcrumb,
+        part_list=part_list,
         targettype=sTargetType,
         error_list=error_list
         )

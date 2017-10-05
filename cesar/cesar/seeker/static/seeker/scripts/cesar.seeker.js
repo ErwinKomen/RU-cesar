@@ -100,256 +100,6 @@ var ru = (function ($, ru) {
     // Public methods
     return {
       /**
-       * research_wizard
-       *    Select one item from the research project wizard
-       *
-       */
-      research_wizard: function(el, sPart) {
-        var sTargetId = "research_container_",
-            sTargetType = "",
-            sObjectId = "",
-            sMsg = "",
-            html = "",
-            data = {},
-            frm = null,
-            response = null,
-            elListItem = null,
-            elList = null;
-
-        try {
-          // Get the correct target id
-          sTargetId = "#" + sTargetId + sPart;
-          sObjectId = $("#researchid").text().trim();
-          sTargetType = $("#id_research-targetType").val();
-          // If it is undefined, try to get the target type from the input
-          if (sTargetType === undefined || sTargetType === "") {
-            sTargetType = $("#targettype").text().trim();
-          }
-          // Before continuing: has the targettype been chosen?
-          if (sPart !== "1") {
-            // Sanity check          
-            switch (sTargetType) {
-              case "w":
-              case "c":
-                private_methods.errClear();
-                break;
-              default:
-                // There really is no other option, so warn the user and do not change place
-                private_methods.errMsg("Choose the main element type");
-                // We need to LEAVE at this point
-                return;
-            }
-          }
-          // Find the currently shown 'research-part' form
-          frm = $(".research-part").not(".hidden").find("form");
-          // [1] Some (increasingly many) calls require FIRST saving of the currently loaded information
-          sMsg = "";
-          switch (sPart) {
-            case "42": sMsg = "4-before-42";
-            case "43": if (sMsg ==="") sMsg = "42-before-43";
-            case "44": if (sMsg === "") sMsg = "43-before-44";
-            case "62": if (sMsg === "") sMsg = "6-before-62";
-              // Opening a new form requires prior processing of the current form
-              if (frm !== undefined) {
-                data = $(frm).serializeArray();
-                var button = $(frm).find(".submit-row .ajaxform");
-                if (button !== undefined) {
-                  // Indicate we are saving
-                  $(".save-warning").html("Processing... "+sMsg);
-                  data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
-                  // Process this information: save the data!
-                  response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
-                  // Check the response
-                  if (response.status === undefined || response.status !== "ok") {
-                    // Action to undertake if we have not been successfull
-                    private_methods.errMsg("research_wizard["+sPart+"]: could not save the data for this function");
-                  }
-                }
-              }
-              break;
-          }
-
-          // [2] Load the new form through an AJAX call
-          switch (sPart) {
-            case "1":
-            case "2":
-            case "3":
-            case "4":
-            case "42":
-            case "43":
-            case "44":
-            case "6":
-            case "62":
-            case "63":
-
-              // CHeck if we need to take another instance id instead of #researchid
-              if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
-              // Indicate we are saving/preparing
-              $(".save-warning").html("Processing... " + sPart);
-              // Fetch the corr
-              response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
-              if (response.status && response.status === "ok") {
-                // Make the HTML response visible
-                $(sTargetId).html(response.html);
-                // Make sure events are set again
-                ru.cesar.seeker.init_events();
-              }
-              break;
-          }
-          // Bind the click event to all class="ajaxform" elements
-          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
-
-          // Some actions depend on the particular page we are going to visit
-          switch (sPart) {
-            case "4": // Page 4=Calculation
-            case "42":
-              // add any event handlers for wizard part '42'
-              ru.cesar.seeker.init_cvar_events();
-              break;
-            case "43":
-            case "44":
-            case "62":
-            case "63":
-              // add any event handlers for wizard part '43' and part '44'
-              // As well as for '62' and '63'
-              ru.cesar.seeker.init_arg_events();
-              break;
-            case "6":
-              // add any event handlers for wizard part '46'
-              ru.cesar.seeker.init_cond_events();
-              break;
-            case "5": // Page 5=Conditions
-
-              // TODO: this still needs to be specified
-
-              // Make sure the 'Type' field values are processed everywhere
-              $(".cvar-item").each(function () {
-                // Perform the same function as if we were clicking it
-                ru.cesar.seeker.cvartype_click(this);
-              });
-              // Specify the change reaction function
-              $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
-              // Specify the function to be called when the user presses "summary"
-              $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
-              break;
-          }
-          // Hide all research parts
-          $(".research-part").not(sTargetId).addClass("hidden");
-          $(".research-part").not(sTargetId).removeClass("active");
-
-          $(sTargetId).removeClass("hidden");
-          // If this is not [Project Type] then get the project type
-          if (sPart !== '1') {
-            // Set the <input> element
-            $("#research_part").val(sTargetType);
-            // Hide all 
-            $(".research-wrd").addClass("hidden");
-            $(".research-cns").addClass("hidden");
-            // Make sure everything of this target type is unhidden
-            switch (sTargetType) {
-              case "w": $(".research-wrd").removeClass("hidden"); break;
-              case "c": $(".research-cns").removeClass("hidden"); break;
-            }
-          }
-          // Determine what type we are
-          // And then switch to the correct page
-          switch ($(el).prop("tagName").toLowerCase()) {
-            case "a":
-              // Get the <li> element
-              elListItem = $(el).parent();
-              // Get the <ul> element
-              elList = $(elListItem).parent();
-              // Remove all actives
-              $(elList).children("li.active").removeClass("active");
-              $(elListItem).addClass("active");
-              break;
-            case "button":
-              // Get the parent of the buttons
-              elList = $(el).parent();
-              // Adapt all the btn classes
-              $(elList).children('button').each(function() {
-                if ($(this).is(el)) {
-                  $(this).addClass("btn-secondary");
-                  $(this).removeClass("btn-primary");
-                } else {
-                  $(this).removeClass("btn-secondary");
-                  $(this).addClass("btn-primary");
-                }
-              });
-              break;
-          }
-          // Hide the tiles and show the contents
-          $("#research_tiles").addClass("hidden");
-          $("#research_contents").removeClass("hidden");
-          $("#research_conditions").addClass("hidden");
-          switch (sPart) {
-            case "1": case "2": case "7":
-              $("#goto_overview").removeClass("hidden");
-              $("#goto_finetune").addClass("hidden");
-              break;
-            case "3": case "4": case "42": case "43":
-            case "44": case "6":
-              $("#goto_overview").addClass("hidden");
-              $("#goto_finetune").removeClass("hidden");
-              break;
-          }
-        } catch (ex) {
-          private_methods.errMsg("research_wizard", ex);
-        }
-      },
-
-      /**
-       * research_conditions
-       *   Show the 'conditions' part and hide the remainder
-       *
-       */
-      research_finetune(el) {
-        try {
-          // Hide the contents and show the tiles
-          $("#research_tiles").addClass("hidden");
-          $("#research_contents").addClass("hidden");
-          $("#goto_overview").removeClass("hidden");
-          $("#goto_finetune").addClass("hidden");
-          $("#research_conditions").removeClass("hidden");
-        } catch (ex) {
-          private_methods.errMsg("research_conditions", ex);
-        }
-      },
-
-      research_open(sDivName) {
-        try {
-          if (sDivName !== undefined && sDivName !== '') {
-            $("#" + sDivName).removeClass("hidden");
-          }
-        } catch (ex) {
-          private_methods.errMsg("research_open", ex);
-        }
-      },
-
-      /**
-       * research_overview
-       *   Show the tiles-overview
-       *
-       */
-      research_overview(el) {
-        var sTargetUrl = "";
-
-        try {
-          // Try get the target url
-          sTargetUrl = $(el).attr("targeturl");
-          // Open this page
-          window.location.href = sTargetUrl;
-          /*
-          // Hide the contents and show the tiles
-          $("#research_tiles").removeClass("hidden");
-          $("#research_contents").addClass("hidden");
-          $("#research_overview").addClass("hidden");*/
-        } catch (ex) {
-          private_methods.errMsg("research_overview", ex);
-        }
-      },
-
-      /**
        * argtype_click
        *   Set the type of argument: fixed value, select or  calculate
        *
@@ -410,6 +160,276 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * ajaxcall
+       *   Make an AJAX call to the URL with the data
+       *   Use the method specified: POST or GET
+       *
+       */
+      ajaxcall: function (sUrl, data, sMethod) {
+        var response = {};
+
+        try {
+          if (sUrl === undefined || sUrl === "" || data === undefined) {
+            // Cannot do anything with this, so respond with a bad status
+            response['status'] = "error";
+            response['msg'] = "Missing obligatory parameter(s): URL, data";
+            return response;
+          }
+          // There is valid information, continue
+          $.ajax({
+            url: sUrl,
+            type: sMethod,
+            data: data,
+            async: false,
+            dataType: 'json',
+            success: function (data) {
+              response = data;
+            },
+            failure: function () {
+              var iStop = 1;
+            }
+          });
+          // Return the response
+          return response;
+        } catch (ex) {
+          private_methods.errMsg("ajaxcall", ex);
+        }
+      },
+
+      /**
+       * ajaxform_click
+       *   General way to process an ajax form request:
+       *   1 - Issue a POST request to send (and save) data
+       *   2 - Issue a GET request to receive updated data
+       *
+       */
+      ajaxform_click: function () {
+        var data = [],      // Array to store the POST data
+            elCall = this,
+            response = null,
+            callType = "";  // Type of element that calls us
+
+        try {
+          // /WHo is calling?
+          callType = $(this)[0].tagName.toLowerCase();
+
+          // obligatory parameter: ajaxurl
+          var ajaxurl = $(this).attr("ajaxurl");
+          var instanceid = $(this).attr("instanceid");
+          var bNew = (instanceid.toString() === "None");
+
+          // Derive the data
+          if ($(this).attr("data")) {
+            data = $(this).attr("data");
+          } else {
+            var frm = $(this).closest("form");
+            if (frm !== undefined) {
+              data = $(frm).serializeArray();
+            }
+          }
+          data.push({ 'name': 'instanceid', 'value': instanceid });
+          // THird parameter: the id of the element to be opened: OPTIONAL
+          var openid = $(this).attr("openid");
+          // Find the element to be opened/closed
+          var elOpen = null;
+          if (openid !== undefined) {
+            elOpen = $(this).closest("#" + openid);
+          }
+          // Indicate we are saving/preparing
+          $(".save-warning").html("Saving item... " + instanceid.toString());
+          // Make an AJAX call to get an existing or new specification element HTML code
+          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+          if (response.status === undefined || response.status !== 'ok') {
+            // Show an error somewhere
+
+          } else if (bNew && 'instanceid' in response) {
+            // A new item has been created, and now we receive its 'instanceid'
+            instanceid = response['instanceid'];
+            // Add the instanceid to the URL, so that the new item gets opened
+            ajaxurl = ajaxurl + instanceid + "/";
+            // Also find the 'research_overview' and adpat its @targeturl property
+            var elOview = $("#research_overview").children("button").first();
+            if (elOview !== undefined && elOview != - null) {
+              var sOviewUrl = $(elOview).attr("targeturl");
+              sOviewUrl = sOviewUrl + instanceid + "/";
+              $(elOview).attr("targeturl", sOviewUrl);
+            }
+          }
+          // Indicate we are loading
+          $(".save-warning").html("Updating item... " + instanceid.toString());
+          // Make a GET call with fresh data
+          data = [];
+          data.push({ 'name': 'instanceid', 'value': instanceid });
+          // Make an AJAX call to get an existing or new specification element HTML code
+          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "GET");
+          if (response !== undefined && response.status && response.status === 'ok') {
+            // Load the new data
+            $(elOpen).html(response.html);
+            // Make sure events are set again
+            ru.cesar.seeker.init_events();
+            switch (openid) {
+              case "research_container_42":
+                // add any event handlers for wizard part '42'
+                ru.cesar.seeker.init_cvar_events();
+                break;
+              case "research_container_43":
+              case "research_container_44":
+              case "research_container_62":
+                // add any event handlers for wizard part '43' and '44' and '62'
+                ru.cesar.seeker.init_arg_events();
+                break;
+              case "research_container_6":
+                // add any event handlers for wizard part '46'
+                ru.cesar.seeker.init_cond_events();
+                break;
+            }
+          }
+
+
+          // Bind the click event to all class="ajaxform" elements
+          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
+        } catch (ex) {
+          private_methods.errMsg("ajaxform_click", ex);
+        }
+      },
+
+      /**
+       * ajaxform_load
+       *   General way to load an ajax form for 'New' or 'Edit' purposes
+       *
+       */
+      ajaxform_load: function (ajaxurl, instanceid, data) {
+        var response = {},
+            html = "";      // The HTML code to be put
+
+        try {
+          // Initial response
+          response['status'] = "none";
+          // See if data needs to be initialized
+          if (data === undefined) {
+            data = [];      // Array to store the POST data
+          }
+          // Store the instanceid
+          // data.push({ 'name': 'object_id', 'value': instanceid });
+          // NOTE: the form data will be fetched in the Python Server part
+          // Make an AJAX GET call to get the correct HTML code
+          $.ajax({
+            url: ajaxurl,
+            type: "GET",
+            data: data,
+            async: false,
+            dataType: 'json',
+            success: function (data) {
+              // Take over the JSON response (consisting of 'status' and 'html')
+              response = data;
+              // Make sure events are set again
+              ru.cesar.seeker.init_events();
+              var x = 1;
+            },
+            failure: function () {
+              response['status'] = "error";
+              response['html'] = "AJAX get failure";
+            }
+          });
+          // REturn the response
+          return response;
+        } catch (ex) {
+          private_methods.errMsg("ajaxform_load", ex);
+          return {'status': 'error', 'html': ex.message};
+        }
+      },
+
+      /**
+       *  cloneMore
+       *      Add a form to the formset
+       *      selector = the element that should be duplicated
+       *      type     = the formset type
+       *      number   = boolean indicating that re-numbering on the first <td> must be done
+       *
+       */
+      cloneMore: function (selector, type, number) {
+        try {
+          // Clone the element in [selector]
+          var newElement = $(selector).clone(true);
+          // Find the total number of [type] elements
+          var total = $('#id_' + type + '-TOTAL_FORMS').val();
+
+          // Find each <input> element
+          newElement.find(':input').each(function () {
+            // Get the name of this element, adapting it on the fly
+            var name = $(this).attr("name").replace("__prefix__", total.toString());
+            // Produce a new id for this element
+            var id = $(this).attr("id").replace("__prefix__", total.toString());
+            // Adapt this element's name and id, unchecking it
+            $(this).attr({ 'name': name, 'id': id }).val('').removeAttr('checked');
+          });
+          newElement.find('select').each(function () {
+            // Get the name of this element, adapting it on the fly
+            var name = $(this).attr("name").replace("__prefix__", total.toString());
+            // Produce a new id for this element
+            var id = $(this).attr("id").replace("__prefix__", total.toString());
+            // Adapt this element's name and id, unchecking it
+            $(this).attr({ 'name': name, 'id': id }).val('').removeAttr('checked');
+          });
+
+          // Find each <label> under newElement
+          newElement.find('label').each(function () {
+            // Adapt the 'for' attribute
+            var newFor = $(this).attr("for").replace("__prefix__", total.toString());
+            $(this).attr('for', newFor);
+          });
+
+          // Look at the inner text of <td>
+          newElement.find('td').each(function () {
+            var elText = $(this).children().first();
+            if (elText !== undefined) {
+              var sHtml = $(elText).html();
+              if (sHtml !== undefined && sHtml !== "") {
+                sHtml = sHtml.replace("__counter__", total.toString());
+                $(elText).html(sHtml);
+              }
+              // $(elText).html($(elText).html().replace("__counter__", total.toString()));
+            }
+          });
+          // Look at the attributes of <a>
+          newElement.find('a').each(function () {
+            // Iterate over all attributes
+            var elA = this;
+            $.each(elA.attributes, function (i, attrib) {
+              var attrText = $(elA).attr(attrib.name).replace("__counter__", total.toString());
+              $(this).attr(attrib.name, attrText);
+            });
+          });
+
+
+          // Adapt the total number of forms in this formset
+          total++;
+          $('#id_' + type + '-TOTAL_FORMS').val(total);
+
+          // Adaptations on the new <tr> itself
+          newElement.attr("id", "arguments-" + (total - 1).toString());
+          newElement.attr("class", "form-row row" + total.toString());
+
+          // Insert the new element before the selector = empty-form
+          $(selector).before(newElement);
+
+          // Should we re-number?
+          if (number !== undefined && number) {
+            // Walk all <tr> elements of the table
+            var iRow = 1;
+            $(selector).closest("tbody").children("tr.form-row").not(".empty-form").each(function () {
+              var elFirstCell = $(this).find("td").not(".hidden").first();
+              $(elFirstCell).html(iRow);
+              iRow += 1;
+            });
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("cloneMore", ex);
+        }
+      },
+
+      /**
        * condtype_click
        *   Set the type of condition: dvar versus func
        *
@@ -436,6 +456,45 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("condtype_click", ex);
+        }
+      },
+
+      /**
+       * corpus_choice
+       *   Process the chosen corpus-part and show the result
+       *
+       */
+      corpus_choice(el, sTarget) {
+        var divTarget = "",
+            divOption = null, // Chosen <option>
+            sLanguage = "",   // Chosen language
+            sPart = "",       // Chosen corpus part
+            sHtml = "",
+            iChosen = 0,      // ID of chosen one
+            sChosen = "";     // Option that has been chosen
+
+        try {
+          // Get the target <div>
+          divTarget = "#" + sTarget;
+          // Find out what has been chosen
+          sChosen = $("#select_part").val();
+          if (sChosen !== undefined && sChosen !== "" && sChosen !== "-") {
+            // Also set the [searchPart] parameter
+            $("#searchPart").attr("value", sChosen);
+            // Get the integer that has been chosen
+            iChosen = parseInt(sChosen, 10);
+            divOption = $("#select_part").find("option[value=" + iChosen + "]");
+            if (divOption !== undefined && divOption !== null) {
+              sPart = $(divOption).text();
+              sLanguage = $(divOption).closest("optgroup").attr("label");
+              sHtml = "<div class='col-md-12'><table class='seeker-choice'><tr><td>Language: </td><td class='b'>" + sLanguage + "</td></tr>" +
+                "<tr><td>Corpus (part):</td><td class='b'>" + sPart + "</td></tr></table></div>";
+              $(divTarget).html(sHtml);
+            }
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("corpus_choice", ex);
         }
       },
 
@@ -545,197 +604,6 @@ var ru = (function ($, ru) {
       },
 
       /**
-       * nowTime
-       *   Get the current time as a string
-       *
-       */
-      nowTime: function () {
-        var now = new Date(Date.now());
-        var sNow = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-        return sNow;
-      },
-
-      /**
-       * ajaxform_load
-       *   General way to load an ajax form for 'New' or 'Edit' purposes
-       *
-       */
-      ajaxform_load: function (ajaxurl, instanceid, data) {
-        var response = {},
-            html = "";      // The HTML code to be put
-
-        try {
-          // Initial response
-          response['status'] = "none";
-          // See if data needs to be initialized
-          if (data === undefined) {
-            data = [];      // Array to store the POST data
-          }
-          // Store the instanceid
-          // data.push({ 'name': 'object_id', 'value': instanceid });
-          // NOTE: the form data will be fetched in the Python Server part
-          // Make an AJAX GET call to get the correct HTML code
-          $.ajax({
-            url: ajaxurl,
-            type: "GET",
-            data: data,
-            async: false,
-            dataType: 'json',
-            success: function (data) {
-              // Take over the JSON response (consisting of 'status' and 'html')
-              response = data;
-              // Make sure events are set again
-              ru.cesar.seeker.init_events();
-              var x = 1;
-            },
-            failure: function () {
-              response['status'] = "error";
-              response['html'] = "AJAX get failure";
-            }
-          });
-          // REturn the response
-          return response;
-        } catch (ex) {
-          private_methods.errMsg("ajaxform_load", ex);
-          return {'status': 'error', 'html': ex.message};
-        }
-      },
-
-      /**
-       * ajaxcall
-       *   Make an AJAX call to the URL with the data
-       *   Use the method specified: POST or GET
-       *
-       */
-      ajaxcall: function (sUrl, data, sMethod) {
-        var response = {};
-
-        try {
-          if (sUrl === undefined || sUrl === "" || data === undefined) {
-            // Cannot do anything with this, so respond with a bad status
-            response['status'] = "error";
-            response['msg'] = "Missing obligatory parameter(s): URL, data";
-            return response;
-          }
-          // There is valid information, continue
-          $.ajax({
-            url: sUrl,
-            type: sMethod,
-            data: data,
-            async: false,
-            dataType: 'json',
-            success: function (data) {
-              response = data;
-            },
-            failure: function () {
-              var iStop = 1;
-            }
-          });
-          // Return the response
-          return response;
-        } catch (ex) {
-          private_methods.errMsg("ajaxcall", ex);
-        }
-      },
-
-      /**
-       * ajaxform_click
-       *   General way to process an ajax form request:
-       *   1 - Issue a POST request to send (and save) data
-       *   2 - Issue a GET request to receive updated data
-       *
-       */
-      ajaxform_click: function () {
-        var data = [],      // Array to stor the POST data
-            elCall = this,
-            response = null,
-            callType = "";  // Type of element that calls us
-
-        try {
-          // /WHo is calling?
-          callType = $(this)[0].tagName.toLowerCase();
-
-          // obligatory parameter: ajaxurl
-          var ajaxurl = $(this).attr("ajaxurl");
-          var instanceid = $(this).attr("instanceid");
-          var bNew = (instanceid.toString() === "None");
-
-          // Derive the data
-          if ($(this).attr("data")) {
-            data = $(this).attr("data");
-          } else {
-            var frm = $(this).closest("form");
-            if (frm !== undefined) {
-              data = $(frm).serializeArray();
-            }
-          }
-          data.push({ 'name': 'instanceid', 'value': instanceid });
-          // THird parameter: the id of the element to be opened: OPTIONAL
-          var openid = $(this).attr("openid");
-          // Find the element to be opened/closed
-          var elOpen = null;
-          if (openid !== undefined) {
-            elOpen = $(this).closest("#" + openid);
-          }
-          // Indicate we are saving/preparing
-          $(".save-warning").html("Saving item... " + instanceid.toString());
-          // Make an AJAX call to get an existing or new specification element HTML code
-          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
-          if (response.status === undefined || response.status !== 'ok') {
-            // Show an error somewhere
-
-          } else if (bNew && 'instanceid' in response) {
-            // A new item has been created, and now we receive its 'instanceid'
-            instanceid = response['instanceid'];
-            // Add the instanceid to the URL, so that the new item gets opened
-            ajaxurl = ajaxurl + instanceid + "/";
-            // Also find the 'research_overview' and adpat its @targeturl property
-            var elOview = $("#research_overview").children("button").first();
-            if (elOview !== undefined && elOview != - null) {
-              var sOviewUrl = $(elOview).attr("targeturl");
-              sOviewUrl = sOviewUrl + instanceid + "/";
-              $(elOview).attr("targeturl", sOviewUrl);
-            }
-          }
-          // Indicate we are loading
-          $(".save-warning").html("Updating item... " + instanceid.toString());
-          // Make a GET call with fresh data
-          data = [];
-          data.push({ 'name': 'instanceid', 'value': instanceid });
-          // Make an AJAX call to get an existing or new specification element HTML code
-          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "GET");
-          if (response !== undefined && response.status && response.status === 'ok') {
-            // Load the new data
-            $(elOpen).html(response.html);
-            // Make sure events are set again
-            ru.cesar.seeker.init_events();
-            switch (openid) {
-              case "research_container_42":
-                // add any event handlers for wizard part '42'
-                ru.cesar.seeker.init_cvar_events();
-                break;
-              case "research_container_43":
-              case "research_container_44":
-              case "research_container_62":
-                // add any event handlers for wizard part '43' and '44' and '62'
-                ru.cesar.seeker.init_arg_events();
-                break;
-              case "research_container_6":
-                // add any event handlers for wizard part '46'
-                ru.cesar.seeker.init_cond_events();
-                break;
-            }
-          }
-
-
-          // Bind the click event to all class="ajaxform" elements
-          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
-        } catch (ex) {
-          private_methods.errMsg("ajaxform_click", ex);
-        }
-      },
-
-      /**
        * cvarspecify_click
        *   Create a calculation form and show it to the user
        *
@@ -782,12 +650,601 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  funcdefshow
+       *      Show the function definition
+       *
+       */
+      funcdefshow: function (el) {
+        var elTr = null;
+
+        try {
+          // Get to the nearest <tr>
+          elTr = $(el).closest("tr");
+          // Get to the next row
+          elTr = $(elTr).next(".function-details");
+          // Check its status
+          if ($(elTr).hasClass("hidden")) {
+            // Hide all other [function-details]
+            $(elTr).closest("table").find(".function-details").addClass("hidden");
+            // It's hidden, so open it
+            $(elTr).removeClass("hidden");
+          } else {
+            // It's open, so close it
+            $(elTr).addClass("hidden");
+          }
+
+
+        } catch (ex) {
+          private_methods.errMsg("funcdefshow", ex);
+        }
+      },
+
+      /**
+       *  init_arg_events
+       *      Bind events to work with function arguments
+       *
+       */
+      init_arg_events: function () {
+        try {
+          // Make sure the 'Type' field values are processed everywhere
+          $(".arg-item").each(function () {
+            // Perform the same function as if we were clicking it
+            ru.cesar.seeker.argtype_click(this);
+          });
+          // Specify the change reaction function
+          $(".arg-type select").change(ru.cesar.seeker.argtype_click);
+        } catch (ex) {
+          private_methods.errMsg("init_arg_events", ex);
+        }
+      },
+
+      /**
+       *  init_cond_events
+       *      Bind events to work with conditions
+       *
+       */
+      init_cond_events: function () {
+        try {
+          // Make sure the 'Type' field values are processed everywhere
+          $(".cond-item").each(function () {
+            // Perform the same function as if we were clicking it
+            ru.cesar.seeker.condtype_click(this);
+          });
+          // Specify the change reaction function
+          $(".cond-type select").change(ru.cesar.seeker.condtype_click);
+        } catch (ex) {
+          private_methods.errMsg("init_cond_events", ex);
+        }
+      },
+
+      /**
+       *  init_cvar_events
+       *      Bind events to work with constituent variables
+       *
+       */
+      init_cvar_events: function () {
+        try {
+          // Specify the function to be called when the user presses [Calculation...]
+          $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
+          // Specify the function to be called when the user presses [Calculation...]
+          $(".cvar-specify").click(ru.cesar.seeker.cvarspecify_click);
+          // Make sure the 'Type' field values are processed everywhere
+          $(".cvar-item").each(function () {
+            // Perform the same function as if we were clicking it
+            ru.cesar.seeker.cvartype_click(this);
+          });
+          // Specify the change reaction function
+          $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
+          // Specify the function to be called when the user presses "summary"
+          $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
+          // When the function-definition-selection changes, the button name should change
+          $(".cvar-fundef select").change(function () {
+            var button = $(this).closest(".cvar-expression").find("a.btn").first();
+            if (button !== null) {
+              $(button).html("create");
+            }
+          });
+        } catch (ex) {
+          private_methods.errMsg("init_cvar_events", ex);
+        }
+      },
+
+      /**
+       *  init_events
+       *      Bind main necessary events
+       *
+       */
+      init_events: function () {
+        try {
+          $('tr.add-row a').click(ru.cesar.seeker.tabular_addrow);
+          $('.inline-group > div > a.btn').click(function () {
+            var elGroup = null,
+                elTabular = null,
+                sStatus = "";
+
+            // Get the tabular
+            elTabular = $(this).parent().next(".tabular");
+            if (elTabular !== null) {
+              // Get the status of this one
+              if ($(elTabular).hasClass("hidden")) {
+                $(elTabular).removeClass("hidden");
+              } else {
+                $(elTabular).addClass("hidden");
+              }
+            }
+          });
+          $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
+          // Make sure variable ordering is supported
+          $('td span.var-down').click(ru.cesar.seeker.var_down);
+          $('td span.var-up').click(ru.cesar.seeker.var_up);
+          // NOTE: do not use the following mouseout event--it is too weird to work with
+          // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
+        } catch (ex) {
+          private_methods.errMsg("init_events", ex);
+        }
+      },
+
+      /**
+       * nowTime
+       *   Get the current time as a string
+       *
+       */
+      nowTime: function () {
+        var now = new Date(Date.now());
+        var sNow = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+        return sNow;
+      },
+
+      /**
+       *  part_detail_toggle
+       *      Toggle part detail
+       *
+       */
+      part_detail_toggle: function (iPk) {
+        var sId = "";
+
+        try {
+          // validate
+          if (iPk === undefined) return;
+          // Get the name of the tag
+          sId = "#part_details_" + iPk.toString();
+          // Check if it is visible or not
+          if ($(sId).hasClass("hidden")) {
+            // Remove it
+            $(sId).removeClass("hidden");
+          } else {
+            // Add it
+            $(sId).addClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("part_detail_toggle", ex);
+        }
+      },
+
+      /**
+       *  process_item
+       *      Make a POST request to copy or delete an item
+       *      Also show the waiting symbol by un-hiding a particular row
+       *
+       */
+      process_item: function (el) {
+        var elDiv = null,
+            elNext = null,
+            response = null,
+            sUrl = "",
+            frm = null,
+            data = [];
+
+        try {
+          // Get to the nearest <div>
+          elDiv = $(el).closest("div");
+          // Get its second following sibling div
+          elNext = $(elDiv).next(".part-process");
+          if (elNext !== null) {
+            //  We now have the correct row: open it
+            $(elNext).removeClass("hidden");
+            $(elDiv).addClass("hidden");
+          }
+          frm = $(el).closest("form");
+          if (frm !== undefined) {
+            data = $(frm).serializeArray();
+            sUrl = $(el).attr("url");
+            data.push({ 'name': 'caller', 'value': sUrl });
+            // Anyway, start off an ajax call to request deletion
+            response = ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
+            if (response !== undefined) {
+              if (response.status === "ok") {
+                // Continue through to the 'success' url
+                sUrl = $(el).attr("success");
+                window.location.href = sUrl;
+              } else {
+                // SOme kind of error was returned
+                $(elNext).html(response.html);
+              }
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("process_item", ex);
+        }
+      },
+
+      /**
+       * research_conditions
+       *   Show the 'conditions' part and hide the remainder
+       *
+       */
+      research_finetune(el) {
+        try {
+          // Hide the contents and show the tiles
+          $("#research_tiles").addClass("hidden");
+          $("#research_contents").addClass("hidden");
+          $("#goto_overview").removeClass("hidden");
+          $("#goto_finetune").addClass("hidden");
+          $("#research_conditions").removeClass("hidden");
+        } catch (ex) {
+          private_methods.errMsg("research_conditions", ex);
+        }
+      },
+
+      research_open(sDivName, sDivClose) {
+        try {
+          if (sDivName !== undefined && sDivName !== '') {
+            $("#" + sDivName).removeClass("hidden");
+          }
+          // Possibly close [sDivClose]
+          if (sDivClose !== undefined && sDivClose !== "") {
+            $("#" + sDivClose).addClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("research_open", ex);
+        }
+      },
+
+      /**
+       * research_overview
+       *   Show the tiles-overview
+       *
+       */
+      research_overview(el) {
+        var sTargetUrl = "";
+
+        try {
+          // Try get the target url
+          sTargetUrl = $(el).attr("targeturl");
+          // Open this page
+          window.location.href = sTargetUrl;
+          /*
+          // Hide the contents and show the tiles
+          $("#research_tiles").removeClass("hidden");
+          $("#research_contents").addClass("hidden");
+          $("#research_overview").addClass("hidden");*/
+        } catch (ex) {
+          private_methods.errMsg("research_overview", ex);
+        }
+      },
+
+      /**
+       * research_wizard
+       *    Select one item from the research project wizard
+       *
+       */
+      research_wizard: function (el, sPart) {
+        var sTargetId = "research_container_",
+            sTargetType = "",
+            sObjectId = "",
+            sMsg = "",
+            html = "",
+            data = {},
+            frm = null,
+            response = null,
+            elListItem = null,
+            elList = null;
+
+        try {
+          // Get the correct target id
+          sTargetId = "#" + sTargetId + sPart;
+          sObjectId = $("#researchid").text().trim();
+          sTargetType = $("#id_research-targetType").val();
+          // If it is undefined, try to get the target type from the input
+          if (sTargetType === undefined || sTargetType === "") {
+            sTargetType = $("#targettype").text().trim();
+          }
+          // Before continuing: has the targettype been chosen?
+          if (sPart !== "1") {
+            // Sanity check          
+            switch (sTargetType) {
+              case "w":
+              case "c":
+                private_methods.errClear();
+                break;
+              default:
+                // There really is no other option, so warn the user and do not change place
+                private_methods.errMsg("Choose the main element type");
+                // We need to LEAVE at this point
+                return;
+            }
+          }
+          // Find the currently shown 'research-part' form
+          frm = $(".research-part").not(".hidden").find("form");
+          // [1] Some (increasingly many) calls require FIRST saving of the currently loaded information
+          sMsg = "";
+          switch (sPart) {
+            case "42": sMsg = "4-before-42";
+            case "43": if (sMsg === "") sMsg = "42-before-43";
+            case "44": if (sMsg === "") sMsg = "43-before-44";
+            case "62": if (sMsg === "") sMsg = "6-before-62";
+              // Opening a new form requires prior processing of the current form
+              if (frm !== undefined) {
+                data = $(frm).serializeArray();
+                var button = $(frm).find(".submit-row .ajaxform");
+                if (button !== undefined) {
+                  // Indicate we are saving
+                  $(".save-warning").html("Processing... " + sMsg);
+                  data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
+                  // Process this information: save the data!
+                  response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
+                  // Check the response
+                  if (response.status === undefined || response.status !== "ok") {
+                    // Action to undertake if we have not been successfull
+                    private_methods.errMsg("research_wizard[" + sPart + "]: could not save the data for this function");
+                  }
+                }
+              }
+              break;
+          }
+
+          // [2] Load the new form through an AJAX call
+          switch (sPart) {
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "42":
+            case "43":
+            case "44":
+            case "6":
+            case "62":
+            case "63":
+
+              // CHeck if we need to take another instance id instead of #researchid
+              if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
+              // Indicate we are saving/preparing
+              $(".save-warning").html("Processing... " + sPart);
+              // Fetch the corr
+              response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
+              if (response.status && response.status === "ok") {
+                // Make the HTML response visible
+                $(sTargetId).html(response.html);
+                // Make sure events are set again
+                ru.cesar.seeker.init_events();
+              }
+              break;
+          }
+          // Bind the click event to all class="ajaxform" elements
+          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
+
+          // Some actions depend on the particular page we are going to visit
+          switch (sPart) {
+            case "4": // Page 4=Calculation
+            case "42":
+              // add any event handlers for wizard part '42'
+              ru.cesar.seeker.init_cvar_events();
+              break;
+            case "43":
+            case "44":
+            case "62":
+            case "63":
+              // add any event handlers for wizard part '43' and part '44'
+              // As well as for '62' and '63'
+              ru.cesar.seeker.init_arg_events();
+              break;
+            case "6":
+              // add any event handlers for wizard part '46'
+              ru.cesar.seeker.init_cond_events();
+              break;
+            case "5": // Page 5=Conditions
+
+              // TODO: this still needs to be specified
+
+              // Make sure the 'Type' field values are processed everywhere
+              $(".cvar-item").each(function () {
+                // Perform the same function as if we were clicking it
+                ru.cesar.seeker.cvartype_click(this);
+              });
+              // Specify the change reaction function
+              $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
+              // Specify the function to be called when the user presses "summary"
+              $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
+              break;
+          }
+          // Hide all research parts
+          $(".research-part").not(sTargetId).addClass("hidden");
+          $(".research-part").not(sTargetId).removeClass("active");
+
+          $(sTargetId).removeClass("hidden");
+          // If this is not [Project Type] then get the project type
+          if (sPart !== '1') {
+            // Set the <input> element
+            $("#research_part").val(sTargetType);
+            // Hide all 
+            $(".research-wrd").addClass("hidden");
+            $(".research-cns").addClass("hidden");
+            // Make sure everything of this target type is unhidden
+            switch (sTargetType) {
+              case "w": $(".research-wrd").removeClass("hidden"); break;
+              case "c": $(".research-cns").removeClass("hidden"); break;
+            }
+          }
+          // Determine what type we are
+          // And then switch to the correct page
+          switch ($(el).prop("tagName").toLowerCase()) {
+            case "a":
+              // Get the <li> element
+              elListItem = $(el).parent();
+              // Get the <ul> element
+              elList = $(elListItem).parent();
+              // Remove all actives
+              $(elList).children("li.active").removeClass("active");
+              $(elListItem).addClass("active");
+              break;
+            case "button":
+              // Get the parent of the buttons
+              elList = $(el).parent();
+              // Adapt all the btn classes
+              $(elList).children('button').each(function () {
+                if ($(this).is(el)) {
+                  $(this).addClass("btn-secondary");
+                  $(this).removeClass("btn-primary");
+                } else {
+                  $(this).removeClass("btn-secondary");
+                  $(this).addClass("btn-primary");
+                }
+              });
+              break;
+          }
+          // Hide the tiles and show the contents
+          $("#research_tiles").addClass("hidden");
+          $("#research_contents").removeClass("hidden");
+          $("#research_conditions").addClass("hidden");
+          switch (sPart) {
+            case "1": case "2": case "7":
+              $("#goto_overview").removeClass("hidden");
+              $("#goto_finetune").addClass("hidden");
+              break;
+            case "3": case "4": case "42": case "43":
+            case "44": case "6":
+              $("#goto_overview").addClass("hidden");
+              $("#goto_finetune").removeClass("hidden");
+              break;
+          }
+        } catch (ex) {
+          private_methods.errMsg("research_wizard", ex);
+        }
+      },
+
+      /**
+       * search_start
+       *   Check and then start a search
+       *
+       */
+      search_start(elStart) {
+        var sDivProgress = "#research_progress",
+            ajaxurl = "",
+            response = null,
+            frm = null,
+            data = [];
+
+        try {
+          // obligatory parameter: ajaxurl
+          ajaxurl = $(elStart).attr("ajaxurl");
+
+          // Gather the information
+          frm = $(elStart).closest("form");
+          if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+          // Make an AJAX call to get an existing or new specification element HTML code
+          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+
+
+          // Start the search
+          $(sDivProgress).html("Contacting the search server")
+
+        } catch (ex) {
+          private_methods.errMsg("search_start", ex);
+        }
+      },
+
+      /**
+       * search_stop
+       *   Stop an already going search
+       *
+       */
+      search_stop() {
+        try {
+
+        } catch (ex) {
+          private_methods.errMsg("search_stop", ex);
+        }
+      },
+
+      /**
        * sent_click
        *   Show waiting symbol when sentence is clicked
        *
        */
       sent_click: function () {
         $("#sentence-fetch").removeClass("hidden");
+      },
+
+      /**
+       * tabular_addrow
+       *   Add one row into a tabular inline
+       *
+       */
+      tabular_addrow: function () {
+        //var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec', 'research_cond'],
+        //    arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'function', 'cond'],
+        //    arNumber = [true, true, false, false, false, true],
+        var arTdef = lAddTableRow,
+            oTdef = {},
+            elTable = null,
+            iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)
+            sId = "",
+            i;
+
+        try {
+          // Find out just where we are
+          sId = $(this).closest("div").attr("id");
+          // Walk all tables
+          for (i = 0; i < arTdef.length; i++) {
+            // Get the definition
+            oTdef = arTdef[i];
+            if (sId === oTdef.table || sId.indexOf(oTdef.table) >= 0) {
+              // Go to the <tbody> and find the last form-row
+              elTable = $(this).closest("tbody").children("tr.form-row.empty-form")
+
+              // Perform the cloneMore function to this <tr>
+              ru.cesar.seeker.cloneMore(elTable, oTdef.prefix, oTdef.counter);
+              // Call the event initialisation again
+              if (oTdef.events !== null) {
+                oTdef.events();
+              }
+              // We are done...
+              break;
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("tabular_addrow", ex);
+        }
+      },
+
+      /**
+       *  toggle_del
+       *      Toggle research item
+       *
+       */
+      toggle_del: function (el) {
+        var elTr = null;
+
+        try {
+          // Get to the nearest <tr>
+          elTr = $(el).closest("tr");
+          // Is this .part-del?
+          if ($(elTr).is(".part-del")) {
+            // Hide it
+            $(elTr).addClass("hidden");
+          } else {
+            // Get to the next .part-del
+            elTr = $(elTr).next(".part-del");
+            // Show it
+            $(elTr).removeClass("hidden");
+            // Also make sure the correct contents is shown
+            $(elTr).find(".part-del").removeClass("hidden");
+            $(elTr).find(".part-process").addClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("toggle_del", ex);
+        }
       },
 
       /**
@@ -845,378 +1302,9 @@ var ru = (function ($, ru) {
         }
       },
 
-      /**
-       * tabular_addrow
-       *   Add one row into a tabular inline
-       *
-       */
-      tabular_addrow: function () {
-        //var arTable = ['research_intro-wrd', 'research_intro-cns', 'research_gvar', 'research_vardef', 'research_spec', 'research_cond'],
-        //    arPrefix = ['construction', 'construction', 'gvar', 'vardef', 'function', 'cond'],
-        //    arNumber = [true, true, false, false, false, true],
-        var arTdef = lAddTableRow,
-            oTdef = {},
-            elTable = null,
-            iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)
-            sId = "",
-            i;
-
-        try {
-          // Find out just where we are
-          sId = $(this).closest("div").attr("id");
-          // Walk all tables
-          for (i = 0; i < arTdef.length; i++) {
-            // Get the definition
-            oTdef = arTdef[i];
-            if (sId === oTdef.table || sId.indexOf(oTdef.table) >= 0) {
-              // Go to the <tbody> and find the last form-row
-              elTable = $(this).closest("tbody").children("tr.form-row.empty-form")
-
-              // Perform the cloneMore function to this <tr>
-              ru.cesar.seeker.cloneMore(elTable, oTdef.prefix, oTdef.counter);
-              // Call the event initialisation again
-              if (oTdef.events !== null) {
-                oTdef.events();
-              }
-              // We are done...
-              break;
-            }
-          }
-        } catch (ex) {
-          private_methods.errMsg("tabular_addrow", ex);
-        }
-      },
-
-      /**
-       *  cloneMore
-       *      Add a form to the formset
-       *      selector = the element that should be duplicated
-       *      type     = the formset type
-       *      number   = boolean indicating that re-numbering on the first <td> must be done
-       *
-       */
-      cloneMore: function (selector, type, number) {
-        try {
-          // Clone the element in [selector]
-          var newElement = $(selector).clone(true);
-          // Find the total number of [type] elements
-          var total = $('#id_' + type + '-TOTAL_FORMS').val();
-
-          // Find each <input> element
-          newElement.find(':input').each(function () {
-            // Get the name of this element, adapting it on the fly
-            var name = $(this).attr("name").replace("__prefix__", total.toString());
-            // Produce a new id for this element
-            var id = $(this).attr("id").replace("__prefix__", total.toString());
-            // Adapt this element's name and id, unchecking it
-            $(this).attr({ 'name': name, 'id': id }).val('').removeAttr('checked');
-          });
-          newElement.find('select').each(function () {
-            // Get the name of this element, adapting it on the fly
-            var name = $(this).attr("name").replace("__prefix__", total.toString());
-            // Produce a new id for this element
-            var id = $(this).attr("id").replace("__prefix__", total.toString());
-            // Adapt this element's name and id, unchecking it
-            $(this).attr({ 'name': name, 'id': id }).val('').removeAttr('checked');
-          });
-
-          // Find each <label> under newElement
-          newElement.find('label').each(function () {
-            // Adapt the 'for' attribute
-            var newFor = $(this).attr("for").replace("__prefix__", total.toString());
-            $(this).attr('for', newFor);
-          });
-          
-          // Look at the inner text of <td>
-          newElement.find('td').each(function () {
-            var elText = $(this).children().first();
-            if (elText !== undefined) {
-              var sHtml = $(elText).html();
-              if (sHtml !== undefined  && sHtml !== "") {
-                sHtml = sHtml.replace("__counter__", total.toString());
-                $(elText).html(sHtml);
-              }
-              // $(elText).html($(elText).html().replace("__counter__", total.toString()));
-            }
-          });
-          // Look at the attributes of <a>
-          newElement.find('a').each(function () {
-            // Iterate over all attributes
-            var elA = this;
-            $.each(elA.attributes, function (i, attrib) {
-              var attrText = $(elA).attr(attrib.name).replace("__counter__", total.toString());
-              $(this).attr(attrib.name, attrText);
-            });
-          });
-
-
-          // Adapt the total number of forms in this formset
-          total++;
-          $('#id_' + type + '-TOTAL_FORMS').val(total);
-
-          // Adaptations on the new <tr> itself
-          newElement.attr("id", "arguments-"+(total-1).toString());
-          newElement.attr("class", "form-row row" + total.toString());
-
-          // Insert the new element before the selector = empty-form
-          $(selector).before(newElement);
-
-          // Should we re-number?
-          if (number !== undefined && number) {
-            // Walk all <tr> elements of the table
-            var iRow = 1;
-            $(selector).closest("tbody").children("tr.form-row").not(".empty-form").each(function () {
-              var elFirstCell = $(this).find("td").not(".hidden").first();
-              $(elFirstCell).html(iRow);
-              iRow += 1;
-            });
-          }
-
-        } catch (ex) {
-          private_methods.errMsg("cloneMore", ex);
-        }
-      },
-
-
-      /**
-       *  part_detail_toggle
-       *      Toggle part detail
-       *
-       */
-      part_detail_toggle: function (iPk) {
-        var sId = "";
-
-        try {
-          // validate
-          if (iPk === undefined) return;
-          // Get the name of the tag
-          sId = "#part_details_" + iPk.toString();
-          // Check if it is visible or not
-          if ($(sId).hasClass("hidden")) {
-            // Remove it
-            $(sId).removeClass("hidden");
-          } else {
-            // Add it
-            $(sId).addClass("hidden");
-          }
-        } catch (ex) {
-          private_methods.errMsg("part_detail_toggle", ex);
-        }
-      },
-
-      /**
-       *  toggle_del
-       *      Toggle research item
-       *
-       */
-      toggle_del: function (el) {
-        var elTr = null;
-
-        try {
-          // Get to the nearest <tr>
-          elTr = $(el).closest("tr");
-          // Is this .part-del?
-          if ($(elTr).is(".part-del")) {
-            // Hide it
-            $(elTr).addClass("hidden");
-          } else {
-            // Get to the next .part-del
-            elTr = $(elTr).next(".part-del");
-            // Show it
-            $(elTr).removeClass("hidden");
-            // Also make sure the correct contents is shown
-            $(elTr).find(".part-del").removeClass("hidden");
-            $(elTr).find(".part-process").addClass("hidden");
-          }
-        } catch (ex) {
-          private_methods.errMsg("toggle_del", ex);
-        }
-      },
 
       var_down: function() {private_methods.var_move(this, 'down');},
       var_up: function () { private_methods.var_move(this, 'up'); },
-
-      /**
-       *  funcdefshow
-       *      Show the function definition
-       *
-       */
-      funcdefshow: function (el) {
-        var elTr = null;
-
-        try {
-          // Get to the nearest <tr>
-          elTr = $(el).closest("tr");
-          // Get to the next row
-          elTr = $(elTr).next(".function-details");
-          // Check its status
-          if ($(elTr).hasClass("hidden")) {
-            // Hide all other [function-details]
-            $(elTr).closest("table").find(".function-details").addClass("hidden");
-            // It's hidden, so open it
-            $(elTr).removeClass("hidden");
-          } else {
-            // It's open, so close it
-            $(elTr).addClass("hidden");
-          }
-
-
-        } catch (ex) {
-          private_methods.errMsg("funcdefshow", ex);
-        }
-      },
-
-      /**
-       *  process_item
-       *      Make a POST request to copy or delete an item
-       *      Also show the waiting symbol by un-hiding a particular row
-       *
-       */
-      process_item: function (el) {
-        var elDiv = null,
-            elNext = null,
-            response = null,
-            sUrl = "",
-            frm = null,
-            data = [];
-
-        try {
-          // Get to the nearest <div>
-          elDiv = $(el).closest("div");
-          // Get its second following sibling div
-          elNext = $(elDiv).next(".part-process");
-          if (elNext !== null) {
-            //  We now have the correct row: open it
-            $(elNext).removeClass("hidden");
-            $(elDiv).addClass("hidden");
-          }
-          frm = $(el).closest("form");
-          if (frm !== undefined) {
-            data = $(frm).serializeArray();
-            sUrl = $(el).attr("url");
-            data.push({ 'name': 'caller', 'value': sUrl });
-            // Anyway, start off an ajax call to request deletion
-            response = ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
-            if (response !== undefined) {
-              if (response.status === "ok") {
-                // Continue through to the 'success' url
-                sUrl = $(el).attr("success");
-                window.location.href = sUrl;
-              } else {
-                // SOme kind of error was returned
-                $(elNext).html(response.html);
-              }
-            }
-          }
-        } catch (ex) {
-          private_methods.errMsg("process_item", ex);
-        }
-      },
-
-      /**
-       *  init_cvar_events
-       *      Bind events to work with constituent variables
-       *
-       */
-      init_cvar_events: function () {
-        try {
-          // Specify the function to be called when the user presses [Calculation...]
-          $(".cvar-calculate").click(ru.cesar.seeker.cvarcalculate_click);
-          // Specify the function to be called when the user presses [Calculation...]
-          $(".cvar-specify").click(ru.cesar.seeker.cvarspecify_click);
-          // Make sure the 'Type' field values are processed everywhere
-          $(".cvar-item").each(function () {
-            // Perform the same function as if we were clicking it
-            ru.cesar.seeker.cvartype_click(this);
-          });
-          // Specify the change reaction function
-          $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
-          // Specify the function to be called when the user presses "summary"
-          $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
-          // When the function-definition-selection changes, the button name should change
-          $(".cvar-fundef select").change(function () {
-            var button = $(this).closest(".cvar-expression").find("a.btn").first();
-            if (button !== null) {
-              $(button).html("create");
-            }
-          });
-        } catch (ex) {
-          private_methods.errMsg("init_cvar_events", ex);
-        }
-      },
-
-      /**
-       *  init_arg_events
-       *      Bind events to work with function arguments
-       *
-       */
-      init_arg_events: function () {
-        try {
-          // Make sure the 'Type' field values are processed everywhere
-          $(".arg-item").each(function () {
-            // Perform the same function as if we were clicking it
-            ru.cesar.seeker.argtype_click(this);
-          });
-          // Specify the change reaction function
-          $(".arg-type select").change(ru.cesar.seeker.argtype_click);
-        } catch (ex) {
-          private_methods.errMsg("init_arg_events", ex);
-        }
-      },
-
-      /**
-       *  init_cond_events
-       *      Bind events to work with conditions
-       *
-       */
-      init_cond_events: function () {
-        try {
-          // Make sure the 'Type' field values are processed everywhere
-          $(".cond-item").each(function () {
-            // Perform the same function as if we were clicking it
-            ru.cesar.seeker.condtype_click(this);
-          });
-          // Specify the change reaction function
-          $(".cond-type select").change(ru.cesar.seeker.condtype_click);
-        } catch (ex) {
-          private_methods.errMsg("init_cond_events", ex);
-        }
-      },
-
-      /**
-       *  init_events
-       *      Bind main necessary events
-       *
-       */
-      init_events: function () {
-        try {
-          $('tr.add-row a').click(ru.cesar.seeker.tabular_addrow);
-          $('.inline-group > div > a.btn').click(function () {
-            var elGroup = null,
-                elTabular = null,
-                sStatus = "";
-
-            // Get the tabular
-            elTabular = $(this).parent().next(".tabular");
-            if (elTabular !== null) {
-              // Get the status of this one
-              if ($(elTabular).hasClass("hidden")) {
-                $(elTabular).removeClass("hidden");
-              } else {
-                $(elTabular).addClass("hidden");
-              }
-            }
-          });
-          $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
-          // Make sure variable ordering is supported
-          $('td span.var-down').click(ru.cesar.seeker.var_down);
-          $('td span.var-up').click(ru.cesar.seeker.var_up);
-          // NOTE: do not use the following mouseout event--it is too weird to work with
-          // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
-        } catch (ex) {
-          private_methods.errMsg("init_events", ex);
-        }
-      }
 
 
     };
