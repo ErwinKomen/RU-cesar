@@ -172,8 +172,8 @@ class ResearchExe(View):
         self.initializations(request, object_id)
         if self.checkAuthentication(request):
             # Action depends on 'action' value
-            if action != "" and self.obj != None:
-                if action == "start":
+            if self.action != "" and self.obj != None:
+                if self.action == "start":
                     # Check if this object is not currently being executed
                     if self.obj.get_status() != "":
                         # Stop it
@@ -188,10 +188,10 @@ class ResearchExe(View):
                         self.obj.execute(select_part)
                     else:
                         self.arErr.push("No corpus part to be searched has been selected")
-                elif action == "stop":
+                elif self.action == "stop":
                     # Need to stop the execution of the project
                     x=2
-                elif action == "status":
+                elif self.action == "status":
                     # Need to get the status of the project
                     x=3
 

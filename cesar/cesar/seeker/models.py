@@ -11,7 +11,8 @@ from django.utils import timezone
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
-from cesar.browser.models import build_choice_list, build_abbr_list, get_help, choice_value, get_instance_copy, copy_m2m, copy_fk
+from cesar.browser.models import build_choice_list, build_abbr_list, get_help, choice_value, get_instance_copy, copy_m2m, copy_fk, Part, CORPUS_FORMAT
+from cesar.seeker.services import crpp_exe, crpp_send_crp
 import sys
 import copy
 import json
@@ -290,6 +291,11 @@ class Construction(models.Model):
         qs = ConstructionVariable.objects.filter(construction=self).order_by('variable__order')
         return qs
 
+    def get_code(self, format):
+        """Produce the Xuery code for the indicated format"""
+
+        return ""
+
       
 class Variable(models.Model):
     """A variable has a name and a value, possibly combined with a function and a condition"""
@@ -321,6 +327,15 @@ class VarDef(Variable):
       Gateway.check_cvar(self.gateway)
       # Return the result of normal saving
       return save_result
+
+    def get_code(self, cnsThis, format):
+        """Provide Xquery code for this construction group and format"""
+        lstQ = []
+        lstQ.append(Q(construction=cnsThis))
+        lstQ.append(Q(variable=self))
+        cvar = ConstructionVariable.objects.filter(*lstQ).first()
+        return cvar.get_code(format)
+
 
     def get_copy(self, **kwargs):
         # Test
@@ -741,6 +756,17 @@ class ConstructionVariable(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_code(self, format):
+        """Provide Xquery code for this cns var"""
+        sCode = "code_for('{}', '{}')".format(self.type, format)
+        if self.type == "gvar":
+            sCode = "$_{}".format(self.gvar.name)
+        elif self.type == "fixed":
+            sCode = "'{}'".format(self.svalue)
+        elif self.type == "func":
+            sCode = sCode
+        return sCode
+
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         return super().save(force_insert, force_update, using, update_fields)
 
@@ -819,6 +845,20 @@ class Condition(models.Model):
                              function=new_function, gateway=kwargs['gateway'])
         # Return the new copy
         return new_copy
+
+    def get_code(self, format):
+        """Create and return the required Xquery"""
+        sCode = ""
+        if self.condtype == "dvar":
+            if self.variable == None:
+                sCode = "$undefined_{}".format(self.name)
+            else:
+                # A variable has been defined
+                sCode = "${}".format(self.variable.name)
+        else:
+            # This is a function
+            sCode = "$TODO"
+        return sCode
       
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
@@ -960,26 +1000,123 @@ class Research(models.Model):
 
     def to_xquery(self, partId, sFormat):
         """Translate project into Xquery"""
-        pass
 
-    def execute(self, partId):
+        # Import the correct function
+        from cesar.seeker.convert import ConvertProjectToXquery
+
+        # Prepare data
+        oData = {'targetType': self.targetType,
+                 'format': sFormat,
+                 'gateway': self.gateway}
+        # First: check and see if there is no 'basket' yet for the combination of part/format
+        part = Part.objects.filter(id=partId).first()
+        lstQ = []
+        lstQ.append(Q(research=self))
+        lstQ.append(Q(format=sFormat))
+        lstQ.append(Q(part=part))
+        qs = Basket.objects.filter(*lstQ)
+        if qs.count() == 0:
+            # So: create one
+            basket = Basket(research=self, part=part, format=format, status="created", jobid="")
+            # Create the Xquery code
+            basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
+            # Save the basket
+            basket.save()
+        else:
+            # Return the existing one
+            basket = qs[0]
+            # Check if we have Xquery code and there is no 'error' status
+            if basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
+                # Create the Xquery code
+                basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
+                # Save the basket
+                basket.save()
+        # Return the basket
+        return basket
+
+    def execute(self, partId, sFormat):
         """Send command to /crpp to start the project"""
-        pass
+
+        # Import the correct function
+        from cesar.seeker.convert import ConvertProjectToCrpx
+        # Prepare reply
+        oBack = {'status': 'ok', 'msg': ''}
+        # Get the correct Basket
+        basket = self.to_xquery(partId, sFormat)
+        # Create CRPX project and execute it
+        oData = {'codedef': basket.codedef,
+                 'codeqry': basket.codeqry,
+                 'research_id': self.id}
+        sCrpxName, sCrpxText = ConvertProjectToCrpx(oData)
+        # Send the CRPX to /crpp and execute it
+        try:
+            # Get the userid
+            sUser = owner.name
+            # First send over the CRP code
+            oCrpp = crpp_send_crp(sUser, sCrpxText, sCrpxName)
+            if oCrpp['status'] == 'ok':
+                # Last information
+                sLng = basket.part.corpus.lng   # Language of the corpus
+                sDir = basket.part.dir          # Directory where the part is located
+                # Now start execution
+                oCrpp = crpp_exe(sUser, sCrpxName, sLng, sDir)      
+                if oCrpp['status'] == 'ok':   
+                    # Adapt the message
+                    oBack['msg'] = 'sent to the server'
+                    basket.set_status("to_crpp")
+                else:
+                    oBack['status'] = 'error'
+                    oBack['msg'] = 'Could not perform execute at /crpp'
+                    basket.set_status('error')
+            else:
+                oBack['status'] = 'error'
+                oBack['msg'] = 'Could not send CRP to /crpp'
+                basket.set_status('error')
+        except:
+            # Could not send this to the CRPX
+            oBack['status'] = 'error'
+            oBack['msg'] = 'Failed to send or execute the project'
+        # Return the status
+        return oBack
+
 
 
 class Basket(models.Model):
     """A basket of material needed for the transformation and execution of a research project"""
 
-    # [1] Format of the corpus we are going to research
-
-    # [1] The Xquery definitions
-
-    # [1] The Xquery code
-
-    # [1] The status
+    # [1] Format of the corpus this basket searches in
+    format = models.CharField("XML format", choices=build_abbr_list(CORPUS_FORMAT), 
+                              max_length=5, help_text=get_help(CORPUS_FORMAT))
+    # [1] The corpus-part this points to
+    part = models.ForeignKey(Part, blank=False, null=False)
+    # [1] The Xquery definitions (targeted for the corpus)
+    codedef = models.TextField("Xquery definitions", blank=True)
+    # [1] The Xquery code for the main query
+    codeqry = models.TextField("Xquery main query", blank=True)
+    # [1] The status of (a) code generation and (b) execution
     status = models.CharField("Status", max_length=MAX_TEXT_LEN)
+    # [0-1] The jobid generated by /crpp
+    jobid = models.CharField("Job identifier", max_length=MAX_NAME_LEN, blank=True)
+    # [0-1] create date and lastsave date
+    created = models.DateTimeField(default=timezone.now)
+    saved = models.DateTimeField(null=True, blank=True)
     # [1] Each status is linked to one research project
     research = models.ForeignKey(Research, blank=False, null=False, related_name="baskets")
+
+    def __str__(self):
+        # COmbine: research project name, research id, processing status
+        return "{}_{}: {}".format(self.research.name, self.id, self.status)
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        # Adapt the save date
+        self.saved = timezone.now()
+        response = super().save(force_insert, force_update, using, update_fields)
+        return response
+
+    def set_status(self, sStatus):
+        self.status = sStatus
+        self.save()
+        return True
 
    
 
@@ -994,4 +1131,6 @@ class ShareGroup(models.Model):
     # [1] Each Research object can be shared with any number of groups
     research = models.ForeignKey(Research, blank=False, null=False, related_name="sharegroups")
 
+    def __str__(self):
+        return "{}-{}".format(self.group, self.permission)
 

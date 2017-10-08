@@ -47,6 +47,9 @@
     <Compile Include="cesar\browser\__init__.py" />
     <Compile Include="cesar\seeker\admin.py" />
     <Compile Include="cesar\seeker\apps.py" />
+    <Compile Include="cesar\seeker\convert.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\seeker\forms.py">
       <SubType>Code</SubType>
     </Compile>
@@ -54,6 +57,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="cesar\seeker\models.py" />
+    <Compile Include="cesar\seeker\services.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\seeker\tests.py" />
     <Compile Include="cesar\seeker\views.py" />
     <Compile Include="cesar\seeker\widgets.py">
@@ -126,8 +132,12 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
+    <Content Include="cesar\seeker\templates\seeker\def_folia.xq" />
+    <Content Include="cesar\seeker\templates\seeker\def_psdx.xq" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />
+    <Content Include="cesar\seeker\templates\seeker\main_folia.xq" />
+    <Content Include="cesar\seeker\templates\seeker\main_psdx.xq" />
     <Content Include="cesar\seeker\templates\seeker\research_oview.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_63.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_62.html" />
