@@ -1,10 +1,10 @@
-<TEI>{
+<FoLiA>{
     (: This main query is meant for FOLIA encoding :)
     
     for $search in //su[tb:hasConstructionW(self::su)]
     
       (: Get the group this construction belongs to :)
-      let $searchgroup := tb:getConstructionWgroup(self::su)
+      let $searchgroup := tb:getConstructionWgroup($search)
       
       (: Iterate over all the definition variables :)
       {% for item in dvar_list %}
@@ -20,17 +20,21 @@
           {% endfor %}
       {% endfor %}
     
-      (: Divide the results over something :)
-      
+    (: Divide the results over the search group :)
+    let $cat := $searchgroup
+    
+    (: Calculate the features :)
+    let $dbList := tb:getFtList($search, $searchgroup
+      {% for item in dvar_list %}, ${{item.name}}{% endfor %})
     
     (: Conditions that must hold :)
-    where {
+    where (
       {% for cond in cond_list %}
         {% if not forloop.first %}and {% endif %} ({{cond|safe}})
       {% endfor %}
-    }
+    )
     
     (: Return the results :)
     return ru:back($search, $dbList, $cat)
   }
-</TEI>
+</FoLiA>

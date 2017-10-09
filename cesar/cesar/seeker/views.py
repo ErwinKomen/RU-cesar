@@ -183,9 +183,9 @@ class ResearchExe(View):
                         select_part = self.qd.get("select_part")
                         select_format = self.qd.get("searchFormat")
                         # Translate project to Xquery
-                        self.obj.to_xquery(select_part, select_format)
+                        # self.obj.to_xquery(select_part, select_format)
                         # Start execution
-                        self.obj.execute(select_part)
+                        self.obj.execute(select_part, select_format)
                     else:
                         self.arErr.push("No corpus part to be searched has been selected")
                 elif self.action == "stop":

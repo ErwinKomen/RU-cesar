@@ -1,11 +1,14 @@
 """Convert project into Xquery and convert code to CRPX"""
 import json
 import xml
+import re
 from django.template import loader, Context
 from cesar import utils
 from cesar.seeker.models import Construction, ConstructionVariable
 
 def ConvertProjectToXquery(oData):
+    """Convert the project oData.gateway of type oData.targetType into Xquery suitable for oData.format"""
+
     sCodeDef = ""
     sCodeQry = ""
     template_main = ""
@@ -33,7 +36,8 @@ def ConvertProjectToXquery(oData):
             gvars = gateway.globalvariables.all()
             # Search elements are the 'constructions'
             constructions = gateway.constructions.all()
-            search_list = [{'name': item.name, 'value': item.search.value} for item in constructions]
+            # search_list = [{'name': item.name, 'value': item.search.value} for item in constructions]
+            search_list = gateway.get_search_list()
             # The data-dependant variables need to be divided over the search elements
             dvar_list = []
             for var in gateway.definitionvariables.all():
@@ -59,7 +63,10 @@ def ConvertProjectToXquery(oData):
             if targetType == "w":
                 # Step #1: make the start of the main query
                 sCodeQry = loader.get_template(template_main).render(context)
+                sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
+                # Step #2: create the definitions part
                 sCodeDef = loader.get_template(template_def).render(context)
+                sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
             elif targetType == "c":
                 # TODO: make code for constituent-level queries
                 todo = True
@@ -79,3 +86,4 @@ def ConvertProjectToCrpx(oData):
     sCrpxName = ""
     sCrpxContent = ""
     return sCrpxName, sCrpxContent
+

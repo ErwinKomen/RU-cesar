@@ -72,6 +72,25 @@ class SearchMain(models.Model):
                                         operator=operator_matches,
                                         value = value)
         return obj
+
+    def get_search_spec(self):
+        """Combine all single-word lines into a string like 'aap|noot|mies'
+           Divide the remainder into a list of line-objects, containing a list of word-objects"""
+
+        # Initialisations
+        lSingle = []
+        lLine = []
+        # Convert the string into a list of lines, disregarding the \r symbols of Windows
+        input_line_list = self.value.replace('\r', '').split('\n')
+        for input_line in input_line_list:
+            input_word_list = input_line.split()
+            if len(input_word_list) == 1:
+                lSingle.append(input_line)
+            else:
+                lLine.append(input_line)
+        sSingle = "|".join(lSingle)
+        sMulti = tuple(lLine)
+        return {'single': sSingle, 'line_list': sMulti}
         
 
 class GatewayManager(models.Manager):
@@ -150,6 +169,16 @@ class Gateway(models.Model):
                     function.save()
         # Return the new copy
         return new_copy
+
+    def get_search_list(self):
+        """List the names of the constructions plus their search group and specification"""
+        qs = self.constructions.all()
+        lBack = []
+        for item in qs:
+            oSearch = item.search.get_search_spec()
+            oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
+            lBack.append(oItem)
+        return lBack
 
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
@@ -758,7 +787,7 @@ class ConstructionVariable(models.Model):
 
     def get_code(self, format):
         """Provide Xquery code for this cns var"""
-        sCode = "code_for('{}', '{}')".format(self.type, format)
+        sCode = "concat('{}', '{}')".format(self.type, format)
         if self.type == "gvar":
             sCode = "$_{}".format(self.gvar.name)
         elif self.type == "fixed":
@@ -998,7 +1027,7 @@ class Research(models.Model):
         """Reset project"""
         pass
 
-    def to_xquery(self, partId, sFormat):
+    def to_xquery(self, partId, sFormat, bRefresh):
         """Translate project into Xquery"""
 
         # Import the correct function
@@ -1017,7 +1046,7 @@ class Research(models.Model):
         qs = Basket.objects.filter(*lstQ)
         if qs.count() == 0:
             # So: create one
-            basket = Basket(research=self, part=part, format=format, status="created", jobid="")
+            basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
             # Create the Xquery code
             basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
             # Save the basket
@@ -1026,7 +1055,7 @@ class Research(models.Model):
             # Return the existing one
             basket = qs[0]
             # Check if we have Xquery code and there is no 'error' status
-            if basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
+            if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
                 # Create the Xquery code
                 basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
                 # Save the basket
@@ -1042,12 +1071,23 @@ class Research(models.Model):
         # Prepare reply
         oBack = {'status': 'ok', 'msg': ''}
         # Get the correct Basket
-        basket = self.to_xquery(partId, sFormat)
+        try:
+            bRefresh = True # Make sure that Xquery is calculated afresh
+            basket = self.to_xquery(partId, sFormat, bRefresh)
+        except:
+            oBack['msg'] = 'Failed to convert project to Xquery'
+            oBack['status'] = 'error'
+        # Add basket to the return object, provided all went well
+        oBack['basket'] = basket
         # Create CRPX project and execute it
         oData = {'codedef': basket.codedef,
                  'codeqry': basket.codeqry,
                  'research_id': self.id}
-        sCrpxName, sCrpxText = ConvertProjectToCrpx(oData)
+        try:
+            sCrpxName, sCrpxText = ConvertProjectToCrpx(oData)
+        except:
+            oBack['msg'] = 'Failed to convert project to Crpx'
+            oBack['status'] = 'error'
         # Send the CRPX to /crpp and execute it
         try:
             # Get the userid
@@ -1055,15 +1095,18 @@ class Research(models.Model):
             # First send over the CRP code
             oCrpp = crpp_send_crp(sUser, sCrpxText, sCrpxName)
             if oCrpp['status'] == 'ok':
+                basket.set_status("to_crpp")
                 # Last information
                 sLng = basket.part.corpus.lng   # Language of the corpus
                 sDir = basket.part.dir          # Directory where the part is located
                 # Now start execution
                 oCrpp = crpp_exe(sUser, sCrpxName, sLng, sDir)      
                 if oCrpp['status'] == 'ok':   
+                    # Set all that is needed in the basket
+                    basket.set_jobid(oCrpp['jobid'])
+                    basket.set_status("starting")
                     # Adapt the message
                     oBack['msg'] = 'sent to the server'
-                    basket.set_status("to_crpp")
                 else:
                     oBack['status'] = 'error'
                     oBack['msg'] = 'Could not perform execute at /crpp'
@@ -1075,7 +1118,7 @@ class Research(models.Model):
         except:
             # Could not send this to the CRPX
             oBack['status'] = 'error'
-            oBack['msg'] = 'Failed to send or execute the project'
+            oBack['msg'] = 'Failed to send or execute the project to /crpp'
         # Return the status
         return oBack
 
@@ -1115,6 +1158,11 @@ class Basket(models.Model):
 
     def set_status(self, sStatus):
         self.status = sStatus
+        self.save()
+        return True
+
+    def set_jobid(self, jobid):
+        self.jobid = jobid
         self.save()
         return True
 
