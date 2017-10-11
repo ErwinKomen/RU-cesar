@@ -69,5 +69,6 @@ def crpp_command(sCommand, oToCrpp):
 def CompressAndBase64(sText):
     """Compress the string and then encode it into base64"""
     
-    sConverted = base64.b64encode( zlib.compress(sText))
+    sConverted = base64.b64encode( zlib.compress(bytes(sText, encoding="utf-8")))
+    sConverted = str(sConverted).replace("+", "~")
     return sConverted 

@@ -1092,7 +1092,7 @@ class Research(models.Model):
         # Send the CRPX to /crpp and execute it
         try:
             # Get the userid
-            sUser = owner.name
+            sUser = self.owner.username
             # First send over the CRP code
             oCrpp = crpp_send_crp(sUser, sCrpxText, sCrpxName)
             if oCrpp['status'] == 'ok':

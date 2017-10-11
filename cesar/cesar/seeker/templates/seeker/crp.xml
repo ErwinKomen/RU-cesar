@@ -18,7 +18,7 @@
     <Setting Name="SrcDir" Value="{{dir}}" />
     <Setting Name="Goal" Value="{{research.purpose}}" />
     <Setting Name="Comments" Value="Automatically created by Cesar conversion" />
-    <Setting Name="Author" Value="{{research.owner.name}}" />
+    <Setting Name="Author" Value="{{research.owner.firstname}} {{research.owner.lastname}}" />
     <Setting Name="ProjectType" Value="{{project_type}}" />
   </General>
   <QueryConstructor>
