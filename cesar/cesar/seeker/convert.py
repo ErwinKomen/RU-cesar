@@ -51,7 +51,11 @@ def ConvertProjectToXquery(oData):
                 oDvarInfo = {'name': var.name, 'cvar_list': cvar_list}
                 dvar_list.append(oDvarInfo)
             # Also add the conditions
-            cond_list = [cnd.get_code(format) for cnd in gateway.conditions.all()]
+            cond_list = []
+            for cnd in gateway.conditions.all():
+                sCode = cnd.get_code(format)
+                if sCode != "":
+                    cond_list.append(sCode)
 
             context = dict(gvar_list=gvars, 
                            cons_list=constructions, 
@@ -81,9 +85,55 @@ def ConvertProjectToXquery(oData):
     # Return what has been produced
     return sCodeDef, sCodeQry
 
-def ConvertProjectToCrpx(oData):
+def ConvertProjectToCrpx(basket):
+    """Convert the research project oDate.research_id to a CRPX file"""
 
     sCrpxName = ""
     sCrpxContent = ""
+    template_crp = "seeker/crp.xml"
+
+    try:
+        # Access the research project and the gateway
+        research = basket.research
+        gateway = research.gateway
+
+        # Get the name of the project
+        sCrpxName = research.name
+
+        # The format of what we process
+        format = basket.format
+        if format == "psdx":
+            extension = ".psdx"
+            project_type = "Xquery-psdx"
+        elif format == "folia":
+            extension = ".folia.xml"
+            project_type = "Xquery-folia"
+        else:
+            extension = ""
+            project_type = ""
+
+        # The language and location of what we process
+        lng = basket.part.corpus.get_lng_display()
+        dir = basket.part.dir
+
+        # Create a context for the template
+        context = dict(gateway=gateway, 
+                       research=research,
+                       extension=extension,
+                       lng=lng,
+                       dir=dir,
+                       project_type=project_type,
+                       created=basket.created,
+                       codedef=basket.codedef,
+                       codeqry=basket.codeqry)
+        # Convert template
+        sCrpxContent = loader.get_template(template_crp).render(context)
+        sCrpxContent = re.sub(r'\n\s*\n', '\n', sCrpxContent).strip()
+
+    except:
+        # Show error message
+        oErr.DoError("ConvertProjectToCrpx error: ")
+
     return sCrpxName, sCrpxContent
+
 

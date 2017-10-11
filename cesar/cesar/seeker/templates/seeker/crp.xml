@@ -1,0 +1,45 @@
+<?xml version="1.0" standalone="yes"?>
+<CorpusResearchProject>
+  <General>
+    <DateCreated>{{created}}</DateCreated>
+    <DateChanged>{{created}}</DateChanged>
+    <Setting Name="Language" Value="{{lng}}" />
+    <Setting Name="GenPrec" Value="2" />
+    <Setting Name="GenInpExt" Value="{{extension}}" />
+    <Setting Name="PrecNum" Value="2" />
+    <Setting Name="FollNum" Value="1" />
+    <Setting Name="ShowPsd" Value="True" />
+    <Setting Name="Locked" Value="True" />
+    <Setting Name="Stream" Value="False" />
+    <Setting Name="Name" Value="{{research.name}}" />
+    <Setting Name="QueryDir" Value="" />
+    <Setting Name="Source" Value="*{{extension}}" />
+    <Setting Name="DstDir" Value="" />
+    <Setting Name="SrcDir" Value="{{dir}}" />
+    <Setting Name="Goal" Value="{{research.purpose}}" />
+    <Setting Name="Comments" Value="Automatically created by Cesar conversion" />
+    <Setting Name="Author" Value="{{research.owner.name}}" />
+    <Setting Name="ProjectType" Value="{{project_type}}" />
+  </General>
+  <QueryConstructor>
+  </QueryConstructor>
+  <DbFeatList>
+  </DbFeatList>
+  <QueryList>
+    <Query DefId="1" Name="Cesar_Standard-qry" File="Cesar_standard-qry.xq"
+                Goal="Main query defined by Cesar conversion"
+                Comment="" Created="" Changed="">
+      <Text>{{codeqry}}</Text>
+    </Query>
+  </QueryList>
+  <DefList>
+    <Definition DefId="1" Name="Cesar_Standard-def" File="Cesar_standard-def.xq"
+                Goal="Definitions defined by Cesar conversion"
+                Comment="" Created="" Changed="">
+      <Text>{{codedef}}</Text>
+    </Definition>
+  </DefList>
+  <VarList>
+    
+  </VarList>
+</CorpusResearchProject>

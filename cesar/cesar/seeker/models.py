@@ -880,7 +880,8 @@ class Condition(models.Model):
         sCode = ""
         if self.condtype == "dvar":
             if self.variable == None:
-                sCode = "$undefined_{}".format(self.name)
+                # sCode = "$undefined_{}".format(self.name)
+                sCode = ""
             else:
                 # A variable has been defined
                 sCode = "${}".format(self.variable.name)
@@ -1080,11 +1081,11 @@ class Research(models.Model):
         # Add basket to the return object, provided all went well
         oBack['basket'] = basket
         # Create CRPX project and execute it
-        oData = {'codedef': basket.codedef,
-                 'codeqry': basket.codeqry,
-                 'research_id': self.id}
+        #oData = {'codedef': basket.codedef,
+        #         'codeqry': basket.codeqry,
+        #         'research_id': self.id}
         try:
-            sCrpxName, sCrpxText = ConvertProjectToCrpx(oData)
+            sCrpxName, sCrpxText = ConvertProjectToCrpx(basket)
         except:
             oBack['msg'] = 'Failed to convert project to Crpx'
             oBack['status'] = 'error'
