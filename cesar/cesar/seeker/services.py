@@ -38,12 +38,14 @@ def crpp_exe(sUser, sCrpName, sLng, sPart):
 
 def crpp_command(sCommand, oToCrpp):
     # Set the correct URL
-    url = CRPP_HOME + '/crpp/'+sCommand+'?' + json.dumps(oToCrpp)
+    # url = CRPP_HOME + '/crpp/'+sCommand+'?' + json.dumps(oToCrpp)
+    url = CRPP_HOME + '/crpp/'+sCommand
     # Default reply
     oBack = {}
     # Get the data from the CRPP api
     try:
-        r = requests.get(url)
+        # r = requests.get(url)
+        r = requests.post(url, data=oToCrpp)
     except:
         # Getting an exception here probably means that the back-end is not reachable (down)
         oBack['status'] = 'error'
@@ -55,9 +57,11 @@ def crpp_command(sCommand, oToCrpp):
         reply = json.loads(r.text.replace("\t", " "))
         # Get the [content] part (note: no final 's')
         oContent = reply['content']
-        # Define the lists
-        oBack['count'] = oContent['count']
-        oBack['line'] = oContent['line']
+        # Copy all items from [oContent] to oBack
+        for item in oContent:
+            oBack[item] = oContent[item]
+        #oBack['count'] = oContent['count']
+        #oBack['line'] = oContent['line']
         oBack['status'] = 'ok'
     else:
         oBack['status'] = 'error'
@@ -70,5 +74,5 @@ def CompressAndBase64(sText):
     """Compress the string and then encode it into base64"""
     
     sConverted = base64.b64encode( zlib.compress(bytes(sText, encoding="utf-8")))
-    sConverted = str(sConverted).replace("+", "~")
+    sConverted = sConverted.decode("utf-8").replace("+", "~")
     return sConverted 

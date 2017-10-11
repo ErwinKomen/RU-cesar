@@ -171,6 +171,8 @@ class ResearchExe(View):
         # A POST request means we are trying to SAVE something
         self.initializations(request, object_id)
         if self.checkAuthentication(request):
+            # Define the context
+            context = dict(object_id = object_id, savedate=None)
             # Action depends on 'action' value
             if self.action != "" and self.obj != None:
                 if self.action == "start":
@@ -185,7 +187,11 @@ class ResearchExe(View):
                         # Translate project to Xquery
                         # self.obj.to_xquery(select_part, select_format)
                         # Start execution
-                        self.obj.execute(select_part, select_format)
+                        oBack = self.obj.execute(select_part, select_format)
+                        # Check for errors
+                        if oBack['status'] == "error":
+                            # Add error to the error array
+                            self.arErr.push(oBack['msg'])
                     else:
                         self.arErr.push("No corpus part to be searched has been selected")
                 elif self.action == "stop":
@@ -201,6 +207,11 @@ class ResearchExe(View):
             self.data['errors'] = self.arErr
             if len(self.arErr) >0:
                 self.data['status'] = "error"
+
+            # Add items to context
+            context['error_list'] = error_list
+            context['status'] = self.data['status']
+
             # Get the HTML response
             self.data['html'] = render_to_string(self.template_name, context, request)
         else:
@@ -213,13 +224,18 @@ class ResearchExe(View):
         self.initializations(request, object_id)
         if self.checkAuthentication(request):
             # Build the context
-
+            context = dict(object_id = object_id, savedate=None)
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
             self.data['error_list'] = error_list
             self.data['errors'] = self.arErr
             if len(self.arErr) >0:
                 self.data['status'] = "error"
+
+            # Add items to context
+            context['error_list'] = error_list
+            context['status'] = self.data['status']
+
             # Get the HTML response
             self.data['html'] = render_to_string(self.template_name, context, request)
         else:
@@ -262,14 +278,17 @@ class ResearchExe(View):
 class ResearchStart(ResearchExe):
     MainModel = Research
     action = "start"
+    template_name = "seeker/exe_status.html"
     
 
 class ResearchStop(ResearchExe):
     action = "stop"
+    template_name = "seeker/exe_status.html"
 
 
 class ResearchStatus(ResearchExe):
     action = "status"
+    template_name = "seeker/exe_status.html"
 
 
 

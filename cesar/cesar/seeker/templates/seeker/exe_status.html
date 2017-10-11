@@ -1,0 +1,9 @@
+﻿<div>Status: {{status}}</div>
+<div class="errors">
+  {% if error_list %} 
+    <h4>Errors:</h4>
+    {% for item in error_list %}
+    <div class="error-item">{{item}}</div>
+    {% endfor %}
+  {% endif %}
+</div>
