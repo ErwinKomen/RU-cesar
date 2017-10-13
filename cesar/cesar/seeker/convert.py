@@ -101,13 +101,20 @@ def ConvertProjectToCrpx(basket):
         sCrpxName = research.name
 
         # The format of what we process
+        # Options: Xquery-Psdx, Folia-Xml, Negra-Tig, Alpino-Xml, Dbase
         format = basket.format
         if format == "psdx":
             extension = ".psdx"
             project_type = "Xquery-psdx"
         elif format == "folia":
             extension = ".folia.xml"
-            project_type = "Xquery-folia"
+            project_type = "Folia-Xml"
+        elif format == "negra":
+            extension = ".xml"
+            project_type = "Negra-Tig"
+        elif format == "alpino":
+            extension = ".xml"
+            project_type = "Alpino-Xml"
         else:
             extension = ""
             project_type = ""
@@ -123,7 +130,7 @@ def ConvertProjectToCrpx(basket):
                        lng=lng,
                        dir=dir,
                        project_type=project_type,
-                       created=basket.created,
+                       created=get_crpp_date(basket.created),
                        codedef=basket.codedef,
                        codeqry=basket.codeqry)
         # Convert template
@@ -136,4 +143,9 @@ def ConvertProjectToCrpx(basket):
 
     return sCrpxName, sCrpxContent
 
+def get_crpp_date(dtThis):
+    """Convert datetime to string"""
 
+    # Model: yyyy-MM-dd'T'HH:mm:ss
+    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+    return sDate
