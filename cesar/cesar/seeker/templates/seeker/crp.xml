@@ -22,18 +22,37 @@
     <Setting Name="ProjectType" Value="{{project_type}}" />
   </General>
   <QueryConstructor>
+    <QC QCid="1"
+        Cmp="False" Comment="Automatically created at: {{currentdate}}"
+        Goal="Perform the main query provided by Cesar"
+        Input="Source"
+        Mother="False"
+        OutFeat="{% for dbfeat in dbfeatlist %}{{dbfeat.name}}@{{forloop.counter}}{% if not forloop.last %};{% endif %}{% endfor %}"
+        Output="{{outputname}}"
+        Query="{{queryname}}"
+        Result="{{outputname}}"
+        />
   </QueryConstructor>
   <DbFeatList>
+    {% if dbfeatlist %}
+      {% for dbfeat in dbfeatlist %}
+        <DbFeat DbFeatId="{{forloop.counter}}"
+          FtNum="{{forloop.counter}}"
+          Name="{{dbfeat.name}}"
+          Pre="True"
+          QCid="1" />
+      {% endfor %}
+    {% endif %}
   </DbFeatList>
   <QueryList>
-    <Query DefId="1" Name="Cesar_Standard-qry" File="Cesar_standard-qry.xq"
+    <Query QueryId="1" Name="{{queryname}}" File="Cesar_standard-qry.xq"
                 Goal="Main query defined by Cesar conversion"
                 Comment="" Created="" Changed="">
       <Text>{{codeqry}}</Text>
     </Query>
   </QueryList>
   <DefList>
-    <Definition DefId="1" Name="Cesar_Standard-def" File="Cesar_standard-def.xq"
+    <Definition DefId="1" Name="{{defname}}" File="Cesar_standard-def.xq"
                 Goal="Definitions defined by Cesar conversion"
                 Comment="" Created="" Changed="">
       <Text>{{codedef}}</Text>

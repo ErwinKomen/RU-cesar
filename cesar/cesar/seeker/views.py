@@ -191,9 +191,9 @@ class ResearchExe(View):
                         # Check for errors
                         if oBack['status'] == "error":
                             # Add error to the error array
-                            self.arErr.push(oBack['msg'])
+                            self.arErr.append(oBack['msg'])
                     else:
-                        self.arErr.push("No corpus part to be searched has been selected")
+                        self.arErr.append("No corpus part to be searched has been selected")
                 elif self.action == "stop":
                     # Need to stop the execution of the project
                     x=2

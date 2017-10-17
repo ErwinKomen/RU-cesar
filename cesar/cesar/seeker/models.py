@@ -1089,6 +1089,15 @@ class Research(models.Model):
         except:
             oBack['msg'] = 'Failed to convert project to Crpx'
             oBack['status'] = 'error'
+            return oBack
+
+        # Check what is returned
+        if sCrpxName == "":
+            # An error has returned
+            oBack['status'] = 'error'
+            oBack['msg'] = "/n".join(sCrpxText)
+            return oBack
+
         # Send the CRPX to /crpp and execute it
         try:
             # Get the userid

@@ -1,8 +1,13 @@
 """Convert project into Xquery and convert code to CRPX"""
+
+# General Django/Python
+from django.template import loader, Context
+from django.utils import timezone
 import json
 import xml
 import re
-from django.template import loader, Context
+
+# Application-specific
 from cesar import utils
 from cesar.seeker.models import Construction, ConstructionVariable
 
@@ -91,6 +96,7 @@ def ConvertProjectToCrpx(basket):
     sCrpxName = ""
     sCrpxContent = ""
     template_crp = "seeker/crp.xml"
+    oErr = utils.ErrHandle()
 
     try:
         # Access the research project and the gateway
@@ -116,13 +122,27 @@ def ConvertProjectToCrpx(basket):
         lng = basket.part.corpus.get_lng_display()
         dir = basket.part.dir
 
+        outfeat = ""    # List of features separated by semicolon
+        queryname = "Cesar_query-main"
+        defname = "Cesar_standard-def"
+        currentdate = timezone.now().strftime("%c")
+        outputname = "standard"
+        # Make sure that the dbfeatlist contains all features in exactly the right ORDER!!!
+        dbfeatlist = []
+
         # Create a context for the template
         context = dict(gateway=gateway, 
                        research=research,
                        extension=extension,
                        lng=lng,
                        dir=dir,
+                       outfeat=outfeat,
+                       queryname=queryname,
+                       defname=defname,
+                       outputname=outputname,
+                       dbfeatlist=dbfeatlist,
                        project_type=project_type,
+                       currentdate=currentdate,
                        created=basket.created,
                        codedef=basket.codedef,
                        codeqry=basket.codeqry)
@@ -133,6 +153,8 @@ def ConvertProjectToCrpx(basket):
     except:
         # Show error message
         oErr.DoError("ConvertProjectToCrpx error: ")
+        sCrpxName = ""
+        sCrpxContent = oErr.loc_errStack
 
     return sCrpxName, sCrpxContent
 

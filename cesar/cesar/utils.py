@@ -32,6 +32,7 @@ class ErrHandle:
         for nErr in sys.exc_info():
             if (nErr != None):
                 print(nErr, file=sys.stderr)
+                self.loc_errStack.append(str(nErr))
         # Is this a fatal error that requires exiting?
         if (bExit):
             sys.exit(2)
