@@ -1,13 +1,8 @@
 """Convert project into Xquery and convert code to CRPX"""
-
-# General Django/Python
-from django.template import loader, Context
-from django.utils import timezone
 import json
 import xml
 import re
-
-# Application-specific
+from django.template import loader, Context
 from cesar import utils
 from cesar.seeker.models import Construction, ConstructionVariable
 
@@ -96,7 +91,6 @@ def ConvertProjectToCrpx(basket):
     sCrpxName = ""
     sCrpxContent = ""
     template_crp = "seeker/crp.xml"
-    oErr = utils.ErrHandle()
 
     try:
         # Access the research project and the gateway
@@ -107,13 +101,20 @@ def ConvertProjectToCrpx(basket):
         sCrpxName = research.name
 
         # The format of what we process
+        # Options: Xquery-Psdx, Folia-Xml, Negra-Tig, Alpino-Xml, Dbase
         format = basket.format
         if format == "psdx":
             extension = ".psdx"
             project_type = "Xquery-psdx"
         elif format == "folia":
             extension = ".folia.xml"
-            project_type = "Xquery-folia"
+            project_type = "Folia-Xml"
+        elif format == "negra":
+            extension = ".xml"
+            project_type = "Negra-Tig"
+        elif format == "alpino":
+            extension = ".xml"
+            project_type = "Alpino-Xml"
         else:
             extension = ""
             project_type = ""
@@ -122,28 +123,14 @@ def ConvertProjectToCrpx(basket):
         lng = basket.part.corpus.get_lng_display()
         dir = basket.part.dir
 
-        outfeat = ""    # List of features separated by semicolon
-        queryname = "Cesar_query-main"
-        defname = "Cesar_standard-def"
-        currentdate = timezone.now().strftime("%c")
-        outputname = "standard"
-        # Make sure that the dbfeatlist contains all features in exactly the right ORDER!!!
-        dbfeatlist = []
-
         # Create a context for the template
         context = dict(gateway=gateway, 
                        research=research,
                        extension=extension,
                        lng=lng,
                        dir=dir,
-                       outfeat=outfeat,
-                       queryname=queryname,
-                       defname=defname,
-                       outputname=outputname,
-                       dbfeatlist=dbfeatlist,
                        project_type=project_type,
-                       currentdate=currentdate,
-                       created=basket.created,
+                       created=get_crpp_date(basket.created),
                        codedef=basket.codedef,
                        codeqry=basket.codeqry)
         # Convert template
@@ -153,9 +140,12 @@ def ConvertProjectToCrpx(basket):
     except:
         # Show error message
         oErr.DoError("ConvertProjectToCrpx error: ")
-        sCrpxName = ""
-        sCrpxContent = oErr.loc_errStack
 
     return sCrpxName, sCrpxContent
 
+def get_crpp_date(dtThis):
+    """Convert datetime to string"""
 
+    # Model: yyyy-MM-dd'T'HH:mm:ss
+    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+    return sDate
