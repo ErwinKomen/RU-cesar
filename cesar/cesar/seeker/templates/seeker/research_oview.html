@@ -45,7 +45,29 @@
               <tr>
                 <td valign='top' class='tdnowrap'>{{gvar.name}}</td>
                 <td valign='top'>{{gvar.description}}</td>
-                <td valign='top' class="gvar-value">{{gvar.value}}</td>
+                <td valign='top' class="gvar-value">
+                    <span class="gvar-shown">{{gvar.value|slice:":40"}}
+                      {% if gvar.value|length > 40 %}...{% endif %}
+                    </span>
+                    <span class="gvar-full hidden">{{gvar.value}}</span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Conditions -->
+        <div class="row">
+          <h3>Conditions</h3>
+          <table>
+            <thead><tr><th>Condition</th><th>Description</th><th>Definition</th></tr></thead>
+            <tbody>
+              {% for cond in gateway.conditions.all %}
+              <tr>
+                <td valign='top' class='tdnowrap'>{{cond.name}}</td>
+                <td valign='top'>{{cond.description}}</td>
+                <td valign='top'>-</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -87,9 +109,10 @@
                         <!-- This is where the variable definition table should come -->
                         {% for function_this in dvar.get_functions %}
                         <tr class="function-item">
-                          <td valign="top" class="function-intro">{{forloop.counter}}</td>
+                          <td valign="top" class="function-intro"><code>line_{{forloop.counter}}</code></td>
                           <td valign="top" class="function-name">{{function_this.functiondef.name}}</td>
                           <td valign="top" class="function-layout">
+                            {% for level in function_this.get_level_range %}&bull;&nbsp;&nbsp;{% endfor %}
                             {% for arg_this in function_this.get_arguments %}
                               <span class="function-arg-text">{{arg_this.argumentdef.text}}</span>
                               <span class="function-arg-view"><code>{{arg_this.get_view}}</code></span>
@@ -107,23 +130,6 @@
               </p>
             {% endfor %}
           {% endfor %}
-        </div>
-
-        <!-- Conditions -->
-        <div class="row">
-          <h3>Conditions</h3>
-          <table>
-            <thead><tr><th>Condition</th><th>Description</th><th>Definition</th></tr></thead>
-            <tbody>
-              {% for cond in gateway.conditions.all %}
-              <tr>
-                <td valign='top' class='tdnowrap'>{{cond.name}}</td>
-                <td valign='top'>{{cond.description}}</td>
-                <td valign='top'>-</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
         </div>
 
         <!-- Ruler and copyright-->

@@ -529,6 +529,10 @@ class Function(models.Model):
             parentarg = parentarg.function.parent
         return iLevel
 
+    def get_level_range(self):
+        iLevel = self.get_level()
+        return range(0, iLevel)
+
     def get_line(self):
         """Determine which line in the function table this is at"""
         iLine = 0
