@@ -165,14 +165,17 @@ class ResearchExe(View):
     arErr = []              # errors   
     template_name = None    # The template to be used
     action = ""             # The action to be undertaken
-    data = {'status': 'ok', 'html': ''}       # Create data to be returned    
+    data = {'status': 'ok', 'html': '', 'statuscode': ''}       # Create data to be returned   
+    progress = ['start', 'finish', 'count', 'total', 'ready'] 
+    completed = ['searchTime', 'searchDone', 'taskid', 'table', 'total']
 
     def post(self, request, object_id=None):
         # A POST request means we are trying to SAVE something
         self.initializations(request, object_id)
         if self.checkAuthentication(request):
             # Define the context
-            context = dict(object_id = object_id, savedate=None)
+            sStatusCode = "none"
+            context = dict(object_id = object_id, savedate=None, statuscode=sStatusCode)
             # Action depends on 'action' value
             if self.action != "" and self.obj != None:
                 if self.action == "start":
@@ -192,14 +195,47 @@ class ResearchExe(View):
                         if oBack['status'] == "error":
                             # Add error to the error array
                             self.arErr.append(oBack['msg'])
+                        elif 'basket' in oBack:
+                            # Retrieve the basket-id to be returned to our caller
+                            basket_id = oBack['basket'].id
+                            self.data['basket_id'] = basket_id
+                            # Also provide the status and the stop commands for the caller
+                            self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket_id})
+                            self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket_id})
                     else:
                         self.arErr.append("No corpus part to be searched has been selected")
                 elif self.action == "stop":
                     # Need to stop the execution of the project
                     x=2
-                elif self.action == "status":
+                elif self.action == "progress":
                     # Need to get the status of the project
-                    x=3
+                    # NOTE: the self.obj now is the BASKET!!
+                    oBack = self.obj.get_progress()
+                    if oBack['commandstatus'] == "error":
+                        self.arErr.append(oBack['msg'])
+                        context['statuscode'] = "error"
+                    else:
+                        # All went well: provide information for the context
+                        sStatusCode = ""
+                        if 'code' in oBack['status']:
+                            sStatusCode = oBack['status']['code']
+                        # Pass on the status code in the context
+                        context['statuscode'] = sStatusCode
+                        # Action depends on the status code
+                        if sStatusCode == "working":
+                            # Now we have one set of feedback
+                            for item in self.progress:
+                                context[item] = oBack[item]
+                            # Add percentages
+                            context['ptc_count'] = 100 * oBack['count'] / oBack['total']
+                            context['ptc_ready'] = 100 * oBack['ready'] / oBack['total']
+                            context['pipecount'] = oBack['count'] - oBack['ready']
+                        elif sStatusCode == "completed":
+                            # Now we have another set of feedback
+                            for item in self.completed:
+                                context[item] = oBack[item]
+                            # Make sure the searchTime is provided in seconds
+                            context['searchTime'] = context['searchTime'] / 1000
 
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
@@ -214,6 +250,8 @@ class ResearchExe(View):
 
             # Get the HTML response
             self.data['html'] = render_to_string(self.template_name, context, request)
+            # Pass on the statuscode
+            self.data['statuscode'] = sStatusCode
         else:
             self.data['html'] = "Please log in before continuing"
 
@@ -260,8 +298,12 @@ class ResearchExe(View):
         self.request = request
         # Copy any object id
         self.object_id = object_id
-        # Get the instance of the Main Model object
-        self.obj =  self.MainModel.objects.get(pk=object_id)
+        if self.action == "start":
+            # Get the instance of the Main Model object
+            self.obj =  self.MainModel.objects.get(pk=object_id)
+        else:
+            # In all other cases we are looking at a Basket object
+            self.obj = Basket.objects.get(pk=object_id)
         # Get the parameters
         if request.POST:
             self.qd = request.POST
@@ -286,8 +328,8 @@ class ResearchStop(ResearchExe):
     template_name = "seeker/exe_status.html"
 
 
-class ResearchStatus(ResearchExe):
-    action = "status"
+class ResearchProgress(ResearchExe):
+    action = "progress"
     template_name = "seeker/exe_status.html"
 
 

@@ -12,6 +12,9 @@ var ru = (function ($, ru) {
     var loc_example = "",
         loc_divErr = "research_err",
         oSyncTimer = null,
+        basket_progress = "",         // URL to get progress
+        basket_stop = "",             // URL to stop the basket
+        basket_data = null,           // DATA to be sent along
         lAddTableRow = [
           { "table": "research_intro-wrd", "prefix": "construction", "counter": true, "events": null},
           { "table": "research_intro-cns", "prefix": "construction", "counter": true, "events": null },
@@ -1131,7 +1134,9 @@ var ru = (function ($, ru) {
         var sDivProgress = "#research_progress",
             ajaxurl = "",
             response = null,
+            basket_id = -1,
             frm = null,
+            sMsg = "",
             data = [];
 
         try {
@@ -1142,12 +1147,40 @@ var ru = (function ($, ru) {
           frm = $(elStart).closest("form");
           if (frm !== undefined) { data = $(frm).serializeArray(); }
 
-          // Make an AJAX call to get an existing or new specification element HTML code
-          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
-
-
           // Start the search
           $(sDivProgress).html("Contacting the search server")
+
+          // Hide some buttons
+          $("#research_stop").addClass("hidden");
+          $("#research_results").addClass("hidden");
+
+          // Make an AJAX call to get an existing or new specification element HTML code
+          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+          if (response.status === undefined) {
+            // Show an error somewhere
+            private_methods.errMsg("Bad execute response");
+            $(sDivProgress).html("Bad execute response");
+          } else if (response.status !== "ok") {
+            // Show the error that has occurred
+            if ("html" in response) { sMsg = response['html']; }
+            if ("error_list" in response) { sMsg += response['error_list'];}
+            private_methods.errMsg("Execute error: " + toString);
+            $(sDivProgress).html("execution error");
+          } else {
+            // All went well -- get the basket id
+            basket_id = response.basket_id;
+            basket_progress = response.basket_progress;
+            basket_stop = response.basket_stop;
+            basket_data = data;
+            // Make the stop button available
+            $("#research_stop").removeClass("hidden");
+            // TODO: hide the start button
+            // $("#research_start").addClass("hidden");
+
+            // Start the next call for status after 1 second
+            setTimeout(function () { ru.cesar.seeker.search_progress(); }, 1000);
+          }
+
 
         } catch (ex) {
           private_methods.errMsg("search_start", ex);
@@ -1160,10 +1193,70 @@ var ru = (function ($, ru) {
        *
        */
       search_stop() {
+        var sDivProgress = "#research_progress",
+            response = null;
         try {
+          // Make an AJAX call by using the already stored basket_stop URL
+          response = ru.cesar.seeker.ajaxcall(basket_stop, basket_data, "POST");
+          if (response.status !== undefined) {
+            switch (response.status) {
+              case "ok": break;
+              case "error": break;
+            }
+          }
 
         } catch (ex) {
           private_methods.errMsg("search_stop", ex);
+        }
+      },
+
+      /**
+       * search_progress
+       *   Elicit and show the status of an ongoing search
+       *
+       */
+      search_progress() {
+        var sDivProgress = "#research_progress",
+            response = null,
+            html = [],
+            sMsg = "";
+
+        try {
+          // Make an AJAX call by using the already stored basket_stop URL
+          response = ru.cesar.seeker.ajaxcall(basket_progress, basket_data, "POST");
+          if (response.status !== undefined) {
+            if ('html' in response) { sMsg = response.html; }
+            switch (response.status) {
+              case "ok":
+                // Action depends on the statuscode
+                switch (response.statuscode) {
+                  case "working":
+                    // Show the status of the project
+                    $(sDivProgress).html(response.html);
+                    // Make sure we are called again
+                    setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
+                    break;
+                  case "completed":
+                    // Show that the project has finished
+                    $(sDivProgress).html(response.html);
+                    // Hide the STOP button
+                    $("#research_stop").addClass("hidden");
+                    break;
+                  default:
+                    // Show the current status
+                    private_methods.errMsg("Unknown statuscode: [" + response.status.statuscode+"]");
+                    break;
+                }
+                break;
+              case "error":
+                if ('error_list' in response) { sMsg += response.error_list; }
+                private_methods.errMsg("Progress error: " + sMsg);
+                break;
+            }
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("search_progress", ex);
         }
       },
 

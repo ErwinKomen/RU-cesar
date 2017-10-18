@@ -12,7 +12,7 @@ from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
 from cesar.browser.models import build_choice_list, build_abbr_list, get_help, choice_value, get_instance_copy, copy_m2m, copy_fk, Part, CORPUS_FORMAT
-from cesar.seeker.services import crpp_exe, crpp_send_crp
+from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status
 import sys
 import copy
 import json
@@ -1084,10 +1084,8 @@ class Research(models.Model):
             oBack['status'] = 'error'
         # Add basket to the return object, provided all went well
         oBack['basket'] = basket
-        # Create CRPX project and execute it
-        #oData = {'codedef': basket.codedef,
-        #         'codeqry': basket.codeqry,
-        #         'research_id': self.id}
+        # Create CRPX project
+        basket.set_status("create_crpx")
         try:
             sCrpxName, sCrpxText = ConvertProjectToCrpx(basket)
         except:
@@ -1107,18 +1105,21 @@ class Research(models.Model):
             # Get the userid
             sUser = self.owner.username
             # First send over the CRP code
+            basket.set_status("send_crpx")
             oCrpp = crpp_send_crp(sUser, sCrpxText, sCrpxName)
-            if oCrpp['status'] == 'ok':
-                basket.set_status("to_crpp")
+            if oCrpp['commandstatus'] == 'ok':
+                basket.set_status("issue_exe")
                 # Last information
-                sLng = basket.part.corpus.lng   # Language of the corpus
+                sLng = basket.part.corpus.get_lng_display()   # Language of the corpus
                 sDir = basket.part.dir          # Directory where the part is located
                 # Now start execution
                 oCrpp = crpp_exe(sUser, sCrpxName, sLng, sDir)      
-                if oCrpp['status'] == 'ok':   
+                if oCrpp['commandstatus'] == 'ok':   
+                    # Get the status object
+                    oExeStatus = oCrpp['status']
                     # Set all that is needed in the basket
-                    basket.set_jobid(oCrpp['jobid'])
-                    basket.set_status("starting")
+                    basket.set_jobid(oExeStatus['jobid'])
+                    basket.set_status("exe_starting")
                     # Adapt the message
                     oBack['msg'] = 'sent to the server'
                 else:
@@ -1133,6 +1134,7 @@ class Research(models.Model):
             # Could not send this to the CRPX
             oBack['status'] = 'error'
             oBack['msg'] = 'Failed to send or execute the project to /crpp'
+            sys.exc_info()
         # Return the status
         return oBack
 
@@ -1179,6 +1181,31 @@ class Basket(models.Model):
         self.jobid = jobid
         self.save()
         return True
+
+    def get_progress(self):
+        """Issue a progress request for this job and return the status"""
+
+        # Initialise the status
+        oBack = {'commandstatus': 'ok'}
+        oErr = ErrHandle()
+        try:
+            # Issue a status request
+            sUser = self.research.owner.username
+            oCrpp = crpp_status(sUser, self.jobid)
+            if oCrpp['commandstatus'] == 'ok':
+                for item in oCrpp:
+                    if item != 'commandstatus':
+                        oBack[item] = oCrpp[item]
+            else:
+                oBack['commandstatus'] = 'error'
+                oBack['msg'] = oCrpp['message']
+
+        except:
+            oBack['commandstatus'] = "error"
+            oBack['msg'] = oErr.DoError("get_progress error")
+
+        # And then we return what we have
+        return oBack
 
    
 

@@ -36,4 +36,6 @@ class ErrHandle:
         # Is this a fatal error that requires exiting?
         if (bExit):
             sys.exit(2)
+        # Otherwise: return the string that has been made
+        return "<br>".join(self.loc_errStack)
 

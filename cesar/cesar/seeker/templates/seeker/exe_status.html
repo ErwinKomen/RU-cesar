@@ -1,4 +1,19 @@
 ﻿<div>Status: {{status}}</div>
+{% if statuscode == "working" %}
+  <div class='col-md-12'>
+    <table class='seeker-choice'>
+      <tbody>
+        <tr><td>Submitted:</td><td>{{count}} ({{ptc_count|floatformat:1}}%)</td><td class="b">{{start}}</td></tr>
+        <tr><td>Ready:</td><td>{{ready}} ({{ptc_ready|floatformat:1}}%)</td><td class="b">{{finish}}</td></tr>
+        <tr><td>Processing:</td><td align="center">{{pipecount}}</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+{% elif statuscode == "completed" %}
+  <div class='col-md-12'>
+    The search has finished in {{searchTime|floatformat:3}} seconds.
+  </div>
+{% endif %}
 <div class="errors">
   {% if error_list %} 
     <h4>Errors:</h4>
