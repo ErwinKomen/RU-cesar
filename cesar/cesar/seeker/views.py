@@ -230,6 +230,7 @@ class ResearchExe(View):
                             context['ptc_count'] = 100 * oBack['count'] / oBack['total']
                             context['ptc_ready'] = 100 * oBack['ready'] / oBack['total']
                             context['pipecount'] = oBack['count'] - oBack['ready']
+                            context['ptc_done'] = int(context['ptc_ready'])
                         elif sStatusCode == "completed":
                             # Now we have another set of feedback
                             for item in self.completed:

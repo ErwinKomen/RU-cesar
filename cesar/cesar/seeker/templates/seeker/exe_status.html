@@ -9,6 +9,11 @@
       </tbody>
     </table>
   </div>
+  <div class="col-md-10 progress">
+    <div id="exe-progress" class="progress-bar" role="progressbar" aria-valuenow="{{ptc_done}}" aria-valuemin="100" aria-valuemax="100" style="width:{{ptc_done}}%">
+      {% if ptc_done > 5 %}{{ptc_done}}%{% endif %}
+    </div>
+  </div>
 {% elif statuscode == "completed" %}
   <div class='col-md-12'>
     The search has finished in {{searchTime|floatformat:3}} seconds.

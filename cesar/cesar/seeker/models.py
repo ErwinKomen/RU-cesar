@@ -1038,6 +1038,10 @@ class Research(models.Model):
         # Import the correct function
         from cesar.seeker.convert import ConvertProjectToXquery
 
+        # Validate
+        if partId == None or partId == "" or sFormat == None or sFormat == "":
+            return None
+
         # Prepare data
         oData = {'targetType': self.targetType,
                  'format': sFormat,
@@ -1080,9 +1084,19 @@ class Research(models.Model):
         try:
             bRefresh = True # Make sure that Xquery is calculated afresh
             basket = self.to_xquery(partId, sFormat, bRefresh)
+            # Check on what was returned
+            if basket == None:
+                if partId == None or partId == "":
+                    sMsg = "First specify a corpus (or a part of a corpus) to search in"
+                else:
+                    sMsg = "Something is wrong. Cesar is unable to execute"
+                oBack['msg'] = sMsg
+                oBack['status'] = 'error'
+                return oBack
         except:
             oBack['msg'] = 'Failed to convert project to Xquery'
             oBack['status'] = 'error'
+            return oBack
         # Add basket to the return object, provided all went well
         oBack['basket'] = basket
         # Create CRPX project
