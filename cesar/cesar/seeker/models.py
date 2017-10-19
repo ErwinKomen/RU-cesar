@@ -1071,6 +1071,7 @@ class Research(models.Model):
     def execute(self, partId, sFormat):
         """Send command to /crpp to start the project"""
 
+        oErr = ErrHandle()
         # Import the correct function
         from cesar.seeker.convert import ConvertProjectToCrpx
         # Prepare reply
@@ -1117,11 +1118,28 @@ class Research(models.Model):
                 if oCrpp['commandstatus'] == 'ok':   
                     # Get the status object
                     oExeStatus = oCrpp['status']
-                    # Set all that is needed in the basket
-                    basket.set_jobid(oExeStatus['jobid'])
-                    basket.set_status("exe_starting")
-                    # Adapt the message
-                    oBack['msg'] = 'sent to the server'
+                    # NOTE: the exeStatus may be a string or an object (hmmm)
+                    if oExeStatus == "error":
+                        # The server is complaining, it seems
+                        oBack['msg'] = 'The server gives an error'
+                        if 'code' in oCrpp:
+                            oBack['msg'] += "<br>Code: " + oCrpp['code']
+                        if 'message' in oCrpp:
+                            oBack['msg'] += "<br>Message: " + oCrpp['message']
+                        oBack['status'] = 'error'
+                        basket.set_status('error')
+                    else:
+                        # Set all that is needed in the basket
+                        if 'jobid' in oCrpp:
+                            basket.set_jobid(oCrpp['jobid'])
+                        elif 'jobid' in oExeStatus:
+                            basket.set_jobid(oExeStatus['jobid'])
+                        else:
+                            # Not sure why we do not have jobid
+                            sStop = "Yes"
+                        basket.set_status("exe_starting")
+                        # Adapt the message
+                        oBack['msg'] = 'sent to the server'
                 else:
                     oBack['status'] = 'error'
                     oBack['msg'] = 'Could not perform execute at /crpp'
@@ -1133,8 +1151,7 @@ class Research(models.Model):
         except:
             # Could not send this to the CRPX
             oBack['status'] = 'error'
-            oBack['msg'] = 'Failed to send or execute the project to /crpp'
-            sys.exc_info()
+            oBack['msg'] = oErr.DoError('Failed to send or execute the project to /crpp')
         # Return the status
         return oBack
 

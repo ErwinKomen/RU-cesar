@@ -1140,6 +1140,9 @@ var ru = (function ($, ru) {
             data = [];
 
         try {
+          // Clear the errors
+          private_methods.errClear();
+
           // obligatory parameter: ajaxurl
           ajaxurl = $(elStart).attr("ajaxurl");
 
@@ -1159,12 +1162,12 @@ var ru = (function ($, ru) {
           if (response.status === undefined) {
             // Show an error somewhere
             private_methods.errMsg("Bad execute response");
-            $(sDivProgress).html("Bad execute response");
-          } else if (response.status !== "ok") {
+            $(sDivProgress).html("Bad execute response:<br>"+response);
+          } else if (response.status === "error") {
             // Show the error that has occurred
             if ("html" in response) { sMsg = response['html']; }
-            if ("error_list" in response) { sMsg += response['error_list'];}
-            private_methods.errMsg("Execute error: " + toString);
+            if ("error_list" in response) { sMsg += response['error_list']; }
+            private_methods.errMsg("Execute error: " + sMsg);
             $(sDivProgress).html("execution error");
           } else {
             // All went well -- get the basket id
