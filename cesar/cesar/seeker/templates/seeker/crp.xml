@@ -2,7 +2,7 @@
 <CorpusResearchProject>
   <General>
     <DateCreated>{{created}}</DateCreated>
-    <DateChanged>{{created}}</DateChanged>
+    <DateChanged>{{changed}}</DateChanged>
     <Setting Name="Language" Value="{{lng}}" />
     <Setting Name="GenPrec" Value="2" />
     <Setting Name="GenInpExt" Value="{{extension}}" />
@@ -10,15 +10,17 @@
     <Setting Name="FollNum" Value="1" />
     <Setting Name="ShowPsd" Value="True" />
     <Setting Name="Locked" Value="True" />
-    <Setting Name="Stream" Value="False" />
+    <Setting Name="DbaseInput" Value="False" />
+    <Setting Name="Stream" Value="True" />
     <Setting Name="Name" Value="{{research.name}}" />
-    <Setting Name="QueryDir" Value="" />
+    <Setting Name="QueryDir" Value="/etc/project/{{research.owner.username}}/xq" />
     <Setting Name="Source" Value="*{{extension}}" />
-    <Setting Name="DstDir" Value="" />
+    <Setting Name="DstDir" Value="/etc/project/{{research.owner.username}}/out" />
     <Setting Name="SrcDir" Value="{{dir}}" />
+    <Setting Name="OutputDir" Value="/etc/project/{{research.owner.username}}/out" />
     <Setting Name="Goal" Value="{{research.purpose}}" />
     <Setting Name="Comments" Value="Automatically created by Cesar conversion" />
-    <Setting Name="Author" Value="{{research.owner.firstname}} {{research.owner.lastname}}" />
+    <Setting Name="Author" Value="{{research.owner.first_name}} {{research.owner.last_name}}" />
     <Setting Name="ProjectType" Value="{{project_type}}" />
   </General>
   <QueryConstructor>
@@ -28,7 +30,7 @@
         Input="Source"
         Mother="False"
         OutFeat="{% for dbfeat in dbfeatlist %}{{dbfeat.name}}@{{forloop.counter}}{% if not forloop.last %};{% endif %}{% endfor %}"
-        Output="{{outputname}}"
+        Output="1_{{outputname}}"
         Query="{{queryname}}"
         Result="{{outputname}}"
         />
@@ -37,28 +39,30 @@
     {% if dbfeatlist %}
       {% for dbfeat in dbfeatlist %}
         <DbFeat DbFeatId="{{forloop.counter}}"
-          FtNum="{{forloop.counter}}"
+          FtNum="{{dbfeat.FtNum}}"
           Name="{{dbfeat.name}}"
           Pre="True"
-          QCid="1" />
+          QCid="{{dbfeat.QCid}}" />
       {% endfor %}
     {% endif %}
   </DbFeatList>
   <QueryList>
     <Query QueryId="1" Name="{{queryname}}" File="Cesar_standard-qry.xq"
                 Goal="Main query defined by Cesar conversion"
-                Comment="" Created="" Changed="">
+                Comment="" Created="{{created}}" Changed="{{changed}}">
       <Text>{{codeqry}}</Text>
     </Query>
   </QueryList>
   <DefList>
     <Definition DefId="1" Name="{{defname}}" File="Cesar_standard-def.xq"
                 Goal="Definitions defined by Cesar conversion"
-                Comment="" Created="" Changed="">
+                Comment="" Created="{{created}}" Changed="{{changed}}">
       <Text>{{codedef}}</Text>
     </Definition>
   </DefList>
   <VarList>
     
   </VarList>
+  <PeriodInfo />
+  <QwizList/>
 </CorpusResearchProject>

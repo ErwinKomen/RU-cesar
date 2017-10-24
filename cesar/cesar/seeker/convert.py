@@ -97,6 +97,7 @@ def ConvertProjectToCrpx(basket):
     sCrpxContent = ""
     template_crp = "seeker/crp.xml"
     oErr = utils.ErrHandle()
+    standard_features = ['searchWord', 'searchPOS']
 
     try:
         # Access the research project and the gateway
@@ -136,6 +137,14 @@ def ConvertProjectToCrpx(basket):
         outputname = "standard"
         # Make sure that the dbfeatlist contains all features in exactly the right ORDER!!!
         dbfeatlist = []
+        # Add the standard features
+        for idx in range(0, len(standard_features)):
+            dbfeat = standard_features[idx]
+            iNum =idx+1
+            iQCid = 1
+            oDbFeat = {"name": dbfeat, "QCid": iQCid, "FtNum": iNum}
+            dbfeatlist.append(oDbFeat)
+
 
         # Create a context for the template
         context = dict(gateway=gateway, 
@@ -150,6 +159,7 @@ def ConvertProjectToCrpx(basket):
                        dbfeatlist=dbfeatlist,
                        project_type=project_type,
                        currentdate=currentdate,
+                       changed=get_crpp_date(timezone.now()),
                        created=get_crpp_date(basket.created),
                        codedef=basket.codedef,
                        codeqry=basket.codeqry)
