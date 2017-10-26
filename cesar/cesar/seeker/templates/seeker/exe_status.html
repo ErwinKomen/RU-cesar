@@ -6,17 +6,29 @@
         <tr><td>Submitted:</td><td>{{count}} ({{ptc_count|floatformat:1}}%)</td><td class="b">{{start}}</td></tr>
         <tr><td>Ready:</td><td>{{ready}} ({{ptc_ready|floatformat:1}}%)</td><td class="b">{{finish}}</td></tr>
         <tr><td>Processing:</td><td align="center">{{pipecount}}</td><td></td></tr>
+        <tr><td >Hits (total):</td><td align="center">{{found}}</td><td></td></tr>
       </tbody>
     </table>
   </div>
   <div class="col-md-10 progress">
-    <div id="exe-progress" class="progress-bar" role="progressbar" aria-valuenow="{{ptc_done}}" aria-valuemin="100" aria-valuemax="100" style="width:{{ptc_done}}%">
+    <div id="exe-progress" class="progress-bar" role="progressbar" 
+         aria-valuenow="{{ptc_done}}" aria-valuemin="100" aria-valuemax="100" 
+         style="width:{{ptc_done}}%">
       {% if ptc_done > 5 %}{{ptc_done}}%{% endif %}
     </div>
   </div>
 {% elif statuscode == "completed" %}
   <div class='col-md-12'>
     The search has finished in {{searchTime|floatformat:3}} seconds.
+    <!-- walk through all the QC items -->
+    {% for qcItem in table %}
+    <h4>Output {{qcItem.qc}}: {{qcItem.result}}</h4>
+    <table class='seeker-choice'>
+      <tr><td align="right">Total count:</td><td colspan="{{qcItem.subcats|length}}" align="center">{{qcItem.total}}</td></tr>
+      <tr><td align="right">Category:</td>{% for subcat in qcItem.subcats %}<td class="b">{{subcat}}</td>{% endfor %}</tr>
+      <tr><td align="right">Count per category:</td>{% for subcount in qcItem.counts %}<td align="center">{{subcount}}</td>{% endfor %}</tr>
+    </table>
+    {% endfor %}
   </div>
 {% endif %}
 <div class="errors">
