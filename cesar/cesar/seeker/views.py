@@ -5,7 +5,7 @@ Definition of views for the SEEKER app.
 from django.db.models import Q
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
@@ -202,6 +202,7 @@ class ResearchExe(View):
                             # Also provide the status and the stop commands for the caller
                             self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket_id})
                             self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket_id})
+                            self.data['basket_result'] = reverse("search_result", kwargs={'object_id': basket_id})
                     else:
                         self.arErr.append("No corpus part to be searched has been selected")
                 elif self.action == "stop":
@@ -242,12 +243,14 @@ class ResearchExe(View):
                                     subcount = qcItem['counts'][idx]
                                     sub.append({"subcat": subcat, "subcount": subcount})
                                 qcItem['sub'] = sub
-                            # Now we have another set of feedback
+                            # Copy all the items from [oBack] to [context]
                             for item in self.completed:
                                 context[item] = oBack[item]
 
                             # Make sure the searchTime is provided in seconds
                             context['searchTime'] = context['searchTime'] / 1000
+
+                            # Final action: make all the information available into a ResultItem
 
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
@@ -1510,6 +1513,23 @@ class ObjectDeleteMixin:
 class ResearchDelete(ObjectDeleteMixin, View):
     """Delete one 'Research' object"""
     model = Research
+
+
+class ResearchResultDetail(View):
+    """Show details of one result"""
+    model = Basket
+    template_name = ""
+
+    def get(self, request, object_id=None):
+        # Fetch the basket_id
+        obj = get_object_or_404(self.model, id=object_id)
+        if obj != None:
+            # Get to the result object
+            x = 1
+
+        # Return the html page to be shown
+        context = {}
+        return render( request, self.template_name, context)
 
 
 def research_oview(request, object_id=None):

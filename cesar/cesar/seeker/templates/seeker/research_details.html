@@ -47,7 +47,7 @@
         </div>
 
         <!-- Action Button row -->
-        <div class="row container">
+        <div id="action_buttons" class="row container">
           <div class="col-md-9 panel panel-default">
             <div class="row">&nbsp;</div>
             <div class="row">
@@ -147,7 +147,7 @@
               </div>
 
               <div class="col-md-3 col-md-offset-1 panel panel-default">
-                <b>Execution</b>
+                <b>Action</b>
                 <div class="row">
                   <div class="col-md-2 ">
                     <button type="button" class="btn jumbo-3" id="research_start" 
@@ -158,9 +158,9 @@
                     <button type="button" class="btn jumbo-4 hidden" id="research_stop" 
                             ajaxurl="{% url 'search_stop' object_id %}"
                             onclick="ru.cesar.seeker.search_stop(this);">Stop</button>
-                    <button type="button" class="btn jumbo-2 hidden" id="research_results" 
-                            ajaxurl="{% url 'search_stop' object_id %}"
-                            onclick="ru.cesar.seeker.search_stop(this);">Results</button>
+                    <a class="btn jumbo-2 hidden" id="research_results"
+                       type="button" title="show results"
+                       href="">Results</a>
                   </div>
                 </div>
                 <div class="row">&nbsp;</div>

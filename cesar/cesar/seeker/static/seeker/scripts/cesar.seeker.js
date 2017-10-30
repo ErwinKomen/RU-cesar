@@ -14,6 +14,7 @@ var ru = (function ($, ru) {
         oSyncTimer = null,
         basket_progress = "",         // URL to get progress
         basket_stop = "",             // URL to stop the basket
+        basket_result = "",           // URL to the results for this basket
         basket_data = null,           // DATA to be sent along
         lAddTableRow = [
           { "table": "research_intro-wrd", "prefix": "construction", "counter": true, "events": null},
@@ -889,7 +890,12 @@ var ru = (function ($, ru) {
         }
       },
 
-      research_open(sDivName, sDivClose) {
+      /**
+       * research_open
+       *   Open up a section and close another one
+       *
+       */
+      research_open: function (sDivName, sDivClose) {
         try {
           if (sDivName !== undefined && sDivName !== '') {
             $("#" + sDivName).removeClass("hidden");
@@ -1174,6 +1180,7 @@ var ru = (function ($, ru) {
             basket_id = response.basket_id;
             basket_progress = response.basket_progress;
             basket_stop = response.basket_stop;
+            basket_result = response.basket_result;
             basket_data = data;
             // Make the stop button available
             $("#research_stop").removeClass("hidden");
@@ -1244,6 +1251,10 @@ var ru = (function ($, ru) {
                     $(sDivProgress).html(response.html);
                     // Hide the STOP button
                     $("#research_stop").addClass("hidden");
+                    // Show the RESULTS button
+                    $("#research_results").removeClass("hidden");
+                    // Set the correct href for the button
+                    $("#research_results").attr("href", basket_result);
                     break;
                   default:
                     // Show the current status
