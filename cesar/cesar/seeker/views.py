@@ -233,9 +233,19 @@ class ResearchExe(View):
                             context['ptc_done'] = int(context['ptc_ready'])
                             context['found'] = oBack['found']
                         elif sStatusCode == "completed":
+                            # Adapt the table we receive
+                            oTable = oBack["table"]
+                            for qcItem in oTable:
+                                sub = []
+                                for idx in range(0, len(qcItem['subcats'])):
+                                    subcat = qcItem['subcats'][idx]
+                                    subcount = qcItem['counts'][idx]
+                                    sub.append({"subcat": subcat, "subcount": subcount})
+                                qcItem['sub'] = sub
                             # Now we have another set of feedback
                             for item in self.completed:
                                 context[item] = oBack[item]
+
                             # Make sure the searchTime is provided in seconds
                             context['searchTime'] = context['searchTime'] / 1000
 

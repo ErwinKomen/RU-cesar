@@ -24,9 +24,13 @@
     {% for qcItem in table %}
     <h4>Output {{qcItem.qc}}: {{qcItem.result}}</h4>
     <table class='seeker-choice'>
-      <tr><td align="right">Total count:</td><td colspan="{{qcItem.subcats|length}}" align="center">{{qcItem.total}}</td></tr>
-      <tr><td align="right">Category:</td>{% for subcat in qcItem.subcats %}<td class="b">{{subcat}}</td>{% endfor %}</tr>
-      <tr><td align="right">Count per category:</td>{% for subcount in qcItem.counts %}<td align="center">{{subcount}}</td>{% endfor %}</tr>
+      <tr><td align="right">Total count:</td><td align="right">{{qcItem.total}}</td></tr>
+      {% for subres in qcItem.sub %}
+      <tr>
+        <td align="right" class="b">{{subres.subcat}}</td>
+        <td align="right">{{subres.subcount}}</td>
+      </tr>
+      {% endfor %}
     </table>
     {% endfor %}
   </div>
