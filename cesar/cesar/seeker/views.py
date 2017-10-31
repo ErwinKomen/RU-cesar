@@ -250,7 +250,8 @@ class ResearchExe(View):
                             # Make sure the searchTime is provided in seconds
                             context['searchTime'] = context['searchTime'] / 1000
 
-                            # Final action: make all the information available into a ResultItem
+                            # Final action: make all the information available into a Quantor for this basket
+                            self.obj.set_quantor(oBack)
 
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]

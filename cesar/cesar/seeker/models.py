@@ -11,7 +11,9 @@ from django.utils import timezone
 from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
-from cesar.browser.models import build_choice_list, build_abbr_list, get_help, choice_value, get_instance_copy, copy_m2m, copy_fk, Part, CORPUS_FORMAT
+from cesar.browser.models import build_choice_list, build_abbr_list, \
+                                 get_help, choice_value, get_instance_copy, \
+                                 copy_m2m, copy_fk, Part, CORPUS_FORMAT, Text
 from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status
 import sys
 import copy
@@ -1190,7 +1192,7 @@ class Basket(models.Model):
     # [0-1] create date and lastsave date
     created = models.DateTimeField(default=timezone.now)
     saved = models.DateTimeField(null=True, blank=True)
-    # [1] Each status is linked to one research project
+    # [1] Each basket is linked to one research project
     research = models.ForeignKey(Research, blank=False, null=False, related_name="baskets")
 
     def __str__(self):
@@ -1238,8 +1240,160 @@ class Basket(models.Model):
         # And then we return what we have
         return oBack
 
+    def set_quantor(self, oResults):
+        """Get or create a quantor and put all the results from [oResults] into it"""
 
-   
+        oErr = ErrHandle()
+        try:
+            # Get (or create) the quantor
+            quantor = Quantor.get_quantor(self)
+            # Set the necessary parameters
+            quantor.searchTime = oResults['searchTime']
+            quantor.total = oResults['total']
+            quantor.qcNum = len(oResults['table'])
+            quantor.save()
+            # Get or create the required QC lines
+            for idx in range(0, quantor.qcNum):
+                # Access the result information for this QC
+                oQcResults = oResults['table'][idx]
+                # Set the QC number
+                qc = idx + 1
+                qcline = QCline.get_qcline(quantor, qc)
+                # Set the number of hits for this QC line
+                qcline.set_count(oQcResults['total'])
+                # Create all the necessary subcategories
+                numsubcats = len(oQcResults['subcats'])
+                subcats = []
+                for subnum in range(0, numsubcats):
+                    # Get or create this subject
+                    qsubcat = Qsubcat.get_qsubcat(qcline, oQcResults['subcats'][subnum])
+                    # Set the number of counts for this subcategory
+                    qsubcat.set_count(oQcResults['counts'][subnum])
+                    subcats.append(qsubcat)
+                # Process all the hits for this QCline
+                with transaction.atomic():
+                    for hit in oQcResults['hits']:
+                        # Find the text within the appropriate part/format
+                        text = Text.find_text(self.part, self.format, hit['file'])
+                        # Process the sub categories
+                        for subnum in range(0, numsubcats):
+                            # Get this Qsubcat and the count for it
+                            qsubcat = subcats[subnum]
+                            subcount = hit['subs'][subnum]
+                            # Add the appropriate Qsubinfo
+                            qsubinfo = Qsubinfo.get_qsubinfo(qsubcat, text)
+                            qsubinfo.set_count(subcount)
+            # REturn positively
+            return True
+        except:
+            # Failure
+            oErr.DoError('set_quantor could not read the hit information')
+            return False
+
+class Quantor(models.Model):
+    """QUantificational results of executing one basket"""
+
+    # [1] A Quantor is linked to a basket
+    basket = models.ForeignKey(Basket, blank=False, null=False)
+    # [1] THe number of files (texts) that have been searched
+    total = models.IntegerField("Number of files", default=0)
+    # [1] Keep the number of milliseconds the search took
+    searchTime = models.IntegerField("Search time (ms)", default=0)
+    # [1] Need to know the number of QCs for this search
+    qcNum = models.IntegerField("Number of query lines", default=1)
+
+    def __str__(self):
+        return "{}".format(self.count)
+
+    def get_quantor(basket):
+        # CHeck if this exists
+        item = Quantor.objects.filter(basket=basket).first()
+        if item == None:
+            item = Quantor(basket=basket)
+            item.save()
+        # Return the fetched or created item
+        return item
+
+
+class QCline(models.Model):
+
+    # [1] A subcategory belongs to a particular QC of the quantor
+    qc = models.IntegerField("QC number", default=1)
+    # [1] The number of hits for this QC line
+    count = models.IntegerField("Number of hits", default=0)
+    # [1] Every QCline is linked to a Quantor with results
+    quantor = models.ForeignKey(Quantor, blank=False, null=False, related_name="qclines")
+
+    def __str__(self):
+        return "{}".format(self.qc)
+
+    def get_qcline(quantor, qcnum):
+        # CHeck if this exists
+        item = QCline.objects.filter(qc=qcnum, quantor=quantor).first()
+        if item == None:
+            item = QCline(qc=qcnum, quantor=quantor)
+            item.save()
+        # Return the fetched or created item
+        return item
+
+    def set_count(self, count):
+        self.count = count
+        self.save()
+
+
+class Qsubcat(models.Model):
+    """Subcategory made when executing one project"""
+
+    # [1] Subcategory must have a name--but not too long
+    name = models.CharField("Name", max_length=MAX_TEXT_LEN)
+    # [1] The number of hits for this subcat
+    count = models.IntegerField("Number of hits", default=0)
+    # [1] Every subcategory is linked to a QCline
+    qcline = models.ForeignKey(QCline, blank=False, null=False, related_name="qsubcats")
+
+    def __str__(self):
+        return self.name
+
+    def get_qsubcat(qcline, name):
+        # CHeck if this exists
+        item = Qsubcat.objects.filter(qcline=qcline, name=name).first()
+        if item == None:
+            item = Qsubcat(qcline=qcline, name=name)
+            item.save()
+        # Return the fetched or created item
+        return item
+
+    def set_count(self, count):
+        self.count = count
+        self.save()
+
+
+class Qsubinfo(models.Model):   
+    """Information on one subcategory of one file"""
+
+    # [1] subcatinfo links to a QUantor-Subcat name
+    subcat = models.ForeignKey(Qsubcat, blank=False, null=False, related_name="qsubinfos")
+    # [1] subcatinfo also links to a Text (which is under the part)
+    text = models.ForeignKey(Text, blank=False, null=False)
+    # [1] The new information is the COUNT - the number of hits
+    count = models.IntegerField("Hits", default=0)
+
+    def __str__(self):
+        return "{}".format(self.count)
+
+    def get_qsubinfo(subcat, text):
+        # CHeck if this exists
+        item = Qsubinfo.objects.filter(subcat=subcat, text=text).first()
+        if item == None:
+            item = Qsubinfo(subcat=subcat, text=text)
+            item.save()
+        # Return the fetched or created item
+        return item
+
+    def set_count(self, count):
+        self.count = count
+        self.save()
+
 
 class ShareGroup(models.Model):
     """Group witch which a project is shared"""

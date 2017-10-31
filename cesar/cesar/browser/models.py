@@ -979,6 +979,18 @@ class Text(models.Model):
         else:
             return qs[0]
 
+    def find_text(part, format, sName):
+        """Find the text [sName] within the part/format combination"""
+        sName = os.path.basename(sName)
+        sName = sName.replace(".folia.xml", "")
+        sName = sName.replace(".psdx", "")
+        iFormat = choice_value(CORPUS_FORMAT, format)
+        qs = Text.objects.filter(fileName=sName, part=part, format=iFormat)
+        if qs == None or len(qs) == 0:
+            return None
+        else:
+            return qs[0]
+
     def get_sentences(self):
         """Get the sentences belonging to this text"""
 
