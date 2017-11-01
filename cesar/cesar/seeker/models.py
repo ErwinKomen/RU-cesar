@@ -1245,44 +1245,54 @@ class Basket(models.Model):
 
         oErr = ErrHandle()
         try:
-            # Get (or create) the quantor
-            quantor = Quantor.get_quantor(self)
-            # Set the necessary parameters
-            quantor.searchTime = oResults['searchTime']
-            quantor.total = oResults['total']
-            quantor.qcNum = len(oResults['table'])
-            quantor.save()
-            # Get or create the required QC lines
-            for idx in range(0, quantor.qcNum):
-                # Access the result information for this QC
-                oQcResults = oResults['table'][idx]
-                # Set the QC number
-                qc = idx + 1
-                qcline = QCline.get_qcline(quantor, qc)
-                # Set the number of hits for this QC line
-                qcline.set_count(oQcResults['total'])
-                # Create all the necessary subcategories
-                numsubcats = len(oQcResults['subcats'])
-                subcats = []
-                for subnum in range(0, numsubcats):
-                    # Get or create this subject
-                    qsubcat = Qsubcat.get_qsubcat(qcline, oQcResults['subcats'][subnum])
-                    # Set the number of counts for this subcategory
-                    qsubcat.set_count(oQcResults['counts'][subnum])
-                    subcats.append(qsubcat)
-                # Process all the hits for this QCline
-                with transaction.atomic():
+            # Get all quantors (if any) still attached to me
+            qs = Quantor.objects.filter(basket=self)
+            # Remove them
+            qs.delete()
+
+            # Preparation: get necessary instances
+            instPart = self.part
+            instFormat = choice_value(CORPUS_FORMAT, self.format)
+
+            # Do all in one go
+            with transaction.atomic():
+                iNumQc = len(oResults['table'])
+                # Create a completely new quantor
+                quantor = Quantor(basket=self, searchTime=oResults['searchTime'],
+                                  total=oResults['total'], qcNum=iNumQc)
+                quantor.save()
+                # Get or create the required QC lines
+                for idx in range(0, iNumQc):
+                    # Access the result information for this QC
+                    oQcResults = oResults['table'][idx]
+                    # Set the QC number
+                    qc = idx + 1
+                    qcline = QCline(quantor=quantor, qc=qc, count=oQcResults['total'])
+                    qcline.save()
+                    # Create all the necessary subcategories
+                    numsubcats = len(oQcResults['subcats'])
+                    subcats = []
+                    for subnum in range(0, numsubcats):
+                        # Get or create this subject
+                        qsubcat = Qsubcat(qcline=qcline, 
+                                          name=oQcResults['subcats'][subnum],
+                                          count=oQcResults['counts'][subnum])
+                        qsubcat.save()
+                        subcats.append(qsubcat)
                     for hit in oQcResults['hits']:
                         # Find the text within the appropriate part/format
-                        text = Text.find_text(self.part, self.format, hit['file'])
+                        text = Text.find_text(instPart, instFormat, hit['file'])
                         # Process the sub categories
                         for subnum in range(0, numsubcats):
                             # Get this Qsubcat and the count for it
                             qsubcat = subcats[subnum]
                             subcount = hit['subs'][subnum]
                             # Add the appropriate Qsubinfo
-                            qsubinfo = Qsubinfo.get_qsubinfo(qsubcat, text)
-                            qsubinfo.set_count(subcount)
+                            qsubinfo = Qsubinfo(subcat = qsubcat, 
+                                                text= text,
+                                                count = subcount)
+                            qsubinfo.save()
+ 
             # REturn positively
             return True
         except:
@@ -1313,6 +1323,23 @@ class Quantor(models.Model):
             item.save()
         # Return the fetched or created item
         return item
+
+    def delete(self, using = None, keep_parents = False):
+        # Delete the quantor and all under it
+        with transaction.atomic():
+            # (1) Walk all its qclines
+            for qcline in self.qclines.all():
+                # (2) Each qcline has qsubcats
+                for qsubcat in qcline.qsubcats.all():
+                    # (3) Remove all the related qsubinfo elements
+                    qsubcat.qsubinfos.all().delete()
+                # Now we can remove the qsubcats
+                qcline.qsubcats.all().delete()
+            # Now remove the qclines
+            self.qclines.all().delete()
+            # Remove myself
+            response = super().delete(using, keep_parents)
+        return response
 
 
 class QCline(models.Model):
