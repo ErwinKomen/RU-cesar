@@ -1,0 +1,116 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
+      &rsaquo; <a href="{{search_edit_url}}">{{search_name}}</a>
+      &rsaquo; results [{{quantor.basket.part.corpus.get_lng_display}}, {{quantor.basket.part.name}}]
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="row">
+
+    <!-- The left sidebar -->
+    <div class="col-sm-3 col-md-2 sidebar">
+      <form name="textsearch" id="textsearch" action="" method="get"  
+                onsubmit="return do_search('#id_submit_button', 'text', 'simple');" >
+        <!-- EK: A sort-order specification is in a hidden form field, which is filled by JS:do_sort_column() -->
+        <div class="hidden">
+          <input name='sortOrder' class='form-control' value='subcat' >
+          <input id="submit_type" name='submit_type' class='form-control' value='simple'>
+        </div>
+
+        <table>
+          <tr><td>Project:</td><td><b>{{original.name}}</b></td></tr>
+          <tr><td>Language:</td><td><code>{{quantor.basket.part.corpus.get_lng_display}}</code></td></tr>
+          <tr><td>Corpus:</td><td>{{quantor.basket.part.name}}</td></tr>
+        </table>
+
+        <!-- Search button(s) panel -->
+        <div><label>&nbsp;</label></div>
+        <div class="row">
+          <div class='pull-right'>
+              <!-- Make sure no button has the *name* 'submit', otherwise submit() cannot be used -->
+              <input class='btn btn-primary' type="submit" onclick="ru.cesar.seeker.do_search(this, 'trefwoord', 'simple');" value="Search">
+              <input class='btn btn-default' type="submit" onclick="ru.cesar.seeker.do_search(this, 'trefwoord', 'reset');" value="Reset">
+          </div>
+        </div>
+
+        <!-- Control #1: Category selection -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='subcategory'>Category</label>
+          <select class="form-control" name="subcategory" id="subcategory">
+            <option value="">-</option>
+            {% for subcat in qsubcats %}
+              <option value="{{subcat.id}}" {% if subcat.id == searchform.subcategory.value|add:"0" %} selected {% endif %}>
+                {{subcat.name}} ({{subcat.count}})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Control #2: Text Name -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='textname'>Text</label>
+          <input name='textname' class='form-control' {% if searchform.textname.value %}value='{{searchform.textname.value}}'{% endif %}>
+        </div>
+
+        <!-- Control #3: Minimum hits -->
+        <div><label>&nbsp;</label></div>
+        <div class="input-group input-group-sm">
+          <label class='input-group-addon' for='minhits'>Minimum hits</label>
+          <input name='minhits' class='form-control' {% if searchform.minhits.value %}value='{{searchform.minhits.value}}'{% endif %}>
+        </div>
+
+        <hr />
+        <div><label>Statistics</label></div>
+        <table>
+          <tr><td>Searchtime:</td><td>{{quantor.searchTime}} ms.</td></tr>
+          <tr><td>Operations:</td><td>{{quantor.qcNum}}</td></tr>
+          <tr><td>Texts:</td><td>{{quantor.total}}</td></tr>
+        </table>
+        <hr />
+        <div><label>Hit counts</label></div>
+        <table>
+          {% for line in quantor.qclines.all %}
+              <tr><td>Line {{line.qc}}</td><td>{{line.count}}</td></tr>
+            {% for scat in line.qsubcats.all %}
+              <tr><td>{{scat.name}}</td><td>{{scat.count}}</td></tr>
+            {% endfor %}
+          {% endfor %}
+        </table>
+
+      </form>
+    </div>
+
+    <!-- The main part -->
+    <div id="mainpart" class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
+      <!-- If needed: provide a list of errors-->
+      <div id="research_err">
+        {% for item in error_list %}
+        {{item}}
+        {% endfor %}
+      </div>
+
+      <!-- Main statistics of the results -->
+      {% include 'seeker/quantor_list_main.html' %}
+
+    </div>
+
+  </div>
+
+{% endblock content %}
+
+{% block script %}
+  <script>
+    ru.cesar.seeker.init_events();
+  </script>
+{% endblock %}

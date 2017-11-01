@@ -3,6 +3,7 @@ Definition of views for the SEEKER app.
 """
 
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
@@ -18,7 +19,7 @@ from django.views.generic import ListView, View
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
 from cesar.browser.models import Part, Corpus
-from cesar.browser.views import get_item_list
+from cesar.browser.views import get_item_list, adapt_search
 from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
@@ -1517,20 +1518,125 @@ class ResearchDelete(ObjectDeleteMixin, View):
 
 
 class ResearchResultDetail(View):
-    """Show details of one result"""
+    """Show details (all) of one result"""
     model = Basket
-    template_name = ""
+    template_name = "seeker/research_result.html"
 
     def get(self, request, object_id=None):
+        # Initialize the context
+        context = dict()
         # Fetch the basket_id
         obj = get_object_or_404(self.model, id=object_id)
         if obj != None:
-            # Get to the result object
-            x = 1
+            # Provide search URL and search name
+            context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": obj.research.id})
+            context['search_name'] = obj.research.name
+            context['original'] = obj.research
+            context['intro_message'] = "Research project: <b>{}</b>".format(obj.research.name)
+            # Get to the result object, a quantor
+            quantor = Quantor.objects.filter(basket=obj).first()
+            if quantor != None:
+                context['quantor'] = quantor
 
         # Return the html page to be shown
-        context = {}
         return render( request, self.template_name, context)
+
+class QuantorListView(ListView):
+    """Show the search results connected to one quantor << Basket << Research"""
+
+    model = Qsubinfo    # Each element consists of QsubInfo
+    template_name = 'seeker/quantor_list.html'
+    paginate_by = paginateEntries
+    entrycount = 0
+    qcTarget = 1
+    basket = None       # Object: Basket
+    quantor = None      # Object: Quantor
+    qcline = None       # Object: QCline
+    qs = None
+
+    def get_qs(self):
+        """Get the Texts that are selected"""
+        if self.qs == None:
+            # Get the Lemma PKs
+            qs = self.get_queryset()
+        else:
+            qs = self.qs
+        return qs
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(QuantorListView, self).get_context_data(**kwargs)
+
+        # Get parameters for the search
+        initial = self.request.GET
+
+        # Specify the search form
+        search_form = QuantorSearchForm(initial)
+        context['searchform'] = search_form
+
+        # Add some elements to the context
+        research = self.basket.research
+        context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
+        context['search_name'] = research.name
+        context['original'] = research
+        context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
+        context['quantor'] = self.quantor
+        context['entrycount'] = self.entrycount
+        context['qsubcats'] = self.qcline.qsubcats.all()
+
+        # Return the calculated context
+        return context
+
+    def get(self, request, object_id=None):
+        # Fetch the basket_id
+        self.basket = get_object_or_404(Basket, id=object_id)
+        return super(QuantorListView,self).get(self, request)
+
+    def get_queryset(self):
+        """Determine the Qsubinfo queryset"""
+
+        # Get the parameters passed on with the GET request
+        get = self.request.GET
+
+        # Find out where we are 
+        self.quantor = Quantor.objects.filter(basket=self.basket).first()
+        self.qcline = self.quantor.qclines.filter(qc=self.qcTarget).first()
+
+        # Determine the selection
+        lstQ = []
+        lstQ.append(Q(subcat__qcline=self.qcline))
+
+        # Filter on subcat
+        if 'subcategory' in get and get['subcategory'] != '':
+            val = get['subcategory']
+            # The subcat value is an id
+            lstQ.append(Q(subcat=val))
+
+        # Filter on text Name
+        if 'textname' in get and get['textname'] != '':
+            # Allow simple wildcard search
+            val = adapt_search(get['textname'])
+            lstQ.append(Q(text__fileName__iregex=val))
+
+        # Filter on the minimum number of hits
+        if 'minhits' in get and get['minhits'] != '':
+            # Get the minimum number of hits
+            val = get['minhits']
+            try:
+                iVal = int(val)-1
+                lstQ.append(Q(count__gt=iVal))
+            except:
+                iDoNothing = 1
+
+        # Set and order the selection
+        self.qs = Qsubinfo.objects.filter(*lstQ).distinct().select_related().order_by(
+            Lower('subcat__name'),
+            Lower('text__fileName'))
+
+        self.entrycount = self.qs.count()
+
+        # Return the resulting filtered and sorted queryset
+        return self.qs
 
 
 def research_oview(request, object_id=None):
@@ -1579,14 +1685,13 @@ def get_partlist():
     lItem = get_item_list(lVars, lFuns, qs)
     # REturn this list
     return lItem
-      
     
 def research_edit(request, object_id=None):
     """Main entry point for the specification of a seeker research project"""
 
     # Initialisations
     template = 'seeker/research_details.html'
-    arErr = []         # Start out with no errors
+    arErr = []              # Start out with no errors
 
     # Check if the user is authenticated
     if not request.user.is_authenticated:

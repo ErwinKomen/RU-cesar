@@ -1,0 +1,52 @@
+﻿    <!-- Main statistics of the results -->
+    {% if object_list %}
+
+      <h3>Search results</h3>
+
+      <!-- Top page selectors -->
+      {% if is_paginated %}
+        <div class="row">
+          <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
+          <div class="col-sm-8">
+          <span class="step-links pull-right">
+
+          {% include 'pagination.html' %}
+
+          </span>
+          </div>
+        </div>
+      {% else %}
+        <div class="row">
+          <div class="col-sm-4"><span>Found: </span><span>{{entrycount}}</span></div>
+        </div>
+      {% endif %}
+
+      <!-- The contents as a table -->
+      <table class="table table-hover">
+        <thead><tr><th class="hidden">id</th><th>Text</th><th>Category</th><th>Hits</th></tr></thead>
+        <tbody>
+        {% for item in object_list %}
+          <tr class="part-item">
+            <td class="hidden">{{item.id}}</td>
+            <td><span class="part-item-name">{{item.text.fileName}}</span></td>
+            <td><span class="part-item-corp">{{item.subcat.name}}</span></td>
+            <td><span class="part-item-corp">{{item.count}}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Bottom page selectors -->
+      {% if is_paginated %}
+      <div >
+        <span class="step-links  pull-right">
+
+        {% include 'pagination.html' %}
+
+        </span>
+      </div>
+      {% endif %}
+    {% else %}
+      <p>No results are available.</p>
+    {% endif %}
+

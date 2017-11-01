@@ -140,9 +140,11 @@
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />
     <Content Include="cesar\seeker\templates\seeker\main_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\main_psdx.xq" />
+    <Content Include="cesar\seeker\templates\seeker\quantor_list.html" />
     <Content Include="cesar\seeker\templates\seeker\research_oview.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_63.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_62.html" />
+    <Content Include="cesar\seeker\templates\seeker\quantor_list_main.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_details.html" />
     <Content Include="cesar\templates\nlogin.html" />
     <Content Include="cesar\seeker\templates\seeker\research_details.html" />

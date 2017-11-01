@@ -494,6 +494,8 @@ var ru = (function ($, ru) {
               sHtml = "<div class='col-md-12'><table class='seeker-choice'><tr><td>Language: </td><td class='b'>" + sLanguage + "</td></tr>" +
                 "<tr><td>Corpus (part):</td><td class='b'>" + sPart + "</td></tr></table></div>";
               $(divTarget).html(sHtml);
+
+              // TODO: Check whether this search has already been made
             }
           }
 
