@@ -1567,6 +1567,12 @@ class ResearchResultDetail(View):
         # Return the html page to be shown
         return render( request, self.template_name, context)
 
+
+class KwicListView(ListView):
+    """This listview manages showing the results that are gathered using /crpp/dbinfo"""
+
+    model = Kwic
+
 class QuantorListView(ListView):
     """Show the search results connected to one quantor << Basket << Research"""
 
