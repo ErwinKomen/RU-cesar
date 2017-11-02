@@ -118,7 +118,16 @@ def crpp_status(sUser, sJobId):
     # Send and return the reply
     return crpp_command("statusxq", oToCrpp)
 
+def crpp_db_count_per_qc(sUser, sCrpName, iQcNum):
+    """Ask the /crpp/dbinfo service for the count it has for the result combination"""
 
+    # Construct the object we pass along
+    oToCrpp = { 'userid': sUser,
+                'name':   "{}_QC{}_Dbase".format(sCrpName, iQcNum),
+                'start':  -1,
+                'count': 0 }
+    # Send and return the reply
+    return crpp_command("statusxq", oToCrpp)
 
 
 def crpp_command(sCommand, oToCrpp):

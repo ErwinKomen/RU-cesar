@@ -14,7 +14,7 @@ from cesar.settings import APP_PREFIX
 from cesar.browser.models import build_choice_list, build_abbr_list, \
                                  get_help, choice_value, get_instance_copy, \
                                  copy_m2m, copy_fk, Part, CORPUS_FORMAT, Text
-from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status
+from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_db_count_per_qc
 import sys
 import copy
 import json
@@ -1299,6 +1299,64 @@ class Basket(models.Model):
             # Failure
             oErr.DoError('set_quantor could not read the hit information')
             return False
+
+    def set_kwic(self, iQcLine):
+        """Check if a KWIC table is available; otherwise make one"""
+
+        oErr = ErrHandle()
+        try:
+            # Get the number of results from the associated QCline object
+            lstQ = []
+            lstQ.append(Q(quantor__basket = self))
+            lstQ.append(Q(qc=iQcLine))
+            oQcLine = QCline.objects.filter().first()
+            if oQcLine == None:
+                # No results can be retrieved
+                return False
+            quantor_count_for_this_qc = oQcLine.count
+
+            # Get the /crpp/dbinfo count for this QC line
+            oDbInfoBack = crpp_db_count_per_qc(sUser, sCrpName, iQcLine)
+            if oDbInfoBack['status'] != 'completed':
+                # Cannot get a positive reply
+                return False
+            dbinfo_count_for_this_qc = oDbInfoBack['content']['Size']
+
+            # Check for the presence of enough elements
+            qs = Kwic.objects.filter(basket=self, qc=iQcLine)
+            if qs.count() != count_for_this_qc:
+                # Do we have some results?
+                if qs.count() != 0:
+                    # Delete what is there
+                    qs.delete()
+                # Create enough space
+                with transaction.atomic():
+                    for idx in range(count_for_this_qc):
+                        kwic = Kwic(basket=self, qc=iQcLine)
+                        kwic.save()
+            
+            # All is well now: the correct KWIC is ready
+            return True
+        except:
+            # Failure
+            oErr.DoError('set_kwic could not read the hit information')
+            return False
+
+
+class Kwic(models.Model):
+    """Keyword-in-context results
+    
+    Note: The actual results reside on the /crpp server.
+          This model only provides an abstract layer, so that KwicListView works.
+    """
+
+    # Note: the implicit 'id' field is used too
+    # [1] Each KWIC belongs to a particular QCline
+    qc = models.IntegerField("QC number", default=1)
+    # [1] There must be a link to the Basket the results belong to
+    basket = models.ForeignKey(Basket, blank=False, null=False, related_name="kwiclines")
+
+
 
 class Quantor(models.Model):
     """QUantificational results of executing one basket"""
