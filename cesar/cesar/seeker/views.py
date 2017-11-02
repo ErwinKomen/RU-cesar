@@ -58,6 +58,32 @@ class FunctionListView(ListView):
         return super(FunctionListView, self).render_to_response(context, **response_kwargs)
 
 
+class BasketListView(ListView):
+    """List all the search-result-baskets that are available"""
+
+    model = Basket
+    template_name = 'seeker/basket_list.html'
+    paginate_by = paginateEntries
+    entrycount = 0
+    qs = None
+
+    def render_to_response(self, context, **response_kwargs):
+        # Make sure we get the user and check the authentication
+        currentuser = self.request.user
+        context['authenticated'] = currentuser.is_authenticated()
+        # Create a list that not only contains the baskets, but also the corresponding quantor
+        lCombi = []
+        lstQ = []
+        lstQ.append(Q(research__owner = currentuser))
+        for itm in  Basket.objects.filter(*lstQ).order_by('research__name', 'part__name'):
+            # Get any quantor 
+            quantor = Quantor.objects.filter(basket=itm).first()
+            # Add the elements to the list
+            lCombi.append({'basket': itm, 'quantor': quantor})            
+        context['object_list'] = lCombi
+        # Make sure the correct URL is being displayed
+        return super(BasketListView, self).render_to_response(context, **response_kwargs)
+
 
 class SeekerListView(ListView):
     """List all the research projects available"""

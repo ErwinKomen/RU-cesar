@@ -1,0 +1,110 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; Results
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+    <div class="panel panel-default">
+      <form name="researchsearch" id="researchsearch" action="" method="get"  
+                onsubmit="return do_search('#id_submit_button', 'research', 'simple');" >
+        <!-- EK: A sort-order specification is in a hidden form field, which is filled by JS:do_sort_column() -->
+        <div class="hidden">
+          <input name='sortOrder' class='form-control' value='name' >
+          <input id="submit_type" name='submit_type' class='form-control' value='simple'>
+        </div>
+      </form>
+    </div>
+
+    {% if authenticated %}
+      {% if object_list %}
+        <h3>Overview of search results</h3>
+
+        <!-- Room for errors -->
+        <div id="research_err"></div>
+
+        <!-- The contents as a table -->
+        <table class="table table-hover">
+          <thead><tr><th class="hidden">id</th><th>Project</th><th>Language</th><th>Corpus</th><th>Texts</th><th>Date</th><th></th></tr></thead>
+          <tbody>
+          {% for item in object_list %}
+            <tr class="function-item">
+              <td class="hidden">{{item.basket.id}}</td>
+              <td><span class="research-item-user">{{item.basket.research.name}}</span></td>
+              <td><span class="research-item-type">{{item.basket.part.corpus.get_lng_display}}</span></td>
+              <td><span class="research-item-type">{{item.basket.part.name}}</span></td>
+              <td><span class="research-item-name">
+                  {% if item.quantor %}{{item.quantor.total}}{% endif %}</span>
+              </td>
+              <td><span class="research-item-purpose">{{item.basket.saved}}</span></td>
+              <td class="tdnowrap">
+                <!-- Specify the different actions here-->
+                <div class="part-buttons">
+                    <!-- Action #1: show statistics of the results -->
+                    <a title="details" 
+                       class="btn btn-success btn-xs" 
+                       onclick="ru.cesar.seeker.funcdefshow(this);">
+                      <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                    </a>
+
+                    <!-- Action #2: show the results in KWIC -->
+                    <a title="keywords in context" href="{% url 'search_result' object_id=item.basket.id %}">
+                      <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                    </a>
+
+                    <!-- Action #3: over to the Quantor listview -->
+                    <a title="numbers per document" href="{% url 'search_result' object_id=item.basket.id %}">
+                      <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                    </a>
+                </div>
+              </td>
+            </tr>
+            <!-- Provide a form row for further information -->
+            <tr class="function-details hidden">
+              <td>Structure:</td>
+              <td colspan="3">
+                <div>
+                  <table>
+                    {% for arg in item.arguments.all %}
+                    <tr>
+                      <td>{{forloop.counter}}</td>
+                      <td>
+                        <span>{{arg.text}}</span>
+                        <span><code>{{arg.name}}</code></span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </table>
+                </div>
+              </td>
+              <td></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>{% trans "No search results are available" %}.</p>
+      {% endif %}
+    {% else %}
+    <div class="explanation">
+      <p>Dear user, you are <b>not</b> logged in.</p>
+      <p>Unfortunately this means that you will not be able to see any of the search results that are available.</p>
+      <p>Should you want to work with Cesar, then here are your options:
+        <ul>
+          <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
+          <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>
+        </ul>
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+
+
+{% endblock content %}
