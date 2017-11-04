@@ -60,6 +60,9 @@
     <Compile Include="cesar\seeker\services.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="cesar\seeker\templates\seeker\kwic_list.html">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\seeker\tests.py" />
     <Compile Include="cesar\seeker\views.py" />
     <Compile Include="cesar\seeker\widgets.py">
@@ -139,6 +142,7 @@
     <Content Include="cesar\seeker\templates\seeker\basket_list.html" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />
+    <Content Include="cesar\seeker\templates\seeker\kwic_main.html" />
     <Content Include="cesar\seeker\templates\seeker\main_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\main_psdx.xq" />
     <Content Include="cesar\seeker\templates\seeker\quantor_list.html" />
@@ -154,7 +158,6 @@
     <Content Include="cesar\seeker\templates\seeker\research_part_43.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_42.html" />
     <Content Include="cesar\seeker\templates\seeker\research_list.html" />
-    <Content Include="cesar\seeker\templates\seeker\research_edit-DO_NOT_USE.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_4.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_3.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_2.html" />

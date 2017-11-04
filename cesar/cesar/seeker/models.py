@@ -14,7 +14,7 @@ from cesar.settings import APP_PREFIX
 from cesar.browser.models import build_choice_list, build_abbr_list, \
                                  get_help, choice_value, get_instance_copy, \
                                  copy_m2m, copy_fk, Part, CORPUS_FORMAT, Text
-from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_db_count_per_qc
+from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_dbinfo
 import sys
 import copy
 import json
@@ -1293,6 +1293,10 @@ class Basket(models.Model):
                                                 count = subcount)
                             qsubinfo.save()
  
+            # Create KWIC material for each QC line
+            for idx in range(0, iNumQc):
+                self.set_kwic(idx+1)
+
             # REturn positively
             return True
         except:
@@ -1316,24 +1320,34 @@ class Basket(models.Model):
             quantor_count_for_this_qc = oQcLine.count
 
             # Get the /crpp/dbinfo count for this QC line
-            oDbInfoBack = crpp_db_count_per_qc(sUser, sCrpName, iQcLine)
-            if oDbInfoBack['status'] != 'completed':
+            sUser = self.research.owner
+            sCrpName = self.research.name
+            oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0)
+            if oDbInfoBack['commandstatus'] != 'ok':
+                oErr.DoError("set_kwic: didn't get a positive reply from /crpp/dbinfo")
                 # Cannot get a positive reply
                 return False
-            dbinfo_count_for_this_qc = oDbInfoBack['content']['Size']
+            dbinfo_count_for_this_qc = oDbInfoBack['Size']
+
+            # TEst to see if the counts coincide
+            if quantor_count_for_this_qc != dbinfo_count_for_this_qc:
+                oErr.DoError("set_kwic: the dbinfo count of the results differs from the quantor count")
+                return False
+
+            # Accept the count for this QC
+            count_for_this_qc = dbinfo_count_for_this_qc
 
             # Check for the presence of enough elements
             qs = Kwic.objects.filter(basket=self, qc=iQcLine)
-            if qs.count() != count_for_this_qc:
-                # Do we have some results?
-                if qs.count() != 0:
-                    # Delete what is there
-                    qs.delete()
-                # Create enough space
-                with transaction.atomic():
-                    for idx in range(count_for_this_qc):
-                        kwic = Kwic(basket=self, qc=iQcLine)
-                        kwic.save()
+            if qs.count() != 0:
+                # Delete what is there
+                qs.delete()
+            # Create a KWIC object for this information
+            kwic = Kwic(basket=self, 
+                        qc=iQcLine, 
+                        hitcount=count_for_this_qc,
+                        textcount=oQcLine.quantor.total)
+            kwic.save()
             
             # All is well now: the correct KWIC is ready
             return True
@@ -1350,9 +1364,12 @@ class Kwic(models.Model):
           This model only provides an abstract layer, so that KwicListView works.
     """
 
-    # Note: the implicit 'id' field is used too
     # [1] Each KWIC belongs to a particular QCline
     qc = models.IntegerField("QC number", default=1)
+    # [1] Number of texts
+    textcount = models.IntegerField("Number of texts", default=0)
+    # [1] Number of hits
+    hitcount = models.IntegerField("Number of hits", default=0)
     # [1] There must be a link to the Basket the results belong to
     basket = models.ForeignKey(Basket, blank=False, null=False, related_name="kwiclines")
 

@@ -2,16 +2,18 @@
 Definition of views for the SEEKER app.
 """
 
+from django.core.exceptions import FieldDoesNotExist
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.forms import formset_factory
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
-from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic.detail import DetailView
+from django.views.generic.list import MultipleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
@@ -1568,10 +1570,133 @@ class ResearchResultDetail(View):
         return render( request, self.template_name, context)
 
 
-class KwicListView(ListView):
+class KwicView(DetailView):
+    """The main view that hosts the KWIC listview"""
+
+    model = Basket
+    template_name = 'seeker/kwic_main.html'
+    basket = None
+    kwic = None
+    qc = 1        # Selected QC
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(KwicView, self).get_context_data(**kwargs)
+
+        # Get parameters for the KWIC ordering and filtering
+        initial = self.request.GET
+
+        # EITHER: Pass on the form
+        # context['form'] = self.form_class(instance=self.object)
+        # OR: Specify the search form
+        # search_form = KwicSearchForm(initial)
+        # context['searchform'] = search_form
+
+        status = ""
+        if 'status' in initial:
+            status = initial['status']
+        context['status'] = status
+
+        # Process the chosen QC (if any)
+        if 'qc' in initial:
+            self.qc = initial['qc']
+        context['qc'] = self.qc
+
+        # Add some elements to the context
+        self.basket = self.object
+        context['basket'] = self.basket
+        research = self.basket.research
+        context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
+        context['search_name'] = research.name
+        context['original'] = research
+        context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
+        quantor = Quantor.objects.filter(basket=self.basket).first()
+        context['qc_list'] = [idx for idx in range(1,quantor.qcNum+1)]
+
+        # Return what we have
+        return context
+
+
+
+
+class KwicListView(View):
     """This listview manages showing the results that are gathered using /crpp/dbinfo"""
 
     model = Kwic
+    template_name = 'seeker/kwic_list.html'
+    paginate_by = paginateEntries
+    entrycount = 0
+    basket = None       # Object: Basket
+    qcline = 0          # Number
+    page_obj = None     # Initializing the page object
+    qs = None
+
+    def initialize(self, request):
+        # Get the parameters
+        if request.POST:
+            self.qd = request.POST
+        else:
+            self.qd = request.GET
+
+    def post(self, request, object_id=None):
+        self.initialize(request)
+        # Get the BASKET object
+        self.basket = get_object_or_404(Basket, id=object_id)
+        # Get the page number
+        page = request.POST.get('page')
+
+        # Return the information
+        return JsonResponse(self.data)
+      
+    def get(self, request, object_id=None):
+        self.initialize(request)
+        # Fetch the basket_id
+        self.basket = get_object_or_404(Basket, id=object_id)
+        return super(KwicListView,self).get(self, request)
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(KwicListView, self).get_context_data(**kwargs)
+
+        # Get parameters for the search
+        initial = self.request.GET
+
+        # Add some elements to the context
+        research = self.basket.research
+        context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
+        context['search_name'] = research.name
+        context['original'] = research
+        context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
+        context['entrycount'] = self.entrycount
+        context['basket'] = self.basket
+        quantor = Quantor.objects.filter(basket=self.basket).first()
+        context['qc_list'] = [idx for idx in range(1,quantor.qcNum+1)]
+
+        # Return the calculated context
+        return context
+
+    def get_queryset(self):
+        """Determine the queryset that is to be used"""
+
+        # Get the parameters passed on with the GET request
+        get = self.request.GET
+
+        # Determine the selection
+        lstQ = []
+        lstQ.append(Q(basket=self.basket))
+        if self.qcline > 0:
+          lstQ.append(Q(qc=self.qcline))
+
+        # Set and order the selection
+        self.qs = Kwic.objects.filter(*lstQ)
+
+        self.entrycount = self.qs.count()
+
+        # Return the resulting filtered and sorted queryset
+        return self.qs
+
+
+
 
 class QuantorListView(ListView):
     """Show the search results connected to one quantor << Basket << Research"""

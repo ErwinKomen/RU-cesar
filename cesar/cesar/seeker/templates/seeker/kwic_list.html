@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
+      &rsaquo; <a href="{{search_edit_url}}">{{search_name}}</a>
+      &rsaquo; results [{{basket.part.corpus.get_lng_display}}, {{basket.part.name}}]
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+      <!-- EMpty line -->
+      <div class="row">&nbsp;</div>
+
+      <!-- Make sure user knows where we are-->
+      <div class="row">
+          {{intro_message|safe}}
+      </div>
+
+      <!-- Allow user to filter what he/she wants to see -->
+      <div class="row">
+        <form name="textsearch" id="textsearch" action="">
+          <div class="col-md-2 input-group input-group-sm">
+              <label class='input-group-addon' for='qc_select'>Query line</label>
+              <select class="form-control" id="qc_select">
+                  {% for qcNumber in qc_list %}
+                  <option value="qcNumber">{{qcNumber}}</option>
+                  {% endfor %}
+              </select>
+          </div>
+          <div class="col-md-3">
+
+          </div>
+          <div class="col-md-3">
+
+          </div>
+          <div class="col-md-3">
+
+          </div>
+        </form>
+      </div>
+  </div>
+
+
+{% endblock content %}

@@ -54,7 +54,7 @@
                     </a>
 
                     <!-- Action #2: show the results in KWIC -->
-                    <a title="keywords in context" href="{% url 'search_result' object_id=item.basket.id %}">
+                    <a title="keywords in context" href="{% url 'kwic_result' pk=item.basket.pk %}">
                       <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
                     </a>
 
