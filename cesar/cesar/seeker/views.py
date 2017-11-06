@@ -1630,13 +1630,15 @@ class KwicListView(View):
     model = Kwic
     arErr = []              # errors   
     template_name = 'seeker/kwic_list.html'
+    page_function = "ru.cesar.seeker.kwic_page"
+    form_div = "kwic_search_button"
     paginate_by = paginateEntries
     entrycount = 0
-    data = {'status': 'ok', 'html': '', 'statuscode': ''}       # Create data to be returned   
     basket = None       # Object: Basket
     qcline = 0          # Number
     page_obj = None     # Initializing the page object
     qs = None
+    data = {'status': 'ok', 'html': '', 'statuscode': ''}       # Create data to be returned   
 
     def initialize(self, request):
         # Get the parameters
@@ -1654,14 +1656,22 @@ class KwicListView(View):
             # Get the BASKET object
             self.basket = get_object_or_404(Basket, id=object_id)
             # Get relevant information from the query dictionary
-            page = self.qd.get('page')
             qcNumber = self.qd.get('selected_qc')
+            page = self.qd.get('page')
+            if page == None:
+                page = 1
+            else:
+                page = int(page)
+            # Pagination
+            kwic_object = self.basket.kwiclines.filter(qc=qcNumber).first()
+            hit_count = kwic_object.hitcount
+            result_number_list = list(range(1, hit_count))
+            paginator = Paginator(result_number_list, self.paginate_by)
+            self.page_obj = paginator.page(page)
+
             # Set the number of items to be fetched
             iCount = self.paginate_by
-            iStart = 0
-            if page != None:
-                # A particular page is being requested
-                iTODO = 1
+            iStart = (page-1) * self.paginate_by
             # Fetch the data for this page
             oData = crpp_dbinfo(self.basket.research.owner.username, 
                                 self.basket.research.name,
@@ -1672,7 +1682,14 @@ class KwicListView(View):
                 # Provide all the information needed to create the Html presentation of the data
                 context['result_list'] = oData['Results']
                 context['feature_list'] = oData['Features']
-                # Make sure we get sliced results
+
+                # Add pagination information
+                context['page_obj'] = self.page_obj
+                context['page_function'] = self.page_function
+                context['hitcount'] = hit_count
+
+                # Information on this basket/kwic object
+                context['formdiv'] = self.form_div
 
                 # Make sure we have a list of any errors
                 error_list = [str(item) for item in self.arErr]

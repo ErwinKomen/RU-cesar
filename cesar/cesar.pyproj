@@ -169,6 +169,7 @@
     <Content Include="cesar\templates\login.html" />
     <Content Include="cesar\templates\loginpartial.html" />
     <Content Include="cesar\templates\more.html" />
+    <Content Include="cesar\templates\paginationpost.html" />
     <Content Include="cesar\templates\pagination.html" />
     <Content Include="cesar\browser\templates\browser\sentence_list.html" />
     <Content Include="cesar\browser\templates\browser\sentence_view.html" />

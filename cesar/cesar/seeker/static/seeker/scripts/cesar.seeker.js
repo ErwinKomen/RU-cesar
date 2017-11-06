@@ -797,12 +797,31 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * kwic_page
+       *    Make sure we go to the indicated page
+       * 
+       * @param {type} iPage
+       * @param {type} sFormDiv
+       */
+      kwic_page: function (iPage, sFormDiv) {
+        var elStart = null;
+
+        try {
+          elStart = $("#"+sFormDiv);
+          ru.cesar.seeker.load_kwic(elStart, iPage);
+        } catch (ex) {
+          private_methods.errMsg("kwic_page", ex);
+        }
+      },
+
+      /**
        * load_kwic
        *   Make an AJAX request to load data for a Kwic instance
        * 
        * @param {dom}  elStart
+       * @param {int}  iPage
        */
-      load_kwic: function (elStart) {
+      load_kwic: function (elStart, iPage) {
         var data = [],
             targetid = "#kwiclistshow",
             waitid = "#kwic-fetch",
@@ -825,6 +844,9 @@ var ru = (function ($, ru) {
 
           data.push({ 'name': 'instanceid', 'value': instanceid });
           data.push({ 'name': 'target', 'value': targetid });
+
+          if (iPage === undefined) { iPage = 1; }
+          data.push({ 'name': 'page', 'value': iPage });
 
           // Indicate we are waiting
           $(waitid).removeClass("hidden");

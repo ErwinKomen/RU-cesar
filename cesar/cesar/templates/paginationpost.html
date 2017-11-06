@@ -1,0 +1,33 @@
+﻿              <ul class='pagination pagination-xsm'>
+              {% if page_obj.has_previous %}
+                  <li><a onclick="{{page_function}}({{ page_obj.previous_page_number }}, '{{formdiv}}');">&laquo;</a></li>
+                  <li><a onclick="{{page_function}}(1, '{{formdiv}}');">1</a></li>
+              {% endif %}
+          
+                {% if  page_obj.number > 10 %}
+                  <li><a>...</a></li>
+                {% endif %}
+
+                {% for p in page_obj.paginator.page_range %}
+          
+                   {% if p < page_obj.number|add:"10" and  p > page_obj.number|add:"-10" %}
+                   <li {% ifequal p page_obj.number %}class='active'{% endifequal %}>
+                   <a onclick="{{page_function}}( {{ p }}, '{{formdiv}}');">{{p}}</a>
+                   </li>
+                   {% endif %}
+         
+                {% endfor %}
+  
+                {% if page_obj.paginator.num_pages > page_obj.number|add:"10" %}
+                  <li><a>...</a></li>
+                  <li>
+                  <a onclick="{{page_function}}( {{page_obj.paginator.num_pages}}, '{{formdiv}}');">{{page_obj.paginator.num_pages}}</a>
+                  </li>
+                {% endif %}
+      
+              {% if page_obj.has_next %}
+                  <li><a onclick="{{page_function}}({{page_obj.next_page_number }}, '{{formdiv}}');">&raquo;</a></li>
+              {% endif %}
+
+            
+            </ul>

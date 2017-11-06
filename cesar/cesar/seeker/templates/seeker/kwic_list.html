@@ -2,6 +2,16 @@
 
 <div class="kwic_result_part">
 
+  <!-- Pagination -->
+  <div class="row">
+      <div class="col-sm-4"><span>Hits: </span><span>{{hitcount}}</span></div>
+      <div class="col-sm-8 right">
+        <span class="step-links pull-right">
+          {% include 'paginationpost.html' %}
+        </span>
+      </div>
+  </div>
+
   <form action="" method="post">
     {% csrf_token %}
 
@@ -33,5 +43,16 @@
       </table>
     </div>
 
+
   </form>
+
+  <!-- Pagination -->
+  <div class="row">
+      <div class="col-sm-4"><span>Hits: </span><span>{{hitcount}}</span></div>
+      <div class="col-sm-8 right">
+        <span class="step-links pull-right">
+          {% include 'paginationpost.html' %}
+        </span>
+      </div>
+  </div>
 </div>
