@@ -791,6 +791,26 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * load_kwic
+       *   Make an AJAX request to load data for a Kwic instance
+       * 
+       * @param {string}  sTargetId
+       * @param {int}     iKwicId
+       */
+      load_kwic: function (sTargetId, sUrl, iKwicId) {
+        var data = [];
+
+        try {
+          data.push({ 'name': 'kwicid', 'value': iKwicId });
+          data.push({ 'name': 'instanceid', 'value': instanceid });
+          data.push({ 'name': 'target', 'value', sTargetId});
+          ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
+        } catch (ex) {
+          private_methods.errMsg("load_kwic", ex);
+        }
+      },
+
+      /**
        * nowTime
        *   Get the current time as a string
        *

@@ -27,8 +27,8 @@
           <div class="col-md-2 input-group input-group-sm">
               <label class='input-group-addon' for='qc_select'>Query line</label>
               <select class="form-control" id="qc_select">
-                  {% for qcNumber in qc_list %}
-                  <option value="qcNumber"  {% if qcNumber == qc %}selected {% endif %}>{{qcNumber}}</option>
+                  {% for instance in qc_list %}
+                  <option value="qcNumber"  {% if instance.qc == qc %}selected {% endif %}>{{instance.qc}}</option>
                   {% endfor %}
               </select>
           </div>
@@ -45,7 +45,7 @@
       </div>
 
       <!-- Provide room for the actual KWIC list -->
-      <div id="kwiclistview">
+      <div id="kwiclistshow">
           <!-- This is where the listview will appear-->
       </div>
 
@@ -54,6 +54,6 @@
 
   <script>
     // Start off showing the first view
-    ru.cesar.seeker.load_kwic();
+    ru.cesar.seeker.load_kwic("kwiclistshow", {% url 'kwic_list' object_id=basket.id %}, $("#qc_select").val());
   </script>
 {% endblock content %}

@@ -1610,8 +1610,7 @@ class KwicView(DetailView):
         context['search_name'] = research.name
         context['original'] = research
         context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
-        quantor = Quantor.objects.filter(basket=self.basket).first()
-        context['qc_list'] = [idx for idx in range(1,quantor.qcNum+1)]
+        context['qc_list'] = Kwic.objects.filter(basket=self.basket).order_by("qc")
 
         # Return what we have
         return context

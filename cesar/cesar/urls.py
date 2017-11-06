@@ -53,6 +53,7 @@ urlpatterns = [
     url(r'^seek/wizard/delete/(?P<object_id>\d+)/$', ResearchDelete.as_view(), name='seeker_delete'),
     url(r'^seek/result/list/$', BasketListView.as_view(), name='result_list'),
     url(r'^seek/result/kwic/(?P<pk>\d+)/$', KwicView.as_view(), name='kwic_result'),
+    url(r'^seek/result/kwic/list/(?P<pk>\d+)/$', KwicListView.as_view(), name='kwic_list'),
     url(r'^seek/result/(?P<object_id>\d+)/$', QuantorListView.as_view(), name='search_result'),
     url(r'^seek/list/$', SeekerListView.as_view(), name='seeker_list'),
     url(r'^function/list/$', FunctionListView.as_view(), name='function_list'),
