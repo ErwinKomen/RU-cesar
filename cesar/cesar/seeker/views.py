@@ -17,6 +17,7 @@ from django.views.generic.list import MultipleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
+from django import template
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
@@ -1605,11 +1606,16 @@ class KwicView(DetailView):
         # Add some elements to the context
         self.basket = self.object
         context['basket'] = self.basket
+        context['object_id'] = self.basket.id
         research = self.basket.research
         context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
         context['search_name'] = research.name
         context['original'] = research
         context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
+        qc_list = Kwic.objects.filter(basket=self.basket).order_by("qc")
+        if qc_list.count() == 0:
+            # Create KWIC objects
+            self.basket.create_kwic_objects()
         context['qc_list'] = Kwic.objects.filter(basket=self.basket).order_by("qc")
 
         # Return what we have
@@ -1622,9 +1628,11 @@ class KwicListView(View):
     """This listview manages showing the results that are gathered using /crpp/dbinfo"""
 
     model = Kwic
+    arErr = []              # errors   
     template_name = 'seeker/kwic_list.html'
     paginate_by = paginateEntries
     entrycount = 0
+    data = {'status': 'ok', 'html': '', 'statuscode': ''}       # Create data to be returned   
     basket = None       # Object: Basket
     qcline = 0          # Number
     page_obj = None     # Initializing the page object
@@ -1639,10 +1647,52 @@ class KwicListView(View):
 
     def post(self, request, object_id=None):
         self.initialize(request)
-        # Get the BASKET object
-        self.basket = get_object_or_404(Basket, id=object_id)
-        # Get the page number
-        page = request.POST.get('page')
+        if self.checkAuthentication(request):
+            # Define the context
+            sStatusCode = "none"
+            context = dict(object_id = object_id, statuscode=sStatusCode)
+            # Get the BASKET object
+            self.basket = get_object_or_404(Basket, id=object_id)
+            # Get relevant information from the query dictionary
+            page = self.qd.get('page')
+            qcNumber = self.qd.get('selected_qc')
+            # Set the number of items to be fetched
+            iCount = self.paginate_by
+            iStart = 0
+            if page != None:
+                # A particular page is being requested
+                iTODO = 1
+            # Fetch the data for this page
+            oData = crpp_dbinfo(self.basket.research.owner.username, 
+                                self.basket.research.name,
+                                qcNumber, 
+                                iStart,
+                                iCount)
+            if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
+                # Provide all the information needed to create the Html presentation of the data
+                context['result_list'] = oData['Results']
+                context['feature_list'] = oData['Features']
+                # Make sure we get sliced results
+
+                # Make sure we have a list of any errors
+                error_list = [str(item) for item in self.arErr]
+                self.data['error_list'] = error_list
+                self.data['errors'] = self.arErr
+                if len(self.arErr) >0:
+                    self.data['status'] = "error"
+
+                # Add items to context
+                context['error_list'] = error_list
+                context['status'] = self.data['status']
+
+                # Get the HTML response
+                self.data['html'] = render_to_string(self.template_name, context, request)
+
+            else:
+                # Some error has occurred
+                self.data['status'] = "error"
+        else:
+            self.data['html'] = "Please log in before continuing"
 
         # Return the information
         return JsonResponse(self.data)
@@ -1652,6 +1702,15 @@ class KwicListView(View):
         # Fetch the basket_id
         self.basket = get_object_or_404(Basket, id=object_id)
         return super(KwicListView,self).get(self, request)
+
+    def checkAuthentication(self,request):
+        # first check for authentication
+        if not request.user.is_authenticated:
+            # Simply redirect to the home page
+            self.data['html'] = "Please log in to work on a research project"
+            return False
+        else:
+            return True
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context

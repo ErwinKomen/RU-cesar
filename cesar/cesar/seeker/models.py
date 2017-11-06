@@ -1304,6 +1304,18 @@ class Basket(models.Model):
             oErr.DoError('set_quantor could not read the hit information')
             return False
 
+    def create_kwic_objects(self):
+        """Create all needed KWIC objects"""
+
+        # Get the quantor (if existing)
+        quantor = Quantor.objects.filter(basket=self).first()
+        if quantor != None:
+            # We can only proceed if there is a Quantor
+            iNumQc = quantor.qcNum
+            # Now create the KWIC instances
+            for idx in range(0, iNumQc):
+                self.set_kwic(idx+1)
+
     def set_kwic(self, iQcLine):
         """Check if a KWIC table is available; otherwise make one"""
 

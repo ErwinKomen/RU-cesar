@@ -1,49 +1,37 @@
-{% extends "layout.html" %}
 {% load i18n %}
 
-{% block breadcrumbs %}
-  <div class="breadcrumbs">
-      <a href="{% url 'home' %}">Home</a>
-      &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
-      &rsaquo; <a href="{{search_edit_url}}">{{search_name}}</a>
-      &rsaquo; results [{{basket.part.corpus.get_lng_display}}, {{basket.part.name}}]
-  </div>
-{% endblock %}
+<div class="kwic_result_part">
 
-{% block content %}
+  <form action="" method="post">
+    {% csrf_token %}
 
-  <div class="container body-content">
-      <!-- EMpty line -->
-      <div class="row">&nbsp;</div>
+    <!-- Allow user to filter what he/she wants to see -->
+    <div class="row">
+      <table>
+        <thead><tr><th>Location</th><th></th><th>search</th><th></th></tr></thead>
+        <tbody>
+          {% for result in result_list %}
+          <tr>
+            <td class="kwic-loc">{{result.ResId}}</td>
+            <td class="kwic-pre">{% if result.kwic_pre|length > 70 %}...{% endif %}{{result.kwic_pre|slice:"-70:"}}</td>
+            <td class="kwic-hit" ><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');">{{result.kwic_hit}}</a></td>
+            <td class="kwic-fol">{{result.kwic_fol|truncatewords:7}}</td>
+            <td class="kwic-actions">
+              <a class="btn btn-default btn-xs" onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">
+                <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+              </a>
+            </td>
+          </tr>
+          <tr class="hidden kwic-details">
+            <td colspan="4">
+              [<span class="kwic-loc">{{result.Locw}}</span>]
+              {{result.kwic_pre}} <b>{{result.kwic_hit}}</b> {{result.kwic_fol}}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-      <!-- Make sure user knows where we are-->
-      <div class="row">
-          {{intro_message|safe}}
-      </div>
-
-      <!-- Allow user to filter what he/she wants to see -->
-      <div class="row">
-        <form name="textsearch" id="textsearch" action="">
-          <div class="col-md-2 input-group input-group-sm">
-              <label class='input-group-addon' for='qc_select'>Query line</label>
-              <select class="form-control" id="qc_select">
-                  {% for qcNumber in qc_list %}
-                  <option value="qcNumber">{{qcNumber}}</option>
-                  {% endfor %}
-              </select>
-          </div>
-          <div class="col-md-3">
-
-          </div>
-          <div class="col-md-3">
-
-          </div>
-          <div class="col-md-3">
-
-          </div>
-        </form>
-      </div>
-  </div>
-
-
-{% endblock content %}
+  </form>
+</div>

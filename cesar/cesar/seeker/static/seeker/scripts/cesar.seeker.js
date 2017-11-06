@@ -660,18 +660,22 @@ var ru = (function ($, ru) {
        *      Show the function definition
        *
        */
-      funcdefshow: function (el) {
-        var elTr = null;
+      funcdefshow: function (el, sMyClass) {
+        var elTr = null,
+            sClass = "function-details";
 
         try {
+          if (sMyClass !== undefined && sMyClass !== "") {
+            sClass = sMyClass;
+          }
           // Get to the nearest <tr>
           elTr = $(el).closest("tr");
           // Get to the next row
-          elTr = $(elTr).next(".function-details");
+          elTr = $(elTr).next("."+sClass);
           // Check its status
           if ($(elTr).hasClass("hidden")) {
             // Hide all other [function-details]
-            $(elTr).closest("table").find(".function-details").addClass("hidden");
+            $(elTr).closest("table").find("." + sClass).addClass("hidden");
             // It's hidden, so open it
             $(elTr).removeClass("hidden");
           } else {
@@ -785,6 +789,8 @@ var ru = (function ($, ru) {
           $('td span.var-up').click(ru.cesar.seeker.var_up);
           // NOTE: do not use the following mouseout event--it is too weird to work with
           // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
+          // Bind the click event to all class="ajaxform" elements
+          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
         } catch (ex) {
           private_methods.errMsg("init_events", ex);
         }
@@ -794,18 +800,51 @@ var ru = (function ($, ru) {
        * load_kwic
        *   Make an AJAX request to load data for a Kwic instance
        * 
-       * @param {string}  sTargetId
-       * @param {int}     iKwicId
+       * @param {dom}  elStart
        */
-      load_kwic: function (sTargetId, sUrl, iKwicId) {
-        var data = [];
+      load_kwic: function (elStart) {
+        var data = [],
+            targetid = "#kwiclistshow",
+            waitid = "#kwic-fetch",
+            ajaxurl = "",
+            frm = null,
+            response = null,
+            instanceid = "";
 
         try {
-          data.push({ 'name': 'kwicid', 'value': iKwicId });
+          // Clear the errors
+          private_methods.errClear();
+
+          // obligatory parameter: ajaxurl
+          ajaxurl = $(elStart).attr("ajaxurl");
+          instanceid = $(elStart).attr("instanceid");
+
+          // Gather the information
+          frm = $(elStart).closest("form");
+          if (frm !== undefined) { data = $(frm).serializeArray(); }
+
           data.push({ 'name': 'instanceid', 'value': instanceid });
-          data.push({ 'name': 'target', 'value', sTargetId});
-          ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
-        } catch (ex) {
+          data.push({ 'name': 'target', 'value': targetid });
+
+          // Indicate we are waiting
+          $(waitid).removeClass("hidden");
+          var posting = $.post(ajaxurl, data);
+          posting.done(function (data) {
+            // Put the results on display
+            $(targetid).html(data['html']);
+            // Indicate we are ready
+            $(waitid).addClass("hidden");
+          });
+
+          /*
+          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+          if (response.status === undefined || response.status !== 'ok') {
+            // Show an error somewhere
+          } else {
+            // Coming here means that we've had a positive response
+
+          }*/
+          } catch (ex) {
           private_methods.errMsg("load_kwic", ex);
         }
       },

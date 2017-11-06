@@ -20,10 +20,22 @@
       <div class="row">
           {{intro_message|safe}}
       </div>
+      <div id="research_err">
+        {% for item in error_list %}
+        {{item}}
+        {% endfor %}
+      </div>
 
       <!-- Allow user to filter what he/she wants to see -->
       <div class="row">
-        <form name="textsearch" id="textsearch" action="">
+        <form name="textsearch" id="textsearch" action="" method="post">
+          {% csrf_token %}
+          <!-- Hidden form attributes -->
+          <div class="hidden">
+            <input name='searchPart' id='searchPart' class='form-control' value='' >
+            <input name='selected_qc' class='form-control' value='1' >
+          </div>
+
           <div class="col-md-2 input-group input-group-sm">
               <label class='input-group-addon' for='qc_select'>Query line</label>
               <select class="form-control" id="qc_select">
@@ -36,13 +48,23 @@
 
           </div>
           <div class="col-md-3">
-
+            <div id="kwic-fetch" class="row hidden">
+              <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+            </div>
           </div>
           <div class="col-md-3">
-
+            <a class="btn btn-primary"
+               onclick="ru.cesar.seeker.load_kwic(this);"
+               instanceid="{{object_id}}"
+               openid="kwiclistshow" 
+               ajaxurl="{% if object_id %}{% url 'kwic_list' object_id %}{% else %}{% url 'kwic_list' %}{% endif %}"
+               data="">{% trans 'Search' %}</a>
           </div>
         </form>
       </div>
+
+      <!-- Some space-->
+      <div class="row">&nbsp;</div>
 
       <!-- Provide room for the actual KWIC list -->
       <div id="kwiclistshow">
@@ -53,7 +75,9 @@
 
 
   <script>
-    // Start off showing the first view
-    ru.cesar.seeker.load_kwic("kwiclistshow", {% url 'kwic_list' object_id=basket.id %}, $("#qc_select").val());
+    // Make sure events are connect on the right places
+    // ru.cesar.seeker.init_events();
+    // Make sure the button is pressed on the first time
+    // $("#kwiclistsearch").click();
   </script>
 {% endblock content %}

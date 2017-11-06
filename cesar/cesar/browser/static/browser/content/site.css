@@ -476,3 +476,36 @@ div.explanation {
 div.up {
   margin-top: -10px !important;
 }
+
+/* Seeker KWIC */
+table td.kwic-loc, table td span.kwic-loc {
+  font-family: monospace;
+  color: darkblue;
+  /* background-color: lightgray; */
+  font-size: small;
+  text-align: left;
+  white-space:nowrap !important;
+}
+
+table td.kwic-pre {
+  color: brown;
+  font-size: small;
+  text-align: right;
+  white-space:nowrap !important;
+}
+
+table td.kwic-hit {
+  color: black;
+  font-weight: bold;
+  font-size: small;
+  text-align: center;
+  border: 2px solid white;
+  white-space:nowrap !important;
+}
+
+table td.kwic-fol {
+  color: brown;
+  font-size: small;
+  text-align: left;
+  white-space:nowrap !important;
+}
