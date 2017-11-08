@@ -36,6 +36,7 @@
             <input name='selected_qc' class='form-control' value='1' >
           </div>
 
+          <!-- Allow choosing a QC line -->
           <div class="col-md-2 input-group input-group-sm">
               <label class='input-group-addon' for='qc_select'>Query line</label>
               <select class="form-control" id="qc_select">
@@ -44,11 +45,15 @@
                   {% endfor %}
               </select>
           </div>
+
           <div class="col-md-3">
 
           </div>
+
+          <!-- Show we are waiting -->
           <div class="col-md-3">
             <div id="kwic-fetch" class="row hidden">
+              <span>Loading...</span>
               <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
             </div>
           </div>
@@ -78,6 +83,6 @@
     // Make sure events are connect on the right places
     // ru.cesar.seeker.init_events();
     // Make sure the button is pressed on the first time
-    // $("#kwiclistsearch").click();
+    $("#kwic_search_button").click();
   </script>
 {% endblock content %}

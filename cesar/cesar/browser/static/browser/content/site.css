@@ -478,6 +478,12 @@ div.up {
 }
 
 /* Seeker KWIC */
+
+table.kwic-list a:hover {
+    text-decoration: none;
+    cursor: pointer;
+}
+
 table td.kwic-loc, table td span.kwic-loc {
   font-family: monospace;
   color: darkblue;
@@ -501,6 +507,12 @@ table td.kwic-hit {
   text-align: center;
   border: 2px solid white;
   white-space:nowrap !important;
+}
+td.kwic-hit a {
+    color: black;
+}
+td.kwic-loc a {
+    color: darkblue;
 }
 
 table td.kwic-fol {

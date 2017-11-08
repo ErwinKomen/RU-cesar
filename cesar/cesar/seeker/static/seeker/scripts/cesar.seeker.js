@@ -671,7 +671,7 @@ var ru = (function ($, ru) {
           // Get to the nearest <tr>
           elTr = $(el).closest("tr");
           // Get to the next row
-          elTr = $(elTr).next("."+sClass);
+          elTr = $(elTr).nextAll("."+sClass).first();
           // Check its status
           if ($(elTr).hasClass("hidden")) {
             // Hide all other [function-details]
@@ -850,7 +850,9 @@ var ru = (function ($, ru) {
 
           // Indicate we are waiting
           $(waitid).removeClass("hidden");
+          // Define the post command
           var posting = $.post(ajaxurl, data);
+          // Execute the post command and tell what needs to be done when ready
           posting.done(function (data) {
             // Put the results on display
             $(targetid).html(data['html']);
@@ -858,15 +860,7 @@ var ru = (function ($, ru) {
             $(waitid).addClass("hidden");
           });
 
-          /*
-          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
-          if (response.status === undefined || response.status !== 'ok') {
-            // Show an error somewhere
-          } else {
-            // Coming here means that we've had a positive response
-
-          }*/
-          } catch (ex) {
+        } catch (ex) {
           private_methods.errMsg("load_kwic", ex);
         }
       },

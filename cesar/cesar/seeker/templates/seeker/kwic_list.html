@@ -11,40 +11,50 @@
         </span>
       </div>
   </div>
-
-  <form action="" method="post">
-    {% csrf_token %}
-
-    <!-- Allow user to filter what he/she wants to see -->
-    <div class="row">
-      <table>
-        <thead><tr><th>Location</th><th></th><th>search</th><th></th></tr></thead>
-        <tbody>
-          {% for result in result_list %}
-          <tr>
-            <td class="kwic-loc">{{result.ResId}}</td>
-            <td class="kwic-pre">{% if result.kwic_pre|length > 70 %}...{% endif %}{{result.kwic_pre|slice:"-70:"}}</td>
-            <td class="kwic-hit" ><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');">{{result.kwic_hit}}</a></td>
-            <td class="kwic-fol">{{result.kwic_fol|truncatewords:7}}</td>
-            <td class="kwic-actions">
-              <a class="btn btn-default btn-xs" onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">
-                <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
-              </a>
-            </td>
-          </tr>
-          <tr class="hidden kwic-details">
-            <td colspan="4">
-              [<span class="kwic-loc">{{result.Locw}}</span>]
-              {{result.kwic_pre}} <b>{{result.kwic_hit}}</b> {{result.kwic_fol}}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-
-  </form>
+    
+  <!-- Allow user to filter what he/she wants to see -->
+  <div class="row">
+    <table class="kwic-list">
+      <thead><tr><th>Location</th><th></th><th>search</th><th></th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for result in result_list %}
+        <tr>
+          <td class="kwic-loc">
+            <a onclick="ru.cesar.seeker.funcdefshow(this, 'meta-details');"
+               title="{{result.TextId}}&#13;{{result.Locw}}">{{result.ResId}}</a>
+          </td>
+          <td class="kwic-pre">{% if result.kwic_pre|length > 70 %}...{% endif %}{{result.kwic_pre|slice:"-70:"}}</td>
+          <td class="kwic-hit" ><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">{{result.kwic_hit}}</a></td>
+          <td class="kwic-fol">{{result.kwic_fol|truncatewords:7}}</td>
+          <td class="kwic-actions">
+            <a class="btn btn-default btn-xs" 
+               onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">
+              <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+            </a>
+          </td>
+        </tr>
+        <tr class="hidden kwic-details">
+          <td></td>
+          <td colspan="3">
+            [<span class="kwic-loc">{{result.Locw}}</span>]
+            {{result.kwic_pre}} <b>{{result.kwic_hit}}</b> {{result.kwic_fol}}
+          </td>
+          <td></td>
+        </tr>
+        <tr class="hidden meta-details">
+          <td></td>
+          <td colspan="3">
+            <table>
+              <tr><td>Text:</td><td class="kwic-loc">{{result.TextId}}</td></tr>
+              <tr><td>Hit:</td><td class="kwic-loc">{{result.Locw}}</td></tr>
+            </table>
+          </td>
+          <td></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <!-- Pagination -->
   <div class="row">
