@@ -4,13 +4,13 @@
                   <li><a onclick="{{page_function}}(1, '{{formdiv}}');">1</a></li>
               {% endif %}
           
-                {% if  page_obj.number > 10 %}
+                {% if  page_obj.number > 6 %}
                   <li><a>...</a></li>
                 {% endif %}
 
                 {% for p in page_obj.paginator.page_range %}
           
-                   {% if p < page_obj.number|add:"10" and  p > page_obj.number|add:"-10" %}
+                   {% if p < page_obj.number|add:"6" and  p > page_obj.number|add:"-6" %}
                    <li {% ifequal p page_obj.number %}class='active'{% endifequal %}>
                    <a onclick="{{page_function}}( {{ p }}, '{{formdiv}}');">{{p}}</a>
                    </li>
@@ -18,7 +18,7 @@
          
                 {% endfor %}
   
-                {% if page_obj.paginator.num_pages > page_obj.number|add:"10" %}
+                {% if page_obj.paginator.num_pages > page_obj.number|add:"6" %}
                   <li><a>...</a></li>
                   <li>
                   <a onclick="{{page_function}}( {{page_obj.paginator.num_pages}}, '{{formdiv}}');">{{page_obj.paginator.num_pages}}</a>

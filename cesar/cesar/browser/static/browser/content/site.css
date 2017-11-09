@@ -167,8 +167,11 @@ p {
 }
 .pagination-xsm > li > a,
 .pagination-xsm > li > span {
-  padding: 3px 6px;
+  padding: 2px 4px;     /* Note: this is vertical, horizontal... */
   font-size: 12px;
+}
+.pagination-xsm > li > a:hover {
+  cursor: pointer; 
 }
 
 .pagination-xsm > li:first-child > a,
