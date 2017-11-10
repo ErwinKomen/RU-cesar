@@ -29,6 +29,7 @@ SEARCH_VARIABLE_TYPE = "search.variabletype"        # fixed, calc, gvar
 SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, dvar, func, cnst, axis, hit
 SEARCH_CONDTYPE = "search.condtype"                 # func, dvar
 SEARCH_TYPE = "search.type"                         # str, int, bool, cnst
+SEARCH_FILTEROPERATOR = (('and', 'and'), ('andnot', 'andnot'))
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -1385,6 +1386,56 @@ class Kwic(models.Model):
     # [1] There must be a link to the Basket the results belong to
     basket = models.ForeignKey(Basket, blank=False, null=False, related_name="kwiclines")
 
+    def __str__(self):
+        return "{}".format(self.qc)
+
+    def add_filter(self, sField, sValue):
+        # Add this to the set of filters belonging to this Kwic object
+        obj = KwicFilter(kwic=self, field=sField, value=sValue)
+        obj.save()
+
+    def get_filter(self):
+        # Combine all filters into a JSON object to be sent
+        oFilter = {}
+        for item in self.kwicfilters.all():
+            oFilter[item.field] = item.value
+        return oFilter
+
+    def apply_filter(self, oFilter=None):
+        oErr = ErrHandle()
+        # Combine all filters into a JSON object to be sent
+        if oFilter == None:
+            oFilter = self.get_filter()
+        # Send to /crpp/dbinfo to get the correct amounts
+        sUser = self.basket.research.owner.username
+        sCrpName = self.basket.research.name
+        iQcLine = self.qc
+        oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0, filter=oFilter)
+        if oDbInfoBack['commandstatus'] != 'ok':
+            oErr.DoError("set_kwic: didn't get a positive reply from /crpp/dbinfo")
+            # Cannot get a positive reply
+            return False
+        # Adapt the hitcount
+        self.hitcount = oDbInfoBack['Size']
+        self.save()
+        # REturn positively
+        return True
+
+class KwicFilter(models.Model):
+    """A filter that needs to be applied to the KWIC it is attached to"""
+
+    # [1] The database field this filter applies to
+    field = models.CharField("Database field", max_length=MAX_NAME_LEN)
+    # [1] Either 'and' or 'and not'
+    operator = models.CharField("Filter operator", choices=SEARCH_FILTEROPERATOR, 
+                              max_length=5, default="and")
+    # [1] The value of the filter
+    value = models.CharField("Value", max_length=MAX_TEXT_LEN)
+    # [1] Link this filter the the KWIC it belongs to
+    kwic = models.ForeignKey(Kwic, blank=False, null=False, related_name="kwicfilters")
+
+    def __str__(self):
+        return "{}".format(self.field)
 
 
 class Quantor(models.Model):

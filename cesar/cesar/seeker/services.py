@@ -4,6 +4,7 @@ import requests
 import sys
 import base64
 import zlib
+import urllib
 
 # Specific for Cesar
 from cesar.settings import CRPP_HOME
@@ -118,7 +119,7 @@ def crpp_status(sUser, sJobId):
     # Send and return the reply
     return crpp_command("statusxq", oToCrpp)
 
-def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount):
+def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount, filter=None, sort=None):
     """Ask the /crpp/dbinfo service for the count it has for the result combination"""
 
     # Construct the object we pass along
@@ -126,20 +127,24 @@ def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount):
                 'name':   "{}_QC{}_Dbase".format(sCrpName, iQcNum),
                 'start':  iStart,
                 'count':  iCount }
+    # Possibly add filter
+    if filter != None and len(filter)>0:
+        oToCrpp['filter'] = filter
+    # Possibly add sorting
+    if sort != None:
+        oToCrpp['sort'] = sort
     # Send and return the reply
     return crpp_command("dbinfo", oToCrpp)
 
 
 def crpp_command(sCommand, oToCrpp):
     # Set the correct URL
-    # url = CRPP_HOME + '/crpp/'+sCommand+'?' + json.dumps(oToCrpp)
     url = CRPP_HOME + '/crpp/'+sCommand
     # Default reply
     oBack = {}
     # Get the data from the CRPP api
     try:
-        # r = requests.get(url)
-        r = requests.post(url, data=oToCrpp)
+        r = requests.post(url, json=oToCrpp)
     except:
         # Getting an exception here probably means that the back-end is not reachable (down)
         oBack['commandstatus'] = 'error'

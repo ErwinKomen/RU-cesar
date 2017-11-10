@@ -418,6 +418,10 @@ div.arg-selected {
 form .row {
     margin-left: 0px;
 }
+form .panel-heading.row {
+    margin-right: 0px;
+    margin-left: 0px;
+}
 
 /* Colors of jumbo parts */
 .jumbo-1 {
@@ -485,6 +489,9 @@ div.up {
 table.kwic-list a:hover {
     text-decoration: none;
     cursor: pointer;
+}
+table.kwic-list {
+    width: 100%;
 }
 
 table td.kwic-loc, table td span.kwic-loc {

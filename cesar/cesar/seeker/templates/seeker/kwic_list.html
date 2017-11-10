@@ -25,7 +25,7 @@
           </td>
           <td class="kwic-pre">{% if result.kwic_pre|length > 70 %}...{% endif %}{{result.kwic_pre|slice:"-70:"}}</td>
           <td class="kwic-hit" ><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">{{result.kwic_hit}}</a></td>
-          <td class="kwic-fol">{{result.kwic_fol|truncatewords:7}}</td>
+          <td class="kwic-fol">{{result.kwic_fol|truncatewords:9}}</td>
           <td class="kwic-actions">
             <a class="btn btn-default btn-xs" 
                onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">

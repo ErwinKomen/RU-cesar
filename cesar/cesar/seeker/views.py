@@ -1638,6 +1638,13 @@ class KwicListView(View):
     qcline = 0          # Number
     page_obj = None     # Initializing the page object
     qs = None
+    arFilter = [{'field': 'TextId', 'id': 'filter-text'},
+                {'field': 'Cat', 'id': 'filter-cat'},
+                {'field': 'SubType', 'id': 'filter-subtype'},
+                {'field': 'Title', 'id': 'filter-title'},
+                {'field': 'Genre', 'id': 'filter-genre'},
+                {'field': 'Author', 'id': 'filter-author'},
+                {'field': 'Date', 'id': 'filter-date'}]
     data = {'status': 'ok', 'html': '', 'statuscode': ''}       # Create data to be returned   
 
     def initialize(self, request):
@@ -1662,8 +1669,22 @@ class KwicListView(View):
                 page = 1
             else:
                 page = int(page)
-            # Pagination
             kwic_object = self.basket.kwiclines.filter(qc=qcNumber).first()
+
+            # Filtering
+            kwic_object.kwicfilters.all().delete()
+            for item in self.arFilter:
+                field = item['field']
+                id = item['id']
+                if self.qd.get(id) != "":
+                    kwic_object.add_filter(field, self.qd.get(id))
+            # Get the filter myself
+            oFilter = kwic_object.get_filter()
+            # Apply the filter
+            kwic_object.apply_filter(oFilter)
+
+
+            # Pagination
             hit_count = kwic_object.hitcount
             result_number_list = list(range(1, hit_count))
             paginator = Paginator(result_number_list, self.paginate_by)
@@ -1677,11 +1698,23 @@ class KwicListView(View):
                                 self.basket.research.name,
                                 qcNumber, 
                                 iStart,
-                                iCount)
+                                iCount,
+                                filter=oFilter)
             if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
                 # Provide all the information needed to create the Html presentation of the data
                 context['result_list'] = oData['Results']
                 context['feature_list'] = oData['Features']
+
+                # Put all the available filtering lists in here
+                context['list_textid'] = []
+                context['list_cat'] = []
+                context['list_subtype'] = []
+                context['list_title'] = []
+                context['list_genre'] = []
+                context['list_author'] = []
+
+                # A list of filters that the user has specified in the past and saved
+                context['list_filter'] = []
 
                 # Add pagination information
                 context['page_obj'] = self.page_obj
