@@ -13,200 +13,63 @@
 {% block content %}
 
   <div class="container body-content">
+    <h3>Keyword-in-context results</h3>
+    <p>{{intro_message|safe}}</p>
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- Allow choosing and adjusting a filter -->
+    <div id="goto_kwicfilter" class="row container">
+
+      <!-- allow returning back to KWIC listview -->
+      <div class="col-md-3" align="left">
+        <div id="goto_kwic" class="hidden">
+          <button type="button" class="btn btn-primary" 
+                  onclick="ru.cesar.seeker.research_open('kwiclistshow', 'kwicfilter', 'goto_filter', 'goto_kwic');">
+            << Kwic-results</button>
+        </div>
+      </div>
+
+      <!-- Show we are waiting -->
+      <div class="col-md-6" align="center">
+        <div id="kwic-fetch" class="row hidden">
+          <span>Loading...</span>
+          <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+        </div>
+      </div>
+
+      <!-- Goto filter editing -->
+      <div class="col-md-3" align="right">
+        <a id="goto_filter" class="btn btn-info" role="button"
+            onclick="ru.cesar.seeker.research_open('kwicfilter', 'kwiclistshow', 'goto_kwic', 'goto_filter');">
+          Adjust filter</a>
+      </div>
+    </div>
+
+
+    <!-- Both kwic-listview and kwic-filter should be within a panel -->
     <div class="panel panel-default">
-      <!-- Allow user to filter what he/she wants to see -->
-      <form name="textsearch" id="textsearch" action="" method="post">
-        {% csrf_token %}
-        <!-- Hidden form attributes -->
-        <div class="hidden">
-          <input name='searchPart' id='searchPart' class='form-control' value='' >
-          <input name='selected_qc' class='form-control' value='1' >
-        </div>
 
-        <!-- EMpty line -->
-        <div class="row">&nbsp;</div>
+      <!-- Option 1: The kwic listview -->
+      <div id="kwiclistshow" class="row result-part"></div>
 
-        <!-- Make sure user knows where we are-->
-        <div class="row">
-            <div class="col-md-3">
-              {{intro_message|safe}}
-            </div>
-            <!-- Show we are waiting -->
-            <div class="col-md-3">
-              <div id="kwic-fetch" class="row hidden">
-                <span>Loading...</span>
-                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
-              </div>
-            </div>
-        </div>
-        <div id="research_err">
-          {% for item in error_list %}
-          {{item}}
-          {% endfor %}
-        </div>
-
-        <!-- Collapsable area for filtering -->
-        <div class="panel panel-default">
-          <div class="panel-heading collapsed row" data-toggle="collapse" data-target="#filter-area">
-            <div class="col-md-1">Filter...</div>
-            <div class="col-md-2" id="filter-summary"><i>(none)</i></div>
-            <div id="filter-selector" class="col-md-4">
-              {% if list_filter|length %}
-                <select class="form-control" id="filter-selector">
-                  <option value="">-</option>
-                  {% for option in list_filter %}<option value="{{option}}">{{option}}</option>{% endfor %}
-                </select>
-              {% endif %}
-            </div>
-          </div>
-          <div id="filter-area" class="collapse">
-            <div class="row">&nbsp;</div>
-            <div class="row">
-              <!-- Allow choosing a QC line -->
-              <div class="col-md-2 input-group input-group-sm">
-                  <label class='input-group-addon' for='qc_select'>Query line</label>
-                  <select class="form-control" id="qc_select">
-                      {% for instance in qc_list %}
-                      <option value="qcNumber"  {% if instance.qc == qc %}selected {% endif %}>{{instance.qc}}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-
-              <!-- Allow user to apply the filter -->
-              <div class="col-md-3 col-md-offset-6 text-right">
-                <a class="btn btn-primary" id="kwic_search_button"
-                   onclick="ru.cesar.seeker.load_kwic(this);"
-                   instanceid="{{object_id}}"
-                   openid="kwiclistshow" 
-                   ajaxurl="{% if object_id %}{% url 'kwic_list' object_id %}{% else %}{% url 'kwic_list' %}{% endif %}"
-                   data="">{% trans 'Apply' %}</a>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-            <!-- Filter on [TextId] -->
-            <div class="row">
-              <div class="col-md-4 input-group">
-                <label class="input-group-addon" for="id_filter-text">Text</label>
-                <input class="form-control" name="filter-text" type="text" placeholder="Text name (use * as wildcard)" />
-              </div>
-              <div class="col-md-7 input-group">
-                <label class="input-group-addon" for="id_filter-textselector">Or choose:</label>
-                <select class="form-control" id="filter-textselector">
-                  <option value="">-</option>
-                  {% for option in list_textid %}<option value="{{option}}">{{option}}</option>{% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-            <!-- Filter on [Cat] -->
-            <div class="row">
-              <div class="col-md-4 input-group">
-                <label class="input-group-addon" for="id_filter-cat">Category</label>
-                <input class="form-control" name="filter-cat" type="text" placeholder="Output category (use * as wildcard)" />
-              </div>
-              <div class="col-md-7 input-group">
-                <label class="input-group-addon" for="id_filter-catselector">Or choose:</label>
-                <select class="form-control" id="filter-catselector">
-                  <option value="">-</option>
-                  {% for option in list_cat %}<option value="{{option}}">{{option}}</option>{% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-            <!-- Filter on [SubType] -->
-            <div class="row">
-              <div class="col-md-4 input-group">
-                <label class="input-group-addon" for="id_filter-subtype">SubType</label>
-                <input class="form-control" name="filter-subtype" type="text" placeholder="Text subtype (use * as wildcard)" />
-              </div>
-              <div class="col-md-7 input-group">
-                <label class="input-group-addon" for="id_filter-subtypeselector">Or choose:</label>
-                <select class="form-control" id="filter-subtypeselector">
-                  <option value="">-</option>
-                  {% for option in list_subtype %}<option value="{{option}}">{{option}}</option>{% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-            <!-- Filter on [Title] -->
-            <div class="row">
-              <div class="col-md-4 input-group">
-                <label class="input-group-addon" for="id_filter-title">Title</label>
-                <input class="form-control" name="filter-title" type="text" placeholder="Text title (use * as wildcard)" />
-              </div>
-              <div class="col-md-7 input-group">
-                <label class="input-group-addon" for="id_filter-titleselector">Or choose:</label>
-                <select class="form-control" id="filter-titleselector">
-                  <option value="">-</option>
-                  {% for option in list_title %}<option value="{{option}}">{{option}}</option>{% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-            <!-- Filter on [Genre] -->
-            <div class="row">
-              <div class="col-md-4 input-group">
-                <label class="input-group-addon" for="id_filter-genre">Genre</label>
-                <input class="form-control" name="filter-genre" type="text" placeholder="Text genre (use * as wildcard)" />
-              </div>
-              <div class="col-md-7 input-group">
-                <label class="input-group-addon" for="id_filter-genreselector">Or choose:</label>
-                <select class="form-control" id="filter-genreselector">
-                  <option value="">-</option>
-                  {% for option in list_genreid %}<option value="{{option}}">{{option}}</option>{% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-            <!-- Filter on [Author] -->
-            <div class="row">
-              <div class="col-md-4 input-group">
-                <label class="input-group-addon" for="id_filter-author">Author</label>
-                <input class="form-control" name="filter-author" type="text" placeholder="Text author (use * as wildcard)" />
-              </div>
-              <div class="col-md-7 input-group">
-                <label class="input-group-addon" for="id_filter-authorselector">Or choose:</label>
-                <select class="form-control" id="filter-authorselector">
-                  <option value="">-</option>
-                  {% for option in list_authorid %}<option value="{{option}}">{{option}}</option>{% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-            <!-- Filter on [Date] -->
-            <div class="row">
-              <div class="col-md-4 input-group">
-                <label class="input-group-addon" for="id_filter-date">Date</label>
-                <input class="form-control" name="filter-date" type="text" placeholder="Text date (use * as wildcard)" />
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-
-          </div>
-        </div>
-      </form>
+      <!-- Option 2: THe KWIC filter definition -->
+      <div id="kwicfilter" class="row result-part hidden">
+          {% include 'seeker/kwic_filter.html' %}
+      </div>
     </div>
 
-    <!-- Some space-->
-    <div class="row">&nbsp;</div>
 
-    <!-- Provide room for the actual KWIC list -->
-    <div id="kwiclistshow">
-        <!-- This is where the listview will appear-->
-    </div>
+
   </div>
 
 
   <script>
     // Make sure events are connect on the right places
-    // ru.cesar.seeker.init_events();
+    ru.cesar.seeker.init_events();
     // Make sure the button is pressed on the first time
     $("#kwic_search_button").click();
   </script>

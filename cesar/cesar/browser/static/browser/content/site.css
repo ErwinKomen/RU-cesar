@@ -9,6 +9,11 @@
     padding-right: 15px;
 }
 
+.center {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
 .container-large {
     margin-left: 50px;
 }
@@ -342,6 +347,11 @@ svg g.lithium-node:hover > text {
 }
 .glyphicon-plus {
     color: mediumseagreen;
+}
+
+.result-part .row {
+    margin-right: 20px;
+    margin-left: 20px;
 }
 
 .seeker-choice {

@@ -142,6 +142,8 @@
     <Content Include="cesar\seeker\templates\seeker\basket_list.html" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />
+    <Content Include="cesar\seeker\templates\seeker\kwic_filter.html" />
+    <Content Include="cesar\seeker\templates\seeker\kwic_filter_old.html" />
     <Content Include="cesar\seeker\templates\seeker\kwic_main.html" />
     <Content Include="cesar\seeker\templates\seeker\main_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\main_psdx.xq" />

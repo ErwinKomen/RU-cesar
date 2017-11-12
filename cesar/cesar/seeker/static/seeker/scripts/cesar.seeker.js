@@ -972,7 +972,7 @@ var ru = (function ($, ru) {
        *   Open up a section and close another one
        *
        */
-      research_open: function (sDivName, sDivClose) {
+      research_open: function (sDivName, sDivClose, sBtnOpen, sBtnClose) {
         try {
           if (sDivName !== undefined && sDivName !== '') {
             $("#" + sDivName).removeClass("hidden");
@@ -980,6 +980,14 @@ var ru = (function ($, ru) {
           // Possibly close [sDivClose]
           if (sDivClose !== undefined && sDivClose !== "") {
             $("#" + sDivClose).addClass("hidden");
+          }
+          // Possible open button
+          if (sBtnOpen !== undefined && sBtnOpen !== '') {
+            $("#" + sBtnOpen).removeClass("hidden");
+          }
+          // Possibly close [sBtnClose]
+          if (sBtnClose !== undefined && sBtnClose !== "") {
+            $("#" + sBtnClose).addClass("hidden");
           }
         } catch (ex) {
           private_methods.errMsg("research_open", ex);
