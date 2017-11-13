@@ -21,6 +21,9 @@
       {% endfor %}
     </div>
 
+    <!-- Keep track of the basket we are currently working with -->
+    <div class="hidden" id="basketid">{{object_id}}</div>
+
     <!-- Allow choosing and adjusting a filter -->
     <div id="goto_kwicfilter" class="row container">
 
@@ -60,6 +63,13 @@
       <div id="kwicfilter" class="row result-part hidden">
           {% include 'seeker/kwic_filter.html' %}
       </div>
+
+      <!-- Option 1: The kwic listview -->
+      <div id="result_container_1" class="row result-part"></div>
+
+      <!-- Option 2: THe KWIC filter definition -->
+      <div id="result_container_2" class="row result-part"></div>
+
     </div>
 
 

@@ -1017,6 +1017,35 @@ var ru = (function ($, ru) {
         }
       },
 
+
+      /**
+       * result_wizard
+       *    Select one item from the result wizard
+       *
+       */
+      result_wizard: function (el, sPart) {
+        var sTargetId = "research_container_",
+            sTargetType = "",
+            sObjectId = "",
+            sMsg = "",
+            html = "",
+            data = {},
+            frm = null,
+            response = null,
+            elListItem = null,
+            elList = null;
+
+        try {
+          // Get the correct target id
+          sTargetId = "#" + sTargetId + sPart;
+          // Get the correct id for this BASKET
+          sObjectId = $("#basketid").text().trim();
+
+        } catch (ex) {
+          private_methods.errMsg("research_overview", ex);
+        }
+      },
+
       /**
        * research_wizard
        *    Select one item from the research project wizard
