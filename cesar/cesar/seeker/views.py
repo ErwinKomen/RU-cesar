@@ -61,11 +61,11 @@ class FunctionListView(ListView):
         return super(FunctionListView, self).render_to_response(context, **response_kwargs)
 
 
-class BasketListView(ListView):
+class ResultListView(ListView):
     """List all the search-result-baskets that are available"""
 
     model = Basket
-    template_name = 'seeker/basket_list.html'
+    template_name = 'seeker/result_list.html'
     paginate_by = paginateEntries
     entrycount = 0
     qs = None
@@ -85,7 +85,7 @@ class BasketListView(ListView):
             lCombi.append({'basket': itm, 'quantor': quantor})            
         context['object_list'] = lCombi
         # Make sure the correct URL is being displayed
-        return super(BasketListView, self).render_to_response(context, **response_kwargs)
+        return super(ResultListView, self).render_to_response(context, **response_kwargs)
 
 
 class SeekerListView(ListView):
@@ -232,7 +232,7 @@ class ResearchExe(View):
                             # Also provide the status and the stop commands for the caller
                             self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket_id})
                             self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket_id})
-                            self.data['basket_result'] = reverse("search_result", kwargs={'object_id': basket_id})
+                            self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket_id})
                     else:
                         self.arErr.append("No corpus part to be searched has been selected")
                 elif self.action == "stop":
@@ -603,6 +603,11 @@ class ResearchPart(View):
         # Copy any object id
         self.object_id = object_id
         self.add = object_id is None
+        # Get the parameters
+        if request.POST:
+            self.qd = request.POST
+        else:
+            self.qd = request.GET
 
         # Find out what the Main Model instance is, if any
         if self.add:
@@ -674,7 +679,8 @@ class ResearchPart1(ResearchPart):
                 if research.owner_id == None:
                     research.owner = request.user
         # Set the 'saved' one
-        self.obj.save()
+        if self.obj != None:
+            self.obj.save()
         return has_changed
 
     def after_save(self, prefix, instance=None):
@@ -1622,8 +1628,6 @@ class KwicView(DetailView):
         return context
 
 
-
-
 class KwicListView(View):
     """This listview manages showing the results that are gathered using /crpp/dbinfo"""
 
@@ -1804,6 +1808,38 @@ class KwicListView(View):
         return self.qs
 
 
+class ResultDetailView(DetailView):
+    """Show the results connected to one basket/quantor"""
+
+    model = Basket
+    template_name = 'seeker/result_details.html'
+    basket = None     # Object: basket
+    quantor = None    # Object: quantor
+
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(ResultDetailView, self).get_context_data(**kwargs)
+
+        # Get parameters for the search
+        initial = self.request.GET
+
+        # Find out where we are 
+        self.basket = self.object
+        self.quantor = Quantor.objects.filter(basket=self.basket).first()
+
+        # Add some elements to the context
+        research = self.basket.research
+        context['object_id'] = self.object.id
+        context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
+        context['search_name'] = research.name
+        context['original'] = research
+        context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
+        context['quantor'] = self.quantor
+        context['qclines'] = self.quantor.qclines.all()
+
+        # Return the calculated context
+        return context
 
 
 class QuantorListView(ListView):
@@ -1902,6 +1938,123 @@ class QuantorListView(ListView):
 
         # Return the resulting filtered and sorted queryset
         return self.qs
+
+
+class ResultPart1(ResearchPart):
+    MainModel = Basket
+    template_name = 'seeker/result_part_1.html'
+    form_objects = [{'form': KwicForm, 'prefix': 'kwic', 'readonly': True}] 
+    
+    def get_queryset(self, prefix):
+        """Determine the queryset that is to be used"""
+
+        # Get the parameters passed on with the GET request
+        get = self.request.GET
+
+
+class ResultPart2(ResearchPart):
+    MainModel = Basket
+    template_name = 'seeker/result_part_2.html'
+    page_function = "ru.cesar.seeker.kwic_page"
+    form_div = "kwic_search_button"
+    paginate_by = paginateEntries
+    form_objects = [{'form': KwicForm, 'prefix': 'kwic', 'readonly': True}]  
+
+    def custom_init(self):
+        """Calculate stuff"""
+
+        # Determine the QC line that has been passed on
+        qc = self.qd['qc_select']
+        if qc != None and qc != '':
+            self.qcline = int(qc)
+        # Set the basket
+        self.basket = self.obj
+        # Need to get the queryset already
+        self.get_queryset('kwic')
+        # Paging...
+        page = self.qd.get('page')
+        if page == None:
+            page = 1
+        else:
+            page = int(page)
+        kwic_object = self.basket.kwiclines.filter(qc=qc).first()
+
+        # Get the filter myself
+        oFilter = kwic_object.get_filter()
+        # Apply the filter
+        kwic_object.apply_filter(oFilter)
+
+        # Pagination
+        self.hit_count = kwic_object.hitcount
+        result_number_list = list(range(1, self.hit_count))
+        paginator = Paginator(result_number_list, self.paginate_by)
+        self.page_obj = paginator.page(page)
+        # Set the number of items to be fetched
+        iCount = self.paginate_by
+        iStart = (page-1) * self.paginate_by
+        # Fetch the data for this page
+        oData = crpp_dbinfo(self.basket.research.owner.username, 
+                            self.basket.research.name,
+                            qc, 
+                            iStart,
+                            iCount,
+                            filter=oFilter)
+        if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
+            self.result_list = oData['Results']
+            self.feature_list = oData['Features']
+        else:
+            # Some error has occurred
+            self.data['status'] = "error"
+
+    def add_to_context(self, context):
+        # Add some elements to the context
+        research = self.basket.research
+        context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
+        context['search_name'] = research.name
+        context['original'] = research
+        context['entrycount'] = self.entrycount
+        context['basket'] = self.basket
+        # Provide all the information needed to create the Html presentation of the data
+        context['result_list'] = self.result_list
+        context['feature_list'] = self.feature_list
+
+        # Put all the available filtering lists in here
+        context['list_textid'] = []
+        context['list_cat'] = []
+        context['list_subtype'] = []
+        context['list_title'] = []
+        context['list_genre'] = []
+        context['list_author'] = []
+
+        # A list of filters that the user has specified in the past and saved
+        context['list_filter'] = []
+
+        # Add pagination information
+        context['page_obj'] = self.page_obj
+        context['page_function'] = self.page_function
+        context['hitcount'] = self.hit_count
+
+        # Information on this basket/kwic object
+        context['formdiv'] = self.form_div
+        return context
+
+    def get_queryset(self, prefix):
+        """Determine the queryset that is to be used"""
+
+        # Determine the selection
+        lstQ = []
+        lstQ.append(Q(basket=self.basket))
+        if self.qcline > 0:
+          lstQ.append(Q(qc=self.qcline))
+
+        # Set and order the selection
+        self.qs = Kwic.objects.filter(*lstQ)
+
+        self.entrycount = self.qs.count()
+
+        # Return the resulting filtered and sorted queryset
+        return self.qs
+
 
 
 def research_oview(request, object_id=None):

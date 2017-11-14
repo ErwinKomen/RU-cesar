@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
+      &rsaquo; <a href="{{search_edit_url}}">{{search_name}}</a>
+      &rsaquo; results [{{basket.part.corpus.get_lng_display}}, {{basket.part.name}}]
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+    <h3>Search results</h3>
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- Keep track of the basket we are currently working with -->
+    <div class="hidden" id="basketid">{{object_id}}</div>
+    <div class="hidden" id="selectedqc"></div>
+
+    <form id="qc_form" action="" method="post">
+      {% csrf_token %}
+      <div class="row">
+        <!-- Allow choosing a QC line -->
+        <div class="col-md-3 input-group input-group-sm">
+            <label class='input-group-addon' for='qc_select'>Search result line:</label>
+            <select class="form-control" id="qc_select" name="qc_select"
+                    onchange="ru.cesar.seeker.select_qc(this, 'selectedqc', 'action_buttons');">
+                {% for instance in qclines %}
+                <option value="{{instance.qc}}"  {% if instance.qc == qc %}selected {% endif %}>{{instance.qc}} ({{instance.count}})</option>
+                {% endfor %}
+            </select>
+        </div>
+      </div>
+    </form>
+
+
+    <!-- Allow choosing and adjusting a filter -->
+    <div class="row container">
+
+      <!-- allow returning back to Results Details -->
+      <div class="col-md-3" align="left">
+        <div id="goto_result_details" class="hidden">
+          <button type="button" class="btn btn-primary" 
+                  onclick="ru.cesar.seeker.result_wizard(this, 'main');">
+            << Result center</button>
+        </div>
+      </div>
+
+      <!-- Show we are waiting -->
+      <div class="col-md-6" align="center">
+        <div id="kwic-fetch" class="row hidden">
+          <span>Loading...</span>
+          <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+        </div>
+      </div>
+
+      <!-- Goto filter editing -->
+      <div class="col-md-3" align="right">
+        <!-- No idea what to use this for yet -->
+      </div>
+    </div>
+
+    <!-- Action button row -->
+    <div id="action_buttons" class="row container">
+      <div class="col-md-12">
+        <!-- Space above -->
+        <div class="row">&nbsp;</div>
+
+        <!-- Actual button row-->
+        <div class="row">
+          <div class="col-md-3 ">
+            <a class="btn jumbotron jumbo-1" 
+               targeturl="{% url 'result_part_1' object_id=object_id %}"
+               targetid="result_part_1"
+               onclick="ru.cesar.seeker.result_wizard(this, '1');">Documents</a>
+          </div>
+          <div class="col-md-6  " align="center">
+            <a class="btn jumbotron jumbo-2" 
+               targeturl="{% url 'result_part_2' object_id=object_id %}"
+               targetid="result_part_2"
+               onclick="ru.cesar.seeker.result_wizard(this, '2');">Sentences</a>
+          </div>
+          <div class="col-md-3 " align="right">
+            <a class="btn jumbotron jumbo-3" 
+               targeturl=""
+               targetid="result_part_3"
+               onclick="ru.cesar.seeker.result_wizard(this, '3');">Define a filter</a>
+          </div>
+        </div>
+
+        <!-- Space below-->
+        <div class="row">&nbsp;</div>
+      </div>
+    </div>
+
+    <!-- Show the main features of the results -->
+    <div id="result_info" class="row container panel panel-default">
+      <!-- Project information -->
+      <div class="col-md-4">
+        <div><label>Search</label></div>
+        <table>
+          <tr><td>Project:</td><td><b>{{original.name}}</b></td></tr>
+          <tr><td>Language:</td><td><code>{{basket.part.corpus.get_lng_display}}</code></td></tr>
+          <tr><td>Corpus:</td><td>{{basket.part.name}}</td></tr>
+        </table>
+      </div>
+
+      <!-- Search statistics -->
+      <div class="col-md-4" align="center">
+        <div><label>Statistics</label></div>
+        <table>
+          <tr><td>Date:</td><td>{{basket.saved|date:"j/b/o G:i"}}</td></tr>
+          <tr><td>Searchtime:</td><td align="right">{{quantor.searchTime}} ms.</td></tr>
+          <tr><td>Operations:</td><td align="right">{{quantor.qcNum}}</td></tr>
+          <tr><td>Texts:</td><td align="right">{{quantor.total}}</td></tr>
+        </table>
+      </div>
+
+      <!-- Search quantificational results -->
+      <div class="col-md-4" align="right">
+        <div><label>Hit counts</label></div>
+        <table>
+          {% for line in quantor.qclines.all %}
+              <tr><td>Line {{line.qc}}</td><td align="right">{{line.count}}</td></tr>
+            {% for scat in line.qsubcats.all %}
+              <tr><td>{{scat.name}}</td><td align="right">{{scat.count}}</td></tr>
+            {% endfor %}
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <!-- Both kwic-listview and kwic-filter should be within a panel -->
+    <div id="result_host_containers" class="panel panel-default">
+
+      <!-- Option 1: The result documents view -->
+      <div id="result_container_1" class="row result-part"></div>
+
+      <!-- Option 2: THe result sentences view -->
+      <div id="result_container_2" class="row result-part"></div>
+
+      <!-- Option 3: THe filter definition -->
+      <div id="result_container_3" class="row result-part"></div>
+
+    </div>
+      
+  </div>
+
+
+  <script>
+    // Make sure events are connect on the right places
+    ru.cesar.seeker.init_events();
+  </script>
+{% endblock content %}

@@ -239,8 +239,11 @@ var ru = (function ($, ru) {
           if (openid !== undefined) {
             elOpen = $(this).closest("#" + openid);
           }
+
           // Indicate we are saving/preparing
-          $(".save-warning").html("Saving item... " + instanceid.toString());
+          if (!bNew) {
+            $(".save-warning").html("Saving item... " + instanceid.toString());
+          }
           // Make an AJAX call to get an existing or new specification element HTML code
           response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
           if (response.status === undefined || response.status !== 'ok') {
@@ -251,11 +254,11 @@ var ru = (function ($, ru) {
             instanceid = response['instanceid'];
             // Add the instanceid to the URL, so that the new item gets opened
             ajaxurl = ajaxurl + instanceid + "/";
-            // Also find the 'research_overview' and adpat its @targeturl property
-            var elOview = $("#research_overview").children("button").first();
-            if (elOview !== undefined && elOview != - null) {
+            // Also find the 'goto_overview' and adpat its @targeturl property
+            var elOview = $("#goto_overview").children("button").first();
+            if (elOview !== undefined && elOview !== null) {
               var sOviewUrl = $(elOview).attr("targeturl");
-              sOviewUrl = sOviewUrl + instanceid + "/";
+              sOviewUrl = sOviewUrl.replace("/new/", "/" + instanceid + "/");
               $(elOview).attr("targeturl", sOviewUrl);
             }
           }
@@ -291,7 +294,7 @@ var ru = (function ($, ru) {
 
 
           // Bind the click event to all class="ajaxform" elements
-          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
+          $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
         } catch (ex) {
           private_methods.errMsg("ajaxform_click", ex);
         }
@@ -760,6 +763,24 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  click_if_new
+       *      If the [divObject] is empty, then click on [sTarget]
+       *
+       */
+      click_if_new: function (divObject, sTarget) {
+        try {
+          if (divObject !== undefined && sTarget !== undefined) {
+            var sContent = $("#" + divObject).text().trim();
+            if (sContent === "" || sContent === "None") {
+              $("#" + sTarget).click();
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("click_if_new", ex);
+        }
+      },
+
+      /**
        *  init_events
        *      Bind main necessary events
        *
@@ -789,8 +810,9 @@ var ru = (function ($, ru) {
           $('td span.var-up').click(ru.cesar.seeker.var_up);
           // NOTE: do not use the following mouseout event--it is too weird to work with
           // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
+
           // Bind the click event to all class="ajaxform" elements
-          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
+          $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
         } catch (ex) {
           private_methods.errMsg("init_events", ex);
         }
@@ -1007,11 +1029,6 @@ var ru = (function ($, ru) {
           sTargetUrl = $(el).attr("targeturl");
           // Open this page
           window.location.href = sTargetUrl;
-          /*
-          // Hide the contents and show the tiles
-          $("#research_tiles").removeClass("hidden");
-          $("#research_contents").addClass("hidden");
-          $("#research_overview").addClass("hidden");*/
         } catch (ex) {
           private_methods.errMsg("research_overview", ex);
         }
@@ -1024,7 +1041,7 @@ var ru = (function ($, ru) {
        *
        */
       result_wizard: function (el, sPart) {
-        var sTargetId = "research_container_",
+        var sTargetId = "result_container_",
             sTargetType = "",
             sObjectId = "",
             sMsg = "",
@@ -1036,13 +1053,80 @@ var ru = (function ($, ru) {
             elList = null;
 
         try {
-          // Get the correct target id
+          // Check for 'main'
+          if (sPart !== undefined && sPart === "main") {
+            // THis means: return to the main center          
+            $(".result-part").addClass("hidden");
+            $(".result-part").removeClass("active");
+            $("#goto_result_details").addClass("hidden");
+            $("#action_buttons").removeClass("hidden");
+            $("#result_info").removeClass("hidden");
+            $("#result_host_containers").addClass("hidden");
+            return;
+          }
+
+          // Make sure we hide the jubmo buttons and the search result information
+          $("#action_buttons").addClass("hidden");
+          $("#result_info").addClass("hidden");
+          $("#result_host_containers").removeClass("hidden");
+
+          frm = $("#qc_form");
+          if (frm !== undefined) {
+            data = $(frm).serializeArray();
+          }
+
+          // Get the correct target id: a 'result_container_{num}'
           sTargetId = "#" + sTargetId + sPart;
+          // Clear errors
+          private_methods.errClear();
           // Get the correct id for this BASKET
           sObjectId = $("#basketid").text().trim();
 
+          // [2] Load the new form through an AJAX call
+          var ajaxurl = $(el).attr("targeturl");
+          switch (sPart) {
+            case "1":
+            case "2":
+            case "3":
+              // CHeck if we need to take another instance id instead of #researchid
+              if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
+
+              // POST call: show waiting
+              $("#kwic-fetch").removeClass("hidden");
+              // Fetch the correct data through a POST call
+              // response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId, data);
+              response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+              if (response !== undefined && response.status && response.status === 'ok') {
+                // Make the HTML response visible in a 'result_container_{num}'
+                $(sTargetId).html(response.html);
+                // Make sure events are set again
+                ru.cesar.seeker.init_events();
+              }
+              // POST call: hide waiting
+              $("#kwic-fetch").addClass("hidden");
+              break;
+          }
+          // Bind the click event to all class="ajaxform" elements
+          $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
+
+          // Hide all research parts
+          $(".result-part").not(sTargetId).addClass("hidden");
+          $(".result-part").not(sTargetId).removeClass("active");
+
+          // Show the target result part
+          $(sTargetId).removeClass("hidden");
+
+          // Show the 'back' button and hide ourselves
+          switch (sPart) {
+            case "1": case "2": case "3":
+              $("#goto_result_details").removeClass("hidden");
+              $("#goto_finetune").addClass("hidden");
+              break;
+          }
+
+
         } catch (ex) {
-          private_methods.errMsg("research_overview", ex);
+          private_methods.errMsg("result_wizard", ex);
         }
       },
 
@@ -1144,7 +1228,7 @@ var ru = (function ($, ru) {
               break;
           }
           // Bind the click event to all class="ajaxform" elements
-          $(".ajaxform").click(ru.cesar.seeker.ajaxform_click);
+          $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
 
           // Some actions depend on the particular page we are going to visit
           switch (sPart) {
@@ -1385,6 +1469,21 @@ var ru = (function ($, ru) {
 
         } catch (ex) {
           private_methods.errMsg("search_progress", ex);
+        }
+      },
+
+      /**
+       * select_qc
+       *   Set the 'qc' to the correct div and then open [sDivOpen]
+       *
+       */
+      select_qc: function (elThis, sDivQc, sDivOpen) {
+        try {
+          var iSelectedQc = parseInt($(elThis).val(), 10);
+          $("#"+sDivQc).html(str(iSelectedQc));
+          $("#" + sDivOpen).removeClass("hidden");
+        } catch (ex) {
+          private_methods.errMsg("select_qc", ex);
         }
       },
 

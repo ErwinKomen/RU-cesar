@@ -118,6 +118,12 @@ class GvarForm(ModelForm):
         return valid
 
 
+class KwicForm(ModelForm):
+    class Meta:
+        model = Kwic
+        fields = ['qc']
+
+
 class VarDefForm(ModelForm):
     """The DEFINITION of construction variables (not their values)"""
 

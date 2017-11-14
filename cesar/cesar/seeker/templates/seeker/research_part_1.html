@@ -22,8 +22,9 @@
       </div>
 
       <!-- SHAREGROUP specification: multiple options -->
+      
       <div id="research_part_3"
-           class="row js-inline-formset inline-group panel panel-default"
+           class="row js-inline-formset inline-group panel panel-default {% if not object_id %}hidden{% endif %}"
            data-inline-type="tabular"
            data-inline-formset="{{shareg_formset.inline_formset_data}}">
           <!-- GLOBAL VARIABLE specification -->
@@ -74,11 +75,11 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
-        <button type="button" class="btn btn-primary ajaxform"
+        <a class="btn btn-primary ajaxform"
                 instanceid="{{researchForm.instance.id}}"
                 openid="research_container_1" 
                 ajaxurl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
-                data="">{% trans 'Save' %}</button>
+                data="">{% trans 'Save' %}</a>
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </div>

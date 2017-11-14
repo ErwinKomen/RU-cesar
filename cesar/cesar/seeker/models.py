@@ -267,7 +267,8 @@ class Gateway(models.Model):
       # Save the gateway
       response = super().save(force_insert, force_update, using, update_fields)
       # Adapt the saved date of the research project
-      self.research.save()
+      if Research.objects.filter(gateway=self).first() != None:
+          self.research.save()
       return response
 
 

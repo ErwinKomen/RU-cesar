@@ -46,20 +46,21 @@
               <td class="tdnowrap">
                 <!-- Specify the different actions here-->
                 <div class="part-buttons">
+                    <!-- Action #1: open the result detail view -->
+                    <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'result_details' pk=item.basket.id %}">
+                      <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                    </a>
+
                     <!-- Action #1: show statistics of the results -->
                     <a title="details" 
-                       class="btn btn-success btn-xs" 
+                       class="btn btn-success btn-xs hidden" 
                        onclick="ru.cesar.seeker.funcdefshow(this);">
                       <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
                     </a>
 
                     <!-- Action #2: show the results in KWIC -->
-                    <a title="keywords in context" href="{% url 'kwic_result' pk=item.basket.pk %}">
-                      <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
-                    </a>
-
-                    <!-- Action #3: over to the Quantor listview -->
-                    <a title="numbers per document" href="{% url 'search_result' object_id=item.basket.id %}">
+                    <a title="keywords in context" class="hidden"
+                       href="{% url 'kwic_result' pk=item.basket.pk %}">
                       <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
                     </a>
                 </div>

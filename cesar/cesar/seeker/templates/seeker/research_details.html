@@ -22,10 +22,12 @@
     </div>
     <div class="hidden" id="researchid">{{object_id}}</div>
     <div class="hidden" id="targettype">{{targettype}}</div>
+
     <div class="xpanel xpanel-default">
 
       <!-- Short summary of the project -->
       <div id="research_tiles" class="row container">
+        {% if object_id %}
         <div class="row container">
           <div class="col-md-9 panel panel-default">
             <table>
@@ -45,8 +47,10 @@
             </table>
           </div>
         </div>
+        {% endif %}
 
         <!-- Action Button row -->
+        {% if object_id %}
         <div id="action_buttons" class="row container">
           <div class="col-md-9 panel panel-default">
             <div class="row">&nbsp;</div>
@@ -55,10 +59,12 @@
                 <button type="button" class="btn jumbo-1" onclick="ru.cesar.seeker.research_open('edit_buttons', 'exe_dashboard');">Edit</button>
               </div>
               <div class="col-md-2 ">
-                <a href="{% url 'seeker_oview' object_id=object_id %}" 
-                   role="button" 
-                   class="btn jumbo-2"
-                   target="_blank">Summary</a>
+                {% if object_id %}
+                  <a href="{% url 'seeker_oview' object_id=object_id %}" 
+                     role="button" 
+                     class="btn jumbo-2"
+                     target="_blank">Summary</a>
+                {% endif %}
               </div>
               <div class="col-md-2 ">
                 <button type="button" class="btn jumbo-3" onclick="ru.cesar.seeker.research_open('exe_dashboard', 'edit_buttons');">Search...</button>
@@ -67,6 +73,7 @@
             <div class="row">&nbsp;</div>
           </div>
         </div>
+        {% endif %}
         
         <!-- The buttons to be able to edit the search -->
         <div id="edit_buttons" class="hidden">
@@ -146,6 +153,7 @@
 
               </div>
 
+              {% if object_id %}
               <div class="col-md-3 col-md-offset-1 panel panel-default">
                 <b>Action</b>
                 <div class="row">
@@ -166,6 +174,7 @@
                 <div class="row">&nbsp;</div>
                 <div class="row">&nbsp;</div>
               </div>
+              {% endif %}
             </form>
           </div>
 
@@ -191,10 +200,12 @@
                   targeturl="{% if object_id %}{% url 'seeker_edit' object_id=object_id  %}{% else %}{% url 'seeker_define' %}{% endif %}"
                   onclick="ru.cesar.seeker.research_overview(this);"><< Overview</button>
           <!-- Allow user to create an overview page -->
-          <a href="{% url 'seeker_oview' object_id=object_id %}" 
-             role="button" 
-             class="btn btn-info pull-right"
-             target="_blank">Show summary</a>
+          {% if object_id %}
+            <a href="{% url 'seeker_oview' object_id=object_id %}" 
+               role="button" 
+               class="btn btn-info pull-right"
+               target="_blank">Show summary</a>
+          {% endif %}
       </div>
 
       <!-- allow returning back to the tiles -->
@@ -303,6 +314,7 @@
 
 <script>
   ru.cesar.seeker.init_events();
+  ru.cesar.seeker.click_if_new("researchid","button_part_1");
 </script>
 
 {% endblock content %}
