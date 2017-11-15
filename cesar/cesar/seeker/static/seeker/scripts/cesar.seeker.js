@@ -845,7 +845,7 @@ var ru = (function ($, ru) {
        */
       load_kwic: function (elStart, iPage) {
         var data = [],
-            targetid = "#kwiclistshow",
+            targetid = "",
             waitid = "#kwic-fetch",
             ajaxurl = "",
             frm = null,
@@ -857,14 +857,16 @@ var ru = (function ($, ru) {
           private_methods.errClear();
 
           // obligatory parameter: ajaxurl
-          ajaxurl = $(elStart).attr("ajaxurl");
-          instanceid = $(elStart).attr("instanceid");
+          //ajaxurl = $(elStart).attr("ajaxurl");
+          //instanceid = $(elStart).attr("instanceid");
+          ajaxurl = $(elStart).attr("targeturl");
+          targetid = $(elStart).attr("targetid");
 
           // Gather the information
           frm = $(elStart).closest("form");
           if (frm !== undefined) { data = $(frm).serializeArray(); }
 
-          data.push({ 'name': 'instanceid', 'value': instanceid });
+          //data.push({ 'name': 'instanceid', 'value': instanceid });
           data.push({ 'name': 'target', 'value': targetid });
 
           if (iPage === undefined) { iPage = 1; }
@@ -877,7 +879,7 @@ var ru = (function ($, ru) {
           // Execute the post command and tell what needs to be done when ready
           posting.done(function (data) {
             // Put the results on display
-            $(targetid).html(data['html']);
+            $("#"+targetid).html(data['html']);
             // Indicate we are ready
             $(waitid).addClass("hidden");
           });

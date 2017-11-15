@@ -1956,7 +1956,7 @@ class ResultPart2(ResearchPart):
     MainModel = Basket
     template_name = 'seeker/result_part_2.html'
     page_function = "ru.cesar.seeker.kwic_page"
-    form_div = "kwic_search_button"
+    form_div = "result_part2_button"
     paginate_by = paginateEntries
     form_objects = [{'form': KwicForm, 'prefix': 'kwic', 'readonly': True}]  
 

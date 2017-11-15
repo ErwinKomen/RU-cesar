@@ -38,67 +38,67 @@
             </select>
         </div>
       </div>
+
+
+      <!-- Allow choosing and adjusting a filter -->
+      <div class="row container">
+
+        <!-- allow returning back to Results Details -->
+        <div class="col-md-3" align="left">
+          <div id="goto_result_details" class="hidden">
+            <button type="button" class="btn btn-primary" 
+                    onclick="ru.cesar.seeker.result_wizard(this, 'main');">
+              << Result center</button>
+          </div>
+        </div>
+
+        <!-- Show we are waiting -->
+        <div class="col-md-6" align="center">
+          <div id="kwic-fetch" class="row hidden">
+            <span>Loading...</span>
+            <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+          </div>
+        </div>
+
+        <!-- Goto filter editing -->
+        <div class="col-md-3" align="right">
+          <!-- No idea what to use this for yet -->
+        </div>
+      </div>
+
+      <!-- Action button row -->
+      <div id="action_buttons" class="row container">
+        <div class="col-md-12">
+          <!-- Space above -->
+          <div class="row">&nbsp;</div>
+
+          <!-- Actual button row-->
+          <div class="row">
+            <div class="col-md-3 ">
+              <a class="btn jumbotron jumbo-1" 
+                 targeturl="{% url 'result_part_1' object_id=object_id %}"
+                 targetid="result_part_1"
+                 onclick="ru.cesar.seeker.result_wizard(this, '1');">Documents</a>
+            </div>
+            <div class="col-md-6  " align="center">
+              <a class="btn jumbotron jumbo-2" id="result_part2_button"
+                 targeturl="{% url 'result_part_2' object_id=object_id %}"
+                 targetid="result_container_2"
+                 onclick="ru.cesar.seeker.result_wizard(this, '2');">Sentences</a>
+            </div>
+            <div class="col-md-3 " align="right">
+              <a class="btn jumbotron jumbo-3" 
+                 targeturl=""
+                 targetid="result_part_3"
+                 onclick="ru.cesar.seeker.result_wizard(this, '3');">Define a filter</a>
+            </div>
+          </div>
+
+          <!-- Space below-->
+          <div class="row">&nbsp;</div>
+        </div>
+      </div>
     </form>
-
-
-    <!-- Allow choosing and adjusting a filter -->
-    <div class="row container">
-
-      <!-- allow returning back to Results Details -->
-      <div class="col-md-3" align="left">
-        <div id="goto_result_details" class="hidden">
-          <button type="button" class="btn btn-primary" 
-                  onclick="ru.cesar.seeker.result_wizard(this, 'main');">
-            << Result center</button>
-        </div>
-      </div>
-
-      <!-- Show we are waiting -->
-      <div class="col-md-6" align="center">
-        <div id="kwic-fetch" class="row hidden">
-          <span>Loading...</span>
-          <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
-        </div>
-      </div>
-
-      <!-- Goto filter editing -->
-      <div class="col-md-3" align="right">
-        <!-- No idea what to use this for yet -->
-      </div>
-    </div>
-
-    <!-- Action button row -->
-    <div id="action_buttons" class="row container">
-      <div class="col-md-12">
-        <!-- Space above -->
-        <div class="row">&nbsp;</div>
-
-        <!-- Actual button row-->
-        <div class="row">
-          <div class="col-md-3 ">
-            <a class="btn jumbotron jumbo-1" 
-               targeturl="{% url 'result_part_1' object_id=object_id %}"
-               targetid="result_part_1"
-               onclick="ru.cesar.seeker.result_wizard(this, '1');">Documents</a>
-          </div>
-          <div class="col-md-6  " align="center">
-            <a class="btn jumbotron jumbo-2" 
-               targeturl="{% url 'result_part_2' object_id=object_id %}"
-               targetid="result_part_2"
-               onclick="ru.cesar.seeker.result_wizard(this, '2');">Sentences</a>
-          </div>
-          <div class="col-md-3 " align="right">
-            <a class="btn jumbotron jumbo-3" 
-               targeturl=""
-               targetid="result_part_3"
-               onclick="ru.cesar.seeker.result_wizard(this, '3');">Define a filter</a>
-          </div>
-        </div>
-
-        <!-- Space below-->
-        <div class="row">&nbsp;</div>
-      </div>
-    </div>
 
     <!-- Show the main features of the results -->
     <div id="result_info" class="row container panel panel-default">
