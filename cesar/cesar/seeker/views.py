@@ -1943,13 +1943,102 @@ class QuantorListView(ListView):
 class ResultPart1(ResearchPart):
     MainModel = Basket
     template_name = 'seeker/result_part_1.html'
-    form_objects = [{'form': KwicForm, 'prefix': 'kwic', 'readonly': True}] 
+    page_function = "ru.cesar.seeker.kwic_page"
+    form_div = "result_part1_button"
+    paginate_by = paginateEntries
+    entrycount = 0
+    qcTarget = 1
+    basket = None       # Object: Basket
+    quantor = None      # Object: Quantor
+    qcline = None       # Object: QCline
+    qs = None
+    form_objects = []
     
-    def get_queryset(self, prefix):
-        """Determine the queryset that is to be used"""
+    def custom_init(self):
+        """Calculate stuff"""
 
-        # Get the parameters passed on with the GET request
-        get = self.request.GET
+        # Determine the QC line that has been passed on
+        qc = self.qd['qc_select']
+        if qc != None and qc != '':
+            self.qcTarget = int(qc)
+        # Set the basket
+        self.basket = self.obj
+        # Need to calculate the queryset already
+        self.get_queryset('quantor')
+
+        # Paging...
+        page = self.qd.get('page')
+        page = 1 if page == None else int(page)
+        # Create a list [page_obj] that contains just these results
+        paginator = Paginator(self.qs, self.paginate_by)
+        self.page_obj = paginator.page(page)
+
+    def add_to_context(self, context):
+        # Specify the search form
+        search_form = QuantorSearchForm(self.qd)
+        context['searchform'] = search_form
+
+        # Add some elements to the context
+        context['quantor'] = self.quantor
+        context['entrycount'] = self.entrycount
+        context['qsubcats'] = self.qcline.qsubcats.all()
+
+        # Add pagination information
+        context['object_list'] = self.page_obj
+        context['page_obj'] = self.page_obj
+        context['page_function'] = self.page_function
+        context['hitcount'] = self.entrycount
+
+        # Other required information
+        context['formdiv'] = self.form_div
+
+        # Return the calculated context
+        return context
+
+    def get_queryset(self, prefix):
+        """Determine the Qsubinfo queryset"""
+
+        # The parameters (POST or GET) are available through self.qd
+
+        # Find out where we are 
+        self.quantor = Quantor.objects.filter(basket=self.basket).first()
+        self.qcline = self.quantor.qclines.filter(qc=self.qcTarget).first()
+
+        # Determine the selection
+        lstQ = []
+        lstQ.append(Q(subcat__qcline=self.qcline))
+
+        # Filter on subcat
+        if 'subcategory' in self.qd and self.qd['subcategory'] != '':
+            val = self.qd['subcategory']
+            # The subcat value is an id
+            lstQ.append(Q(subcat=val))
+
+        # Filter on text Name
+        if 'textname' in self.qd and self.qd['textname'] != '':
+            # Allow simple wildcard search
+            val = adapt_search(self.qd['textname'])
+            lstQ.append(Q(text__fileName__iregex=val))
+
+        # Filter on the minimum number of hits
+        if 'minhits' in self.qd and self.qd['minhits'] != '':
+            # Get the minimum number of hits
+            val = self.qd['minhits']
+            try:
+                iVal = int(val)-1
+                lstQ.append(Q(count__gt=iVal))
+            except:
+                iDoNothing = 1
+
+        # Set and order the selection
+        self.qs = Qsubinfo.objects.filter(*lstQ).distinct().select_related().order_by(
+            Lower('subcat__name'),
+            Lower('text__fileName'))
+
+        self.entrycount = self.qs.count()
+
+        # Return the resulting filtered and sorted queryset
+        return self.qs
 
 
 class ResultPart2(ResearchPart):

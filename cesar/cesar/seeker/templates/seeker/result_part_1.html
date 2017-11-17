@@ -1,2 +1,46 @@
 ﻿{% load i18n %}
 <!-- Result part 1: document count view -->
+
+
+<div class="result_part_1">
+
+  <!-- Pagination -->
+  <div class="row">
+      <div class="col-sm-4"><span>Hits: </span><span>{{hitcount}}</span></div>
+      <div class="col-sm-8 right">
+        <span class="step-links pull-right">
+          {% include 'paginationpost.html' %}
+        </span>
+      </div>
+  </div>
+    
+  <!-- Show a list of sentences -->
+  <div class="row">
+      <!-- The contents as a table -->
+      <table class="table table-hover">
+        <thead><tr><th class="hidden">id</th><th>Text</th><th>Category</th><th>Hits</th></tr></thead>
+        <tbody>
+        {% for item in object_list %}
+          <tr class="part-item">
+            <td class="hidden">{{item.id}}</td>
+            <td><span class="part-item-name">{{item.text.fileName}}</span></td>
+            <td><span class="part-item-corp">{{item.subcat.name}}</span></td>
+            <td><span class="part-item-corp">{{item.count}}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="row">
+      <div class="col-sm-4"><span>Hits: </span><span>{{hitcount}}</span></div>
+      <div class="col-sm-8 right">
+        <span class="step-links pull-right">
+          {% include 'paginationpost.html' %}
+        </span>
+      </div>
+  </div>
+
+</div>
+
