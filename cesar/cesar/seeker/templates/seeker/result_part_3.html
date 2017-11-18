@@ -1,2 +1,76 @@
 ﻿{% load i18n %}
 <!-- Result part 3: filter specification -->
+
+<form action="" method="post">
+    {% csrf_token %}
+    <!-- Take over the qc_select value -->
+    <div class="hidden">
+      <input name='qc_select' class='form-control' value='{{qc_select}}'  />
+    </div>
+
+    <div id="result_part_3" 
+        class="js-inline-formset inline-group row"
+        data-inline-type="tabular"
+        data-inline-formset="{{filter_formset.inline_formset_data}}">
+
+      <div class="explanation up">
+        <p><b>Define </b>one or more filters that need to be applied. 
+          The 'operator' for the first filter is 'first'.</p>
+        <p>The 'value' of the filter may contain one or more '*' as wildcard.</p>
+      </div>
+
+      <div id="result_kwicfilter" class="tabular inline-related">
+        {{ filter_formset.management_form }}
+        <fieldset class="module {{filter_formset.classes}}">
+          <table>
+            <thead><tr><th>#</th><th>Operator</th><th>Filter field</th><th>Value</th>{% if currentowner == user %}<th align="center">DELETE?</th>{% endif %}</tr></thead>
+            <tbody>
+              {% for filter_form in filter_formset %}
+                <tr class="form-row">
+                  <td class="hidden">{{filter_form.id}}</td>
+                  <td valign="top">{{forloop.counter}}</td>
+                  <td valign="top">{{filter_form.operator}}</td>
+                  <td valign="top">{{filter_form.field}}</td>
+                  <td valign="top">{{filter_form.value}}</td>
+                  <td valign="top" align="center">{{filter_form.DELETE}}</td>
+                </tr>
+              {% endfor %}
+              {% if currentowner == user %}
+              <tr id="filter-empty" class="form-row empty-form row1">
+                  <td class="hidden">{{filter_formset.empty_form.id}}</td>
+                  <td valign="top">__counter__</td>
+                  <td valign="top">{{filter_formset.empty_form.operator}}</td>
+                  <td valign="top">{{filter_formset.empty_form.field}}</td>
+                  <td valign="top">{{filter_formset.empty_form.value}}</td>
+                  <td valign="top" align="center">{{filter_formset.empty_form.DELETE}}</td>
+              </tr>
+              <tr class="add-row">
+                <td colspan="5">
+                  <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another filter line</a>
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </fieldset>
+      </div>
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        {% for item in error_list %}
+        {{item}}
+        {% endfor %}
+      </div>
+
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary ajaxform"
+                instanceid="{{object_id}}"
+                openid="result_container_3" 
+                ajaxurl="{% if object_id %}{% url 'result_part_3' object_id %}{% else %}{% url 'result_part_3' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
+      </div>
+
+    </div>
+</form>

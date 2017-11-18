@@ -512,6 +512,8 @@ class ResearchPart(View):
             error_list = [str(item) for item in self.arErr]
             context['error_list'] = error_list
             context['errors'] = self.arErr
+            if len(self.arErr) > 0:
+                self.data['has_errors'] = True
             # Standard: add request user to context
             context['requestuser'] = request.user
             # Get the HTML response
@@ -1837,6 +1839,7 @@ class ResultDetailView(DetailView):
         context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
         context['quantor'] = self.quantor
         context['qclines'] = self.quantor.qclines.all()
+        context['filters'] = self.basket.get_filters()
 
         # Return the calculated context
         return context
@@ -1982,6 +1985,7 @@ class ResultPart1(ResearchPart):
         context['quantor'] = self.quantor
         context['entrycount'] = self.entrycount
         context['qsubcats'] = self.qcline.qsubcats.all()
+        context['filter_list'] = self.basket.get_filter_list(self.qcTarget)
 
         # Add pagination information
         context['object_list'] = self.page_obj
@@ -2047,6 +2051,7 @@ class ResultPart2(ResearchPart):
     page_function = "ru.cesar.seeker.kwic_page"
     form_div = "result_part2_button"
     paginate_by = paginateEntries
+    kwic_object = None
     form_objects = [{'form': KwicForm, 'prefix': 'kwic', 'readonly': True}]  
 
     def custom_init(self):
@@ -2066,15 +2071,15 @@ class ResultPart2(ResearchPart):
             page = 1
         else:
             page = int(page)
-        kwic_object = self.basket.kwiclines.filter(qc=qc).first()
+        self.kwic_object = self.basket.kwiclines.filter(qc=qc).first()
 
         # Get the filter myself
-        oFilter = kwic_object.get_filter()
+        oFilter = self.kwic_object.get_filter()
         # Apply the filter
-        kwic_object.apply_filter(oFilter)
+        self.kwic_object.apply_filter(oFilter)
 
         # Pagination
-        self.hit_count = kwic_object.hitcount
+        self.hit_count = self.kwic_object.hitcount
         result_number_list = list(range(1, self.hit_count))
         paginator = Paginator(result_number_list, self.paginate_by)
         self.page_obj = paginator.page(page)
@@ -2118,6 +2123,8 @@ class ResultPart2(ResearchPart):
         # A list of filters that the user has specified in the past and saved
         context['list_filter'] = []
 
+        context['filter_list'] = self.kwic_object.kwicfilters.all()
+
         # Add pagination information
         context['page_obj'] = self.page_obj
         context['page_function'] = self.page_function
@@ -2143,6 +2150,44 @@ class ResultPart2(ResearchPart):
 
         # Return the resulting filtered and sorted queryset
         return self.qs
+
+
+class ResultPart3(ResearchPart):
+    MainModel = Basket
+    template_name = 'seeker/result_part_3.html'
+    qcTarget = 1
+    basket = None
+    kwic = None
+    FilterFormSet = inlineformset_factory(Kwic, KwicFilter, 
+                                          form=KwicFilterForm, min_num=1, 
+                                          extra=0, can_delete=True, can_order=False)
+    formset_objects = [{'formsetClass': FilterFormSet, 'prefix': 'filter', 'readonly': False}]
+
+    def custom_init(self):
+        """Calculate stuff"""
+
+        # Determine the QC line that has been passed on
+        qc = self.qd['qc_select']
+        if qc != None and qc != '':
+            self.qcTarget = int(qc)
+        # Set the basket-object
+        self.basket = self.obj
+        # Set the kwic object under which all filters are going to appear
+        self.kwic = self.basket.get_kwic(self.qcTarget)
+
+    def get_instance(self, prefix):
+        if prefix == 'filter':
+            return self.kwic
+
+
+    def add_to_context(self, context):
+        if self.obj == None:
+            currentowner = None
+        else:
+            currentowner = self.obj.research.owner
+        context['currentowner'] = currentowner
+        context['qc_select'] = self.qcTarget
+        return context
 
 
 

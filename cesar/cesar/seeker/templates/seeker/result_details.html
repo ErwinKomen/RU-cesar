@@ -24,47 +24,42 @@
     <div class="hidden" id="basketid">{{object_id}}</div>
     <div class="hidden" id="selectedqc"></div>
 
-    <form id="qc_form" action="" method="post">
-      {% csrf_token %}
-      <div class="row">
-        <!-- Allow choosing a QC line -->
-        <div class="col-md-3 input-group input-group-sm">
-            <label class='input-group-addon' for='qc_select'>Search result line:</label>
-            <select class="form-control" id="qc_select" name="qc_select"
-                    onchange="ru.cesar.seeker.select_qc(this, 'selectedqc', 'action_buttons');">
-                {% for instance in qclines %}
-                <option value="{{instance.qc}}"  {% if instance.qc == qc %}selected {% endif %}>{{instance.qc}} ({{instance.count}})</option>
-                {% endfor %}
-            </select>
+    <form id="qc_form" action="" method="get">
+      <div id="qc_selector">
+        <!--csrf_token needed for result method 2 -->
+        {% csrf_token %}
+        <div class="row">
+          <!-- Allow choosing a QC line -->
+          <div class="col-md-3 input-group input-group-sm">
+              <label class='input-group-addon' for='qc_select'>Search result line:</label>
+              <select class="form-control" id="qc_select" name="qc_select"
+                      onchange="ru.cesar.seeker.select_qc(this, 'selectedqc', 'action_buttons');">
+                  {% for instance in qclines %}
+                  <option value="{{instance.qc}}"  {% if instance.qc == qc %}selected {% endif %}>{{instance.qc}} ({{instance.count}})</option>
+                  {% endfor %}
+              </select>
+          </div>
+
+          <!-- Show we are waiting -->
+          <div class="col-md-6" align="center">
+            <div id="kwic-fetch" class="row hidden">
+              <span>Loading...</span>
+              <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+            </div>
+          </div>
+
+          <!-- allow returning back to Results Details -->
+          <div class="col-md-3" align="left">
+            <div id="goto_result_details" class="hidden">
+              <button type="button" class="btn btn-primary" 
+                      onclick="ru.cesar.seeker.result_wizard(this, 'main');">
+                << Result center</button>
+            </div>
+          </div>
+
         </div>
       </div>
 
-
-      <!-- Allow choosing and adjusting a filter -->
-      <div class="row container">
-
-        <!-- allow returning back to Results Details -->
-        <div class="col-md-3" align="left">
-          <div id="goto_result_details" class="hidden">
-            <button type="button" class="btn btn-primary" 
-                    onclick="ru.cesar.seeker.result_wizard(this, 'main');">
-              << Result center</button>
-          </div>
-        </div>
-
-        <!-- Show we are waiting -->
-        <div class="col-md-6" align="center">
-          <div id="kwic-fetch" class="row hidden">
-            <span>Loading...</span>
-            <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
-          </div>
-        </div>
-
-        <!-- Goto filter editing -->
-        <div class="col-md-3" align="right">
-          <!-- No idea what to use this for yet -->
-        </div>
-      </div>
 
       <!-- Action button row -->
       <div id="action_buttons" class="row container">
@@ -87,10 +82,10 @@
                  onclick="ru.cesar.seeker.result_wizard(this, '2');">Sentences</a>
             </div>
             <div class="col-md-3 " align="right">
-              <a class="btn jumbotron jumbo-3" 
-                 targeturl=""
+              <a class="btn jumbotron jumbo-3" id="result_part3_button" 
+                 targeturl="{% url 'result_part_3' object_id=object_id %}"
                  targetid="result_part_3"
-                 onclick="ru.cesar.seeker.result_wizard(this, '3');">Define a filter</a>
+                 onclick="ru.cesar.seeker.result_wizard(this, '3');">Adjust filter</a>
             </div>
           </div>
 
@@ -137,8 +132,17 @@
       </div>
     </div>
 
+    <!-- Show which filters have been set (if any) -->
+    <div id="result_filter_list">
+      {% for filter_list in filters %}
+        <div id="kwic_filters_for_qc_{{forloop.counter1}}">
+          {% include 'seeker/filter_list.html' %} 
+        </div>
+      {% endfor %}
+    </div>
+
     <!-- Both kwic-listview and kwic-filter should be within a panel -->
-    <div id="result_host_containers" class="panel panel-default">
+    <div id="result_host_containers" class="panel panel-default hidden">
 
       <!-- Option 1: The result documents view -->
       <div id="result_container_1" class="row result-part"></div>
@@ -149,9 +153,16 @@
       <!-- Option 3: THe filter definition -->
       <div id="result_container_3" class="row result-part"></div>
 
+      <div id="result_wait_message" class="row hidden">
+        <div class="explanation col-md-6 col-md-offset-2" align="center">
+          <p>Please wait while the results are being fetched...</p>
+        </div>
+      </div>
+
     </div>
       
   </div>
+
 
 
   <script>

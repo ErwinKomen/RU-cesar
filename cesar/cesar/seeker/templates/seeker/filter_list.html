@@ -1,0 +1,19 @@
+﻿{% load i18n %}
+
+  {% if filter_list|length > 0 %}
+    <div class="panel">
+      <div class="row">
+        <div class="col-md-2">Current filter:</div>
+        <div class="col-md-10">
+          {% for item in filter_list %}
+            {% if not forloop.first %}
+            <span class="kwic-filter-operator" >{{item.operator}}</span>
+            {% endif %}
+            <span class="kwic-filter-field" >{{item.field}}</span>
+            =
+            <span class="kwic-filter-value" >'{{item.value}}'</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}

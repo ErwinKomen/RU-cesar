@@ -29,7 +29,9 @@ SEARCH_VARIABLE_TYPE = "search.variabletype"        # fixed, calc, gvar
 SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, dvar, func, cnst, axis, hit
 SEARCH_CONDTYPE = "search.condtype"                 # func, dvar
 SEARCH_TYPE = "search.type"                         # str, int, bool, cnst
-SEARCH_FILTEROPERATOR = (('and', 'and'), ('andnot', 'andnot'))
+# SEARCH_FILTER = "search.filteroperator"
+SEARCH_FILTEROPERATOR = "search.filteroperator"     # first, and, andnot
+# SEARCH_FILTEROPERATOR = (('first', 'first'), ('and', 'and'), ('andnot', 'andnot'))
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -1318,6 +1320,11 @@ class Basket(models.Model):
             for idx in range(0, iNumQc):
                 self.set_kwic(idx+1)
 
+    def get_kwic(self, iQcLine):
+        """Get the Kwic object under this basket with the indicated QC line"""
+
+        return Kwic.objects.filter(basket=self, qc=iQcLine).first()
+
     def set_kwic(self, iQcLine):
         """Check if a KWIC table is available; otherwise make one"""
 
@@ -1369,6 +1376,18 @@ class Basket(models.Model):
             # Failure
             oErr.DoError('set_kwic could not read the hit information')
             return False
+
+    def get_filters(self):
+        filters = []
+        for item in self.kwiclines.all():
+            # filters.append(item.get_filter())
+            filters.append(item.kwicfilters.all())
+        return filters
+
+    def get_filter_list(self, iQcLine):
+        kwic = self.get_kwic(iQcLine)
+        return kwic.kwicfilters.all()
+
 
 
 class Kwic(models.Model):
@@ -1422,14 +1441,15 @@ class Kwic(models.Model):
         # REturn positively
         return True
 
+
 class KwicFilter(models.Model):
     """A filter that needs to be applied to the KWIC it is attached to"""
 
     # [1] The database field this filter applies to
     field = models.CharField("Database field", max_length=MAX_NAME_LEN)
     # [1] Either 'and' or 'and not'
-    operator = models.CharField("Filter operator", choices=SEARCH_FILTEROPERATOR, 
-                              max_length=5, default="and")
+    operator = models.CharField("Filter operator", choices=build_abbr_list(SEARCH_FILTEROPERATOR), 
+                              max_length=5)
     # [1] The value of the filter
     value = models.CharField("Value", max_length=MAX_TEXT_LEN)
     # [1] Link this filter the the KWIC it belongs to

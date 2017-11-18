@@ -23,8 +23,9 @@ var ru = (function ($, ru) {
           { "table": "research_gvar", "prefix": "gvar", "counter": false, "events": null },
           { "table": "research_vardef", "prefix": "vardef", "counter": false, "events": null },
           { "table": "research_spec", "prefix": "function", "counter": false, "events": null },
-          { "table": "research_cond", "prefix": "cond", "counter": true, "events": function () { ru.cesar.seeker.init_cond_events(); } }
-        ];
+          { "table": "research_cond", "prefix": "cond", "counter": true, "events": function () { ru.cesar.seeker.init_cond_events(); } },
+          { "table": "result_kwicfilter", "prefix": "filter", "counter": true, "events": null },
+      ];
 
 
     // Private methods specification
@@ -262,11 +263,31 @@ var ru = (function ($, ru) {
               $(elOview).attr("targeturl", sOviewUrl);
             }
           }
+          // Check whether we need to show the error response
+          if ('has_errors' in response) {
+            // Yes, show the resulting form with the errors
+            $(elOpen).html(response.html);
+            // Make sure events are set again
+            ru.cesar.seeker.init_events();
+            // Bind the click event to all class="ajaxform" elements
+            $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
+            // And return
+            return;
+          }
+
           // Indicate we are loading
           $(".save-warning").html("Updating item... " + instanceid.toString());
           // Make a GET call with fresh data
           data = [];
           data.push({ 'name': 'instanceid', 'value': instanceid });
+          // Add parameters depending on the openid
+          switch (openid) {
+            case "result_container_3":
+              // Need to add the 'qc_select' value
+              var iQcSelect = $("#qc_select").val();
+              data.push({ 'name': 'qc_select', 'value': iQcSelect });
+              break;
+          }
           // Make an AJAX call to get an existing or new specification element HTML code
           response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "GET");
           if (response !== undefined && response.status && response.status === 'ok') {
@@ -1048,6 +1069,7 @@ var ru = (function ($, ru) {
             sObjectId = "",
             sMsg = "",
             html = "",
+            sAjaxMethod = "",
             data = {},
             frm = null,
             response = null,
@@ -1064,13 +1086,16 @@ var ru = (function ($, ru) {
             $("#action_buttons").removeClass("hidden");
             $("#result_info").removeClass("hidden");
             $("#result_host_containers").addClass("hidden");
+            $("#result_filter_list").removeClass("hidden");
             return;
           }
 
-          // Make sure we hide the jubmo buttons and the search result information
+          // Make sure we hide the jumbo buttons and the search result information
           $("#action_buttons").addClass("hidden");
           $("#result_info").addClass("hidden");
           $("#result_host_containers").removeClass("hidden");
+          $("#result_wait_message").removeClass("hidden");
+          $("#result_filter_list").addClass("hidden");
 
           frm = $("#qc_form");
           if (frm !== undefined) {
@@ -1085,10 +1110,12 @@ var ru = (function ($, ru) {
           sObjectId = $("#basketid").text().trim();
 
           // [2] Load the new form through an AJAX call
+          sAjaxMethod = "GET";
           var ajaxurl = $(el).attr("targeturl");
           switch (sPart) {
-            case "1":
             case "2":
+              sAjaxMethod = "POST";
+            case "1":
             case "3":
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
@@ -1096,8 +1123,7 @@ var ru = (function ($, ru) {
               // POST call: show waiting
               $("#kwic-fetch").removeClass("hidden");
               // Fetch the correct data through a POST call
-              // response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId, data);
-              response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+              response = ru.cesar.seeker.ajaxcall(ajaxurl, data, sAjaxMethod);
               if (response !== undefined && response.status && response.status === 'ok') {
                 // Make the HTML response visible in a 'result_container_{num}'
                 $(sTargetId).html(response.html);
@@ -1125,6 +1151,7 @@ var ru = (function ($, ru) {
               $("#goto_finetune").addClass("hidden");
               break;
           }
+          $("#result_wait_message").addClass("hidden");
 
 
         } catch (ex) {

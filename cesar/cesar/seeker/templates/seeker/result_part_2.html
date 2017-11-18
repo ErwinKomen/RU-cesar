@@ -1,7 +1,11 @@
 ﻿{% load i18n %}
 <!-- Result part 2: sentence view (kwic) -->
 
-<div class="result_part_2">
+<div id="result_part_2">
+
+  <div class="row container">
+    {% include 'seeker/filter_list.html' %} 
+  </div>
 
   <!-- Pagination -->
   <div class="row">

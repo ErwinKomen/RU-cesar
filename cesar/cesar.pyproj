@@ -139,6 +139,7 @@
     <Content Include="cesar\seeker\templates\seeker\def_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\def_psdx.xq" />
     <Content Include="cesar\seeker\templates\seeker\exe_status.html" />
+    <Content Include="cesar\seeker\templates\seeker\filter_list.html" />
     <Content Include="cesar\seeker\templates\seeker\result_list.html" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />

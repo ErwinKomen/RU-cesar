@@ -56,6 +56,30 @@ class GatewayForm(ModelForm):
             return True
 
 
+class KwicFilterForm(ModelForm):
+    string_fields = ['Cat', 'TextId', 'Author', 'Title', 'Date']
+    number_fields = ['Size']
+    operator = forms.ChoiceField(choices=SEARCH_FILTEROPERATOR, required=True)
+    field = forms.ChoiceField(choices=[], required=True)
+
+    class Meta:
+        model = KwicFilter
+        fields = ['field', 'operator', 'value']
+        widgets={ 'field': forms.Select() }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(KwicFilterForm, self).__init__(*args, **kwargs)
+        # Initialize the default 'fields' that can be chosen from
+        choice_list = []
+        for item in self.string_fields:
+            choice_list.append( (item, item))
+        for item in self.number_fields:
+            choice_list.append( (item, item))
+        self.fields['field'].choices = choice_list
+        init_choices(self, 'operator', SEARCH_FILTEROPERATOR, bUseAbbr=True)
+
+
 class ConstructionWrdForm(ModelForm):
     # function_sc = forms.ChoiceField(choices=SEARCHMAIN_WRD_FUNCTIONS, required = True)
     value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}))
