@@ -67,7 +67,7 @@ class KwicFilterForm(ModelForm):
         fields = ['field', 'operator', 'value']
         widgets={ 'field': forms.Select() }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, features, *args, **kwargs):
         # Start by executing the standard handling
         super(KwicFilterForm, self).__init__(*args, **kwargs)
         # Initialize the default 'fields' that can be chosen from
@@ -76,8 +76,11 @@ class KwicFilterForm(ModelForm):
             choice_list.append( (item, item))
         for item in self.number_fields:
             choice_list.append( (item, item))
+        for item in features:
+            choice_list.append( (item, item))
         self.fields['field'].choices = choice_list
         init_choices(self, 'operator', SEARCH_FILTEROPERATOR, bUseAbbr=True)
+
 
 
 class ConstructionWrdForm(ModelForm):

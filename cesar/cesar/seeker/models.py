@@ -1341,7 +1341,7 @@ class Basket(models.Model):
             quantor_count_for_this_qc = oQcLine.count
 
             # Get the /crpp/dbinfo count for this QC line
-            sUser = self.research.owner
+            sUser = self.research.owner.username
             sCrpName = self.research.name
             oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0)
             if oDbInfoBack['commandstatus'] != 'ok':
@@ -1349,6 +1349,7 @@ class Basket(models.Model):
                 # Cannot get a positive reply
                 return False
             dbinfo_count_for_this_qc = oDbInfoBack['Size']
+            feature_list = json.dumps(oDbInfoBack['Features'])
 
             # TEst to see if the counts coincide
             if quantor_count_for_this_qc != dbinfo_count_for_this_qc:
@@ -1366,6 +1367,7 @@ class Basket(models.Model):
             # Create a KWIC object for this information
             kwic = Kwic(basket=self, 
                         qc=iQcLine, 
+                        features=feature_list,
                         hitcount=count_for_this_qc,
                         textcount=oQcLine.quantor.total)
             kwic.save()
@@ -1388,6 +1390,10 @@ class Basket(models.Model):
         kwic = self.get_kwic(iQcLine)
         return kwic.kwicfilters.all()
 
+    def get_feature_list(self, iQcLine):
+        kwic = self.get_kwic(iQcLine)
+        return kwic.get_features()
+
 
 
 class Kwic(models.Model):
@@ -1403,6 +1409,8 @@ class Kwic(models.Model):
     textcount = models.IntegerField("Number of texts", default=0)
     # [1] Number of hits
     hitcount = models.IntegerField("Number of hits", default=0)
+    # [1] String JSON list of feature names
+    features = models.TextField("Features", default="[]")
     # [1] There must be a link to the Basket the results belong to
     basket = models.ForeignKey(Basket, blank=False, null=False, related_name="kwiclines")
 
@@ -1420,6 +1428,10 @@ class Kwic(models.Model):
         for item in self.kwicfilters.all():
             oFilter[item.field] = item.value
         return oFilter
+
+    def get_features(self):
+        lFeatures = json.loads(self.features)
+        return lFeatures
 
     def apply_filter(self, oFilter=None):
         oErr = ErrHandle()

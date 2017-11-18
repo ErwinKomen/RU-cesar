@@ -2179,6 +2179,11 @@ class ResultPart3(ResearchPart):
         if prefix == 'filter':
             return self.kwic
 
+    def get_form_kwargs(self, prefix):
+        if prefix == 'filter':
+            return {"features":  self.kwic.get_features()}
+        else:
+            return None
 
     def add_to_context(self, context):
         if self.obj == None:
@@ -2187,6 +2192,16 @@ class ResultPart3(ResearchPart):
             currentowner = self.obj.research.owner
         context['currentowner'] = currentowner
         context['qc_select'] = self.qcTarget
+
+        #filter_formset = context['filter_formset']
+        #for index, filter_form in enumerate(filter_formset):
+        #    choice_list = filter_form.fields['field'].choices
+        #    # TODO: add features
+        #    feature_list = self.kwic.get_features()
+        #    for item in feature_list:
+        #        choice_list.append((item, item))
+        #    filter_form.fields['field'].choices = choice_list
+        #context['filter_formset'] = filter_formset
         return context
 
 
