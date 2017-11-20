@@ -61,6 +61,8 @@ urlpatterns = [
     url(r'^seek/result/docs/(?P<object_id>\d+)/$', ResultPart1.as_view(), name='result_part_1'),
     url(r'^seek/result/sents/(?P<object_id>\d+)/$', ResultPart2.as_view(), name='result_part_2'),
     url(r'^seek/result/filter/(?P<object_id>\d+)/$', ResultPart3.as_view(), name='result_part_3'),
+    url(r'^seek/result/hit/(?P<object_id>\d+)/$', ResultPart4.as_view(), name='result_part_4'),
+    url(r'^seek/result/tree/(?P<object_id>\d+)/$', ResultPart5.as_view(), name='result_part_5'),
 
     url(r'^seek/list/$', SeekerListView.as_view(), name='seeker_list'),
     url(r'^function/list/$', FunctionListView.as_view(), name='function_list'),

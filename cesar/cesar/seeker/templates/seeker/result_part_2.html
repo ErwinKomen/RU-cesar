@@ -33,8 +33,23 @@
           <td class="kwic-fol">{{result.kwic_fol|truncatewords:9}}</td>
           <td class="kwic-actions">
             <a class="btn btn-default btn-xs" 
-               onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">
+               onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" 
+               title="sentence">
               <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+            </a>
+            <a class="btn btn-default btn-xs" id="result_part4_button" 
+                targeturl="{% url 'result_part_4' object_id=object_id %}"
+                targetid="result_part_4"
+                onclick="ru.cesar.seeker.result_wizard(this, '4');"
+                title="hit details">
+              <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+            </a>
+            <a class="btn btn-default btn-xs" id="result_part5_button" 
+                targeturl="{% url 'result_part_5' object_id=object_id %}"
+                targetid="result_part_5"
+                onclick="ru.cesar.seeker.result_wizard(this, '5');"
+                title="tree">
+              <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
             </a>
           </td>
         </tr>

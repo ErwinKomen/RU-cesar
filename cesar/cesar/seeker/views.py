@@ -2205,6 +2205,15 @@ class ResultPart3(ResearchPart):
         return context
 
 
+class ResultPart4(ResearchPart):
+    MainModel = Kwic
+
+
+class ResultPart5(ResearchPart):
+    MainModel = Kwic
+
+
+
 
 def research_oview(request, object_id=None):
     """Entry point to show a summary of a search specification"""
