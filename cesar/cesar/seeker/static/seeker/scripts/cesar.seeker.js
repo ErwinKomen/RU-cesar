@@ -1099,7 +1099,16 @@ var ru = (function ($, ru) {
 
           frm = $("#qc_form");
           if (frm !== undefined) {
-            data = $(frm).serializeArray();
+              data = $(frm).serializeArray();
+              // Some items need data added
+              switch (sPart) {
+                  case "4":
+                  case "5":
+                      data.push({ 'name': 'filename', 'value': $(el).attr('filename') });
+                      data.push({ 'name': 'locs', 'value': $(el).attr('locs') });
+                      data.push({ 'name': 'locw', 'value': $(el).attr('locw') });
+                      break;
+              }
           }
 
           // Get the correct target id: a 'result_container_{num}'
@@ -1117,6 +1126,8 @@ var ru = (function ($, ru) {
               sAjaxMethod = "POST";
             case "1":
             case "3":
+            case "4":
+            case "5":
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
 

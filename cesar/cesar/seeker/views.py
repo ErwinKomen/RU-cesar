@@ -23,6 +23,7 @@ from cesar.seeker.forms import *
 from cesar.seeker.models import *
 from cesar.browser.models import Part, Corpus
 from cesar.browser.views import get_item_list, adapt_search
+from cesar.browser.services import get_crpp_sent_info
 from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
@@ -2071,7 +2072,11 @@ class ResultPart2(ResearchPart):
             page = 1
         else:
             page = int(page)
-        self.kwic_object = self.basket.kwiclines.filter(qc=qc).first()
+        self.kwic_object = self.basket.kwiclines.filter(qc=self.qcline).first()
+        if self.kwic_object == None:
+            # there is no KWIC object for this one yet: create the KWIC objects
+            self.basket.set_kwic(self.qcline)
+            self.kwic_object = self.basket.kwiclines.filter(qc=self.qcline).first()
 
         # Get the filter myself
         oFilter = self.kwic_object.get_filter()
@@ -2108,6 +2113,7 @@ class ResultPart2(ResearchPart):
         context['original'] = research
         context['entrycount'] = self.entrycount
         context['basket'] = self.basket
+        context['kwic_id'] = self.kwic_object.id
         # Provide all the information needed to create the Html presentation of the data
         context['result_list'] = self.result_list
         context['feature_list'] = self.feature_list
@@ -2192,21 +2198,42 @@ class ResultPart3(ResearchPart):
             currentowner = self.obj.research.owner
         context['currentowner'] = currentowner
         context['qc_select'] = self.qcTarget
-
-        #filter_formset = context['filter_formset']
-        #for index, filter_form in enumerate(filter_formset):
-        #    choice_list = filter_form.fields['field'].choices
-        #    # TODO: add features
-        #    feature_list = self.kwic.get_features()
-        #    for item in feature_list:
-        #        choice_list.append((item, item))
-        #    filter_form.fields['field'].choices = choice_list
-        #context['filter_formset'] = filter_formset
         return context
 
 
 class ResultPart4(ResearchPart):
     MainModel = Kwic
+
+    def add_to_context(self, context):
+        # find out which sentence has been identified by the user
+        self.basket = self.obj.basket
+        options = {'userid': self.basket.research.owner.username,
+                   'lng': self.basket.part.corpus.get_lng_display(),
+                   'dir': self.basket.part.dir,
+                   'ext': self.basket.get_format_display(),
+                   'name': self.qd['filename'],
+                   'locs': self.qd['locs'],
+                   'locw': self.qd['locw'],
+                   'type': 'syntax_tree'}
+        oInfo = get_crpp_sent_info(options)
+        if oInfo != None and oInfo['status'] == "ok":
+            # Make sure that 'object' sections are translated to proper JSON
+            oSentInfo = oInfo['info']
+            # Get the sentence tree and extract any top-node features from it
+            treeSent = oSentInfo['allT']
+            context['eng'] = ""
+            if treeSent != None and treeSent['f'] != None:
+                f = treeSent['f']
+                if 'eng' in f and f['eng'] != "":
+                    # We have an 'eng' translation: make it available
+                    context['eng'] = f['eng']
+            # Replace the 'allT' and 'hitT' with STRING json
+            if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
+            if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])
+            context['sent_info'] = oSentInfo
+        else:
+            context['sent_info'] = None
+        return context
 
 
 class ResultPart5(ResearchPart):

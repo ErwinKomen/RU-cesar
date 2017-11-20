@@ -2,6 +2,7 @@
 <!-- Result part 2: sentence view (kwic) -->
 
 <div id="result_part_2">
+  <div class="hidden" id="kwicid">{{kwic_id}}</div>
 
   <div class="row container">
     {% include 'seeker/filter_list.html' %} 
@@ -31,22 +32,23 @@
           <td class="kwic-pre">{% if result.kwic_pre|length > 70 %}...{% endif %}{{result.kwic_pre|slice:"-70:"}}</td>
           <td class="kwic-hit" ><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">{{result.kwic_hit}}</a></td>
           <td class="kwic-fol">{{result.kwic_fol|truncatewords:9}}</td>
-          <td class="kwic-actions">
-            <a class="btn btn-default btn-xs" 
-               onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" 
-               title="sentence">
-              <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
-            </a>
+          <td class="kwic-actions tdnowrap">
             <a class="btn btn-default btn-xs" id="result_part4_button" 
-                targeturl="{% url 'result_part_4' object_id=object_id %}"
+                targeturl="{% url 'result_part_4' object_id=kwic_id %}"
                 targetid="result_part_4"
+                filename="{{result.File}}"
+                locs="{{result.Locs}}"
+                locw="{{result.Locw}}"
                 onclick="ru.cesar.seeker.result_wizard(this, '4');"
                 title="hit details">
-              <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+              <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
             </a>
             <a class="btn btn-default btn-xs" id="result_part5_button" 
-                targeturl="{% url 'result_part_5' object_id=object_id %}"
+                targeturl="{% url 'result_part_5' object_id=kwic_id %}"
                 targetid="result_part_5"
+                filename="{{result.File}}"
+                locs="{{result.Locs}}"
+                locw="{{result.Locw}}"
                 onclick="ru.cesar.seeker.result_wizard(this, '5');"
                 title="tree">
               <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>

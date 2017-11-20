@@ -1444,7 +1444,7 @@ class Kwic(models.Model):
         iQcLine = self.qc
         oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0, filter=oFilter)
         if oDbInfoBack['commandstatus'] != 'ok':
-            oErr.DoError("set_kwic: didn't get a positive reply from /crpp/dbinfo")
+            oErr.DoError("apply_filter: didn't get a positive reply from /crpp/dbinfo")
             # Cannot get a positive reply
             return False
         # Adapt the hitcount

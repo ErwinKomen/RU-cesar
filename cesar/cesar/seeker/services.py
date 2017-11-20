@@ -137,6 +137,26 @@ def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount, filter=None, sort=None)
     return crpp_command("dbinfo", oToCrpp)
 
 
+def crpp_hitinfo(sUser, sCrpName, sLng, iQcNum, iStart, iCount, filter=None, sort=None):
+    """Ask the /crpp/dbinfo service for the count it has for the result combination"""
+
+    # Construct the object we pass along
+    oToCrpp = { 'userid': sUser,
+                'crp'   : sCrpName,
+                'lng'   : sLng,
+                'name':   "{}_QC{}_Dbase".format(sCrpName, iQcNum),
+                'start':  iStart,
+                'count':  iCount }
+    # Possibly add filter
+    if filter != None and len(filter)>0:
+        oToCrpp['filter'] = filter
+    # Possibly add sorting
+    if sort != None:
+        oToCrpp['sort'] = sort
+    # Send and return the reply
+    return crpp_command("dbinfo", oToCrpp)
+
+
 def crpp_command(sCommand, oToCrpp):
     # Set the correct URL
     url = CRPP_HOME + '/crpp/'+sCommand
