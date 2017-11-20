@@ -1104,9 +1104,7 @@ var ru = (function ($, ru) {
               switch (sPart) {
                   case "4":
                   case "5":
-                      data.push({ 'name': 'filename', 'value': $(el).attr('filename') });
-                      data.push({ 'name': 'locs', 'value': $(el).attr('locs') });
-                      data.push({ 'name': 'locw', 'value': $(el).attr('locw') });
+                      data.push({ 'name': 'resid', 'value': $(el).attr('resid') });
                       break;
               }
           }

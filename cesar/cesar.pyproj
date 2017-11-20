@@ -154,6 +154,7 @@
     <Content Include="cesar\seeker\templates\seeker\research_part_63.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_62.html" />
     <Content Include="cesar\seeker\templates\seeker\quantor_list_main.html" />
+    <Content Include="cesar\seeker\templates\seeker\result_part_4.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_3.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_2.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_1.html" />

@@ -1452,6 +1452,35 @@ class Kwic(models.Model):
         self.save()
         # REturn positively
         return True
+      
+    def add_result(self, oResult):
+        iResId = oResult['ResId']
+        sResult = json.dumps(oResult)
+        obj = KwicResult(resId=iResId, result=sResult, kwic=self)
+        obj.save()
+        return True
+
+    def add_result_list(self, result_list):
+        with transaction.atomic():
+            self.kwicresults.all().delete()
+            for result in result_list:
+                self.add_result(result)
+        return True
+
+    def get_result(self, iResId):
+        """Get the result with the indicated ResId"""
+
+        result = self.kwicresults.filter(resId=iResId).first()
+        if result == None:
+            return None
+        else:
+            return json.loads( result.result)
+
+    def clear_results(self):
+        """Remove all the result objects that were made for me until now"""
+        with transaction.atomic():
+            self.kwicresults.all().delete()
+        return True
 
 
 class KwicFilter(models.Model):
@@ -1469,6 +1498,20 @@ class KwicFilter(models.Model):
 
     def __str__(self):
         return "{}".format(self.field)
+
+
+class KwicResult(models.Model):
+    """Details of selected results that are or have been requested by the user"""
+
+    # [1] Identification of this result by the ResId (also within [result] field)
+    resId = models.IntegerField("Result identifier")
+    # [1] Result details in the form of a JSON object (stringified)
+    result = models.TextField("JSON details")
+    # [1] Link this filter the the KWIC it belongs to
+    kwic = models.ForeignKey(Kwic, blank=False, null=False, related_name="kwicresults")
+
+    def __str__(self):
+        return "{}".format(self.resId)
 
 
 class Quantor(models.Model):

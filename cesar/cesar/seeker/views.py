@@ -2101,6 +2101,8 @@ class ResultPart2(ResearchPart):
         if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
             self.result_list = oData['Results']
             self.feature_list = oData['Features']
+            # Also add the results as objects
+            self.kwic_object.add_result_list(oData['Results'])
         else:
             # Some error has occurred
             self.data['status'] = "error"
@@ -2203,17 +2205,33 @@ class ResultPart3(ResearchPart):
 
 class ResultPart4(ResearchPart):
     MainModel = Kwic
+    template_name = 'seeker/result_part_4.html'
 
     def add_to_context(self, context):
         # find out which sentence has been identified by the user
         self.basket = self.obj.basket
+
+        # Other information is also required: basket and so forth
+        context['basket'] = self.basket
+        context['kwic'] = self.obj
+        context['quantor'] = Quantor.objects.filter(basket=self.basket).first()
+        oResult = None
+        if 'resid' in self.qd:
+            iResId = int(self.qd['resid'])
+            oResult = self.obj.get_result(iResId)
+            context['result'] = oResult
+        if oResult == None:
+            # What do we do if the result is empty??
+            context['no_result'] = True
+            return context
+        # Fetch information from the /crpp service
         options = {'userid': self.basket.research.owner.username,
                    'lng': self.basket.part.corpus.get_lng_display(),
                    'dir': self.basket.part.dir,
                    'ext': self.basket.get_format_display(),
-                   'name': self.qd['filename'],
-                   'locs': self.qd['locs'],
-                   'locw': self.qd['locw'],
+                   'name': oResult['File'],
+                   'locs': oResult['Locs'],
+                   'locw': oResult['Locw'],
                    'type': 'syntax_tree'}
         oInfo = get_crpp_sent_info(options)
         if oInfo != None and oInfo['status'] == "ok":

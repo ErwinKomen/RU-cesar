@@ -36,9 +36,7 @@
             <a class="btn btn-default btn-xs" id="result_part4_button" 
                 targeturl="{% url 'result_part_4' object_id=kwic_id %}"
                 targetid="result_part_4"
-                filename="{{result.File}}"
-                locs="{{result.Locs}}"
-                locw="{{result.Locw}}"
+                resid="{{result.ResId}}"
                 onclick="ru.cesar.seeker.result_wizard(this, '4');"
                 title="hit details">
               <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
@@ -46,9 +44,7 @@
             <a class="btn btn-default btn-xs" id="result_part5_button" 
                 targeturl="{% url 'result_part_5' object_id=kwic_id %}"
                 targetid="result_part_5"
-                filename="{{result.File}}"
-                locs="{{result.Locs}}"
-                locw="{{result.Locw}}"
+                resid="{{result.ResId}}"
                 onclick="ru.cesar.seeker.result_wizard(this, '5');"
                 title="tree">
               <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
