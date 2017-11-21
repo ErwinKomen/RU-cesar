@@ -504,7 +504,7 @@ table.kwic-list {
     width: 100%;
 }
 
-table td.kwic-loc, table td span.kwic-loc {
+table td.kwic-loc, table td span.kwic-loc, div span.kwic-loc {
   font-family: monospace;
   color: darkblue;
   /* background-color: lightgray; */

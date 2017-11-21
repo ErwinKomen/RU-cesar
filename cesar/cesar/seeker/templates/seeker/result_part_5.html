@@ -1,22 +1,12 @@
 ﻿{% load i18n %}
-<!-- Result part 4: hit detail view -->
+<!-- Result part 5: Tree of a hit -->
 
-<div id="result_part_4">
+<div id="result_part_5">
   <div class="row">
     <div class="col-md-2" align="left">
-      <div class="row">
-        <button type="button" class="btn btn-primary" 
-                onclick="ru.cesar.seeker.research_open('result_container_2', 'result_container_4');">
-          << Back</button>
-      </div>
-      <div><label>&nbsp;</label></div>
-      <div><label>&nbsp;</label></div>
-      <div class="row">
-          Result category:
-      </div>
-      <div class="row">
-          <code>{{result.Cat}}</code>
-      </div>
+      <button type="button" class="btn btn-primary" 
+              onclick="ru.cesar.seeker.research_open('result_container_2', 'result_container_5');">
+        << Back</button>
     </div>
     <div class="col-md-10">
       <!-- Show the main features of the results -->
@@ -58,15 +48,6 @@
         </div>
       </div>
 
-    </div>
-  </div>
-
-  <!-- Show a bit of context as to where we are -->
-  <div class="row container panel panel-default">
-    <div><label>Context of this hit</label></div>
-    <div class="row">
-         [<span class="kwic-loc">{{result.Locw}}</span>]
-            {{result.kwic_pre}} <b>{{result.kwic_hit}}</b> {{result.kwic_fol}}
     </div>
   </div>
 

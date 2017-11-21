@@ -2219,6 +2219,32 @@ class ResultPart4(ResearchPart):
         if 'resid' in self.qd:
             iResId = int(self.qd['resid'])
             oResult = self.obj.get_result(iResId)
+            # The RESULT object also contains all features and their values
+            context['result'] = oResult
+        if oResult == None:
+            # What do we do if the result is empty??
+            context['no_result'] = True
+            return context
+        return context
+
+
+class ResultPart5(ResearchPart):
+    MainModel = Kwic
+    template_name = 'seeker/result_part_5.html'
+
+    def add_to_context(self, context):
+        # find out which sentence has been identified by the user
+        self.basket = self.obj.basket
+
+        # Other information is also required: basket and so forth
+        context['basket'] = self.basket
+        context['kwic'] = self.obj
+        context['quantor'] = Quantor.objects.filter(basket=self.basket).first()
+        oResult = None
+        if 'resid' in self.qd:
+            iResId = int(self.qd['resid'])
+            oResult = self.obj.get_result(iResId)
+            # The RESULT object also contains all features and their values
             context['result'] = oResult
         if oResult == None:
             # What do we do if the result is empty??
@@ -2252,10 +2278,6 @@ class ResultPart4(ResearchPart):
         else:
             context['sent_info'] = None
         return context
-
-
-class ResultPart5(ResearchPart):
-    MainModel = Kwic
 
 
 
