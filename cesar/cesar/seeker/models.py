@@ -1393,8 +1393,7 @@ class Basket(models.Model):
     def get_feature_list(self, iQcLine):
         kwic = self.get_kwic(iQcLine)
         return kwic.get_features()
-
-
+    
 
 class Kwic(models.Model):
     """Keyword-in-context results
