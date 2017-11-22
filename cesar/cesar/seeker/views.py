@@ -2078,34 +2078,42 @@ class ResultPart2(ResearchPart):
             self.basket.set_kwic(self.qcline)
             self.kwic_object = self.basket.kwiclines.filter(qc=self.qcline).first()
 
-        # Get the filter myself
-        oFilter = self.kwic_object.get_filter()
-        # Apply the filter
-        self.kwic_object.apply_filter(oFilter)
-
         # Pagination
         self.hit_count = self.kwic_object.hitcount
         result_number_list = list(range(1, self.hit_count))
         paginator = Paginator(result_number_list, self.paginate_by)
         self.page_obj = paginator.page(page)
-        # Set the number of items to be fetched
-        iCount = self.paginate_by
-        iStart = (page-1) * self.paginate_by
-        # Fetch the data for this page
-        oData = crpp_dbinfo(self.basket.research.owner.username, 
-                            self.basket.research.name,
-                            qc, 
-                            iStart,
-                            iCount,
-                            filter=oFilter)
-        if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
-            self.result_list = oData['Results']
-            self.feature_list = oData['Features']
-            # Also add the results as objects
-            self.kwic_object.add_result_list(oData['Results'])
+
+        # Get the filter myself
+        oFilter = self.kwic_object.get_filter()
+        # Check filter with what is available
+        if self.kwic_object.has_results(oFilter, page):
+            # Use the features and the results we already have
+            self.result_list = [json.loads(item.result) for item in self.kwic_object.kwicresults.all()]
+            self.feature_list = self.kwic_object.get_features()
         else:
-            # Some error has occurred
-            self.data['status'] = "error"
+            if not self.kwic_object.has_filter(oFilter):
+                # Apply the filter
+                self.kwic_object.apply_filter(oFilter)
+
+            # Set the number of items to be fetched
+            iCount = self.paginate_by
+            iStart = (page-1) * self.paginate_by
+            # Fetch the data for this page
+            oData = crpp_dbinfo(self.basket.research.owner.username, 
+                                self.basket.research.name,
+                                qc, 
+                                iStart,
+                                iCount,
+                                filter=oFilter)
+            if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
+                self.result_list = oData['Results']
+                self.feature_list = oData['Features']
+                # Also add the results as objects
+                self.kwic_object.add_result_list(oData['Results'], page)
+            else:
+                # Some error has occurred
+                self.data['status'] = "error"
 
     def add_to_context(self, context):
         # Add some elements to the context

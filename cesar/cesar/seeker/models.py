@@ -1461,11 +1461,51 @@ class Kwic(models.Model):
         obj.save()
         return True
 
-    def add_result_list(self, result_list):
+    def has_filter(self, oFilter):
+        """Check if the CURRENT kwic object contains the filter indicated"""
+
+        if self.resultKey == None or self.resultKey == "":
+            return False
+        # Get the filter we currently have
+        oResultKey = json.loads(self.resultKey)
+        if not 'filter' in oResultKey:
+            return False
+        sStoredFilter = json.dumps( oResultKey['filter'])
+        sCurrentFilter = json.dumps(self.get_filter())
+        return (sStoredFilter == sCurrentFilter)
+
+    def has_page(self, page):
+        """Check if the CURRENT kwic object pertains to the page indicated"""
+
+        if self.resultKey == None or self.resultKey == "":
+            return False
+        # Get the filter we currently have
+        oResultKey = json.loads(self.resultKey)
+        if not 'page' in oResultKey:
+            return False
+        sStoredPage = json.dumps( oResultKey['page'])
+        return (sStoredPage == page)
+
+    def has_results(self, oFilter, page):
+        """Check if the CURRENT kwic object contains the results and the filter indicated"""
+
+        if self.resultKey == None or self.resultKey == "" or page == None:
+            return False
+        # Create an object for comparison
+        oResultKey = {'filter': oFilter, 'page': page}
+        sResultKey = json.dumps(oResultKey)
+        return (sResultKey == self.resultKey)
+
+    def add_result_list(self, result_list, page):
+        # Create a result key and add it
+        oResultKey = {'filter': self.get_filter(), 'page': page}
+        self.resultKey = json.dumps(oResultKey)
         with transaction.atomic():
             self.kwicresults.all().delete()
             for result in result_list:
                 self.add_result(result)
+            # Save the result key
+            self.save()
         return True
 
     def get_result(self, iResId):
