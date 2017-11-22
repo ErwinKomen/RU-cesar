@@ -1411,6 +1411,8 @@ class Kwic(models.Model):
     hitcount = models.IntegerField("Number of hits", default=0)
     # [1] String JSON list of feature names
     features = models.TextField("Features", default="[]")
+    # [0-1] Stringified JSON that explains which results (if any) are already present
+    resultKey = models.TextField("Result key", blank=True, null=True)
     # [1] There must be a link to the Basket the results belong to
     basket = models.ForeignKey(Basket, blank=False, null=False, related_name="kwiclines")
 

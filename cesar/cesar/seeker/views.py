@@ -2214,6 +2214,7 @@ class ResultPart4(ResearchPart):
         # Other information is also required: basket and so forth
         context['basket'] = self.basket
         context['kwic'] = self.obj
+        context['kwic_id'] = self.obj.id
         context['quantor'] = Quantor.objects.filter(basket=self.basket).first()
         oResult = None
         if 'resid' in self.qd:
@@ -2239,6 +2240,7 @@ class ResultPart5(ResearchPart):
         # Other information is also required: basket and so forth
         context['basket'] = self.basket
         context['kwic'] = self.obj
+        context['kwic_id'] = self.obj.id
         context['quantor'] = Quantor.objects.filter(basket=self.basket).first()
         oResult = None
         if 'resid' in self.qd:

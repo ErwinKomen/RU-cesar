@@ -2,6 +2,7 @@
 <!-- Result part 4: hit detail view -->
 
 <div id="result_part_4">
+  <div class="hidden" id="kwicid">{{kwic_id}}</div>
   <div class="row">
     <div class="col-md-2" align="left">
       <div class="row">
@@ -63,7 +64,26 @@
 
   <!-- Show a bit of context as to where we are -->
   <div class="row container panel panel-default">
-    <div><label>Context of this hit</label></div>
+    <div class="col-md-3"><label>Context of this hit</label></div>
+    <div class="col-md-6"></div>
+    <div class="col-md-3" align="right">
+      <a class="btn btn-default btn-xs" id="result_part4_button" 
+          targeturl=""
+          targetid="result_part_4"
+          resid="{{result.ResId}}"
+          onclick=""
+          title="more context">
+        <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+      </a>
+      <a class="btn btn-default btn-xs" id="result_part5_button" 
+          targeturl="{% url 'result_part_5' object_id=kwic_id %}"
+          targetid="result_part_5"
+          resid="{{result.ResId}}"
+          onclick="ru.cesar.seeker.result_wizard(this, '5');"
+          title="tree">
+        <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
+      </a>
+    </div>
     <div class="row">
          [<span class="kwic-loc">{{result.Locw}}</span>]
             {{result.kwic_pre}} <b>{{result.kwic_hit}}</b> {{result.kwic_fol}}
