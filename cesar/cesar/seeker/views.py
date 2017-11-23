@@ -2281,6 +2281,8 @@ class ResultPart5(ResearchPart):
                 if 'eng' in f and f['eng'] != "":
                     # We have an 'eng' translation: make it available
                     context['eng'] = f['eng']
+            # Put the information into the DATA object
+            self.data['sent_info'] = oSentInfo
             # Replace the 'allT' and 'hitT' with STRING json
             if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
             if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])

@@ -1072,6 +1072,7 @@ var ru = (function ($, ru) {
             sAjaxMethod = "",
             data = {},
             frm = null,
+            oTree = null,
             response = null,
             elListItem = null,
             elList = null;
@@ -1158,6 +1159,11 @@ var ru = (function ($, ru) {
             case "1": case "2": case "3":
               $("#goto_result_details").removeClass("hidden");
               $("#goto_finetune").addClass("hidden");
+              break;
+            case "5":
+              // Show the tree in the appropriate location
+              oTree = JSON.parse( response.sent_info.allT);
+              crpstudio.svg.treeToSvg("#sentdetails_tree", oTree, "#sentdetails_err");
               break;
           }
           $("#result_wait_message").addClass("hidden");
