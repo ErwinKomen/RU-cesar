@@ -257,7 +257,7 @@ def sync_crpp_start(request):
                 oStatus.save()
 
                 # Get the data from the CRPP api: this only returns a JOBID
-                crpp_texts = get_crpp_texts(sLng, sPart, sFormat)
+                crpp_texts = get_crpp_texts(sLng, sPart, sFormat, oStatus)
 
                 # Now loop until we get the correct status
 

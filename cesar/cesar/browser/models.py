@@ -443,7 +443,8 @@ def process_corpusinfo(oCorpusInfo):
                  'tagset': 0, 'grouping': 0, 'part': 0}
 
         # Validate
-        if not 'indices' in oCorpusInfo or not 'corpora' in oCorpusInfo or not 'metavar' in oCorpusInfo or not 'constituents' in oCorpusInfo:
+        if not 'indices' in oCorpusInfo or not 'corpora' in oCorpusInfo \
+            or not 'metavar' in oCorpusInfo or not 'constituents' in oCorpusInfo:
             # We miss information
             oStatus.status = "information is missing"
             oStatus.save()
