@@ -293,9 +293,12 @@ def sync_crpp_start(request):
             data['count'] = 0
             oBack = {}
 
-            # Delete everything that is already there
+            # ================ IMPORTANT ===========================
+            # Delete everything that is already theres
             oStatus.set("deleting")
             Text.objects.all().delete()
+
+            # Only now do we start in full
             oStatus.set("continuing")
 
             # We are going to try and update ALL the texts in the entire application
@@ -362,7 +365,8 @@ def sync_crpp_progress(request):
         bDone = False
         while not bDone:
             try:
-                # Find the currently being used status
+                # Find the currently being used status:
+                # Note: THAT MUST BE THE LAST STATUS OBJECT
                 oStatus = Status.objects.last()
                 if oStatus != None:
                     # Get the last status information
