@@ -290,7 +290,7 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting):
+def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting = False):
     """Update our own models with the information in [oCorpusInfo]"""
 
     oBack = {}      # What we return
