@@ -151,6 +151,21 @@ class DownloadInline(admin.TabularInline):
     extra = 0
 
 
+class SentenceAdmin(admin.ModelAdmin):
+    """Showing a sentence"""
+
+    form = SentenceAdminForm
+
+    list_display = ['order', 'identifier', 'sent']
+    search_fields = ['order', 'identifier', 'sent']
+    list_filter = ['text__part__name', 'text__fileName']
+
+
+class SentenceInline(admin.TabularInline):
+    model = Sentence
+    extra = 0
+
+
 class TextAdmin(admin.ModelAdmin):
     """Showing texts"""
 
@@ -160,6 +175,7 @@ class TextAdmin(admin.ModelAdmin):
     # list_display = ['admin_form_column_names',]
     search_fields = ['part','format', 'fileName','title', 'date', 'author', 'genre', 'subtype']
     list_filter = ['part', 'format', 'genre', 'subtype']
+    inlines = [SentenceInline]
 
 
 class PartAdmin(admin.ModelAdmin):
@@ -206,3 +222,4 @@ admin.site.register(Corpus, CorpusAdmin)
 admin.site.register(Part, PartAdmin)
 admin.site.register(Download, DownloadAdmin)
 admin.site.register(Text, TextAdmin)
+admin.site.register(Sentence, SentenceAdmin)

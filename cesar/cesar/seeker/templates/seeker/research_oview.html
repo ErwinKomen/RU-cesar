@@ -72,6 +72,41 @@
               {% endfor %}
             </tbody>
           </table>
+
+          <!-- Walk all condition -->
+          <h4>Defintions of conditions per search element</h4>
+          {% for cond in gateway.conditions.all  %}
+            <p>Condition <code>{{cond.name}}</code>:
+            {% if cond.condtype == "dvar" %}
+              <code>{{cond.variable.name}}</code>
+            {% elif cond.condtype == "func" %}
+              {% if cond.get_functions %}
+                <div class="panel panel-default">
+                  <table>
+                    <thead><tr><th>#</th><th>Function</th><th>Layout</th></tr></thead>
+                    <tbody id="condition_definition">
+                      <!-- This is where the condition definition table should come -->
+                      {% for function_this in cond.get_functions %}
+                      <tr class="function-item">
+                        <td valign="top" class="function-intro"><code>line_{{forloop.counter}}</code></td>
+                        <td valign="top" class="function-name">{{function_this.functiondef.name}}</td>
+                        <td valign="top" class="function-layout">
+                          {% for level in function_this.get_level_range %}&bull;&nbsp;&nbsp;{% endfor %}
+                          {% for arg_this in function_this.get_arguments %}
+                            <span class="function-arg-text">{{arg_this.argumentdef.text}}</span>
+                            <span class="function-arg-view"><code>{{arg_this.get_view}}</code></span>
+                          {% endfor %}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}<i>(not yet defined)</i>{% endif %}
+            {% else %}
+              <i>(unknown type)</i>
+            {% endif %}
+          {% endfor %}
         </div>
 
         <!-- Data-dependant variables -->

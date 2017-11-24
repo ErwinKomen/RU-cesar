@@ -910,6 +910,28 @@ class Condition(models.Model):
         # And then delete myself
         return super().delete(using, keep_parents)
 
+    def get_functions(self):
+        """Get all the functions belonging to this condition"""
+
+        func_list = []
+        # Only works for the correct type
+        if self.condtype == "func":
+            func_this = self.function
+            if func_this != None:
+                # Add function to list
+                func_list.append(func_this)
+                # Walk all arguments
+                for arg_this in func_this.functionarguments.all():
+                    # CHeck if this is a function argument
+                    if arg_this.argtype == "func":
+                        # Then add the function pointed to by the argument
+                        arg_func = arg_this.functionparent.first()
+                        if arg_func != None:
+                            arg_func_list = arg_func.get_functions()
+                            for func in arg_func_list:
+                                func_list.append(func)
+        return func_list
+
       
 class SearchItem(models.Model):
     """A search item is one 'search' variable specification for a gateway"""

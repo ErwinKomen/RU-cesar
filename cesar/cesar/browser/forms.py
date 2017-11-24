@@ -96,6 +96,20 @@ class ConstituentNameTransForm(forms.ModelForm):
             }
 
 
+class SentenceAdminForm(forms.ModelForm):
+    """Admin [Sentence] form"""
+
+    class Meta:
+        model = Sentence
+        fields = '__all__'
+        widgets={'sent': forms.Textarea(attrs={'rows': 1})
+            }
+
+    def __init__(self, *args, **kwargs):
+        super(SentenceAdminForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'format', CORPUS_FORMAT)
+
+
 class TextAdminForm(forms.ModelForm):
     """Admin [Text] form"""
 

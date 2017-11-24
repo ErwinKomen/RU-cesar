@@ -1034,10 +1034,18 @@ class Sentence(models.Model):
     # [1] Identifier
     identifier = models.CharField("Identifier", max_length=MAX_TEXT_LEN)
     # [1] Text content itself
-    sent = models.CharField("Sentence", max_length=MAX_TEXT_LEN)
+    # sent = models.CharField("Sentence", max_length=MAX_TEXT_LEN)
+    sent = models.TextField("Sentence")
     # [1] Link to the [Text] this line belongs to
     text = models.ForeignKey(Text, blank=False, null=False, related_name="sentences")
 
+    def __str__(self):
+        return self.identifier
 
+    def get_part(self):
+        return self.text.part.name
+
+    def get_fileName(self):
+        return self.text.fileName
 
 

@@ -935,6 +935,18 @@ class Variable43(ResearchPart):
         return context
 
 
+class Condition63(ResearchPart):
+    """The definition of one particular condition"""
+
+    MainModel = Condition
+    template_name = 'seeker/variable_details.html'
+
+    def add_to_context(self, context):
+        # Add a list of functions to the context
+        context['function_list'] = self.obj.get_functions()
+        return context
+
+
 class ResearchPart43(ResearchPart):
     """Starting from a CVAR of type 'function', allow defining that function"""
 

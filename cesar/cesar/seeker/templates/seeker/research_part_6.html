@@ -46,7 +46,9 @@
                           {% trans 'create' %}
                           {% endif %}
                         </a>
-                        <a class="cond-summary">{% trans 'summary' %}</a>
+                        <a class="cond-summary"
+                           targeturl="{% if cond_form.instance.id %}{% url 'condition63' cond_form.instance.id %}{% endif %}">
+                           {% trans 'summary' %}</a>
                         ...
                       </span>
                       <!-- Room to provide a summary of the function-calculation -->
@@ -117,5 +119,7 @@
       <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
     </div>
   </div>
+
+  <div id="cond_summary" class="hidden"></div>
 </form>
 

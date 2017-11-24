@@ -571,45 +571,6 @@ var ru = (function ($, ru) {
       },
 
       /**
-       * cvarsummary_click
-       *   Show or hide the summary of the expression here
-       *
-       */
-      cvarsummary_click: function () {
-        var response,   // The ID of the current row
-            sTargetId = "#cvar_summary";
-
-        try {
-          // Get to the row from here
-          var elRow = $(this).closest("tr");
-          // Find the expression summary
-          // OLD: var elSum = $(elRow).find(".cvar-expression-summary");
-          var elSum = $(sTargetId);
-          // Is it closed or opened?
-          if ($(elSum).hasClass("hidden")) {
-            // Calculate and show the value
-            // OLD: $(elSum).html("hier komt de waarde");
-            // sId = $(this).attr("instanceid");
-            // Fetch the corr
-            response = ru.cesar.seeker.ajaxform_load($(this).attr("targeturl"));
-            if (response.status && response.status === "ok") {
-              // Make the HTML response visible
-              $(elSum).html(response.html);
-              // Make sure events are set again
-              ru.cesar.seeker.init_events();
-            }
-            // Unhide it
-            $(elSum).removeClass("hidden");
-          } else {
-            // Hide it
-            $(elSum).addClass("hidden");
-          }
-        } catch (ex) {
-          private_methods.errMsg("cvarsummary_click", ex);
-        }
-      },
-
-      /**
        * cvarcalculate_click
        *   Show or hide the calculation of one data-specific variable for all search-elements
        *
@@ -714,6 +675,45 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * get_summary_click
+       *   Show or hide the summary of the expression here
+       *
+       */
+      get_summary_click: function (el, target) {
+        var response,   // The ID of the current row
+            sTargetId = "#cvar_summary";
+
+        try {
+          // Possibly get target
+          if (target !== undefined && target !== "") {
+            sTargetId = target;
+          }
+          // Get to the row from here
+          var elRow = $(el).closest("tr");
+          // Find the expression summary
+          var elSum = $(sTargetId);
+          // Is it closed or opened?
+          if ($(elSum).hasClass("hidden")) {
+            // Calculate and show the value
+            response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"));
+            if (response.status && response.status === "ok") {
+              // Make the HTML response visible
+              $(elSum).html(response.html);
+              // Make sure events are set again
+              ru.cesar.seeker.init_events();
+            }
+            // Unhide it
+            $(elSum).removeClass("hidden");
+          } else {
+            // Hide it
+            $(elSum).addClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("get_summary_click", ex);
+        }
+      },
+
+      /**
        *  init_arg_events
        *      Bind events to work with function arguments
        *
@@ -770,7 +770,7 @@ var ru = (function ($, ru) {
           // Specify the change reaction function
           $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
           // Specify the function to be called when the user presses "summary"
-          $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
+          $(".cvar-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cvar_summary"); });
           // When the function-definition-selection changes, the button name should change
           $(".cvar-fundef select").change(function () {
             var button = $(this).closest(".cvar-expression").find("a.btn").first();
@@ -1292,6 +1292,8 @@ var ru = (function ($, ru) {
             case "6":
               // add any event handlers for wizard part '46'
               ru.cesar.seeker.init_cond_events();
+              // Specify the function to be called when the user presses "summary"
+              $(".cond-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
               break;
             case "5": // Page 5=Conditions
 
@@ -1305,7 +1307,7 @@ var ru = (function ($, ru) {
               // Specify the change reaction function
               $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
               // Specify the function to be called when the user presses "summary"
-              $(".cvar-summary").click(ru.cesar.seeker.cvarsummary_click);
+              $(".cvar-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cvar_summary"); });
               break;
           }
           // Hide all research parts
