@@ -174,6 +174,12 @@ class VarDefForm(ModelForm):
 class CvarForm(ModelForm):
     """The VALUES of construction variables"""
     # type = forms.ChoiceField(choices=build_choice_list(SEARCH_VARIABLE_TYPE), required=True)
+    targetid = "research_part_43"
+    target = "43"
+    sumid = 'variable43'
+    url_edit = ""
+    url_new = ""
+    url_summary = ""
 
     class Meta:
         model = ConstructionVariable
@@ -196,6 +202,12 @@ class CvarForm(ModelForm):
         #self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway)
         # make sure all the available function-definitions are shown
         self.fields['functiondef'].queryset = FunctionDef.get_list()
+        # Provide values for url_edit and url_new if possible
+        if self.instance and self.instance != None and self.instance.id != None:
+            self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})
+            self.url_summary = reverse(self.sumid, kwargs={"object_id": self.instance.id})
+        # THe url for new can always be given
+        self.url_new = reverse(self.targetid)
 
 
 class FunctionForm(ModelForm):
@@ -261,6 +273,12 @@ class ConditionForm(ModelForm):
     """The argument to a function"""
 
     condtype = forms.ChoiceField(choices=SEARCH_CONDTYPE, required=True)
+    targetid = "research_part_62"
+    target = "62"
+    sumid = 'condition63'
+    url_edit = ""
+    url_new = ""
+    url_summary = ""
 
     class Meta:
         model = Condition
@@ -282,6 +300,12 @@ class ConditionForm(ModelForm):
         self.fields['variable'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+        # Provide values for url_edit and url_new if possible
+        if self.instance and self.instance != None and self.instance.id != None:
+            self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})
+            self.url_summary = reverse(self.sumid, kwargs={"object_id": self.instance.id})
+        # THe url for new can always be given
+        self.url_new = reverse(self.targetid)
 
 
 class SeekerResearchForm(ModelForm):

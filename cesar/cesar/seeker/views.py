@@ -1334,7 +1334,7 @@ class ResearchPart6(ResearchPart):
             return self.obj.gateway
 
     def get_form_kwargs(self, prefix):
-        if prefix == 'cond':
+        if prefix == 'cond' and self.obj != None and self.obj.gateway != None:
             return {"gateway":  self.obj.gateway}
         else:
             return None

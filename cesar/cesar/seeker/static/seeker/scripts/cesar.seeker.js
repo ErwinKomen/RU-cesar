@@ -770,7 +770,7 @@ var ru = (function ($, ru) {
           // Specify the change reaction function
           $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
           // Specify the function to be called when the user presses "summary"
-          $(".cvar-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cvar_summary"); });
+          $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cvar_summary"); });
           // When the function-definition-selection changes, the button name should change
           $(".cvar-fundef select").change(function () {
             var button = $(this).closest(".cvar-expression").find("a.btn").first();
@@ -1293,7 +1293,7 @@ var ru = (function ($, ru) {
               // add any event handlers for wizard part '46'
               ru.cesar.seeker.init_cond_events();
               // Specify the function to be called when the user presses "summary"
-              $(".cond-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
+              $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
               break;
             case "5": // Page 5=Conditions
 
@@ -1307,7 +1307,7 @@ var ru = (function ($, ru) {
               // Specify the change reaction function
               $(".cvar-type select").change(ru.cesar.seeker.cvartype_click);
               // Specify the function to be called when the user presses "summary"
-              $(".cvar-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cvar_summary"); });
+              $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cvar_summary"); });
               break;
           }
           // Hide all research parts
