@@ -28,6 +28,36 @@ from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
 
+def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
+    # Take the functiondef as available in this argument
+    arg_defs = ArgumentDef.objects.filter(function=functiondef)
+
+    for index, arg_form in enumerate(arg_formset):
+        # Initialise the querysets
+        arg_form.fields['gvar'].queryset = qs_gvar
+        if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
+        arg_form.fields['dvar'].queryset = qs_dvar
+        # Add the information required by 'seeker/function_args.html' for each argument
+        arg_form.target = target
+        arg_form.targetid = 'research_part_' + arg_form.target
+        if arg_form.instance != None and arg_form.instance.id != None:
+            arg_form.url_edit = reverse(arg_form.targetid, kwargs={'object_id': arg_form.instance.id})
+        arg_form.url_new = reverse(arg_form.targetid)
+        # Get the instance from this form
+        arg = arg_form.save(commit=False)
+        # Check if the argument definition is set
+        if arg.id == None or arg.argumentdef_id == None:
+            # Get the argument definition for this particular argument
+            arg.argumentdef = arg_defs[index]
+            arg_form.initial['argumentdef'] = arg_defs[index]
+            arg_form.initial['argtype'] = arg_defs[index].argtype
+            # Preliminarily save
+            arg_form.save(commit=False)
+
+    # Return the adatpted formset
+    return arg_formset
+
+
 class CustomInlineFormset(BaseInlineFormSet):
     def clean(self):
         super(CustomInlineFormset, self).clean()
@@ -894,15 +924,6 @@ class ResearchPart42(ResearchPart):
         has_changed = False
         # When saving a CVAR, we need to check that the functions are okay
         if prefix == 'cvar':
-            # Find all functions that are not pointed to from any of the construction variables
-            lstCvarId = [item.id for item in ConstructionVariable.objects.exclude(function=None)]
-            lstFunDel = Function.objects.exclude(root__in=lstCvarId)
-            # Now delete those that need deleting (cascading is done in the function model itself)
-            with transaction.atomic():
-                for fun_this in lstFunDel:
-                    fun_this.delete()
-                    # Make sure that deletions get saved
-                    has_changed = True
             # Find the function attached to me - only if applicable!!
             if instance.type == "calc" and instance.functiondef != None:
                 # Two situations:
@@ -921,6 +942,22 @@ class ResearchPart42(ResearchPart):
         self.obj.gateway.research.save()
         # Return the changed flag
         return has_changed
+
+def cleanup_functions():
+    """Remove superfluous functions"""
+
+    has_changed = False
+    # Find all functions that are not pointed to from any of the construction variables
+    lstCvarId = [item.id for item in ConstructionVariable.objects.exclude(function=None)]
+    lstCondId = [item.id for item in Condition.objects.exclude(function=None)]
+    lstFunDel = Function.objects.exclude(root__in=lstCvarId).exclude(rootcond__in=lstCondId)
+    # Now delete those that need deleting (cascading is done in the function model itself)
+    with transaction.atomic():
+        for fun_this in lstFunDel:
+            fun_this.delete()
+            # Make sure that deletions get saved
+            has_changed = True
+    return has_changed
 
 
 class Variable43(ResearchPart):
@@ -1020,7 +1057,7 @@ class ResearchPart43(ResearchPart):
                     iStop = 1
 
                 # Adapt the arguments for this form
-                arg_formset = context['arg_formset']
+                # arg_formset = context['arg_formset']
                 arg_defs = ArgumentDef.objects.filter(function=functiondef)
 
                 # Calculate the initial queryset for 'gvar'
@@ -1039,29 +1076,12 @@ class ResearchPart43(ResearchPart):
                 lstQ.append(Q(order__lt=self.obj.variable.order))
                 qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
 
-                ## - adapting the 'arg_formset' for the 'function' form (editable)
-                #fun_this = self.get_instance('function')
-                #if fun_this != None:
-                #    context['arg_formset'] = self.check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, qs_cvar, qs_dvar)
-
-                for index, arg_form in enumerate(arg_formset):
-                    # Initialise the querysets
-                    arg_form.fields['gvar'].queryset = qs_gvar
-                    arg_form.fields['cvar'].queryset = qs_cvar
-                    arg_form.fields['dvar'].queryset = qs_dvar
-                    # Get the instance from this form
-                    arg = arg_form.save(commit=False)
-                    # Check if the argument definition is set
-                    if arg.id == None or arg.argumentdef_id == None:
-                        # Get the argument definition for this particular argument
-                        arg.argumentdef = arg_defs[index]
-                        arg_form.initial['argumentdef'] = arg_defs[index]
-                        arg_form.initial['argtype'] = arg_defs[index].argtype
-                        # Preliminarily save
-                        arg_form.save(commit=False)
-
-                # Put the results back again
-                context['arg_formset'] = arg_formset
+                # - adapting the 'arg_formset' for the 'function' form (editable)
+                fun_this = self.get_instance('function')
+                if fun_this != None:
+                    context['arg_formset'] = check_arguments(context['arg_formset'], functiondef, qs_gvar, qs_cvar, qs_dvar, '44')
+                else:
+                    context['arg_formset'] = None
 
                 # Add a list of functions to the context
                 context['function_list'] = self.obj.get_functions()
@@ -1071,16 +1091,23 @@ class ResearchPart43(ResearchPart):
         context['object_id'] = self.object_id
         context['targettype'] = targettype
         return context
-
-    def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar):
+    
+    def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
         # Take the functiondef as available in this argument
-        arg_defs = functiondef.arguments.all()
+        # arg_defs = functiondef.arguments.all()
+        arg_defs = ArgumentDef.objects.filter(function=functiondef)
 
         for index, arg_form in enumerate(arg_formset):
             # Initialise the querysets
             arg_form.fields['gvar'].queryset = qs_gvar
-            arg_form.fields['cvar'].queryset = qs_cvar
+            if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
             arg_form.fields['dvar'].queryset = qs_dvar
+            # Add the information required by 'seeker/function_args.html' for each argument
+            arg_form.target = target
+            arg_form.targetid = 'research_part_' + arg_form.target
+            if arg_form.instance != None:
+                arg_form.url_edit = reverse(arg_form.targetid, kwargs={'object_id': arg_form.instance.id})
+            arg_form.url_new = reverse(arg_form.targetid)
             # Get the instance from this form
             arg = arg_form.save(commit=False)
             # Check if the argument definition is set
@@ -1248,12 +1275,14 @@ class ResearchPart44(ResearchPart):
             qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
 
             # - adapting the 'parg_formset' for the 'parent' form (view-only)
-            context['parg_formset'] = self.check_arguments(context['parg_formset'], pfun_this.functiondef, qs_gvar, qs_cvar, qs_dvar)
+            context['parg_formset'] = check_arguments(context['parg_formset'], pfun_this.functiondef, qs_gvar, qs_cvar, qs_dvar, '44')
 
             # - adapting the 'arg_formset' for the 'function' form (editable)
             fun_this = self.get_instance('function')
             if fun_this != None:
-                context['arg_formset'] = self.check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, qs_cvar, qs_dvar)
+                context['arg_formset'] = check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, qs_cvar, qs_dvar, '44')
+            else:
+                context['arg_formset'] = None
 
             # Get a list of all ancestors
             context['anc_list'] = fun_this.get_ancestors()
@@ -1263,29 +1292,6 @@ class ResearchPart44(ResearchPart):
         context['object_id'] = self.object_id
         context['targettype'] = targettype
         return context
-
-    def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar):
-        # Take the functiondef as available in this argument
-        arg_defs = functiondef.arguments.all()
-
-        for index, arg_form in enumerate(arg_formset):
-            # Initialise the querysets
-            arg_form.fields['gvar'].queryset = qs_gvar
-            arg_form.fields['cvar'].queryset = qs_cvar
-            arg_form.fields['dvar'].queryset = qs_dvar
-            # Get the instance from this form
-            arg = arg_form.save(commit=False)
-            # Check if the argument definition is set
-            if arg.id == None or arg.argumentdef_id == None:
-                # Get the argument definition for this particular argument
-                arg.argumentdef = arg_defs[index]
-                arg_form.initial['argumentdef'] = arg_defs[index]
-                arg_form.initial['argtype'] = arg_defs[index].argtype
-                # Preliminarily save
-                arg_form.save(commit=False)
-
-        # Return the adatpted formset
-        return arg_formset
 
     def before_save(self, prefix, request, instance=None, form=None):
         has_changed = False
@@ -1339,7 +1345,6 @@ class ResearchPart6(ResearchPart):
         else:
             return None
 
-
     def add_to_context(self, context):
         # Note: the self.obj is the Research project
         if self.obj == None:
@@ -1385,6 +1390,29 @@ class ResearchPart6(ResearchPart):
             context['targettype'] = targettype
         # Return the context
         return context
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        if prefix == 'cond':
+            # Find the function attached to me - only if applicable!!
+            if instance.condtype == "func" and instance.functiondef != None:
+                # Two situations:
+                # - THere is no function yet
+                # - There is a function, but with the wrong functiondef
+                if instance.function == None or (instance.function != None and instance.functiondef != instance.function.functiondef):
+                    # Does a previous function exist?
+                    if instance.function:
+                        # Remove the existing function
+                        instance.function.delete()
+                    # Make sure the instance is saved before continuing
+                    instance.save()
+                    # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
+                    instance.function = Function.create(instance.functiondef, None, instance, None)
+                    # Indicate that changes have been made
+                    has_changed = True
+        # Return the change-indicator to trigger saving
+        return has_changed
+
     
 
 class ResearchPart62(ResearchPart):
@@ -1457,7 +1485,6 @@ class ResearchPart62(ResearchPart):
                 # Need to specify the template for the function
                 functiondef = condition.functiondef
                 # Adapt the arguments for this form
-                arg_formset = context['arg_formset']
                 arg_defs = ArgumentDef.objects.filter(function=functiondef)
 
                 # Calculate the initial queryset for 'gvar'
@@ -1469,29 +1496,88 @@ class ResearchPart62(ResearchPart):
                 lstQ.append(Q(gateway=gateway))
                 qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
 
-                for index, arg_form in enumerate(arg_formset):
-                    # Initialise the querysets
-                    arg_form.fields['gvar'].queryset = qs_gvar
-                    arg_form.fields['dvar'].queryset = qs_dvar
-                    # Get the instance from this form
-                    arg = arg_form.save(commit=False)
-                    # Check if the argument definition is set
-                    if arg.id == None or arg.argumentdef_id == None:
-                        # Get the argument definition for this particular argument
-                        arg.argumentdef = arg_defs[index]
-                        arg_form.initial['argumentdef'] = arg_defs[index]
-                        arg_form.initial['argtype'] = arg_defs[index].argtype
-                        # Preliminarily save
-                        arg_form.save(commit=False)
-
-                # Put the results back again
-                context['arg_formset'] = arg_formset
+                # - adapting the 'arg_formset' for the 'function' form (editable)
+                fun_this = self.get_instance('function')
+                if fun_this != None:
+                    context['arg_formset'] = check_arguments(context['arg_formset'], functiondef, qs_gvar, None, qs_dvar, '63')
+                else:
+                    context['arg_formset'] = None
 
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id
         context['targettype'] = targettype
         return context
+
+    def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
+        # Take the functiondef as available in this argument
+        arg_defs = ArgumentDef.objects.filter(function=functiondef)
+
+        for index, arg_form in enumerate(arg_formset):
+            # Initialise the querysets
+            arg_form.fields['gvar'].queryset = qs_gvar
+            if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
+            arg_form.fields['dvar'].queryset = qs_dvar
+            # Add the information required by 'seeker/function_args.html' for each argument
+            arg_form.target = target
+            arg_form.targetid = 'research_part_' + arg_form.target
+            if arg_form.instance != None:
+                arg_form.url_edit = reverse(arg_form.targetid, kwargs={'object_id': arg_form.instance.id})
+            arg_form.url_new = reverse(arg_form.targetid)
+            # Get the instance from this form
+            arg = arg_form.save(commit=False)
+            # Check if the argument definition is set
+            if arg.id == None or arg.argumentdef_id == None or arg.argumentdef_id != arg_defs[index].id:
+                # Get the argument definition for this particular argument
+                arg.argumentdef = arg_defs[index]
+                arg_form.initial['argumentdef'] = arg_defs[index]
+                arg_form.initial['argtype'] = arg_defs[index].argtype
+                # Preliminarily save
+                arg_form.save(commit=False)
+
+        # Return the adatpted formset
+        return arg_formset
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        # When we save an ARG, we need to add a link to the Function it belongs to
+        if prefix == 'arg':
+            # The instance is the argument instance
+
+            # Check the argtype of this argument: is it NOT a function any more?
+            if instance.argtype != "func":
+                # Then REmove all functions pointing to me
+                func_child = instance.functionparent.first()
+                if func_child != None:
+                    func_child.delete()
+                    has_changed = True
+            else:
+                # THis is a function: check if the function definition has not changed
+                func_child = instance.functionparent.first()
+                if func_child == None or instance.functiondef != func_child.functiondef:
+                    # The function definition changed >> replace the child with a completely NEW version
+                    # [1] remove the child (as well as anything attached to it)
+                    if func_child != None:
+                        func_child.delete()
+                    # [2] Create a new version
+                    func_child = Function.create(instance.functiondef, None, instance.function.rootcond, instance)
+                    # [3] Save it here (or that is done one level up)
+                    func_child.save()
+                    # Indicate changes have been made
+                    has_changed = True
+        elif prefix == 'function':
+            if instance != None:
+                if self.obj.function != instance:
+                    # Link the function-instance to the  CVAR instance
+                    self.obj.function = instance
+                    # Save the adapted CVAR instance
+                    self.obj.save()
+                    # We have already saved the above, so 'has_changed' does not need to be touched
+        # Save the related RESEARCH object
+        self.obj.function.condition.gateway.research.save()
+        # Return the change-indicator to trigger saving
+        return has_changed
+
 
 
 class ResearchPart63(ResearchPart):
@@ -1510,6 +1596,129 @@ class ResearchPart63(ResearchPart):
     formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False},
                        {'formsetClass': ArgFormSet, 'prefix': 'parg', 'readonly': True}]
 
+    def get_instance(self, prefix):
+        # NOTE: For '63' the self.obj is an Argument!!
+
+        if prefix == 'function' or prefix == 'arg':
+            # This returns the EXISTING or NEW function object belonging to the argument
+            qs = Function.objects.filter(parent=self.obj)
+            # Does it exist?
+            if qs.count() == 0:
+                # It does not yet exist: create it
+                # Make sure both changes are saved in one database-go
+                with transaction.atomic():
+                    # Create a new function 
+                    function = Function(functiondef = self.obj.functiondef, 
+                                        root = self.obj.function.rootcond,
+                                        parent = self.obj)
+                    # Make sure the function instance gets saved
+                    function.save()
+            else:
+                # It exists, so assign it
+                function = qs[0]
+            return function
+        elif prefix == 'parent' or prefix == 'parg':
+            # This returns the PARENT function object the argument belongs to
+            return self.obj.function
+
+    def custom_init(self):
+        """Make sure the ARG formset gets the correct number of arguments"""
+
+        # Check if we have a FUNCTION object
+        fun_this = self.get_instance('function')
+        if fun_this:
+            # Get the function definition
+            functiondef = fun_this.functiondef
+            if functiondef != None:
+                # Get the number of arguments
+                argnum = functiondef.argnum
+                # Adapt the minimum number of items in the argument formset
+                self.ArgFormSet = inlineformset_factory(Function, Argument, 
+                                        form=ArgumentForm, min_num=argnum, extra=0)
+                # The 'arg' object is the one with index '0'
+                self.formset_objects[0]['formsetClass'] = self.ArgFormSet
+
+        return True
+
+    def add_to_context(self, context):
+        # NOTE: the instance (self.obj) for the '44' form is an ARGUMENT
+        pfun_this = self.get_instance('parent')
+        if pfun_this == None:
+            currentowner = None
+            context['research_id'] = None
+            context['vardef_this'] = None
+            targettype = ""
+        else:
+            # Get to the CONDITION instance
+            cond = pfun_this.rootcond
+            gateway = cond.gateway
+            currentowner = gateway.research.owner
+            context['research_id'] = gateway.research.id
+            context['vardef_this'] = cond.variable
+            targettype = gateway.research.targetType
+
+            # Since this is a '63' form, we know this is a calculation
+
+            # Calculate the initial queryset for 'gvar'
+            #   (These are the variables available for this GATEWAY)
+            qs_gvar = GlobalVariable.objects.filter(gateway=gateway)
+
+            # Calculate the initial queryset for 'dvar'
+            lstQ = []
+            lstQ.append(Q(gateway=gateway))
+            qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
+
+            # - adapting the 'parg_formset' for the 'parent' form (view-only)
+            context['parg_formset'] = check_arguments(context['parg_formset'], pfun_this.functiondef, qs_gvar, None, qs_dvar, '63')
+
+            # - adapting the 'arg_formset' for the 'function' form (editable)
+            fun_this = self.get_instance('function')
+            if fun_this != None:
+                context['arg_formset'] = check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, None, qs_dvar, '63')
+            else:
+                context['arg_formset'] = None
+
+            # Get a list of all ancestors
+            context['anc_list'] = fun_this.get_ancestors()
+
+        context['currentowner'] = currentowner
+        # We also need to make the object_id available
+        context['object_id'] = self.object_id
+        context['targettype'] = targettype
+        return context
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        # When we save an ARG, we need to add a link to the Function it belongs to
+        if prefix == 'arg':
+            # The instance is the argument instance
+
+            # Check the argtype of this argument: is it NOT a function any more?
+            if instance.argtype != "func":
+                # Then REmove all functions pointing to me
+                func_child = instance.functionparent.first()
+                if func_child != None:
+                    func_child.delete()
+                    has_changed = True
+            else:
+                # THis is a function: check if the function definition has not changed
+                func_child = instance.functionparent.first()
+                if func_child == None or instance.functiondef != func_child.functiondef:
+                    # The function definition changed >> replace the child with a completely NEW version
+                    # [1] remove the child
+                    if func_child != None:
+                        func_child.delete()
+                    # [2] Create a new version
+                    func_child = Function.create(instance.functiondef, None, instance.function.rootcond, instance)
+                    # [3] Save it here (or that is done one level up)
+                    func_child.save()
+                    # Indicate changes have been made
+                    has_changed = True
+        # Save the related RESEARCH object
+        if has_changed:
+            self.obj.function.rootcond.gateway.research.save()
+        # Return the change-indicator to trigger saving
+        return has_changed
 
 
 class ObjectCopyMixin:

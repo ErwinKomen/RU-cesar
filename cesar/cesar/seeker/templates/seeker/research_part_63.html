@@ -7,13 +7,8 @@
             targetid="research_part_6"
             onclick="ru.cesar.seeker.research_wizard(this, '6');"><< All Conditions
   </a></span>
-  <span><a role="button" class="btn btn-default btn-xs" 
-                    id="button_part_42_return"
-                    targeturl="{% if vardef_this.id %}{% url 'research_part_42' vardef_this.id %}{% else %}{% url 'research_part_42' %}{% endif %}"
-                    targetid="research_part_42"
-                    onclick="ru.cesar.seeker.research_wizard(this, '42');"><< All search elements
-  </a></span>
   <span>[63]</span>
+  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
 
   <!-- Part 6-3: Starting from one function's ARG, allow building the function pointing to that ARG -->
   <div id="research_part_63" 
@@ -35,10 +30,10 @@
             {% if cvar_this.function.id != parentForm.instance.id %}
               <div>
                   <button type="button" class="btn btn-success btn-xs"
-                          id="button_part_44_up"
-                          targeturl ="{% url 'research_part_44' parentForm.instance.parent.id %}"
-                          targetid="research_part_44"
-                          onclick="ru.cesar.seeker.research_wizard(this, '44');">Up one level</button>
+                          id="button_part_63_up"
+                          targeturl ="{% url 'research_part_63' parentForm.instance.parent.id %}"
+                          targetid="research_part_63"
+                          onclick="ru.cesar.seeker.research_wizard(this, '63');">Up one level</button>
               </div>
             {% endif %}
             <div class="ancestors">
@@ -121,53 +116,7 @@
                 <h3>{{functionForm.instance.functiondef.title}}</h3>
                 <div class="hidden">{{functionForm}}</div>
                 <table class="table-fit">
-                {% for arg_this in arg_formset %}
-                  <tr class="form-row arg-item">
-                    <td class="hidden">{{arg_this.argumentdef}}</td>
-                    <td class="hidden">{{arg_this.id}}</td>
-                    <td valign="bottom" class="arg-intro">{{arg_this.instance.argumentdef.text}}</td>
-                    <td valign="bottom">
-                      <div  class="arg-value">
-                        <div class="arg-type">{{arg_this.argtype}}</div>
-                        <!-- Provide the possible values of the argument, as chosen by argtype -->
-                        <div class="arg-val-exp">
-                          <!-- option 0: fixed value -->
-                          <span class="arg-value">{{arg_this.argval}}</span>
-                          <!-- option 1: global variable -->
-                          <span class="arg-gvar">{{arg_this.gvar}}</span>
-                          <!-- option 2: construction variable -->
-                          <span class="arg-cvar">{{arg_this.cvar}}</span>
-                          <!-- option 3: data-dependant variable -->
-                          <span class="arg-dvar">{{arg_this.dvar}}</span>
-                          <!-- option 4: function/expression -->
-                          <span class="arg-expression">
-                            <span class="arg-fundef">{{arg_this.functiondef}}</span>
-                            <span class="hidden">{{arg_this.function}}</span>
-                            <a class="btn btn-xs btn-default" role="button" 
-                                targeturl="{% if arg_this.instance.id %}{% url 'research_part_44' arg_this.instance.id %}{% else %}{% url 'research_part_44' %}{% endif %}"
-                                targetid="research_part_44"
-                                instanceid="{{arg_this.instance.id}}"
-                                onclick="ru.cesar.seeker.research_wizard(this, '44');" >
-                              <!-- Check if the FUNCTION pointing to this ARG exists -->
-                              {% if arg_this.instance.functionparent.first.id %}
-                              {% trans 'edit' %}
-                                <span>{{arg_this.instance.functionparent.first.id}}</span>
-                              {% else %}
-                              {% trans 'create' %}
-                              {% endif %}
-                            </a>
-                          </span>
-                          <!-- option 5: constituent -->
-                          <span class="arg-cnst">CONSTITUENT-LIST</span>
-                          <!-- option 6: axis -->
-                          <span class="arg-axis">{{arg_this.relation}}</span>
-                          <!-- option 7: search hit -->
-                          <span class="arg-search">Search hit</span>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                {% endfor %}
+                {% include 'seeker/function_args.html' %}
                 </table>
               </div>
             </div>
@@ -186,7 +135,7 @@
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_44" 
-                ajaxurl="{% if object_id %}{% url 'research_part_44' object_id %}{% else %}{% url 'research_part_44' %}{% endif %}"
+                ajaxurl="{% if object_id %}{% url 'research_part_63' object_id %}{% else %}{% url 'research_part_63' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>

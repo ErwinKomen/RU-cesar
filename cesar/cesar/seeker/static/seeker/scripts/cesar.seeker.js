@@ -12,6 +12,7 @@ var ru = (function ($, ru) {
     var loc_example = "",
         loc_divErr = "research_err",
         oSyncTimer = null,
+        loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         basket_progress = "",         // URL to get progress
         basket_stop = "",             // URL to stop the basket
         basket_result = "",           // URL to the results for this basket
@@ -99,6 +100,31 @@ var ru = (function ($, ru) {
       },
       errClear: function () {
         $("#" + loc_divErr).html("");
+      },
+      waitInit: function (el) {
+        var elResPart = null,
+            elWait = null;
+
+        try {
+          // Set waiting div
+          elResPart = $(el).closest(".research_part");
+          if (elResPart !== null) {
+            elWait = $(elResPart).find(".research-fetch").first();
+          }
+          return elWait;
+        } catch (ex) {
+          private_methods.errMsg("waitInit", ex);
+        }
+      },
+      waitStart: function(el) {
+        if (el !== null) {
+          $(el).removeClass("hidden");
+        }
+      },
+      waitStop: function (el) {
+        if (el !== null) {
+          $(el).addClass("hidden");
+        }
       }
     }
 
@@ -212,9 +238,14 @@ var ru = (function ($, ru) {
         var data = [],      // Array to store the POST data
             elCall = this,
             response = null,
+            elWait = null,
             callType = "";  // Type of element that calls us
 
         try {
+          // Set waiting div
+          elWait = private_methods.waitInit(this);
+          // Start waiting
+          private_methods.waitStart(elWait);
           // /WHo is calling?
           callType = $(this)[0].tagName.toLowerCase();
 
@@ -271,6 +302,8 @@ var ru = (function ($, ru) {
             ru.cesar.seeker.init_events();
             // Bind the click event to all class="ajaxform" elements
             $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
+            // Stop waiting
+            private_methods.waitStop(elWait);
             // And return
             return;
           }
@@ -316,8 +349,12 @@ var ru = (function ($, ru) {
 
           // Bind the click event to all class="ajaxform" elements
           $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
+          // Stop waiting
+          private_methods.waitStop(elWait);
         } catch (ex) {
           private_methods.errMsg("ajaxform_click", ex);
+          // Stop waiting
+          private_methods.waitStop(elWait);
         }
       },
 
@@ -1188,10 +1225,16 @@ var ru = (function ($, ru) {
             data = {},
             frm = null,
             response = null,
+            elWait = null,      // Div that should be opened/closed to indicate waiting
             elListItem = null,
             elList = null;
 
         try {
+          // Set waiting div
+          elWait = private_methods.waitInit(el);
+          // Start waiting
+          private_methods.waitStart(elWait);
+          
           // Get the correct target id
           sTargetId = "#" + sTargetId + sPart;
           sObjectId = $("#researchid").text().trim();
@@ -1211,6 +1254,8 @@ var ru = (function ($, ru) {
               default:
                 // There really is no other option, so warn the user and do not change place
                 private_methods.errMsg("Choose the main element type");
+                // Stop waiting
+                private_methods.waitStop(elWait);
                 // We need to LEAVE at this point
                 return;
             }
@@ -1230,7 +1275,7 @@ var ru = (function ($, ru) {
                 var button = $(frm).find(".submit-row .ajaxform");
                 if (button !== undefined) {
                   // Indicate we are saving
-                  $(".save-warning").html("Processing... " + sMsg);
+                  $(".save-warning").html("Processing... " + sMsg + loc_sWaiting);
                   data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
                   // Process this information: save the data!
                   response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
@@ -1238,6 +1283,10 @@ var ru = (function ($, ru) {
                   if (response.status === undefined || response.status !== "ok") {
                     // Action to undertake if we have not been successfull
                     private_methods.errMsg("research_wizard[" + sPart + "]: could not save the data for this function");
+                    // Stop waiting
+                    private_methods.waitStop(elWait);
+                    // And leave...
+                    return;
                   }
                 }
               }
@@ -1260,7 +1309,7 @@ var ru = (function ($, ru) {
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
               // Indicate we are saving/preparing
-              $(".save-warning").html("Processing... " + sPart);
+              $(".save-warning").html("Processing... " + sPart + loc_sWaiting);
               // Fetch the corr
               response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
               if (response.status && response.status === "ok") {
@@ -1370,8 +1419,12 @@ var ru = (function ($, ru) {
               $("#goto_finetune").removeClass("hidden");
               break;
           }
+          // Stop waiting
+          private_methods.waitStop(elWait);
         } catch (ex) {
           private_methods.errMsg("research_wizard", ex);
+          // Stop waiting
+          private_methods.waitStop(elWait);
         }
       },
 

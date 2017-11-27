@@ -1,99 +1,102 @@
 ﻿{% load i18n %}
+<div class="research_part">
   <span class="hidden">[6]</span>
+  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
 
-<form action="" method="post">
-  {% csrf_token %}
-  <!-- Part 6: Search hit conditions -->
-  <div id="research_part_6" 
-        class="js-inline-formset inline-group panel panel-default"
-        data-inline-type="tabular"
-        data-inline-formset="{{cond_formset.inline_formset_data}}">
+  <form action="" method="post">
+    {% csrf_token %}
+    <!-- Part 6: Search hit conditions -->
+    <div id="research_part_6" 
+          class="js-inline-formset inline-group panel panel-default"
+          data-inline-type="tabular"
+          data-inline-formset="{{cond_formset.inline_formset_data}}">
 
-    <!-- List of all conditions that must together hold (logical and) -->
-    <div class="row">
-      <div id="research_cond" class="col-md-11 tabular inline-related">
-        {{cond_formset.management_form}}
-        <fieldset class="module {{cond_formset.classes}}">
-          <div class="explanation">
-            <p>Specify the conditions that <em>all</em> need to be met before the found word or constituent can be regarded as an actual search hit.</p>
-          </div>
-          <table>
-            <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Condition type</th><th>Value</th><th>DELETE</th></tr></thead>
-            <tbody>
-              {% for cond_form in cond_formset %}
-                <tr class="form-row cond-item">
-                  <td class="hidden">{{cond_form.id}}</td>
-                  <td valign="top">{{forloop.counter}}</td>
-                  <td valign="top">{{cond_form.name}}</td>
-                  <td valign="top">{{cond_form.description}}</td>
-                  <td valign="top" class="cond-type">{{cond_form.condtype}}</td>
+      <!-- List of all conditions that must together hold (logical and) -->
+      <div class="row">
+        <div id="research_cond" class="col-md-11 tabular inline-related">
+          {{cond_formset.management_form}}
+          <fieldset class="module {{cond_formset.classes}}">
+            <div class="explanation">
+              <p>Specify the conditions that <em>all</em> need to be met before the found word or constituent can be regarded as an actual search hit.</p>
+            </div>
+            <table>
+              <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Condition type</th><th>Value</th><th>DELETE</th></tr></thead>
+              <tbody>
+                {% for cond_form in cond_formset %}
+                  <tr class="form-row cond-item">
+                    <td class="hidden">{{cond_form.id}}</td>
+                    <td valign="top">{{forloop.counter}}</td>
+                    <td valign="top">{{cond_form.name}}</td>
+                    <td valign="top">{{cond_form.description}}</td>
+                    <td valign="top" class="cond-type">{{cond_form.condtype}}</td>
+                    <td valign="top" class="cond-val-exp">
+                      <div>
+                        <!-- option 0: data-dependant variable -->
+                        <span class="cond-dvar">{{cond_form.variable}}</span>
+                        <!-- option 1: function/expression -->
+                        <span class="cond-expression">
+                          {% include "seeker/function_start.html" with func_form=cond_form %}
+                        </span>
+                        <!-- Room to provide a summary of the function-calculation -->
+                        <div class="cond-expression-summary hidden"></div>
+                      </div>
+                    </td>
+                    <td valign="top" align="center">{{cond_form.DELETE}}</td>
+                  </tr>
+                {% endfor %}
+
+                <tr id="condition-empty" class="form-row empty-form cond-item row1">
+                  <td class="hidden">{{cond_formset.empty_form.id}}</td>
+                  <td valign="top">__counter__</td>
+                  <td valign="top">{{cond_formset.empty_form.name}}</td>
+                  <td valign="top">{{cond_formset.empty_form.description}}</td>
+                  <td valign="top" class="cond-type">{{cond_formset.empty_form.condtype}}</td>
                   <td valign="top" class="cond-val-exp">
-                    <div>
-                      <!-- option 0: data-dependant variable -->
-                      <span class="cond-dvar">{{cond_form.variable}}</span>
-                      <!-- option 1: function/expression -->
-                      <span class="cond-expression">
-                        {% include "seeker/function_start.html" with func_form=cond_form %}
-                      </span>
-                      <!-- Room to provide a summary of the function-calculation -->
-                      <div class="cond-expression-summary hidden"></div>
-                    </div>
-                  </td>
-                  <td valign="top" align="center">{{cond_form.DELETE}}</td>
+                      <div>
+                        <!-- option 0: data-dependant variable -->
+                        <span class="cond-dvar">{{cond_formset.empty_form.variable}}</span>
+                        <!-- option 1: function/expression -->
+                        <span class="cond-expression">
+                          {% include "seeker/function_start.html" with func_form=cond_formset.empty_form %}
+                        </span>
+                        <!-- Room to provide a summary of the function-calculation -->
+                        <div class="cond-expression-summary hidden"></div>
+                      </div>
+                    </td>
+                  <td valign="top" align="center">{{cond_formset.empty_form.DELETE}}</td>
                 </tr>
-              {% endfor %}
-
-              <tr id="condition-empty" class="form-row empty-form cond-item row1">
-                <td class="hidden">{{cond_formset.empty_form.id}}</td>
-                <td valign="top">__counter__</td>
-                <td valign="top">{{cond_formset.empty_form.name}}</td>
-                <td valign="top">{{cond_formset.empty_form.description}}</td>
-                <td valign="top" class="cond-type">{{cond_formset.empty_form.condtype}}</td>
-                <td valign="top" class="cond-val-exp">
-                    <div>
-                      <!-- option 0: data-dependant variable -->
-                      <span class="cond-dvar">{{cond_formset.empty_form.variable}}</span>
-                      <!-- option 1: function/expression -->
-                      <span class="cond-expression">
-                        {% include "seeker/function_start.html" with func_form=cond_formset.empty_form %}
-                      </span>
-                      <!-- Room to provide a summary of the function-calculation -->
-                      <div class="cond-expression-summary hidden"></div>
-                    </div>
+                <tr class="add-row">
+                  <td colspan="4">
+                    <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another condition</a>
                   </td>
-                <td valign="top" align="center">{{cond_formset.empty_form.DELETE}}</td>
-              </tr>
-              <tr class="add-row">
-                <td colspan="4">
-                  <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another condition</a>
-                </td>
-              </tr>
+                </tr>
 
-            </tbody>
-          </table>
-        </fieldset>
+              </tbody>
+            </table>
+          </fieldset>
+        </div>
+      </div>
+
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        {% for item in error_list %}{{item}}{% endfor %}
+      </div>
+
+      <!-- Show the buttons to save, cancel, delete and so forth -->
+      <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary ajaxform"
+                instanceid="{{object_id}}"
+                openid="research_container_6" 
+                ajaxurl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </div>
 
+    <div id="cond_summary" class="func_summary hidden"></div>
+  </form>
 
-    <!-- Show ERRORS if needed -->
-    <div id="research_err">
-      {% for item in error_list %}{{item}}{% endfor %}
-    </div>
-
-    <!-- Show the buttons to save, cancel, delete and so forth -->
-    <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
-    <!-- Provide SAVE button (verification is done on the server) -->
-    <div class="submit-row">
-      <button type="button" class="btn btn-primary ajaxform"
-              instanceid="{{object_id}}"
-              openid="research_container_6" 
-              ajaxurl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
-              data="">{% trans 'Save' %}</button>
-      <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
-    </div>
-  </div>
-
-  <div id="cond_summary" class="func_summary hidden"></div>
-</form>
-
+</div>

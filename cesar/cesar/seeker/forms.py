@@ -246,12 +246,10 @@ class ArgumentForm(ModelForm):
     """The argument to a function"""
 
     argtype = forms.ChoiceField(choices=SEARCH_ARGTYPE, required=True)
-    #targetid = "research_part_44"
-    #target = "44"
-    #sumid = 'condition63'
-    #url_edit = ""
-    #url_new = ""
-    #url_summary = ""
+    targetid = ""   # e.g. research_part_44
+    target = ""     # E.g. '44'
+    url_edit = ""
+    url_new = ""
 
     class Meta:
         model = Argument

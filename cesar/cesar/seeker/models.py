@@ -498,6 +498,8 @@ class Function(models.Model):
     @classmethod
     def create(cls, functiondef, functionroot, functioncondroot, parentarg):
         """Create a new instance of a function based on a 'function definition', binding it to a cvar or a condition"""
+
+        oErr = ErrHandle()
         with transaction.atomic():
             if parentarg == None:
                 if functionroot != None:
@@ -516,14 +518,41 @@ class Function(models.Model):
                 else:
                     # This should actually create an error...
                     inst = cls(functiondef=functiondef, parent=parentarg)
-            # Save this function
-            inst.save()
-            # Add all the arguments that are needed
-            for argdef in functiondef.arguments.all():
-                arg = Argument(argumentdef=argdef, argtype=argdef.argtype, 
-                               functiondef=functiondef, function=inst)
-                # Save this argument
-                arg.save()
+            try:
+                # Save this function
+                inst.save()
+                # Add all the arguments that are needed
+                for argdef in functiondef.arguments.all():
+                    arg = Argument(argumentdef=argdef, argtype=argdef.argtype, 
+                                   functiondef=functiondef, function=inst)
+                    # Save this argument
+                    arg.save()
+            except:
+                oErr.DoError("Function.create error:")
+        return inst
+
+    def changedefinition(self, functiondef):
+        """Change the function definition to the one indicated"""
+
+        # Get the instance
+        inst = self
+        # Check if change is needed
+        if inst.functiondef != functiondef:
+            # Changes are needed, yes
+            with transaction.atomic():
+                # Adapt the functiondef
+                inst.functiondef = functiondef
+                # Remove associated arguments
+                inst.functionarguments.all().delete()
+                # Save this function
+                inst.save()
+                # Add all the arguments that are needed
+                for argdef in functiondef.arguments.all():
+                    arg = Argument(argumentdef=argdef, argtype=argdef.argtype, 
+                                   functiondef=functiondef, function=inst)
+                    # Save this argument
+                    arg.save()
+         # Return the function instance = self  
         return inst
 
     def get_level(self):
@@ -543,12 +572,19 @@ class Function(models.Model):
         """Determine which line in the function table this is at"""
         iLine = 0
         id = self.id
-        start_function = self.root.function
-        lFunc = start_function.get_functions()
-        for idx in range(len(lFunc)):
-            if lFunc[idx].id == id:
-                iLine = idx+1
-                break
+        # The start function depends on there being a root or rootcond
+        start_function = None
+        if self.root != None:
+            start_function = self.root.function
+        elif self.rootcond != None:
+            start_function = self.rootcond.function
+        # Double check: do we have a start_function?
+        if start_function != None:
+            lFunc = start_function.get_functions()
+            for idx in range(len(lFunc)):
+                if lFunc[idx].id == id:
+                    iLine = idx+1
+                    break
         return iLine
 
     def get_functions(self):
@@ -580,6 +616,9 @@ class Function(models.Model):
                 arg_id = parentarg.function.parent.id
             else:
                 arg_id = None
+            # Some information depends on root versus rootcond
+            cvar_id = None if self.root == None else self.root.id
+            cond_id = None if self.rootcond == None else self.rootcond.id
             # Get the information of this parent-argument
             info = {'level': iLevel, 
                     'arginfo': parentarg.get_info(),
@@ -587,7 +626,8 @@ class Function(models.Model):
                     'arg_num': parentarg.function.functiondef.argnum,
                     'arg_order': parentarg.argumentdef.order,
                     'arg_id': arg_id,
-                    'cvar_id': self.root.id,
+                    'cvar_id': cvar_id,
+                    'cond_id': cond_id,
                     'arg': parentarg }
             # Store it in the ancestor list
             anc_list.append(info)
