@@ -336,6 +336,7 @@ var ru = (function ($, ru) {
               case "research_container_43":
               case "research_container_44":
               case "research_container_62":
+              case "research_container_63":
                 // add any event handlers for wizard part '43' and '44' and '62'
                 ru.cesar.seeker.init_arg_events();
                 break;
@@ -1269,6 +1270,7 @@ var ru = (function ($, ru) {
             case "43": if (sMsg === "") sMsg = "42-before-43";
             case "44": if (sMsg === "") sMsg = "43-before-44";
             case "62": if (sMsg === "") sMsg = "6-before-62";
+            case "63": if (sMsg === "") sMsg = "62-before-63";
               // Opening a new form requires prior processing of the current form
               if (frm !== undefined) {
                 data = $(frm).serializeArray();

@@ -1405,10 +1405,11 @@ class ResearchPart6(ResearchPart):
                         # Remove the existing function
                         instance.function.delete()
                     # Make sure the instance is saved before continuing
-                    instance.save()
+                    # No cannot go: instance.save()
+                    
                     # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
                     instance.function = Function.create(instance.functiondef, None, instance, None)
-                    # Indicate that changes have been made
+                    # Indicate that changes have been made and saving of 'instance' is needed
                     has_changed = True
         # Return the change-indicator to trigger saving
         return has_changed
@@ -1655,6 +1656,7 @@ class ResearchPart63(ResearchPart):
             currentowner = gateway.research.owner
             context['research_id'] = gateway.research.id
             context['vardef_this'] = cond.variable
+            context['cond_this'] = cond
             targettype = gateway.research.targetType
 
             # Since this is a '63' form, we know this is a calculation
@@ -1682,7 +1684,7 @@ class ResearchPart63(ResearchPart):
             context['anc_list'] = fun_this.get_ancestors()
 
         context['currentowner'] = currentowner
-        # We also need to make the object_id available
+        # We also need to make the object_id available -- but is this the correct one?
         context['object_id'] = self.object_id
         context['targettype'] = targettype
         return context

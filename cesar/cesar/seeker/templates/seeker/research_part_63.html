@@ -19,15 +19,15 @@
       {% csrf_token %}
 
       <div class="row">
-        <div id="research_cvar" class="tabular inline-related">
+        <div id="research_cond" class="tabular inline-related">
           {{parg_formset.management_form}}
           {{arg_formset.management_form}}
           <fieldset class="module {{arg_formset.classes}}">
             <div class="explanation">
-              <p>Specify how to calculate variable <code>{{vardef_this.name}}</code> for search element <code>{{construction_this.name}}</code></p>
+              <p>Specify how to calculate condition <code>{{cond_this.name}}</code></p>
             </div>
             <!-- Provide a 'one-level-up' button if this is deeper -->
-            {% if cvar_this.function.id != parentForm.instance.id %}
+            {% if cond_this.function.id != parentForm.instance.id %}
               <div>
                   <button type="button" class="btn btn-success btn-xs"
                           id="button_part_63_up"
@@ -48,7 +48,7 @@
                            onclick="ru.cesar.seeker.research_wizard(this, '44');"
                           >{{anc_this.arginfo}}</a>
                       {% else %}
-                        <a targeturl ="{% url 'research_part_43' anc_this.cvar_id %}"
+                        <a targeturl ="{% url 'research_part_43' anc_this.cond_id %}"
                            targetid ="research_part_43"
                            onclick="ru.cesar.seeker.research_wizard(this, '43');"
                           >{{anc_this.arginfo}}</a>
@@ -134,7 +134,7 @@
       <div class="submit-row">
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
-                openid="research_container_44" 
+                openid="research_container_63" 
                 ajaxurl="{% if object_id %}{% url 'research_part_63' object_id %}{% else %}{% url 'research_part_63' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
