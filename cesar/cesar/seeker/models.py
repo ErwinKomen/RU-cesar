@@ -772,6 +772,33 @@ class Argument(models.Model):
                 avalue = "r:{}".format(self.relation.name)
         return avalue
 
+    def get_title(self):
+        """Provide a viewable representation of this particular argument's definition"""
+        atype = self.get_argtype_display()
+        avalue = ""
+        if self.argtype == "func":
+            avalue = ""
+        elif self.argtype == "fixed":
+            avalue = ""
+        elif self.argtype == "gvar":
+            if self.gvar != None:
+                avalue = "{}".format(self.gvar.value)
+        elif self.argtype == "cnst":
+            avalue = ""
+        elif self.argtype == "hit":
+            avalue = "word that is found"
+        elif self.argtype == "cvar":
+            avalue = ""
+        elif self.argtype == "dvar":
+            if self.dvar != None:
+                # Return the name of the variable
+                avalue = ""
+        elif self.argtype == "axis":
+            if self.relation != None:
+                avalue = ""
+        return avalue
+
+
 
 class Relation(models.Model):
     """Hierarchical relation such as the Xpath axes"""
@@ -896,6 +923,8 @@ class Condition(models.Model):
                               max_length=5, help_text=get_help(SEARCH_CONDTYPE))
     # [0-1] One option for a condition is to be equal to the value of a data-dependant variable
     variable = models.ForeignKey(VarDef, null=True, related_name ="variablecondition")
+    # [1] The numerical order of this argument
+    order = models.IntegerField("Order", blank=False, default=0)
 
     # [0-1] Another option for a condition is to be defined in a function
     function = models.OneToOneField(Function, null=True)

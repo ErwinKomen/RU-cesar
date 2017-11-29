@@ -482,6 +482,8 @@ class ResearchPart(View):
                             context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
                             # Put the instance in the form object
                             formObj['instance'] = instance
+                            # Store the instance id in the data
+                            self.data[prefix + '_instanceid'] = instance.id
                             # Any action after saving this form
                             self.after_save(prefix, instance)
                     else:
@@ -540,6 +542,8 @@ class ResearchPart(View):
                                             instance.save()
                                             # Adapt the last save time
                                             context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                                            # Store the instance id in the data
+                                            self.data[prefix + '_instanceid'] = instance.id
                                 else:
                                     self.arErr.append(form.errors)
                     else:
@@ -1356,6 +1360,17 @@ class ResearchPart6(ResearchPart):
         else:
             return None
 
+    def process_formset(self, prefix, request, formset):
+        if prefix == 'cond':
+            # Sorting: see ResearchPart4
+            ordered_forms = sorted(formset.forms, key=lambda item: item.instance.order)
+            # Make sure the initial values of the 'order' in the forms are set correctly
+            for form in ordered_forms:
+                form.fields['ORDER'].initial = form.instance.order
+            return ordered_forms
+        else:
+            return None
+
     def add_to_context(self, context):
         # Note: the self.obj is the Research project
         if self.obj == None:
@@ -1365,40 +1380,10 @@ class ResearchPart6(ResearchPart):
             # gateway = self.obj.gateway
             currentowner = self.obj.owner
             targettype = self.obj.targetType
-
-            #try:
-            #    # Calculate the initial queryset for 'dvar'
-            #    # NOTE: we take into account the 'order' field, which must have been defined properly...
-            #    lstQ = []
-            #    lstQ.append(Q(gateway=gateway))
-            #    qs_dvar = gateway.definitionvariables.filter(*lstQ).order_by('order')
-
-            #    # Determine the possible functiondefs
-            #    qs_fdef = FunctionDef.objects.all().order_by('name')
-
-            #    # Walk all the forms in the formset
-            #    cond_formset = context['cond_formset']
-            #    for cond_form in cond_formset:
-            #        # Initialise the querysets
-            #        cond_form.fields['variable'].queryset = qs_dvar
-            #        cond_form.fields['functiondef'].queryset = qs_fdef
-            #    # Also set the values for the empty-form
-            #    # eform = cond_formset.empty_form
-            #    cond_formset.empty_form.fields['variable'].queryset = qs_dvar
-            #    cond_formset.empty_form.fields['functiondef'].queryset = qs_fdef
-            #    # Replace the empty form
-            #    # cond_formset.empty_form = eform
-            #    # Put the formset back again
-            #    context['cond_formset'] = cond_formset
-            #except:
-            #    lInfo = sys.exc_info()
-            #    if len(lInfo) == 1:
-            #        sMsg = lInfo[0]
-            #    else:
-            #        sMsg = "{}<br>{}".format(lInfo[0], lInfo[1])
-
             context['currentowner'] = currentowner
             context['targettype'] = targettype
+        # Provide a number for the newest item 
+        context['new_order_number'] = len(self.obj.gateway.conditions.all())
         # Return the context
         return context
 
@@ -1411,17 +1396,25 @@ class ResearchPart6(ResearchPart):
                 # - THere is no function yet
                 # - There is a function, but with the wrong functiondef
                 if instance.function == None or (instance.function != None and instance.functiondef != instance.function.functiondef):
+                    # If the instance is not yet made, it needs to be saved before we continue
+                    if instance.id == None:
+                        instance.save()
                     # Does a previous function exist?
                     if instance.function:
                         # Remove the existing function
                         instance.function.delete()
-                    # Make sure the instance is saved before continuing
-                    # No cannot go: instance.save()
                     
                     # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
                     instance.function = Function.create(instance.functiondef, None, instance, None)
                     # Indicate that changes have been made and saving of 'instance' is needed
                     has_changed = True
+            # Retrieve the 'order' field
+            if instance.order != form.cleaned_data['ORDER']:
+                if form.cleaned_data['ORDER'] == None:
+                    instance.order = len(instance.gateway.conditions.all())+1
+                else:
+                    instance.order = form.cleaned_data['ORDER']
+                has_changed = True
         # Return the change-indicator to trigger saving
         return has_changed
 

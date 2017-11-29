@@ -377,6 +377,14 @@ var ru = (function ($, ru) {
           }
           // Store the instanceid
           // data.push({ 'name': 'object_id', 'value': instanceid });
+
+          // If there is an instance ID, then make sure the URL ends with that id
+          if (instanceid !== undefined && instanceid !== '') {
+            if (ajaxurl.indexOf('/' + instanceid + "/") < 0) {
+              ajaxurl += instanceid + "/";
+            }
+          }
+
           // NOTE: the form data will be fetched in the Python Server part
           // Make an AJAX GET call to get the correct HTML code
           $.ajax({
@@ -784,6 +792,9 @@ var ru = (function ($, ru) {
           });
           // Specify the change reaction function
           $(".cond-type select").change(ru.cesar.seeker.condtype_click);
+          // Specify the function to be called when the user presses "summary"
+          $(".func-summary").unbind('click');
+          $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
         } catch (ex) {
           private_methods.errMsg("init_cond_events", ex);
         }
@@ -1296,7 +1307,14 @@ var ru = (function ($, ru) {
           }
 
           // [2] Load the new form through an AJAX call
+          data = [];
           switch (sPart) {
+            case "62":
+              // If a new condition has been created, then this is where we expect the instance number to appear
+              if ('cond_instanceid' in response) {
+                $(el).attr("instanceid", response['cond_instanceid']);
+              }
+              // data.push({ 'name': 'research_id', 'value': sObjectId });
             case "1":
             case "2":
             case "3":
@@ -1305,7 +1323,6 @@ var ru = (function ($, ru) {
             case "43":
             case "44":
             case "6":
-            case "62":
             case "63":
 
               // CHeck if we need to take another instance id instead of #researchid
@@ -1313,7 +1330,7 @@ var ru = (function ($, ru) {
               // Indicate we are saving/preparing
               $(".save-warning").html("Processing... " + sPart + loc_sWaiting);
               // Fetch the corr
-              response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId);
+              response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId, data);
               if (response.status && response.status === "ok") {
                 // Make the HTML response visible
                 $(sTargetId).html(response.html);
@@ -1344,7 +1361,7 @@ var ru = (function ($, ru) {
               // add any event handlers for wizard part '46'
               ru.cesar.seeker.init_cond_events();
               // Specify the function to be called when the user presses "summary"
-              $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
+              // $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
               break;
             case "5": // Page 5=Conditions
 
