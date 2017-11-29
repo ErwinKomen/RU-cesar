@@ -43,14 +43,14 @@
                 <span>{{anc_this.func_id}}</span>
                 <span>argument {{anc_this.arg_order}} of {{anc_this.arg_num}}</span>
                 <span>{% if anc_this.arg_id %}
-                        <a targeturl ="{% url 'research_part_44' anc_this.arg_id %}"
-                           targetid ="research_part_44"
-                           onclick="ru.cesar.seeker.research_wizard(this, '44');"
+                        <a targeturl ="{% url 'research_part_63' anc_this.arg_id %}"
+                           targetid ="research_part_63"
+                           onclick="ru.cesar.seeker.research_wizard(this, '63');"
                           >{{anc_this.arginfo}}</a>
                       {% else %}
-                        <a targeturl ="{% url 'research_part_43' anc_this.cond_id %}"
-                           targetid ="research_part_43"
-                           onclick="ru.cesar.seeker.research_wizard(this, '43');"
+                        <a targeturl ="{% url 'research_part_62' anc_this.cond_id %}"
+                           targetid ="research_part_62"
+                           onclick="ru.cesar.seeker.research_wizard(this, '62');"
                           >{{anc_this.arginfo}}</a>
                       {% endif %}
                 </span>

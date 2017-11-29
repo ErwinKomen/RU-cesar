@@ -29,13 +29,21 @@ from cesar.settings import APP_PREFIX
 paginateEntries = 20
 
 def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
+
+    oErr = ErrHandle()
     # Take the functiondef as available in this argument
     arg_defs = ArgumentDef.objects.filter(function=functiondef)
 
     for index, arg_form in enumerate(arg_formset):
         # Initialise the querysets
         arg_form.fields['gvar'].queryset = qs_gvar
-        if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
+        # if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
+        # arg_form.fields['cvar'].queryset = qs_cvar  # If it is NONE, that's okay
+        if qs_cvar == None:
+            arg_form.fields['cvar'].queryset = ConstructionVariable.objects.none()
+            # arg_form.fields['cvar'] = None
+        else:
+            arg_form.fields['cvar'].queryset = qs_cvar
         arg_form.fields['dvar'].queryset = qs_dvar
         # Add the information required by 'seeker/function_args.html' for each argument
         arg_form.target = target
@@ -44,7 +52,10 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
             arg_form.url_edit = reverse(arg_form.targetid, kwargs={'object_id': arg_form.instance.id})
         arg_form.url_new = reverse(arg_form.targetid)
         # Get the instance from this form
-        arg = arg_form.save(commit=False)
+        try:
+            arg = arg_form.save(commit=False)
+        except:
+            oErr.DoError("check_arguments error")
         # Check if the argument definition is set
         if arg.id == None or arg.argumentdef_id == None:
             # Get the argument definition for this particular argument
@@ -1503,6 +1514,9 @@ class ResearchPart62(ResearchPart):
                     context['arg_formset'] = check_arguments(context['arg_formset'], functiondef, qs_gvar, None, qs_dvar, '63')
                 else:
                     context['arg_formset'] = None
+
+                # Get the list of functions for this condition here
+                context['function_list'] = self.obj.get_functions()
 
         context['currentowner'] = currentowner
         # We also need to make the object_id available

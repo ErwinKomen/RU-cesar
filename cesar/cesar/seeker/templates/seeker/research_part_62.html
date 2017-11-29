@@ -53,6 +53,10 @@
                 data="">{% trans 'Save' %}</button>
         <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
+
+      <!-- Tabular overview of how this cvar is calculated-->
+      {% include 'seeker/variable_details.html' %}
+
     </form>
   </div>
 </div>
