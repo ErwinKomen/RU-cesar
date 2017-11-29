@@ -287,6 +287,12 @@ class Construction(models.Model):
     def __str__(self):
         return self.name
 
+    #def get_list(self, function):
+    #    if function.root != None:
+    #        # This function is under a construction variable
+
+    #        pass
+
     def get_copy(self, **kwargs):
         # Test
         if kwargs == None or 'gateway' not in kwargs:

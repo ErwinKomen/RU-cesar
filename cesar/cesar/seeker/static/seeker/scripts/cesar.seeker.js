@@ -534,11 +534,33 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * copy_function
+       *   Copy the function identified by function_id to the target in the near-by selection
+       *
+       */
+      copy_function: function (elThis, function_id) {
+        var divTarget = null;
+
+        try {
+          divTarget = $(elThis).parent().find("select").first();
+          if (function_id !== undefined && divTarget !== null) {
+            // Prepare data
+            var data = []
+            data.push({'name': 'functionid', 'value': function_id});
+            data.push({ 'name': 'constructionid', 'value': $(divTarget).val() });
+            // Simulate pressing the 'SAVE' button with these data
+          }
+        } catch (ex) {
+          private_methods.errMsg("copy_function", ex);
+        }
+      },
+
+      /**
        * corpus_choice
        *   Process the chosen corpus-part and show the result
        *
        */
-      corpus_choice(el, sTarget) {
+      corpus_choice : function(el, sTarget) {
         var divTarget = "",
             divOption = null, // Chosen <option>
             sLanguage = "",   // Chosen language

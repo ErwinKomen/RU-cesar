@@ -925,6 +925,21 @@ class ResearchPart42(ResearchPart):
             currentowner = self.obj.gateway.research.owner
             researchid = self.obj.gateway.research.id
             targettype = self.obj.gateway.research.targetType
+
+            # Check and adapt the cvar_formset
+            cvar_formset = context['cvar_formset']
+            lstQ = []
+            lstQ.append(Q(gateway=self.obj.gateway))
+            qsCns = Construction.objects.filter(*lstQ)
+            for index, cvar_form in enumerate(cvar_formset):
+                # Get the list of constructions
+                cns_id = cvar_form.instance.construction.id
+                qs = qsCns.exclude(Q(id=cns_id))
+                # Adapt this cvar_form
+                cvar_form.fields['copyto'].queryset = qs
+                cvar_form.fields['copyto'].choices = [(item.id, item.name) for item in qs]
+            # Copy the adapted formset back
+            context['cvar_formset'] = cvar_formset
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id

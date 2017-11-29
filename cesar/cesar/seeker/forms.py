@@ -173,7 +173,9 @@ class VarDefForm(ModelForm):
 
 class CvarForm(ModelForm):
     """The VALUES of construction variables"""
-    # type = forms.ChoiceField(choices=build_choice_list(SEARCH_VARIABLE_TYPE), required=True)
+
+    # copyto = forms.ChoiceField((), required=False)
+    copyto = forms.ChoiceField()
     targetid = "research_part_43"
     target = "43"
     sumid = 'variable43'
@@ -183,10 +185,11 @@ class CvarForm(ModelForm):
 
     class Meta:
         model = ConstructionVariable
-        fields = ['type', 'svalue', 'gvar', 'function', 'functiondef']
+        fields = ['type', 'svalue', 'gvar', 'function', 'functiondef', 'construction']
         widgets={
           'svalue': SeekerTextarea(attrs={'rows': 1, 'cols': 70, 'style': 'height: 30px;'}),
-          'functiondef': forms.Select()
+          'functiondef': forms.Select(),
+          'copyto': forms.Select()
           }
 
     def __init__(self, *args, **kwargs):
@@ -197,6 +200,7 @@ class CvarForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+        self.fields['copyto'].required = False
         ## make sure only the 'gvar' elements under this particular gateway are shown
         #gateway = kwargs['instance'].construction.gateway
         #self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway)
@@ -212,17 +216,20 @@ class CvarForm(ModelForm):
 
 class FunctionForm(ModelForm):
     """Specify the function the user wants to choose"""
+    copyto = forms.ChoiceField((), required=False)
 
     class Meta:
         model = Function
-        fields = ['functiondef']
+        fields = ['functiondef', 'copyto']
         widgets={
-            'functiondef': forms.Select()
+            'functiondef': forms.Select(),
+            'copyto': forms.Select()
             }
 
     def __init__(self, *args, **kwargs):
         super(FunctionForm, self).__init__(*args, **kwargs)
         self.fields['functiondef'].queryset=FunctionDef.get_list()
+        self.fields['copyto'].required = False
 
 
 class ArgumentDefForm(ModelForm):
