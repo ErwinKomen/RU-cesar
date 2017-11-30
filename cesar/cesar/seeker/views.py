@@ -690,6 +690,9 @@ class ResearchPart(View):
     def custom_init(self):
         pass
 
+    def process_task(self):
+        pass
+
 
 class ResearchPart1(ResearchPart):
     template_name = 'seeker/research_part_1.html'
@@ -947,6 +950,31 @@ class ResearchPart42(ResearchPart):
         context['vardef_this'] = self.obj
         context['targettype'] = targettype
         return context
+
+    def process_task(self, initial):
+        """If the dictionary contains a 'task' element, it should be processed"""
+
+        # Get the task
+        sTask = initial.pop('task', "")
+        if sTask == "copy_construction_function":
+            # There are some more parameters we expect
+            functionid = initial.pop('functionid', "")
+            functionid = -1 if functionid == "" else int(functionid)
+            cvarid = initial.pop('constructionid', "")
+            cvarid = -1 if cvarid == "" else int(cvarid)
+            if functionid>=0 and cvarid>=0:
+                # Find the function
+                function = Function.objects.filter(id=functionid).first()
+                cvar = ConstructionVariable.objects.filter(id=cvarid).first()
+                if function != None and cvar != None:
+                    # Copy the function to the construction
+                    with transaction.atomic():
+                        cvar.function.delete()
+                        cvar.function = function.get_copy()
+                        response = cvar.save()
+
+        # REturn an empty dictionary
+        return initial
 
     def before_save(self, prefix, request, instance=None, form=None):
         # NOTE: the 'instance' here is the CVAR instance

@@ -257,6 +257,9 @@ var ru = (function ($, ru) {
           // Derive the data
           if ($(this).attr("data")) {
             data = $(this).attr("data");
+            if (data !== "") {
+              data = JSON.parse(data);
+            }
           } else {
             var frm = $(this).closest("form");
             if (frm !== undefined) {
@@ -530,28 +533,6 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("condtype_click", ex);
-        }
-      },
-
-      /**
-       * copy_function
-       *   Copy the function identified by function_id to the target in the near-by selection
-       *
-       */
-      copy_function: function (elThis, function_id) {
-        var divTarget = null;
-
-        try {
-          divTarget = $(elThis).parent().find("select").first();
-          if (function_id !== undefined && divTarget !== null) {
-            // Prepare data
-            var data = []
-            data.push({'name': 'functionid', 'value': function_id});
-            data.push({ 'name': 'constructionid', 'value': $(divTarget).val() });
-            // Simulate pressing the 'SAVE' button with these data
-          }
-        } catch (ex) {
-          private_methods.errMsg("copy_function", ex);
         }
       },
 
@@ -1675,6 +1656,37 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("tabular_addrow", ex);
+        }
+      },
+
+      /**
+       * task_save
+       *   Perform the SAVE function with an additional task
+       *
+       */
+      task_save: function (sTask, elThis, function_id) {
+        var divTarget = null, // The select function
+            divSave = null;   // THe save button
+
+        try {
+          divTarget = $(elThis).parent().find("select").first();
+          if (sTask !== undefined && function_id !== undefined && divTarget !== null) {
+            // Prepare data
+            var data = []
+            data.push({ 'name': 'task', 'value': sTask });
+            data.push({ 'name': 'functionid', 'value': function_id });
+            data.push({ 'name': 'constructionid', 'value': $(divTarget).val() });
+            // Find out where the save button is located
+            divSave = $(elThis).closest("form").find(".submit-row button").first();
+            if (divSave !== null) {
+              // Position the data in place
+              $(divSave).attr("data", JSON.stringify( data));
+              // Simulate pressing the 'SAVE' button with these data
+              ru.cesar.seeker.ajaxform_click.call(divSave);
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("task_save", ex);
         }
       },
 
