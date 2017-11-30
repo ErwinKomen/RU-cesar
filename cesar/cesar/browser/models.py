@@ -152,6 +152,9 @@ def choice_value(field, term):
     try:
         result_list = FieldChoice.objects.filter(field__iexact=field).filter(english_name__iexact=term)
         if result_list == None:
+            # Try looking at abbreviation
+            result_list = FieldChoice.objects.filter(field__iexact=field).filter(abbr__iexact=term)
+        if result_list == None:
             return -1
         else:
             return result_list[0].machine_value

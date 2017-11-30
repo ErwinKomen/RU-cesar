@@ -690,9 +690,6 @@ class ResearchPart(View):
     def custom_init(self):
         pass
 
-    def process_task(self):
-        pass
-
 
 class ResearchPart1(ResearchPart):
     template_name = 'seeker/research_part_1.html'
@@ -951,30 +948,43 @@ class ResearchPart42(ResearchPart):
         context['targettype'] = targettype
         return context
 
-    def process_task(self, initial):
+    def custom_init(self):
         """If the dictionary contains a 'task' element, it should be processed"""
 
-        # Get the task
-        sTask = initial.pop('task', "")
-        if sTask == "copy_construction_function":
-            # There are some more parameters we expect
-            functionid = initial.pop('functionid', "")
-            functionid = -1 if functionid == "" else int(functionid)
-            cvarid = initial.pop('constructionid', "")
-            cvarid = -1 if cvarid == "" else int(cvarid)
-            if functionid>=0 and cvarid>=0:
-                # Find the function
-                function = Function.objects.filter(id=functionid).first()
-                cvar = ConstructionVariable.objects.filter(id=cvarid).first()
-                if function != None and cvar != None:
-                    # Copy the function to the construction
-                    with transaction.atomic():
-                        cvar.function.delete()
-                        cvar.function = function.get_copy()
-                        response = cvar.save()
-
-        # REturn an empty dictionary
-        return initial
+        oErr = ErrHandle()
+        try:
+            # Get the task
+            sTask = "" if (not '_task' in self.qd) else self.qd['_task']
+            if sTask == "copy_cvar_function":
+                # There are some more parameters we expect
+                functionid = self.qd['_functionid']
+                functionid = -1 if functionid == "" else int(functionid)
+                constructionid = self.qd['_constructionid']
+                constructionid = -1 if constructionid == "" else int(constructionid)
+                if functionid>=0 and constructionid>=0:
+                    # Find the function
+                    function = Function.objects.filter(id=functionid).first()
+                    # Find out what variable we are processing
+                    variable = function.root.variable
+                    construction = Construction.objects.filter(id=constructionid).first()
+                    if construction != None and variable != None:
+                        cvar = ConstructionVariable.objects.filter(variable=variable, construction=construction).first()
+                        if function != None and cvar != None:
+                            # Copy the function to the construction
+                            with transaction.atomic():
+                                if cvar.function != None: 
+                                    # Now we are going to delete the old one
+                                    # Ideally the user should confirm this...
+                                    cvar.function.delete()
+                                cvar.function = function.get_copy()
+                                cvar.functiondef = function.functiondef
+                                cvar.type = function.root.type
+                                response = cvar.save()
+            # REturn positively
+            return True
+        except:
+            oErr.DoError("custom_init error")
+            return False
 
     def before_save(self, prefix, request, instance=None, form=None):
         # NOTE: the 'instance' here is the CVAR instance
@@ -1391,6 +1401,36 @@ class ResearchPart6(ResearchPart):
                                         form=ConditionForm, min_num=1, 
                                         extra=0, can_delete=True, can_order=True)
     formset_objects = [{'formsetClass': CondFormSet, 'prefix': 'cond', 'readonly': False}]
+
+    def custom_init(self):
+        """If the dictionary contains a 'task' element, it should be processed"""
+
+        oErr = ErrHandle()
+        try:
+            # Get the task
+            sTask = "" if (not '_task' in self.qd) else self.qd['_task']
+            if sTask == "copy_condition_function":
+                # There are some more parameters we expect
+                functionid = self.qd['_functionid']
+                functionid = -1 if functionid == "" else int(functionid)
+                conditionid = self.qd['_conditionid']
+                conditionid = -1 if conditionid == "" else int(conditionid)
+                if functionid>=0 and conditionid>=0:
+                    # Find the function
+                    function = Function.objects.filter(id=functionid).first()
+                    condition = Condition.objects.filter(id=conditionid).first()
+                    if function != None and condition != None:
+                        # Copy the function to the construction
+                        with transaction.atomic():
+                            condition.function.delete()
+                            condition.function = function.get_copy()
+                            response = condition.save()
+
+            # REturn positively
+            return True
+        except:
+            oErr.DoError("custom_init error")
+            return False
 
     def get_instance(self, prefix):
         if prefix == 'cond':

@@ -236,6 +236,8 @@ var ru = (function ($, ru) {
        */
       ajaxform_click: function () {
         var data = [],      // Array to store the POST data
+            extra = [],     // Additional data
+            i,
             elCall = this,
             response = null,
             elWait = null,
@@ -257,13 +259,17 @@ var ru = (function ($, ru) {
           // Derive the data
           if ($(this).attr("data")) {
             data = $(this).attr("data");
-            if (data !== "") {
-              data = JSON.parse(data);
-            }
           } else {
             var frm = $(this).closest("form");
             if (frm !== undefined) {
               data = $(frm).serializeArray();
+              // Check if there is additional data
+              if ($(this).attr("extra")) {
+                extra = JSON.parse($(this).attr("extra"));
+                for (i = 0; i < extra.length; i++) {
+                  data.push(extra[i]);
+                }
+              }
             }
           }
           data.push({ 'name': 'instanceid', 'value': instanceid });
@@ -1673,14 +1679,24 @@ var ru = (function ($, ru) {
           if (sTask !== undefined && function_id !== undefined && divTarget !== null) {
             // Prepare data
             var data = []
-            data.push({ 'name': 'task', 'value': sTask });
-            data.push({ 'name': 'functionid', 'value': function_id });
-            data.push({ 'name': 'constructionid', 'value': $(divTarget).val() });
+            data.push({ 'name': '_task', 'value': sTask });
+            switch (sTask) {
+              case "copy_cvar_function":
+                data.push({ 'name': '_functionid', 'value': function_id });
+                data.push({ 'name': '_constructionid', 'value': $(divTarget).val() });
+                break;
+              case "copy_condition_function":
+                data.push({ 'name': '_functionid', 'value': function_id });
+                data.push({ 'name': '_conditionid', 'value': $(divTarget).val() });
+                break;
+              case "copy_feature_function":
+                break;
+            }
             // Find out where the save button is located
             divSave = $(elThis).closest("form").find(".submit-row button").first();
             if (divSave !== null) {
               // Position the data in place
-              $(divSave).attr("data", JSON.stringify( data));
+              $(divSave).attr("extra", JSON.stringify( data));
               // Simulate pressing the 'SAVE' button with these data
               ru.cesar.seeker.ajaxform_click.call(divSave);
             }
