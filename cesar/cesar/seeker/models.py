@@ -41,7 +41,6 @@ TARGET_TYPE_CHOICES = (
     (CONSTITUENT_ORIENTED, 'Constituent(s)'),
 )
 
-
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
 
@@ -476,10 +475,31 @@ class Function(models.Model):
 
     def get_copy(self, **kwargs):
         # Make a clean copy
-        new_copy = get_instance_copy(self)
-        # Skip FK fields: functiondef, root
+        # new_copy = get_instance_copy(self)
+        new_copy = Function(functiondef=self.functiondef,
+                            type = self.type,
+                            output=self.output)
+        # Initial saving
+        new_copy.save()
+        # if the root is provided, change that straight away
+        if kwargs != None and 'root' in kwargs:
+            new_copy.root = kwargs['root']
+        if kwargs != None and 'rootcond' in kwargs:
+            new_copy.rootcond = kwargs['rootcond']
+        # COpy other fields, if they are not yet set
+        if self.root != None and new_copy.root == None:
+            new_copy.root = self.root
+        # COpy other fields, if they are not yet set
+        if self.rootcond != None and new_copy.rootcond == None:
+            new_copy.rootcond = self.rootcond
+        # Process parent
+        if kwargs != None and 'parent' in kwargs:
+            new_copy.parent = kwargs['parent']
         # Copy all 12m fields
-        copy_m2m(self, new_copy, "functionarguments")    # Argument
+        kwargs['function'] = new_copy
+        copy_m2m(self, new_copy, "functionarguments", **kwargs)    # Argument
+        # Save it ( but this may be delayed when transaction.atomic() is used)
+        new_copy.save()
         # Return the new copy
         return new_copy
 
@@ -696,11 +716,28 @@ class Argument(models.Model):
 
     def get_copy(self, **kwargs):
         # Make a clean copy
-        new_copy = get_instance_copy(self)
+        # new_copy = get_instance_copy(self)
+        new_copy = Argument(argumentdef=self.argumentdef,
+                            argtype=self.argtype,
+                            argval=self.argval,
+                            functiondef=self.functiondef,
+                            gvar=self.gvar,
+                            cvar=self.cvar,
+                            dvar=self.dvar,
+                            relation=self.relation)
+        # Initial saving
+        new_copy.save()
+        # Check if we have a new function parent
+        if 'function' in kwargs:
+            new_copy.function = kwargs['function']
         # Skip FK fields: argumentdef, functiondef
         # TODO: how to properly process: gvar, cvar??
         # Copy a potential function pointing to me
-        copy_m2m(self, new_copy, "functionparent")    # Function
+        kwargs['parent'] = new_copy
+        copy_m2m(self, new_copy, "functionparent", **kwargs)    # Function
+
+        # Save the new copy
+        new_copy.save()
         # Return the new copy
         return new_copy
 

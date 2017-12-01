@@ -31,7 +31,11 @@
                onclick="ru.cesar.seeker.task_save('copy_cvar_function', this, '{{func_form.instance.function_id}}');">
               {% trans 'Copy value to' %}
             </a>
-            {{func_form.copyto}}
+            <select id="func-copyto">
+                {% for item in func_form.copyto %}
+                <option value="{{item.id}}">{{item.name}}</option>
+                {% endfor %}
+            </select>
           </span>
         {% endif %}
 

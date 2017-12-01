@@ -33,6 +33,8 @@
                 {% for cvar_form in cvar_formset %}
                   <tr class="form-row cvar-item">
                     <td class="hidden">{{cvar_form.id}}</td>
+                    <td class="hidden">{{cvar_form.construction}}</td>
+                    <td class="hidden">{{cvar_form.function}}</td>
                     <td valign="top">{{forloop.counter}}</td>
                     <td valign="top">{{cvar_form.instance.construction.name}}</td>
                     <td valign="top" class="cvar-type">{{cvar_form.type}}</td>

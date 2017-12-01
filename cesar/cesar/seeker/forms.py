@@ -175,7 +175,7 @@ class CvarForm(ModelForm):
     """The VALUES of construction variables"""
 
     # copyto = forms.ChoiceField((), required=False)
-    copyto = forms.ChoiceField()
+    copyto = None
     targetid = "research_part_43"
     target = "43"
     sumid = 'variable43'
@@ -200,10 +200,7 @@ class CvarForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
-        self.fields['copyto'].required = False
-        ## make sure only the 'gvar' elements under this particular gateway are shown
-        #gateway = kwargs['instance'].construction.gateway
-        #self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway)
+        # self.fields['copyto'].required = False
         # make sure all the available function-definitions are shown
         self.fields['functiondef'].queryset = FunctionDef.get_list()
         # Provide values for url_edit and url_new if possible

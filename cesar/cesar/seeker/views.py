@@ -914,6 +914,7 @@ class ResearchPart42(ResearchPart):
                 
     def get_instance(self, prefix):
         if prefix == 'cvar':
+            # Note: the actual object returned for 'cvar' is a VARDEF...
             return self.obj
 
     def add_to_context(self, context):
@@ -936,10 +937,13 @@ class ResearchPart42(ResearchPart):
                 cns_id = cvar_form.instance.construction.id
                 qs = qsCns.exclude(Q(id=cns_id))
                 # Adapt this cvar_form
-                cvar_form.fields['copyto'].queryset = qs
-                cvar_form.fields['copyto'].choices = [(item.id, item.name) for item in qs]
+                cvar_form.copyto = qs
             # Copy the adapted formset back
             context['cvar_formset'] = cvar_formset
+
+            # Possibly execute post-saving task(s)
+            self.process_task()
+
         context['currentowner'] = currentowner
         # We also need to make the object_id available
         context['object_id'] = self.object_id
@@ -948,7 +952,7 @@ class ResearchPart42(ResearchPart):
         context['targettype'] = targettype
         return context
 
-    def custom_init(self):
+    def process_task(self):
         """If the dictionary contains a 'task' element, it should be processed"""
 
         oErr = ErrHandle()
@@ -965,21 +969,23 @@ class ResearchPart42(ResearchPart):
                     # Find the function
                     function = Function.objects.filter(id=functionid).first()
                     # Find out what variable we are processing
-                    variable = function.root.variable
+                    cvar_src = function.root
+                    variable = cvar_src.variable
                     construction = Construction.objects.filter(id=constructionid).first()
                     if construction != None and variable != None:
-                        cvar = ConstructionVariable.objects.filter(variable=variable, construction=construction).first()
-                        if function != None and cvar != None:
-                            # Copy the function to the construction
-                            with transaction.atomic():
-                                if cvar.function != None: 
-                                    # Now we are going to delete the old one
-                                    # Ideally the user should confirm this...
-                                    cvar.function.delete()
-                                cvar.function = function.get_copy()
-                                cvar.functiondef = function.functiondef
-                                cvar.type = function.root.type
-                                response = cvar.save()
+                        cvar_dst = ConstructionVariable.objects.filter(variable=variable, construction=construction).first()
+                        if function != None and cvar_dst != None:
+                            # Delayed committing doesn't work because of the recursivity
+                            # with transaction.atomic():
+                            if cvar_dst.function != None: 
+                                # Now we are going to delete the old one
+                                # Ideally the user should confirm this...
+                                cvar_dst.function.delete()
+                            cvar_dst.function = function.get_copy(root=cvar_dst)
+                            cvar_dst.functiondef = function.functiondef
+                            cvar_dst.type = function.root.type
+                            response = cvar_dst.save()
+
             # REturn positively
             return True
         except:
