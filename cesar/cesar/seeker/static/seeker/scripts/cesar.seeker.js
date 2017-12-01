@@ -389,7 +389,8 @@ var ru = (function ($, ru) {
 
           // If there is an instance ID, then make sure the URL ends with that id
           if (instanceid !== undefined && instanceid !== '') {
-            if (ajaxurl.indexOf('/' + instanceid + "/") < 0) {
+            // First check if we already have a sequence of /nnn/
+            if (!/\/\d+\//.test(ajaxurl) && ajaxurl.indexOf('/' + instanceid + "/") < 0) {
               ajaxurl += instanceid + "/";
             }
           }

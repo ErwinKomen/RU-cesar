@@ -27,14 +27,19 @@ class ArgumentDefInline(admin.TabularInline):
     form = ArgumentDefForm
     extra = 0
 
+class FuncionCodeInline(admin.TabularInline):
+    model = FunctionCode
+    form = FunctionCodeForm
+    extra = 0
+
 
 class FunctionDefAdmin(admin.ModelAdmin):
     """Display and edit of [Function] definitions"""
 
-    list_display = ['name', 'title', 'type', 'argnum']
+    list_display = ['name', 'title', 'type', 'argnum', 'get_function_count']
     search_fields = ['name', 'title','type', 'argnum']
     fields = ['name', 'title', 'type', 'argnum']
-    inlines = [ArgumentDefInline]
+    inlines = [ArgumentDefInline, FuncionCodeInline]
 
 class RelationAdmin(admin.ModelAdmin):
     """Display and edit [Relation] definitions"""

@@ -18,6 +18,7 @@ from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_dbi
 import sys
 import copy
 import json
+import re
 
 MAX_NAME_LEN = 50
 MAX_TEXT_LEN = 200
@@ -43,7 +44,7 @@ TARGET_TYPE_CHOICES = (
 
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
-
+integer_format = re.compile(r'^\-?[1-9][0-9]*')
 
 class SearchMain(models.Model):
     """The main search item defined for this gateway"""
@@ -451,6 +452,28 @@ class FunctionDef(models.Model):
     def get_list():
         return FunctionDef.objects.all().order_by('name')
 
+    def get_function_count(self):
+        """Calculate how many *functions* actually contain this functiondef"""
+
+        cnt = Function.objects.filter(functiondef=self).count()
+        return cnt
+
+
+class FunctionCode(models.Model):
+    """Basic Xquery code for a function in a particular format"""
+
+    # [1] Must have a specific format
+    format = models.CharField("XML format", choices=build_abbr_list(CORPUS_FORMAT), 
+                              max_length=5, help_text=get_help(CORPUS_FORMAT))
+    # [1] Room for a place to define the xquery code
+    xquery = models.TextField("Xquery code", null=True, blank=True, default="(: Xquery code for function :)")
+    # [1] Must belong to one functiondef
+    functiondef = models.ForeignKey(FunctionDef, null=False, related_name="functioncodings")
+    
+    def __str__(self):
+        return "{} ({})".format(self.functiondef.name, self.format)
+
+
 
 class Function(models.Model):
     """Realization of one function based on a definition"""
@@ -472,6 +495,24 @@ class Function(models.Model):
 
     def __str__(self):
         return "f_{}:{}".format(self.id,self.output)
+
+    def get_code(self, format):
+        """Create and return the required Xquery"""
+        oErr = ErrHandle()
+        try:
+            # Get the basis from the correct format part of the FunctionDef
+            sCode = self.functiondef.functioncodings.filter(format=format).first()
+            # Get and replace the code for the arguments
+            for idx, arg in enumerate(self.get_arguments()):
+                # Get argument code
+                sArgCode = arg.get_code(format)
+                # Replace the code in the basis
+                sCode = sCode.replace("$__arg["+idx+"]", sArgCode)
+            # Return the code that we have produced
+            return sCode
+        except:
+            oErr.DoError("Function/get_code error")
+            return "$ERROR_FUNCTION_{}".format(self.id)
 
     def get_copy(self, **kwargs):
         # Make a clean copy
@@ -714,6 +755,59 @@ class Argument(models.Model):
     def __str__(self):
         return "arg_{}".format(self.id)
 
+    def get_code(self, format):
+        """Create and return the required Xquery for this argument"""
+
+        oErr = ErrHandle()
+        try:
+            """Provide a viewable representation of this particular argument"""
+            atype = self.get_argtype_display()
+            sCode = ""
+            if self.argtype == "func":
+                # Get the function that has me as its parent (just one!!)
+                argfunction = self.functionparent.all().first()
+                if argfunction == None:
+                    sCode = ""
+                else:
+                    # Get the format-dependant Xquery for this function
+                    sCode = argfunction.get_code(format)
+            elif self.argtype == "fixed":
+                # Get the basic value
+                sValue = self.argval
+                # Make sure booleans are translated correctly
+                if sValue.lower() == "true" or sValue.lower() == "true()":
+                    sCode = "true()"
+                elif sValue.lower() == "false" or sValue.lower() == "false()":
+                    sCode = "false()"
+                elif re.match(integer_format, sValue):
+                    # THis is an integer
+                    sCode = sValue
+                else:
+                    # String value -- must be between quotes
+                    sCode = "'{}'".format(sValue.replace("'", "''"))
+            elif self.argtype == "gvar":
+                if self.gvar != None:
+                    sCode = "$_{}".format(self.gvar.name)
+            elif self.argtype == "cnst":
+                # THis is not in use (yet)
+                sCode = "$CONSTITUENT"
+            elif self.argtype == "hit":
+                sCode = "$search"
+            elif self.argtype == "cvar":
+                # This is superceded, I think...
+                sCode = "$CVAR"
+            elif self.argtype == "dvar":
+                if self.dvar != None:
+                    # Return the name of the variable
+                    sCode = "${}".format(self.dvar.name)
+            elif self.argtype == "axis":
+                if self.relation != None:
+                    sCode = "{}".format(self.relation.name)
+            return sCode
+        except:
+            oErr.DoError("Argument/get_code error")
+            return "$ERROR_ARG_{}".format(self.id)
+
     def get_copy(self, **kwargs):
         # Make a clean copy
         # new_copy = get_instance_copy(self)
@@ -907,7 +1001,8 @@ class ConstructionVariable(models.Model):
         elif self.type == "fixed":
             sCode = "'{}'".format(self.svalue)
         elif self.type == "func":
-            sCode = sCode
+            # sCode = sCode
+            sCode = self.function.get_code(format)
         return sCode
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
@@ -1001,9 +1096,12 @@ class Condition(models.Model):
             else:
                 # A variable has been defined
                 sCode = "${}".format(self.variable.name)
+        elif self.condtype == "func":
+            # REturn the code of this function
+            sCode = self.function.get_code(format)
         else:
-            # This is a function
-            sCode = "$TODO"
+            # This is something else
+            sCode = "$UnknownCode"
         return sCode
       
     def delete(self, using = None, keep_parents = False):
