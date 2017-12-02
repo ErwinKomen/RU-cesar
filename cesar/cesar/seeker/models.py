@@ -34,6 +34,8 @@ SEARCH_TYPE = "search.type"                         # str, int, bool, cnst
 SEARCH_FILTEROPERATOR = "search.filteroperator"     # first, and, andnot
 # SEARCH_FILTEROPERATOR = (('first', 'first'), ('and', 'and'), ('andnot', 'andnot'))
 
+ERROR_CODE = "$__error__$"
+
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
 TARGET_TYPE_CHOICES = (
@@ -125,14 +127,28 @@ class Gateway(models.Model):
     name = models.CharField("Name of this gateway option", max_length=MAX_TEXT_LEN, default='leeg')
     # [0-1] Description
     description = models.TextField("Description for this option", blank=True)
-    # [0-n] Additional search items
-    # [1-n]
+    # [0-1] Stringified JSON list of errors
+    errors = models.TextField("Errors", default="")
 
     # This line is needed, in order to add the Gateway.create_gateway() call
     objects = GatewayManager()
 
     def __str__(self):
         return "{}:{}".format(self.id, self.name)
+
+    def error_add(self, sMsg):
+        lErrors = [] if self.errors == "" else json.loads(self.errors)
+        lErrors.append(sMsg)
+        self.errors = json.dumps(lErrors)
+        self.save()
+
+    def error_clear(self):
+        self.errors = ""
+        self.save()
+
+    def get_errors(self):
+        self.refresh_from_db()
+        return self.errors
 
     def get_copy(self, **kwargs):
         # Make a clean copy
@@ -499,15 +515,24 @@ class Function(models.Model):
     def get_code(self, format):
         """Create and return the required Xquery"""
         oErr = ErrHandle()
+        sCode = ""
         try:
             # Get the basis from the correct format part of the FunctionDef
-            sCode = self.functiondef.functioncodings.filter(format=format).first()
-            # Get and replace the code for the arguments
-            for idx, arg in enumerate(self.get_arguments()):
-                # Get argument code
-                sArgCode = arg.get_code(format)
-                # Replace the code in the basis
-                sCode = sCode.replace("$__arg["+idx+"]", sArgCode)
+            code = self.functiondef.functioncodings.filter(format=format).first()
+            if code == None:
+                # SOmething went wrong, so I am not able to get the code for this function
+                self.root.construction.gateway.error_add("Cannot get the Xquery translation for function [{}]".format(self.functiondef.name))
+            else:
+                sCode = code.xquery
+                # Get and replace the code for the arguments
+                for idx, arg in enumerate(self.get_arguments()):
+                    sArg = "$__arg[{}]".format(idx+1)
+                    sAlt = "$_arg[{}]".format(idx+1)
+                    # Get argument code
+                    sArgCode = arg.get_code(format)
+                    # Replace the code in the basis
+                    sCode = sCode.replace(sArg, sArgCode)
+                    sCode = sCode.replace(sAlt, sArgCode)
             # Return the code that we have produced
             return sCode
         except:
@@ -995,15 +1020,33 @@ class ConstructionVariable(models.Model):
 
     def get_code(self, format):
         """Provide Xquery code for this cns var"""
-        sCode = "concat('{}', '{}')".format(self.type, format)
-        if self.type == "gvar":
-            sCode = "$_{}".format(self.gvar.name)
-        elif self.type == "fixed":
-            sCode = "'{}'".format(self.svalue)
-        elif self.type == "func":
-            # sCode = sCode
-            sCode = self.function.get_code(format)
-        return sCode
+
+        oErr = ErrHandle()
+        try:
+            sCode = "concat('{}', '{}')".format(self.type, format)
+            if self.type == "gvar":
+                if self.gvar == None:
+                    # This is not good. The CVAR points to a gvar that does not exist
+                    self.construction.gateway.error_add("The data-dependant variable {} for search element {} is not defined correctly (gvar)".format(
+                      self.variable.name, self.construction.name))
+                    return ERROR_CODE
+                else:
+                    sCode = "$_{}".format(self.gvar.name)
+            elif self.type == "fixed":
+                sCode = "'{}'".format(self.svalue)
+            elif self.type == "calc":
+                # Check if a function has been defined
+                if self.function == None:
+                    # This is not good: no function specified
+                    self.construction.gateway.error_add("The data-dependant variable {} for search element {} is not defined correctly (function)".format(
+                      self.variable.name, self.construction.name))
+                    return ERROR_CODE
+                else:
+                    sCode = self.function.get_code(format)
+            return sCode
+        except:
+            oErr.DoError("cvar/get_code error")
+            return ""
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         return super().save(force_insert, force_update, using, update_fields)
@@ -1299,6 +1342,9 @@ class Research(models.Model):
             if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
                 # Create the Xquery code
                 basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
+                # Check errors
+                if self.gateway.errors != "":
+                    return None
                 # Save the basket
                 basket.save()
         # Return the basket
@@ -1321,7 +1367,14 @@ class Research(models.Model):
                 if partId == None or partId == "":
                     sMsg = "First specify a corpus (or a part of a corpus) to search in"
                 else:
-                    sMsg = "Something is wrong. Cesar is unable to execute"
+                    sMsg = "Something is wrong. Cesar is unable to execute."
+                    sErrors = self.gateway.errors
+                    if sErrors != "":
+                        lErrors = json.loads(sErrors)
+                        lErrors.append(sMsg)
+                        sMsg = "<br>\n".join(lErrors)
+                        # Clear the errors
+                        self.gateway.error_clear()
                 oBack['msg'] = sMsg
                 oBack['status'] = 'error'
                 return oBack

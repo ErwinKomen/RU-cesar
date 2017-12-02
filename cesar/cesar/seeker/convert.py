@@ -9,7 +9,7 @@ import re
 
 # Application-specific
 from cesar import utils
-from cesar.seeker.models import Construction, ConstructionVariable
+from cesar.seeker.models import Construction, ConstructionVariable, ERROR_CODE
 
 def ConvertProjectToXquery(oData):
     """Convert the project oData.gateway of type oData.targetType into Xquery suitable for oData.format"""
@@ -36,6 +36,8 @@ def ConvertProjectToXquery(oData):
         
         # Is everything okay?
         if template_main != "":
+            # Reset any errors
+            gateway.error_clear()
             
             # Collect all relevant information
             gvars = gateway.globalvariables.all()
@@ -50,8 +52,15 @@ def ConvertProjectToXquery(oData):
                 for cons in constructions:
                     # Determine what the construction variable is
                     cvar = ConstructionVariable.objects.filter(construction=cons, variable=var).first()
-                    oCvarInfo = {'grp': cons.name, 'code': cvar.get_code(format)}
-                    cvar_list.append(oCvarInfo)
+                    try:
+                        oCvarInfo = {'grp': cons.name, 'code': cvar.get_code(format)}
+                        # Check for possible error(s)
+                        if gateway.get_errors() != "":
+                            return "", ERROR_CODE
+                        else:
+                            cvar_list.append(oCvarInfo)
+                    except:
+                        iStop = True
                 # Add the cvar_list to the dvar_list
                 oDvarInfo = {'name': var.name, 'cvar_list': cvar_list}
                 dvar_list.append(oDvarInfo)

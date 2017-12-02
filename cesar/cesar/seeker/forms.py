@@ -249,13 +249,13 @@ class ArgumentDefForm(ModelForm):
 class FunctionCodeForm(ModelForm):
     """The specification of the Xquery output of a function"""
 
-    format = forms.ChoiceField(choices=CORPUS_FORMAT, required=True)
+    format = forms.ChoiceField(choices=build_abbr_list(CORPUS_FORMAT), required=True)
 
     class Meta:
         model = FunctionCode
         fields = ['format', 'xquery']
         widgets={
-          'xquery': Textarea(attrs={'rows': 2, 'cols': 100, 'style': 'height: 60px; font-size: 13px; font-family: monospace; color: brown;'})
+          'xquery': Textarea(attrs={'rows': 2, 'cols': 100, 'style': 'height: 30px; font-size: 13px; font-family: monospace; color: brown;'})
           }
 
     def __init__(self, *args, **kwargs):
