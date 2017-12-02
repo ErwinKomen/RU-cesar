@@ -324,6 +324,26 @@ class ResearchExe(View):
 
                             # Final action: make all the information available into a Quantor for this basket
                             self.obj.set_quantor(oBack)
+                elif self.action == "download":
+                    if "select_part" in self.qd:
+                        # Find out which corpus/part has been chosen
+                        select_part = self.qd.get("select_part")
+                        select_format = self.qd.get("searchFormat")
+                        # Translate project to Xquery
+                        # self.obj.to_xquery(select_part, select_format)
+                        # Start execution
+                        oBack = self.obj.to_crpx(select_part, select_format)
+                        # Check for errors
+                        if oBack['status'] == "error":
+                            # Add error to the error array
+                            self.arErr.append(oBack['msg'])
+                        else:
+                            # Get the name adn the contents
+                            sCrpxName = oBack['crpx_name']
+                            sCrpxText = oBack['crpx_text']
+                            response = HttpResponse(sCrpxText, content_type="application/xml")
+                            response['Content-Disposition'] = 'attachment; filename="'+sCrpxName+'.crpx"'     
+                            return response
 
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
@@ -351,6 +371,7 @@ class ResearchExe(View):
         if self.checkAuthentication(request):
             # Build the context
             context = dict(object_id = object_id, savedate=None)
+
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
             self.data['error_list'] = error_list
@@ -386,7 +407,7 @@ class ResearchExe(View):
         self.request = request
         # Copy any object id
         self.object_id = object_id
-        if self.action == "start":
+        if self.action == "start" or self.action == "download":
             # Get the instance of the Main Model object
             self.obj =  self.MainModel.objects.get(pk=object_id)
         else:
@@ -420,6 +441,10 @@ class ResearchProgress(ResearchExe):
     action = "progress"
     template_name = "seeker/exe_status.html"
 
+
+class ResearchDownload(ResearchExe):
+    MainModel = Research
+    action = "download"
 
 
 class ResearchPart(View):

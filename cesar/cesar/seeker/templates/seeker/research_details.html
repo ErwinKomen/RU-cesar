@@ -157,11 +157,13 @@
               <div class="col-md-3 col-md-offset-1 panel panel-default">
                 <b>Action</b>
                 <div class="row">
+
                   <div class="col-md-2 ">
                     <button type="button" class="btn jumbo-3" id="research_start" 
                             ajaxurl="{% url 'search_start' object_id %}"
                             onclick="ru.cesar.seeker.search_start(this);">Start</button>
                   </div>
+
                   <div class="col-md-offset-4 col-md-2 ">
                     <button type="button" class="btn jumbo-4 hidden" id="research_stop" 
                             ajaxurl="{% url 'search_stop' object_id %}"
@@ -170,8 +172,15 @@
                        type="button" title="show results"
                        href="">Results</a>
                   </div>
+
+
                 </div>
                 <div class="row">&nbsp;</div>
+                <div class="row">
+                  <button type="button" class="btn btn-xs jumbo-1" id="research_download" 
+                          ajaxurl="{% url 'search_download' object_id %}"
+                          onclick="ru.cesar.seeker.search_download(this);">Download</button>
+                </div>
                 <div class="row">&nbsp;</div>
               </div>
               {% endif %}

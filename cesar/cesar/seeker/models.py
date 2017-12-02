@@ -46,7 +46,7 @@ TARGET_TYPE_CHOICES = (
 
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
-integer_format = re.compile(r'^\-?[1-9][0-9]*')
+integer_format = re.compile(r'^\-?[0-9]+')
 
 class SearchMain(models.Model):
     """The main search item defined for this gateway"""
@@ -827,7 +827,7 @@ class Argument(models.Model):
                     sCode = "${}".format(self.dvar.name)
             elif self.argtype == "axis":
                 if self.relation != None:
-                    sCode = "{}".format(self.relation.name)
+                    sCode = "{}".format(self.relation.xpath)
             return sCode
         except:
             oErr.DoError("Argument/get_code error")
@@ -1033,7 +1033,18 @@ class ConstructionVariable(models.Model):
                 else:
                     sCode = "$_{}".format(self.gvar.name)
             elif self.type == "fixed":
-                sCode = "'{}'".format(self.svalue)
+                sValue = self.svalue
+                # Make sure booleans are translated correctly
+                if sValue.lower() == "true" or sValue.lower() == "true()":
+                    sCode = "true()"
+                elif sValue.lower() == "false" or sValue.lower() == "false()":
+                    sCode = "false()"
+                elif re.match(integer_format, sValue):
+                    # THis is an integer
+                    sCode = sValue
+                else:
+                    # String value -- must be between quotes
+                    sCode = "'{}'".format(sValue.replace("'", "''"))
             elif self.type == "calc":
                 # Check if a function has been defined
                 if self.function == None:
@@ -1350,7 +1361,7 @@ class Research(models.Model):
         # Return the basket
         return basket
 
-    def execute(self, partId, sFormat):
+    def to_crpx(self, partId, sFormat):
         """Send command to /crpp to start the project"""
 
         oErr = ErrHandle()
@@ -1388,6 +1399,8 @@ class Research(models.Model):
         basket.set_status("create_crpx")
         try:
             sCrpxName, sCrpxText = ConvertProjectToCrpx(basket)
+            oBack['crpx_text'] = sCrpxText
+            oBack['crpx_name'] = sCrpxName
         except:
             oBack['msg'] = 'Failed to convert project to Crpx'
             oBack['status'] = 'error'
@@ -1399,6 +1412,25 @@ class Research(models.Model):
             oBack['status'] = 'error'
             oBack['msg'] = "/n".join(sCrpxText)
             return oBack
+
+        # Return what we have created
+        return oBack
+
+
+    def execute(self, partId, sFormat):
+        """Send command to /crpp to start the project"""
+
+        oErr = ErrHandle()
+        # Convert the project
+        oBack = self.to_crpx(partId, sFormat)
+
+        # Al okay?
+        if oBack['status'] == "error": return oBack
+
+        # GEt the basket
+        basket = oBack['basket']
+        sCrpxText = oBack['crpx_text']
+        sCrpxName = oBack['crpx_name']
 
         # Send the CRPX to /crpp and execute it
         try:
@@ -1424,7 +1456,17 @@ class Research(models.Model):
                         if 'code' in oCrpp:
                             oBack['msg'] += "<br>Code: " + oCrpp['code']
                         if 'message' in oCrpp:
-                            oBack['msg'] += "<br>Message: " + oCrpp['message']
+                            sMsg = oCrpp['message']
+                            try:
+                                if sMsg.startswith("{"):
+                                    oMsg = json.loads(sMsg)
+                                    lMsg = []
+                                    for key, value in oMsg:
+                                        lMsg.append("{}: {}<br>".format(key,value))
+                                    sMsg = "\n".join(lMsg)
+                            except:
+                                sMsg = oCrpp['message']
+                            oBack['msg'] += "<br>Message from the server:<br>" + sMsg
                         oBack['status'] = 'error'
                         basket.set_status('error')
                     else:

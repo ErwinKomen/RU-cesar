@@ -1458,6 +1458,45 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * search_download
+       *   Trigger creating and downloading the CRPX
+       *
+       */
+      search_download: function (elStart) {
+        var ajaxurl = "",
+            response = null,
+            basket_id = -1,
+            frm = null,
+            sMsg = "",
+            data = [];
+
+        try {
+          // Clear the errors
+          private_methods.errClear();
+
+          // obligatory parameter: ajaxurl
+          ajaxurl = $(elStart).attr("ajaxurl");
+
+          // Gather the information
+          frm = $(elStart).closest("form");
+          // Set the 'action; attribute in the form
+          frm.attr("action", ajaxurl);
+          frm.submit();
+          //if (frm !== undefined) { data = $(frm).serializeArray(); }
+          //// Make an AJAX call to start the downloading
+          //response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
+          //if (response.status === undefined) {
+          //  // Show an error somewhere
+          //  private_methods.errMsg("Bad execute response");
+          //  $(sDivProgress).html("Bad execute response:<br>" + response);
+          //}
+
+        } catch (ex) {
+          private_methods.errMsg("search_download", ex);
+        }
+      },
+
+      /**
        * search_start
        *   Check and then start a search
        *
@@ -1582,9 +1621,17 @@ var ru = (function ($, ru) {
                     // Set the correct href for the button
                     $("#research_results").attr("href", basket_result);
                     break;
+                  case "error":
+                    // THis is an Xquery error
+                    // Show that the project has finished
+                    $(sDivProgress).html("Sorry, but there is an error");
+                    // Hide the STOP button
+                    $("#research_stop").addClass("hidden");
+                    // Do NOT shoe the RESULTS button
+                    break;
                   default:
                     // Show the current status
-                    private_methods.errMsg("Unknown statuscode: [" + response.status.statuscode+"]");
+                    private_methods.errMsg("Unknown statuscode: [" + response.statuscode+"]");
                     break;
                 }
                 break;

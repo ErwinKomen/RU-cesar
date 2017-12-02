@@ -183,7 +183,13 @@ def crpp_command(sCommand, oToCrpp):
                 oBack[item] = oContent[item]
             # Also copy the status
             if 'status' in reply:
-                oBack['status'] = reply['status']
+                if 'code' in reply['status']:
+                    oStatus = reply['status']
+                    for item in oStatus:
+                        oBack[item] = oStatus[item]
+                    oBack['status'] = oStatus['code']
+                else:
+                    oBack['status'] = reply['status']
         else:
             # Just copy all items
             for item in reply:

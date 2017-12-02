@@ -11,11 +11,11 @@
         let ${{item.name}} := 
           {% for cvar in item.cvar_list %}
             {% if forloop.first %}
-              if ($searchgroup = '{{cvar.grp}}') then {{cvar.code|safe}}
+              if ($searchgroup = '{{cvar.grp}}') then ({{cvar.code|safe}})
             {% elif forloop.last %}
-              else {{cvar.code|safe}}
+              else ({{cvar.code|safe}})
             {% else %}
-              else if ($searchgroup = '{{cvar.grp}}') then {{cvar.code|safe}}
+              else if ($searchgroup = '{{cvar.grp}}') then ({{cvar.code|safe}})
             {% endif %}
           {% endfor %}
       {% endfor %}
@@ -25,7 +25,9 @@
     
     (: Calculate the features :)
     let $dbList := tb:getFtList($search, $searchgroup
-      {% for item in dvar_list %}, ${{item.name}}{% endfor %})
+      {% for item in dvar_list %}
+         , ${{item.name}}
+      {% endfor %})
     
     (: Conditions that must hold :)
     where (

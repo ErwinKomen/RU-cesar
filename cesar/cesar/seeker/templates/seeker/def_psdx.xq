@@ -54,7 +54,9 @@ declare function tb:getConstructionWgroup($ndThis as node()?) as xs:string? {
     Goal: Create a list of features
    ---------------------------------------------- :)
 declare function tb:getFtList($search, $searchgroup
-      {% for item in dvar_list %}, ${{item.name}}{% endfor %}) as xs:string? {
+      {% for item in dvar_list %}
+        , ${{item.name}} 
+      {% endfor %}) as xs:string? {
   (: At least get the search word :)
   let $ft_search := ru:word($search)
   let $ft_search_pos := $search/@class

@@ -47,7 +47,7 @@ def ConvertProjectToXquery(oData):
             search_list = gateway.get_search_list()
             # The data-dependant variables need to be divided over the search elements
             dvar_list = []
-            for var in gateway.definitionvariables.all():
+            for var in gateway.get_vardef_list():
                 cvar_list = []
                 for cons in constructions:
                     # Determine what the construction variable is
