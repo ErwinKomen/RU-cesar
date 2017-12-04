@@ -30,6 +30,7 @@ SEARCH_VARIABLE_TYPE = "search.variabletype"        # fixed, calc, gvar
 SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, dvar, func, cnst, axis, hit
 SEARCH_CONDTYPE = "search.condtype"                 # func, dvar
 SEARCH_TYPE = "search.type"                         # str, int, bool, cnst
+SEARCH_INCLUDE = "search.include"                   # true, false
 # SEARCH_FILTER = "search.filteroperator"
 SEARCH_FILTEROPERATOR = "search.filteroperator"     # first, and, andnot
 # SEARCH_FILTEROPERATOR = (('first', 'first'), ('and', 'and'), ('andnot', 'andnot'))
@@ -226,6 +227,10 @@ class Gateway(models.Model):
         #vardef_list = [var for var in VarDef.objects.filter(pk__in=var_pk_list)]
         vardef_list = self.definitionvariables.all().order_by('order')
         return vardef_list
+
+    def get_condition_list(self):
+        # Get a list of conditions in order
+        return self.conditions.all().order_by('order')
 
     def order_dvar(self):
         """Order the VarDef instances under me"""
@@ -1116,6 +1121,10 @@ class Condition(models.Model):
     function = models.OneToOneField(Function, null=True)
     # [0-1] If a function is needed, we need to have a link to its definition
     functiondef = models.ForeignKey(FunctionDef, null=True, related_name ="functiondefcondition")
+
+    # [0-1] Include this condition in the search or not?
+    include = models.CharField("Include", choices=build_abbr_list(SEARCH_INCLUDE), 
+                              max_length=5, help_text=get_help(SEARCH_INCLUDE), default="true")
 
     # [1] Every gateway has zero or more conditions it may look for
     gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="conditions")

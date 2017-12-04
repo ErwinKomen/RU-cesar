@@ -292,6 +292,11 @@ class ResearchExe(View):
                         sStatusCode = ""
                         if 'code' in oBack['status']:
                             sStatusCode = oBack['status']['code']
+                        elif 'code' in oBack:
+                            sStatusCode = oBack['code']
+                        else:
+                            # This may be a problem?
+                            iStop = True
                         # Pass on the status code in the context
                         context['statuscode'] = sStatusCode
                         # Action depends on the status code

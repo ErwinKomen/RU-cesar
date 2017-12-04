@@ -307,7 +307,7 @@ class ConditionForm(ModelForm):
 
     class Meta:
         model = Condition
-        fields = ['name', 'description', 'condtype', 'variable', 'function', 'functiondef']
+        fields = ['name', 'description', 'condtype', 'include', 'variable', 'function', 'functiondef']
         widgets={
           'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
           }
@@ -324,6 +324,7 @@ class ConditionForm(ModelForm):
         self.fields['condtype'].required = True
         self.fields['variable'].required = False
         self.fields['function'].required = False
+        self.fields['include'].required = False
         self.fields['functiondef'].required = False
         # Provide values for url_edit and url_new if possible
         if self.instance and self.instance != None and self.instance.id != None:

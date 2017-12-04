@@ -66,10 +66,18 @@ def ConvertProjectToXquery(oData):
                 dvar_list.append(oDvarInfo)
             # Also add the conditions
             cond_list = []
-            for cnd in gateway.conditions.all():
-                sCode = cnd.get_code(format)
-                if sCode != "":
-                    cond_list.append(sCode)
+            for cnd in gateway.get_condition_list():
+                # make sure we have the latest version
+                cnd.refresh_from_db()
+                # Double check the include value of this option
+                if cnd.include == "" or cnd.include == "true":
+                    sCode = cnd.get_code(format)
+                    if sCode != "":
+                        cond_list.append(sCode)
+            # Check for an empty condition list
+            if len(cond_list) == 0:
+                # We still have a 'where' clause, so create one condition that is always true
+                cond_list.append("true()")
 
             context = dict(gvar_list=gvars, 
                            cons_list=constructions, 

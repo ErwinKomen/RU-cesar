@@ -20,7 +20,7 @@
               <p>Specify the conditions that <em>all</em> need to be met before the found word or constituent can be regarded as an actual search hit.</p>
             </div>
             <table>
-              <thead><tr><th>#</th><th>Name</th><th>Order</th><th>Description</th><th>Condition type</th><th>Value</th><th>DELETE</th></tr></thead>
+              <thead><tr><th>#</th><th>Name</th><th>Order</th><th>Description</th><th>Condition type</th><th>Value</th><th>Include</th><th>DELETE</th></tr></thead>
               <tbody>
                 {% for cond_form in cond_ordered %}
                   <tr class="form-row cond-item">
@@ -46,6 +46,7 @@
                         <div class="cond-expression-summary hidden"></div>
                       </div>
                     </td>
+                    <td valign="top" align="center">{{cond_form.include}}</td>
                     <td valign="top" align="center">{{cond_form.DELETE}}</td>
                   </tr>
                 {% endfor %}
@@ -62,17 +63,18 @@
                   <td valign="top">{{cond_formset.empty_form.description}}</td>
                   <td valign="top" class="cond-type">{{cond_formset.empty_form.condtype}}</td>
                   <td valign="top" class="cond-val-exp">
-                      <div>
-                        <!-- option 0: data-dependant variable -->
-                        <span class="cond-dvar">{{cond_formset.empty_form.variable}}</span>
-                        <!-- option 1: function/expression -->
-                        <span class="cond-expression">
-                          {% include "seeker/function_start.html" with func_form=cond_formset.empty_form %}
-                        </span>
-                        <!-- Room to provide a summary of the function-calculation -->
-                        <div class="cond-expression-summary hidden"></div>
-                      </div>
-                    </td>
+                    <div>
+                      <!-- option 0: data-dependant variable -->
+                      <span class="cond-dvar">{{cond_formset.empty_form.variable}}</span>
+                      <!-- option 1: function/expression -->
+                      <span class="cond-expression">
+                        {% include "seeker/function_start.html" with func_form=cond_formset.empty_form %}
+                      </span>
+                      <!-- Room to provide a summary of the function-calculation -->
+                      <div class="cond-expression-summary hidden"></div>
+                    </div>
+                  </td>
+                  <td valign="top" align="center">{{cond_form.include}}</td>
                   <td valign="top" align="center">{{cond_formset.empty_form.DELETE}}</td>
                 </tr>
                 <tr class="add-row">
