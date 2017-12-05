@@ -258,6 +258,8 @@ class ResearchExe(View):
     data = {'status': 'ok', 'html': '', 'statuscode': ''}       # Create data to be returned   
     progress = ['start', 'finish', 'count', 'total', 'ready'] 
     completed = ['searchTime', 'searchDone', 'taskid', 'table', 'total']
+    oErr = ErrHandle()
+    bDebug = True
 
     def post(self, request, object_id=None):
         # A POST request means we are trying to SAVE something
@@ -268,6 +270,7 @@ class ResearchExe(View):
             context = dict(object_id = object_id, savedate=None, statuscode=sStatusCode)
             # Action depends on 'action' value
             if self.action != "" and self.obj != None:
+                if self.bDebug: self.oErr.Status("ResearchExe: action=" + self.action)
                 if self.action == "start":
                     # Check if this object is not currently being executed
                     if self.obj.get_status() != "":
@@ -281,6 +284,10 @@ class ResearchExe(View):
                         # self.obj.to_xquery(select_part, select_format)
                         # Start execution
                         oBack = self.obj.execute(select_part, select_format)
+                        if self.bDebug: 
+                            self.oErr.Status("ResearchExe: start...")
+                            for key in oBack:
+                                self.oErr.Status("   {}={}".format(key, str(oBack[key])[:20]))
                         # Check for errors
                         if oBack['status'] == "error":
                             # Add error to the error array
@@ -731,7 +738,8 @@ class ResearchPart(View):
             self.obj = None
         else:
             # Get the instance of the Main Model object
-            self.obj =  self.MainModel.objects.get(pk=object_id)
+            self.obj =  self.MainModel.objects.filter(pk=object_id).first()
+            # NOTE: if the object doesn't exist, we will NOT get an error here
             # Perform some custom initialisations
             self.custom_init()
 

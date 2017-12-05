@@ -827,6 +827,8 @@ class Argument(models.Model):
                     sCode = "true()"
                 elif sValue.lower() == "false" or sValue.lower() == "false()":
                     sCode = "false()"
+                elif sValue.lower() == "last" or sValue.lower() == "last()":
+                    sCode = "last()"
                 elif re.match(integer_format, sValue):
                     # THis is an integer
                     sCode = sValue
@@ -850,7 +852,14 @@ class Argument(models.Model):
                     sCode = "${}".format(self.dvar.name)
             elif self.argtype == "axis":
                 if self.relation != None:
-                    sCode = "{}".format(self.relation.xpath)
+                    sXpath = self.relation.xpath
+                    if "$cns$" in sXpath:
+                        sTag = "su" if format == "folia" else "eTree"
+                        sXpath = sXpath.replace("$cns$", sTag)
+                    if "$wrd$" in sXpath:
+                        sTag = "wref" if format == "folia" else "eLeaf"
+                        sXpath = sXpath.replace("$wrd$", sTag)
+                    sCode = sXpath
             return sCode
         except:
             oErr.DoError("Argument/get_code error")
