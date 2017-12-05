@@ -1612,8 +1612,6 @@ var ru = (function ($, ru) {
             basket_data = data;
             // Make the stop button available
             $("#research_stop").removeClass("hidden");
-            // TODO: hide the start button
-            // $("#research_start").addClass("hidden");
 
             // Start the next call for status after 1 second
             setTimeout(function () { ru.cesar.seeker.search_progress(); }, 1000);

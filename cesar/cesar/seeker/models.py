@@ -1466,6 +1466,7 @@ class Research(models.Model):
         if qs.count() == 0:
             # So: create one
             basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
+            basket.set_status("Creating Xquery code")
             # Create the Xquery code
             basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
             # Save the basket
@@ -1476,6 +1477,7 @@ class Research(models.Model):
             # Check if we have Xquery code and there is no 'error' status
             if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
                 # Create the Xquery code
+                basket.set_status("Creating Xquery code")
                 basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
                 # Check errors
                 if self.gateway.errors != "":
