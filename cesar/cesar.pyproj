@@ -142,6 +142,9 @@
     <Content Include="cesar\seeker\templates\seeker\filter_list.html" />
     <Content Include="cesar\seeker\templates\seeker\function_args.html" />
     <Content Include="cesar\seeker\templates\seeker\function_start.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_part_7.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_part_72.html" />
+    <Content Include="cesar\seeker\templates\seeker\research_part_73.html" />
     <Content Include="cesar\seeker\templates\seeker\result_list.html" />
     <Content Include="cesar\seeker\templates\seeker\gateway_view.html" />
     <Content Include="cesar\seeker\templates\seeker\function_list.html" />

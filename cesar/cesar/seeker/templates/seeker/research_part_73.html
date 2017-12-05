@@ -1,0 +1,145 @@
+﻿{% load i18n %}
+
+<div class="research_part">
+  <span><a role="button" class="btn btn-default btn-xs" 
+            id="button_part_7_return"
+            targeturl="{% if research_id %}{% url 'research_part_7' research_id %}{% else %}{% url 'research_part_7' %}{% endif %}"
+            targetid="research_part_7"
+            onclick="ru.cesar.seeker.research_wizard(this, '7');"><< All Features
+  </a></span>
+  <span>[73]</span>
+  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+
+  <!-- Part 7-3: Starting from one function's ARG, allow building the function pointing to that ARG -->
+  <div id="research_part_73" 
+      class="js-inline-formset inline-group panel panel-default"
+      data-inline-type="tabular"
+      data-inline-formset="{{arg_formset.inline_formset_data}}">
+    <form action="" method="post">
+      {% csrf_token %}
+
+      <div class="row">
+        <div id="research_feat" class="tabular inline-related">
+          {{parg_formset.management_form}}
+          {{arg_formset.management_form}}
+          <fieldset class="module {{arg_formset.classes}}">
+            <div class="explanation">
+              <p>Specify how to calculate feature <code>{{feat_this.name}}</code></p>
+            </div>
+            <!-- Provide a 'one-level-up' button if this is deeper -->
+            {% if feat_this.function.id != parentForm.instance.id %}
+              <div>
+                  <button type="button" class="btn btn-success btn-xs"
+                          id="button_part_73_up"
+                          targeturl ="{% url 'research_part_73' parentForm.instance.parent.id %}"
+                          targetid="research_part_73"
+                          onclick="ru.cesar.seeker.research_wizard(this, '73');">Up one level</button>
+              </div>
+            {% endif %}
+            <div class="ancestors">
+            {% for anc_this in anc_list reversed %}
+              <div class="row">
+                <div {% if anc_this.level > 0 %}class="col-md-offset-{{anc_this.level}}"{% endif %}>
+                <span>{{anc_this.func_id}}</span>
+                <span>argument {{anc_this.arg_order}} of {{anc_this.arg_num}}</span>
+                <span>{% if anc_this.arg_id %}
+                        <a targeturl ="{% url 'research_part_73' anc_this.arg_id %}"
+                           targetid ="research_part_73"
+                           onclick="ru.cesar.seeker.research_wizard(this, '73');"
+                          >{{anc_this.arginfo}}</a>
+                      {% else %}
+                        <a targeturl ="{% url 'research_part_72' anc_this.feat_id %}"
+                           targetid ="research_part_72"
+                           onclick="ru.cesar.seeker.research_wizard(this, '72');"
+                          >{{anc_this.arginfo}}</a>
+                      {% endif %}
+                </span>
+                </div>
+              </div>
+            {% endfor %}
+            </div>
+
+            <!-- First form: the parent-form that is only available for viewing (no editing) -->
+            <div class="row">
+              <div class="{% if parentForm.instance.get_level > 0 %}col-md-offset-{{parentForm.instance.get_level}} {% endif %}
+                                       panel panel-default panel-function">
+                <h3>{{parentForm.instance.functiondef.title}}</h3>
+                <div class="hidden">{{parentForm}}</div>
+                <table>
+                {% for parg_this in parg_formset %}
+                  <tr class="form-row arg-item">
+                    <td class="hidden">{{parg_this.argumentdef}}</td>
+                    <td class="hidden">{{parg_this.id}}</td>
+                    <td valign="bottom" class="arg-intro">
+                      <span>{{parg_this.instance.argumentdef.text}}</span>
+                    </td>
+                    <td valign="bottom">
+                      <div  class="arg-value {% if parg_this.instance.id|stringformat:"i" == object_id  %}arg-selected{% endif %}">
+                        <div class="arg-type">
+                          <span>{{parg_this.instance.get_argtype_display }}</span>
+                          {% if parg_this.instance.id|stringformat:"i" == object_id  %}<span class="arg-parent">(see below)</span>{% endif %}
+                        </div>
+                        <!-- Provide the possible values of the argument, as chosen by argtype -->
+                        <div class="arg-val-exp">
+                          {% if parg_this.argtype.value == "func" %}{{parg_this.instance.functiondef.name }}
+                          {% elif parg_this.argtype.value == "fixed" %}{{parg_this.argval.value|truncatewords:8}}
+                          {% elif parg_this.argtype.value == "gvar" %}{{parg_this.gvar.name}}
+                          {% elif parg_this.argtype.value == "cvar" %}{{parg_this.cvar.name}}
+                          {% elif parg_this.argtype.value == "dvar" %}{{parg_this.dvar.name}}
+                          {% elif parg_this.argtype.value == "const" %}constituent
+                          {% elif parg_this.argtype.value == "axis" %}axis
+                          {% else %}(unknown)
+                          {% endif %}
+                        </div>
+                        <div class="hidden">
+                          <span class="hidden">{{parg_this.argtype}}</span>
+                          <span class="hidden">{{parg_this.argval}}</span>
+                          <span class="hidden">{{parg_this.gvar}}</span>
+                          <span class="hidden">{{parg_this.cvar}}</span>
+                          <span class="hidden">{{parg_this.dvar}}</span>
+                          <span class="hidden">{{parg_this.functiondef}}</span>
+                          <span class="hidden">{{parg_this.function}}</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+                </table>
+              </div>
+            </div>
+
+            <!-- Second form: the one that can be edited -->
+            <div class="row">
+              <!-- This second form is offset 2 columns to the right -->
+              <div class="{% if functionForm.instance.get_level > 0 %}col-md-offset-{{functionForm.instance.get_level}} {% endif %}
+                          panel panel-default panel-function">
+                <h3>{{functionForm.instance.functiondef.title}}</h3>
+                <div class="hidden">{{functionForm}}</div>
+                <table class="table-fit">
+                {% include 'seeker/function_args.html' %}
+                </table>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        {% for item in error_list %}{{item}}{% endfor %}
+      </div>
+
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary ajaxform"
+                instanceid="{{object_id}}"
+                openid="research_container_73" 
+                ajaxurl="{% if object_id %}{% url 'research_part_73' object_id %}{% else %}{% url 'research_part_73' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
+      </div>
+    </form>
+  </div>
+</div>
+

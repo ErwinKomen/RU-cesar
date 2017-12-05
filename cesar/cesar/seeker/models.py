@@ -29,11 +29,10 @@ SEARCH_PERMISSION = "search.permission"
 SEARCH_VARIABLE_TYPE = "search.variabletype"        # fixed, calc, gvar
 SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, dvar, func, cnst, axis, hit
 SEARCH_CONDTYPE = "search.condtype"                 # func, dvar
+SEARCH_FEATTYPE = "search.feattype"                 # func, dvar
 SEARCH_TYPE = "search.type"                         # str, int, bool, cnst
 SEARCH_INCLUDE = "search.include"                   # true, false
-# SEARCH_FILTER = "search.filteroperator"
 SEARCH_FILTEROPERATOR = "search.filteroperator"     # first, and, andnot
-# SEARCH_FILTEROPERATOR = (('first', 'first'), ('and', 'and'), ('andnot', 'andnot'))
 
 ERROR_CODE = "$__error__$"
 
@@ -231,6 +230,10 @@ class Gateway(models.Model):
     def get_condition_list(self):
         # Get a list of conditions in order
         return self.conditions.all().order_by('order')
+
+    def get_feature_list(self):
+        # Get a list of features in order
+        return self.features.all().order_by('order')
 
     def order_dvar(self):
         """Order the VarDef instances under me"""
@@ -505,6 +508,8 @@ class Function(models.Model):
     root = models.ForeignKey("ConstructionVariable", null=True, related_name="functionroot")
     # [0-1] Alternatively, a function belongs to a condition
     rootcond = models.ForeignKey("Condition", null=True, related_name="functioncondroot")
+    # [0-1] Alternatively, a function belongs to a condition
+    rootfeat = models.ForeignKey("Feature", null=True, related_name="functionfeatroot")
     # [0-1] A function MAY belong to a particular ARGUMENT, which then is its parent
     parent = models.ForeignKey("Argument", null=True, blank=True, related_name="functionparent")
     # [0-1] The output type of the function. May be unknown initially and then calculated
@@ -557,12 +562,17 @@ class Function(models.Model):
             new_copy.root = kwargs['root']
         if kwargs != None and 'rootcond' in kwargs:
             new_copy.rootcond = kwargs['rootcond']
+        if kwargs != None and 'rootfeat' in kwargs:
+            new_copy.rootfeat = kwargs['rootfeat']
         # COpy other fields, if they are not yet set
         if self.root != None and new_copy.root == None:
             new_copy.root = self.root
         # COpy other fields, if they are not yet set
         if self.rootcond != None and new_copy.rootcond == None:
             new_copy.rootcond = self.rootcond
+        # Same for rootfeat
+        if self.rootfeat != None and new_copy.rootfeat == None:
+            new_copy.rootfeat = self.rootfeat
         # Process parent
         if kwargs != None and 'parent' in kwargs:
             new_copy.parent = kwargs['parent']
@@ -587,7 +597,7 @@ class Function(models.Model):
         return result
 
     @classmethod
-    def create(cls, functiondef, functionroot, functioncondroot, parentarg):
+    def create(cls, functiondef, functionroot, functioncondroot, parentarg, functionfeatroot=None):
         """Create a new instance of a function based on a 'function definition', binding it to a cvar or a condition"""
 
         oErr = ErrHandle()
@@ -597,6 +607,8 @@ class Function(models.Model):
                     inst = cls(functiondef=functiondef, root=functionroot)
                 elif functioncondroot != None:
                     inst = cls(functiondef=functiondef, rootcond=functioncondroot)
+                elif functionfeatroot != None:
+                    inst = cls(functiondef=functiondef, rootfeat=functionfeatroot)
                 else:
                     # This should actually create an error...
                     inst = cls(functiondef=functiondef)
@@ -606,6 +618,8 @@ class Function(models.Model):
                     inst = cls(functiondef=functiondef, root=functionroot, parent=parentarg)
                 elif functioncondroot != None:
                     inst = cls(functiondef=functiondef, rootcond=functioncondroot, parent=parentarg)
+                elif functionfeatroot != None:
+                    inst = cls(functiondef=functiondef, rootfeat=functionfeatroot, parent=parentarg)
                 else:
                     # This should actually create an error...
                     inst = cls(functiondef=functiondef, parent=parentarg)
@@ -669,6 +683,8 @@ class Function(models.Model):
             start_function = self.root.function
         elif self.rootcond != None:
             start_function = self.rootcond.function
+        elif self.rootfeat != None:
+            start_function = self.rootfeat.function
         # Double check: do we have a start_function?
         if start_function != None:
             lFunc = start_function.get_functions()
@@ -710,6 +726,7 @@ class Function(models.Model):
             # Some information depends on root versus rootcond
             cvar_id = None if self.root == None else self.root.id
             cond_id = None if self.rootcond == None else self.rootcond.id
+            feat_id = None if self.rootfeat == None else self.rootfeat.id
             # Get the information of this parent-argument
             info = {'level': iLevel, 
                     'arginfo': parentarg.get_info(),
@@ -719,6 +736,7 @@ class Function(models.Model):
                     'arg_id': arg_id,
                     'cvar_id': cvar_id,
                     'cond_id': cond_id,
+                    'feat_id': feat_id,
                     'arg': parentarg }
             # Store it in the ancestor list
             anc_list.append(info)
@@ -1199,6 +1217,103 @@ class Condition(models.Model):
                                 func_list.append(func)
         return func_list
 
+
+class Feature(models.Model):
+    """Each research project may contain any number of features calculated later on"""
+
+    # [1] Feature name
+    name = models.CharField("Name", max_length=MAX_TEXT_LEN)
+    # [0-1] Description of the feature
+    description = models.TextField("Description", blank=True)
+    # [1] A condition is a boolean, and can be of two types: Function or Cvar
+    feattype = models.CharField("Feature type", choices=build_abbr_list(SEARCH_FEATTYPE), 
+                              max_length=5, help_text=get_help(SEARCH_FEATTYPE))
+    # [0-1] One option for a condition is to be equal to the value of a data-dependant variable
+    variable = models.ForeignKey(VarDef, null=True, related_name ="variablefeature")
+    # [1] The numerical order of this argument
+    order = models.IntegerField("Order", blank=False, default=0)
+
+    # [0-1] Another option for a condition is to be defined in a function
+    function = models.OneToOneField(Function, null=True)
+    # [0-1] If a function is needed, we need to have a link to its definition
+    functiondef = models.ForeignKey(FunctionDef, null=True, related_name ="functiondeffeature")
+
+    # [0-1] Include this condition in the search or not?
+    include = models.CharField("Include", choices=build_abbr_list(SEARCH_INCLUDE), 
+                              max_length=5, help_text=get_help(SEARCH_INCLUDE), default="true")
+
+    # [1] Every gateway has zero or more conditions it may look for
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="features")
+
+    def __str__(self):
+        return self.name
+
+    def get_copy(self, **kwargs):
+        """Make a copy of this feature"""
+
+        # Test for the existence of 'gateway'
+        if kwargs == None or 'gateway' not in kwargs:
+            return None
+        # If there is a function, copy it
+        new_function = None
+        if self.function != None:
+            new_function = self.function.get_copy()
+        new_copy = Feature(name=self.name, description=self.description,
+                             feattype=self.feattype, cvar=self.cvar,
+                             functiondef=self.functiondef,
+                             function=new_function, gateway=kwargs['gateway'])
+        # Return the new copy
+        return new_copy
+
+    def get_code(self, format):
+        """Create and return the required Xquery"""
+        sCode = ""
+        if self.feattype == "dvar":
+            if self.variable == None:
+                sCode = ""
+            else:
+                # A variable has been defined
+                sCode = "${}".format(self.variable.name)
+        elif self.feattype == "func":
+            # REturn the code of this function
+            sCode = self.function.get_code(format)
+        else:
+            # This is something else
+            sCode = "$UnknownCode"
+        return sCode
+      
+    def delete(self, using = None, keep_parents = False):
+        """Delete all items pointing to me, then delete myself"""
+
+        # Delete the function(s) pointing to me
+        if self.function != None:
+            self.function.delete()
+        # NOTE: do not delete the functiondef, gateway or cvar -- those are independant of me
+        # And then delete myself
+        return super().delete(using, keep_parents)
+
+    def get_functions(self):
+        """Get all the functions belonging to this condition"""
+
+        func_list = []
+        # Only works for the correct type
+        if self.feattype == "func":
+            func_this = self.function
+            if func_this != None:
+                # Add function to list
+                func_list.append(func_this)
+                # Walk all arguments
+                for arg_this in func_this.functionarguments.all():
+                    # CHeck if this is a function argument
+                    if arg_this.argtype == "func":
+                        # Then add the function pointed to by the argument
+                        arg_func = arg_this.functionparent.first()
+                        if arg_func != None:
+                            arg_func_list = arg_func.get_functions()
+                            for func in arg_func_list:
+                                func_list.append(func)
+        return func_list
+
       
 class SearchItem(models.Model):
     """A search item is one 'search' variable specification for a gateway"""
@@ -1555,10 +1670,10 @@ class Basket(models.Model):
         # Initialise the status
         oBack = {'commandstatus': 'ok'}
         oErr = ErrHandle()
+        # Issue a status request
+        sUser = self.research.owner.username
+        oCrpp = crpp_status(sUser, self.jobid)
         try:
-            # Issue a status request
-            sUser = self.research.owner.username
-            oCrpp = crpp_status(sUser, self.jobid)
             if oCrpp['commandstatus'] == 'ok':
                 for item in oCrpp:
                     if item != 'commandstatus':
@@ -1664,7 +1779,7 @@ class Basket(models.Model):
             lstQ = []
             lstQ.append(Q(quantor__basket = self))
             lstQ.append(Q(qc=iQcLine))
-            oQcLine = QCline.objects.filter().first()
+            oQcLine = QCline.objects.filter(*lstQ).first()
             if oQcLine == None:
                 # No results can be retrieved
                 return False

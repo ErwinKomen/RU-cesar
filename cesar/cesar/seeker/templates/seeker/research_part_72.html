@@ -1,0 +1,63 @@
+﻿{% load i18n %}
+
+<div class="research_part">
+  <span><a role="button" class="btn btn-default btn-xs" 
+            id="button_part_7_return"
+            targeturl="{% if research_id %}{% url 'research_part_7' research_id %}{% else %}{% url 'research_part_7' %}{% endif %}"
+            targetid="research_part_7"
+            onclick="ru.cesar.seeker.research_wizard(this, '7');"><< All Features
+  </a></span>
+  <span>[72]</span>
+  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+  <!-- Part 7-2: Define features for a research project -->
+  <div id="research_part_72" 
+      class="js-inline-formset inline-group panel panel-default"
+      data-inline-type="tabular"
+      data-inline-formset="{{arg_formset.inline_formset_data}}">
+    <form action="" method="post">
+        {% csrf_token %}
+      <div class="row">
+        <div id="research_cvar" class="col-md-11 tabular inline-related">
+          {{arg_formset.management_form}}
+          <fieldset class="module {{arg_formset.classes}}">
+            <div class="explanation">
+              <p>Specify how to calculate feature <code>{{feature_this.name}}</code></p>
+            </div>
+            <!-- Show the template of the main function -->
+            <div class="row">
+              <!-- OLD: col-md-6 (but the variable names and the textarea's don't always fit) -->
+              <div class="panel panel-default panel-function">
+                <h3>{{functionForm.instance.functiondef.title}}</h3>
+                <div class="hidden">{{functionForm}}</div>
+                <table class="table-fit">
+                {% include 'seeker/function_args.html' %}
+                </table>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        {% for item in error_list %}{{item}}{% endfor %}
+      </div>
+
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary ajaxform"
+                instanceid="{{object_id}}"
+                openid="research_container_72" 
+                ajaxurl="{% if object_id %}{% url 'research_part_72' object_id %}{% else %}{% url 'research_part_72' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
+      </div>
+
+      <!-- Tabular overview of how this cvar is calculated-->
+      {% include 'seeker/variable_details.html' %}
+
+    </form>
+  </div>
+</div>
+

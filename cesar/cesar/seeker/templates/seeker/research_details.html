@@ -106,7 +106,11 @@
               <h2>Fine-tune</h2>
               <p>Specify detailed requirements of a hit</p>
             </a>
-            <a class="col-md-4  col-md-offset-1 jumbotron jumbo-4">
+            <a class="col-md-4  col-md-offset-1 jumbotron jumbo-4"
+                      id="button_part_7"
+                      targeturl="{% if object_id %}{% url 'research_part_7' object_id %}{% else %}{% url 'research_part_7' %}{% endif %}"
+                      targetid="research_part_7"
+                      onclick="ru.cesar.seeker.research_wizard(this, '7');">
               <h2>Add features</h2>
               <p>Specify the features to be added to a search hit</p>
             </a>
@@ -318,6 +322,12 @@
         <!-- Part 7: Features -->
         <div id="research_container_7"  class="row research-part" ></div>
         
+        <!-- Part 7-2: Main function specification for a feature -->
+        <div id="research_container_72"  class="row research-part" ></div>
+
+        <!-- Part 7-3: Function specification for one feature function argument -->
+        <div id="research_container_73"  class="row research-part" ></div>
+
       </div>
 
 

@@ -25,6 +25,7 @@ var ru = (function ($, ru) {
           { "table": "research_vardef", "prefix": "vardef", "counter": false, "events": null },
           { "table": "research_spec", "prefix": "function", "counter": false, "events": null },
           { "table": "research_cond", "prefix": "cond", "counter": true, "events": function () { ru.cesar.seeker.init_cond_events(); } },
+          { "table": "research_feat", "prefix": "feat", "counter": true, "events": function () { ru.cesar.seeker.init_feat_events(); } },
           { "table": "result_kwicfilter", "prefix": "filter", "counter": true, "events": null },
       ];
 
@@ -346,12 +347,18 @@ var ru = (function ($, ru) {
               case "research_container_44":
               case "research_container_62":
               case "research_container_63":
+              case "research_container_72":
+              case "research_container_73":
                 // add any event handlers for wizard part '43' and '44' and '62'
                 ru.cesar.seeker.init_arg_events();
                 break;
               case "research_container_6":
                 // add any event handlers for wizard part '46'
                 ru.cesar.seeker.init_cond_events();
+                break;
+              case "research_container_7":
+                // add any event handlers for wizard part '46'
+                ru.cesar.seeker.init_feat_events();
                 break;
             }
           }
@@ -697,6 +704,36 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * feattype_click
+       *   Set the type of feature: dvar versus func
+       *
+       */
+      feattype_click: function (el) {
+        try {
+          var elRow = (el.target === undefined) ? el : $(this).closest("tr");
+          var elType = $(elRow).find(".feat-type").first();
+          var elVal = $(elRow).find(".feat-val-exp").first();
+          // Find the type element
+          var elfeattype = $(elType).find("select").first();
+          // Get its value
+          var elfeattypeVal = $(elfeattype).val();
+          // Hide/show, depending on the value
+          switch (elfeattypeVal) {
+            case "dvar": // Data-dependant variable
+              $(elVal).find(".feat-dvar").removeClass("hidden");
+              $(elVal).find(".feat-expression").addClass("hidden");
+              break;
+            case "func": // Function
+              $(elVal).find(".feat-dvar").addClass("hidden");
+              $(elVal).find(".feat-expression").removeClass("hidden");
+              break;
+          }
+        } catch (ex) {
+          private_methods.errMsg("feattype_click", ex);
+        }
+      },
+
+      /**
        *  funcdefshow
        *      Show the function definition
        *
@@ -807,6 +844,28 @@ var ru = (function ($, ru) {
           $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
         } catch (ex) {
           private_methods.errMsg("init_cond_events", ex);
+        }
+      },
+
+      /**
+       *  init_feat_events
+       *      Bind events to work with featitions
+       *
+       */
+      init_feat_events: function () {
+        try {
+          // Make sure the 'Type' field values are processed everywhere
+          $(".feat-item").each(function () {
+            // Perform the same function as if we were clicking it
+            ru.cesar.seeker.feattype_click(this);
+          });
+          // Specify the change reaction function
+          $(".feat-type select").change(ru.cesar.seeker.feattype_click);
+          // Specify the function to be called when the user presses "summary"
+          $(".func-summary").unbind('click');
+          $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#feat_summary"); });
+        } catch (ex) {
+          private_methods.errMsg("init_feat_events", ex);
         }
       },
 
@@ -1292,6 +1351,8 @@ var ru = (function ($, ru) {
             case "44": if (sMsg === "") sMsg = "43-before-44";
             case "62": if (sMsg === "") sMsg = "6-before-62";
             case "63": if (sMsg === "") sMsg = "62-before-63";
+            case "72": if (sMsg === "") sMsg = "7-before-72";
+            case "73": if (sMsg === "") sMsg = "72-before-73";
               // Opening a new form requires prior processing of the current form
               if (frm !== undefined) {
                 data = $(frm).serializeArray();
@@ -1315,25 +1376,27 @@ var ru = (function ($, ru) {
               }
               break;
           }
-
-          // [2] Load the new form through an AJAX call
-          data = [];
           switch (sPart) {
             case "62":
               // If a new condition has been created, then this is where we expect the instance number to appear
               if ('cond_instanceid' in response) {
                 $(el).attr("instanceid", response['cond_instanceid']);
               }
-              // data.push({ 'name': 'research_id', 'value': sObjectId });
-            case "1":
-            case "2":
-            case "3":
-            case "4":
-            case "42":
-            case "43":
-            case "44":
-            case "6":
-            case "63":
+              break;
+            case "72":
+              // If a new feature has been created, then this is where we expect the instance number to appear
+              if ('feat_instanceid' in response) {
+                $(el).attr("instanceid", response['feat_instanceid']);
+              }
+              break;
+          }
+          // [2] Load the new form through an AJAX call
+          data = [];
+          switch (sPart) {
+            case "1": case "2": case "3":
+            case "4": case "42": case "43": case "44":
+            case "6": case "62": case "63":
+            case "7": case "72": case "73":
 
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
@@ -1354,24 +1417,24 @@ var ru = (function ($, ru) {
 
           // Some actions depend on the particular page we are going to visit
           switch (sPart) {
-            case "4": // Page 4=Calculation
-            case "42":
+            case "4": case "42":
               // add any event handlers for wizard part '42'
               ru.cesar.seeker.init_cvar_events();
               break;
-            case "43":
-            case "44":
-            case "62":
-            case "63":
+            case "43": case "44":
+            case "62": case "63":
+            case "72": case "73":
               // add any event handlers for wizard part '43' and part '44'
               // As well as for '62' and '63'
               ru.cesar.seeker.init_arg_events();
               break;
             case "6":
-              // add any event handlers for wizard part '46'
+              // add any event handlers for wizard part '6'
               ru.cesar.seeker.init_cond_events();
-              // Specify the function to be called when the user presses "summary"
-              // $(".func-summary").click(function () { ru.cesar.seeker.get_summary_click(this, "#cond_summary"); });
+              break;
+            case "7":
+              // add any event handlers for wizard part '7'
+              ru.cesar.seeker.init_feat_events();
               break;
             case "5": // Page 5=Conditions
 
@@ -1738,6 +1801,8 @@ var ru = (function ($, ru) {
                 data.push({ 'name': '_conditionid', 'value': $(divTarget).val() });
                 break;
               case "copy_feature_function":
+                data.push({ 'name': '_functionid', 'value': function_id });
+                data.push({ 'name': '_featureid', 'value': $(divTarget).val() });
                 break;
             }
             // Find out where the save button is located

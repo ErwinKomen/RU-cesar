@@ -69,6 +69,24 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
     return arg_formset
 
 
+def cleanup_functions():
+    """Remove superfluous functions"""
+
+    has_changed = False
+    # Find all functions that are not pointed to from any of the construction variables
+    lstCvarId = [item.id for item in ConstructionVariable.objects.exclude(function=None)]
+    lstCondId = [item.id for item in Condition.objects.exclude(function=None)]
+    lstFeatId = [item.id for item in Feature.objects.exclude(function=None)]
+    lstFunDel = Function.objects.exclude(root__in=lstCvarId).exclude(rootcond__in=lstCondId)
+    # Now delete those that need deleting (cascading is done in the function model itself)
+    with transaction.atomic():
+        for fun_this in lstFunDel:
+            fun_this.delete()
+            # Make sure that deletions get saved
+            has_changed = True
+    return has_changed
+
+
 class CustomInlineFormset(BaseInlineFormSet):
     def clean(self):
         super(CustomInlineFormset, self).clean()
@@ -310,6 +328,27 @@ class ResearchExe(View):
                             context['pipecount'] = oBack['count'] - oBack['ready']
                             context['ptc_done'] = int(context['ptc_ready'])
                             context['found'] = oBack['found']
+                        elif sStatusCode == "error":
+                            # Add the error description to the list
+                            if 'message' in oBack:
+                                # Try to decypher
+                                sMsg = oBack['message']
+                                try:
+                                    if sMsg.startswith("{"):
+                                        # Find the first closing }
+                                        sJson = sMsg.split('}', 1)[0] + "}"
+                                        oJson = json.loads(sJson)
+                                        lErr = []
+                                        for key,value in oJson.items():
+                                            self.arErr.append("{}: {}".format(key,value))
+                                    else:
+                                        # Not structured
+                                        self.arErr.append(sMsg)
+                                except:
+                                    # Could not decypher
+                                    self.arErr.append(sMsg)
+                            else:
+                                self.arErr.append("The /crpp engine returns an unknown error")
                         elif sStatusCode == "completed":
                             # Adapt the table we receive
                             oTable = oBack["table"]
@@ -1047,22 +1086,6 @@ class ResearchPart42(ResearchPart):
         # Return the changed flag
         return has_changed
 
-def cleanup_functions():
-    """Remove superfluous functions"""
-
-    has_changed = False
-    # Find all functions that are not pointed to from any of the construction variables
-    lstCvarId = [item.id for item in ConstructionVariable.objects.exclude(function=None)]
-    lstCondId = [item.id for item in Condition.objects.exclude(function=None)]
-    lstFunDel = Function.objects.exclude(root__in=lstCvarId).exclude(rootcond__in=lstCondId)
-    # Now delete those that need deleting (cascading is done in the function model itself)
-    with transaction.atomic():
-        for fun_this in lstFunDel:
-            fun_this.delete()
-            # Make sure that deletions get saved
-            has_changed = True
-    return has_changed
-
 
 class Variable43(ResearchPart):
     """The definition of one particular variable"""
@@ -1080,6 +1103,18 @@ class Condition63(ResearchPart):
     """The definition of one particular condition"""
 
     MainModel = Condition
+    template_name = 'seeker/variable_details.html'
+
+    def add_to_context(self, context):
+        # Add a list of functions to the context
+        context['function_list'] = self.obj.get_functions()
+        return context
+
+
+class Feature73(ResearchPart):
+    """The definition of one particular condition"""
+
+    MainModel = Feature
     template_name = 'seeker/variable_details.html'
 
     def add_to_context(self, context):
@@ -1536,8 +1571,7 @@ class ResearchPart6(ResearchPart):
                 has_changed = True
         # Return the change-indicator to trigger saving
         return has_changed
-
-    
+          
 
 class ResearchPart62(ResearchPart):
     MainModel = Condition
@@ -1701,10 +1735,10 @@ class ResearchPart62(ResearchPart):
                     self.obj.save()
                     # We have already saved the above, so 'has_changed' does not need to be touched
         # Save the related RESEARCH object
+        # NOTE: should this be function.rootcond.gateway.research???
         self.obj.function.condition.gateway.research.save()
         # Return the change-indicator to trigger saving
         return has_changed
-
 
 
 class ResearchPart63(ResearchPart):
@@ -1736,7 +1770,7 @@ class ResearchPart63(ResearchPart):
                 with transaction.atomic():
                     # Create a new function 
                     function = Function(functiondef = self.obj.functiondef, 
-                                        root = self.obj.function.rootcond,
+                                        rootcond = self.obj.function.rootcond,
                                         parent = self.obj)
                     # Make sure the function instance gets saved
                     function.save()
@@ -1845,6 +1879,423 @@ class ResearchPart63(ResearchPart):
         # Save the related RESEARCH object
         if has_changed:
             self.obj.function.rootcond.gateway.research.save()
+        # Return the change-indicator to trigger saving
+        return has_changed
+
+
+class ResearchPart7(ResearchPart):
+    template_name = 'seeker/research_part_7.html'
+    MainModel = Research
+    FeatFormSet = inlineformset_factory(Gateway, Feature, 
+                                        form=FeatureForm, min_num=1, 
+                                        extra=0, can_delete=True, can_order=True)
+    formset_objects = [{'formsetClass': FeatFormSet, 'prefix': 'feat', 'readonly': False}]
+
+    def custom_init(self):
+        """If the dictionary contains a 'task' element, it should be processed"""
+
+        oErr = ErrHandle()
+        try:
+            # Get the task
+            sTask = "" if (not '_task' in self.qd) else self.qd['_task']
+            if sTask == "copy_feature_function":
+                # There are some more parameters we expect
+                functionid = self.qd['_functionid']
+                functionid = -1 if functionid == "" else int(functionid)
+                featureid = self.qd['_featureid']
+                featureid = -1 if featureid == "" else int(featureid)
+                if functionid>=0 and featureid>=0:
+                    # Find the function
+                    function = Function.objects.filter(id=functionid).first()
+                    feature = feature.objects.filter(id=featureid).first()
+                    if function != None and feature != None:
+                        # Copy the function to the construction
+                        with transaction.atomic():
+                            feature.function.delete()
+                            feature.function = function.get_copy()
+                            response = feature.save()
+
+            # REturn positively
+            return True
+        except:
+            oErr.DoError("custom_init error")
+            return False
+
+    def get_instance(self, prefix):
+        if prefix == 'feat':
+            # We need to have the gateway
+            return self.obj.gateway
+
+    def get_form_kwargs(self, prefix):
+        if prefix == 'feat' and self.obj != None and self.obj.gateway != None:
+            return {"gateway":  self.obj.gateway}
+        else:
+            return None
+
+    def process_formset(self, prefix, request, formset):
+        if prefix == 'feat':
+            # Sorting: see ResearchPart4
+            ordered_forms = sorted(formset.forms, key=lambda item: item.instance.order)
+            # Make sure the initial values of the 'order' in the forms are set correctly
+            for form in ordered_forms:
+                form.fields['ORDER'].initial = form.instance.order
+            return ordered_forms
+        else:
+            return None
+
+    def add_to_context(self, context):
+        # Note: the self.obj is the Research project
+        if self.obj == None:
+            currentowner = None
+            targettype = ""
+        else:
+            # gateway = self.obj.gateway
+            currentowner = self.obj.owner
+            targettype = self.obj.targetType
+            context['currentowner'] = currentowner
+            context['targettype'] = targettype
+        # Provide a number for the newest item 
+        context['new_order_number'] = len(self.obj.gateway.features.all())
+        # Return the context
+        return context
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        if prefix == 'feat':
+            # Find the function attached to me - only if applicable!!
+            if instance.feattype == "func" and instance.functiondef != None:
+                # Two situations:
+                # - THere is no function yet
+                # - There is a function, but with the wrong functiondef
+                if instance.function == None or (instance.function != None and instance.functiondef != instance.function.functiondef):
+                    # If the instance is not yet made, it needs to be saved before we continue
+                    if instance.id == None:
+                        instance.save()
+                    # Does a previous function exist?
+                    if instance.function:
+                        # Remove the existing function
+                        instance.function.delete()
+                    
+                    # Create a new (obligatory) 'Function' instance, with accompanying Argument instances
+                    instance.function = Function.create(instance.functiondef, None, None, None, instance)
+                    # Indicate that changes have been made and saving of 'instance' is needed
+                    has_changed = True
+            # Retrieve the 'order' field
+            if instance.order != form.cleaned_data['ORDER']:
+                if form.cleaned_data['ORDER'] == None:
+                    instance.order = len(instance.gateway.features.all())+1
+                else:
+                    instance.order = form.cleaned_data['ORDER']
+                has_changed = True
+        # Return the change-indicator to trigger saving
+        return has_changed
+          
+
+class ResearchPart72(ResearchPart):
+    MainModel = Feature
+    template_name = 'seeker/research_part_72.html'
+    # Provide a form that allows filling in the specifics of a function
+    form_objects = [{'form': FunctionForm, 'prefix': 'function', 'readonly': False}]
+    # The function that is provided contains a particular number of arguments
+    ArgFormSet = inlineformset_factory(Function, Argument, 
+                                          form=ArgumentForm, min_num=1, extra=0)
+    formset_objects = [{'formsetClass': ArgFormSet,  'prefix': 'arg',  'readonly': False}]
+
+    def get_instance(self, prefix):
+        if prefix == 'function' or prefix == 'arg':
+            # This returns the FUNCTION object we are linked to
+            feature = self.obj
+            if feature.function_id == None or feature.function == None:
+                # Check the function definition
+                if feature.functiondef_id == None:
+                    # There is an error: we need to have a function definition here
+                    return None
+                # Make sure both changes are saved in one database-go
+                with transaction.atomic():
+                    # Create a new function 
+                    function = Function.create(feature.functiondef, None, None, None, feature)
+                    # Add a link to this function from the feature object
+                    feature.function = function
+                    # Make sure we save the feature object
+                    feature.save()
+            return feature.function
+
+    def custom_init(self):
+        """Make sure the ARGUMENT formset gets the correct number of arguments"""
+
+        # Check if we have a Feature object
+        if self.obj:
+            # Check if the feature-object type is 'func' - functiewaarde
+            if self.obj.feattype == "func":
+                # Get the function definition
+                functiondef = self.obj.functiondef
+                if functiondef != None:
+                    # Get the number of arguments
+                    argnum = functiondef.argnum
+                    # Adapt the minimum number of items in the argument formset
+                    self.ArgFormSet = inlineformset_factory(Function, Argument, 
+                                          form=ArgumentForm, min_num=argnum, extra=0)
+                    self.formset_objects[0]['formsetClass'] = self.ArgFormSet
+
+        return True
+
+    def add_to_context(self, context):
+        # Note: the self.obj is a Feature
+        feature = self.obj
+
+        if feature == None:
+            currentowner = None
+            context['research_id'] = None
+            context['feature_this'] = None
+            targettype = ""
+        else:
+            context['feature_this'] = feature
+            gateway = feature.gateway
+            currentowner = gateway.research.owner
+            context['research_id'] = gateway.research.id
+            targettype = gateway.research.targetType
+
+            # Further action if this feature is of the 'func' type
+            if feature.feattype == "func":
+
+                # Need to specify the template for the function
+                functiondef = feature.functiondef
+                # Adapt the arguments for this form
+                arg_defs = ArgumentDef.objects.filter(function=functiondef)
+
+                # Calculate the initial queryset for 'gvar'
+                qs_gvar = GlobalVariable.objects.filter(gateway=gateway)
+
+
+                # Calculate the initial queryset for 'dvar'
+                lstQ = []
+                lstQ.append(Q(gateway=gateway))
+                qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
+
+                # - adapting the 'arg_formset' for the 'function' form (editable)
+                fun_this = self.get_instance('function')
+                if fun_this != None:
+                    context['arg_formset'] = check_arguments(context['arg_formset'], functiondef, qs_gvar, None, qs_dvar, '73')
+                else:
+                    context['arg_formset'] = None
+
+                # Get the list of functions for this feature here
+                context['function_list'] = self.obj.get_functions()
+
+        context['currentowner'] = currentowner
+        # We also need to make the object_id available
+        context['object_id'] = self.object_id
+        context['targettype'] = targettype
+        return context
+
+    def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
+        # Take the functiondef as available in this argument
+        arg_defs = ArgumentDef.objects.filter(function=functiondef)
+
+        for index, arg_form in enumerate(arg_formset):
+            # Initialise the querysets
+            arg_form.fields['gvar'].queryset = qs_gvar
+            if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
+            arg_form.fields['dvar'].queryset = qs_dvar
+            # Add the information required by 'seeker/function_args.html' for each argument
+            arg_form.target = target
+            arg_form.targetid = 'research_part_' + arg_form.target
+            if arg_form.instance != None:
+                arg_form.url_edit = reverse(arg_form.targetid, kwargs={'object_id': arg_form.instance.id})
+            arg_form.url_new = reverse(arg_form.targetid)
+            # Get the instance from this form
+            arg = arg_form.save(commit=False)
+            # Check if the argument definition is set
+            if arg.id == None or arg.argumentdef_id == None or arg.argumentdef_id != arg_defs[index].id:
+                # Get the argument definition for this particular argument
+                arg.argumentdef = arg_defs[index]
+                arg_form.initial['argumentdef'] = arg_defs[index]
+                arg_form.initial['argtype'] = arg_defs[index].argtype
+                # Preliminarily save
+                arg_form.save(commit=False)
+
+        # Return the adatpted formset
+        return arg_formset
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        # When we save an ARG, we need to add a link to the Function it belongs to
+        if prefix == 'arg':
+            # The instance is the argument instance
+
+            # Check the argtype of this argument: is it NOT a function any more?
+            if instance.argtype != "func":
+                # Then REmove all functions pointing to me
+                func_child = instance.functionparent.first()
+                if func_child != None:
+                    func_child.delete()
+                    has_changed = True
+            else:
+                # THis is a function: check if the function definition has not changed
+                func_child = instance.functionparent.first()
+                if func_child == None or instance.functiondef != func_child.functiondef:
+                    # The function definition changed >> replace the child with a completely NEW version
+                    # [1] remove the child (as well as anything attached to it)
+                    if func_child != None:
+                        func_child.delete()
+                    # [2] Create a new version
+                    func_child = Function.create(instance.functiondef, None, None, instance, instance.function.rootfeat)
+                    # [3] Save it here (or that is done one level up)
+                    func_child.save()
+                    # Indicate changes have been made
+                    has_changed = True
+        elif prefix == 'function':
+            if instance != None:
+                if self.obj.function != instance:
+                    # Link the function-instance to the  CVAR instance
+                    self.obj.function = instance
+                    # Save the adapted CVAR instance
+                    self.obj.save()
+                    # We have already saved the above, so 'has_changed' does not need to be touched
+        # Save the related RESEARCH object
+        self.obj.function.feature.gateway.research.save()
+        # Return the change-indicator to trigger saving
+        return has_changed
+
+
+class ResearchPart73(ResearchPart):
+    MainModel = Argument
+    template_name = 'seeker/research_part_73.html'
+    ArgFormSet = inlineformset_factory(Function, Argument, 
+                                          form=ArgumentForm, min_num=1, extra=0)
+    # Two forms:
+    # - the 'parent' form is view-only and contains the argument we are supplying a function for
+    # - the 'function' form is editable and contains the function for the argument 
+    form_objects = [{'form': FunctionForm, 'prefix': 'parent', 'readonly': True},
+                    {'form': FunctionForm, 'prefix': 'function', 'readonly': False}]
+    # Two formsets:
+    # - the 'arg'  formset belongs to the 'function' (see above)
+    # - the 'parg' formset belongs to the 'parent'
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False},
+                       {'formsetClass': ArgFormSet, 'prefix': 'parg', 'readonly': True}]
+
+    def get_instance(self, prefix):
+        # NOTE: For '73' the self.obj is an Argument!!
+
+        if prefix == 'function' or prefix == 'arg':
+            # This returns the EXISTING or NEW function object belonging to the argument
+            qs = Function.objects.filter(parent=self.obj)
+            # Does it exist?
+            if qs.count() == 0:
+                # It does not yet exist: create it
+                # Make sure both changes are saved in one database-go
+                with transaction.atomic():
+                    # Create a new function 
+                    function = Function(functiondef = self.obj.functiondef, 
+                                        rootfeat = self.obj.function.rootfeat,
+                                        parent = self.obj)
+                    # Make sure the function instance gets saved
+                    function.save()
+            else:
+                # It exists, so assign it
+                function = qs[0]
+            return function
+        elif prefix == 'parent' or prefix == 'parg':
+            # This returns the PARENT function object the argument belongs to
+            return self.obj.function
+
+    def custom_init(self):
+        """Make sure the ARG formset gets the correct number of arguments"""
+
+        # Check if we have a FUNCTION object
+        fun_this = self.get_instance('function')
+        if fun_this:
+            # Get the function definition
+            functiondef = fun_this.functiondef
+            if functiondef != None:
+                # Get the number of arguments
+                argnum = functiondef.argnum
+                # Adapt the minimum number of items in the argument formset
+                self.ArgFormSet = inlineformset_factory(Function, Argument, 
+                                        form=ArgumentForm, min_num=argnum, extra=0)
+                # The 'arg' object is the one with index '0'
+                self.formset_objects[0]['formsetClass'] = self.ArgFormSet
+
+        return True
+
+    def add_to_context(self, context):
+        # NOTE: the instance (self.obj) for the '44' form is an ARGUMENT
+        pfun_this = self.get_instance('parent')
+        if pfun_this == None:
+            currentowner = None
+            context['research_id'] = None
+            context['vardef_this'] = None
+            targettype = ""
+        else:
+            # Get to the FEATURE instance
+            feat = pfun_this.rootfeat
+            gateway = feat.gateway
+            currentowner = gateway.research.owner
+            context['research_id'] = gateway.research.id
+            context['vardef_this'] = feat.variable
+            context['feat_this'] = feat
+            targettype = gateway.research.targetType
+
+            # Since this is a '73' form, we know this is a calculation
+
+            # Calculate the initial queryset for 'gvar'
+            #   (These are the variables available for this GATEWAY)
+            qs_gvar = GlobalVariable.objects.filter(gateway=gateway)
+
+            # Calculate the initial queryset for 'dvar'
+            lstQ = []
+            lstQ.append(Q(gateway=gateway))
+            qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
+
+            # - adapting the 'parg_formset' for the 'parent' form (view-only)
+            context['parg_formset'] = check_arguments(context['parg_formset'], pfun_this.functiondef, qs_gvar, None, qs_dvar, '73')
+
+            # - adapting the 'arg_formset' for the 'function' form (editable)
+            fun_this = self.get_instance('function')
+            if fun_this != None:
+                context['arg_formset'] = check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, None, qs_dvar, '73')
+            else:
+                context['arg_formset'] = None
+
+            # Get a list of all ancestors
+            context['anc_list'] = fun_this.get_ancestors()
+
+        context['currentowner'] = currentowner
+        # We also need to make the object_id available -- but is this the correct one?
+        context['object_id'] = self.object_id
+        context['targettype'] = targettype
+        return context
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        # When we save an ARG, we need to add a link to the Function it belongs to
+        if prefix == 'arg':
+            # The instance is the argument instance
+
+            # Check the argtype of this argument: is it NOT a function any more?
+            if instance.argtype != "func":
+                # Then REmove all functions pointing to me
+                func_child = instance.functionparent.first()
+                if func_child != None:
+                    func_child.delete()
+                    has_changed = True
+            else:
+                # THis is a function: check if the function definition has not changed
+                func_child = instance.functionparent.first()
+                if func_child == None or instance.functiondef != func_child.functiondef:
+                    # The function definition changed >> replace the child with a completely NEW version
+                    # [1] remove the child
+                    if func_child != None:
+                        func_child.delete()
+                    # [2] Create a new version
+                    func_child = Function.create(instance.functiondef, None, None, instance, instance.function.rootfeat)
+                    # [3] Save it here (or that is done one level up)
+                    func_child.save()
+                    # Indicate changes have been made
+                    has_changed = True
+        # Save the related RESEARCH object
+        if has_changed:
+            self.obj.function.rootfeat.gateway.research.save()
         # Return the change-indicator to trigger saving
         return has_changed
 
@@ -2427,42 +2878,47 @@ class ResultPart2(ResearchPart):
             self.basket.set_kwic(self.qcline)
             self.kwic_object = self.basket.kwiclines.filter(qc=self.qcline).first()
 
-        # Pagination
-        self.hit_count = self.kwic_object.hitcount
-        result_number_list = list(range(1, self.hit_count))
-        paginator = Paginator(result_number_list, self.paginate_by)
-        self.page_obj = paginator.page(page)
-
-        # Get the filter myself
-        oFilter = self.kwic_object.get_filter()
-        # Check filter with what is available
-        if self.kwic_object.has_results(oFilter, page):
-            # Use the features and the results we already have
-            self.result_list = [json.loads(item.result) for item in self.kwic_object.kwicresults.all()]
-            self.feature_list = self.kwic_object.get_features()
+        # Validate
+        if self.kwic_object == None:
+            # Some error has occurred
+            self.data['status'] = "error"
         else:
-            if not self.kwic_object.has_filter(oFilter):
-                # Apply the filter
-                self.kwic_object.apply_filter(oFilter)
+            # Pagination
+            self.hit_count = self.kwic_object.hitcount
+            result_number_list = list(range(1, self.hit_count))
+            paginator = Paginator(result_number_list, self.paginate_by)
+            self.page_obj = paginator.page(page)
 
-            # Set the number of items to be fetched
-            iCount = self.paginate_by
-            iStart = (page-1) * self.paginate_by
-            # Fetch the data for this page
-            oData = crpp_dbinfo(self.basket.research.owner.username, 
-                                self.basket.research.name,
-                                qc, 
-                                iStart,
-                                iCount,
-                                filter=oFilter)
-            if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
-                self.result_list = oData['Results']
-                self.feature_list = oData['Features']
-                # Also add the results as objects
-                self.kwic_object.add_result_list(oData['Results'], page)
+            # Get the filter myself
+            oFilter = self.kwic_object.get_filter()
+            # Check filter with what is available
+            if self.kwic_object.has_results(oFilter, page):
+                # Use the features and the results we already have
+                self.result_list = [json.loads(item.result) for item in self.kwic_object.kwicresults.all()]
+                self.feature_list = self.kwic_object.get_features()
             else:
-                # Some error has occurred
-                self.data['status'] = "error"
+                if not self.kwic_object.has_filter(oFilter):
+                    # Apply the filter
+                    self.kwic_object.apply_filter(oFilter)
+
+                # Set the number of items to be fetched
+                iCount = self.paginate_by
+                iStart = (page-1) * self.paginate_by
+                # Fetch the data for this page
+                oData = crpp_dbinfo(self.basket.research.owner.username, 
+                                    self.basket.research.name,
+                                    qc, 
+                                    iStart,
+                                    iCount,
+                                    filter=oFilter)
+                if oData['commandstatus'] == "ok" and oData['code'] == "completed":
+                    self.result_list = oData['Results']
+                    self.feature_list = oData['Features']
+                    # Also add the results as objects
+                    self.kwic_object.add_result_list(oData['Results'], page)
+                else:
+                    # Some error has occurred
+                    self.data['status'] = "error"
 
     def add_to_context(self, context):
         # Add some elements to the context

@@ -70,8 +70,14 @@ declare function tb:getFtList($search, $searchgroup
   (: At least get the search word :)
   let $ft_search := ru:word($search)
   let $ft_search_pos := $search/@class
+  (: Include the user-specified features here :)
+  {% for feat in feature_list %}
+  let $ft_{{feat.name}} := {% if feat.type == 'dvar' %}${{feat.dvar.name}}{% else %}{{feat.code|safe}} {% endif %}
+  {% endfor %}
 
   return concat($ft_search, ';', $ft_search_pos
-  
+  {% for feat in feature_list %}
+    , ';', $ft_{{feat.name}}
+  {% endfor %}
   )
 };

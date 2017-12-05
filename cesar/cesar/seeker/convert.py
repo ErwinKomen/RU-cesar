@@ -64,6 +64,7 @@ def ConvertProjectToXquery(oData):
                 # Add the cvar_list to the dvar_list
                 oDvarInfo = {'name': var.name, 'cvar_list': cvar_list}
                 dvar_list.append(oDvarInfo)
+
             # Also add the conditions
             cond_list = []
             for cnd in gateway.get_condition_list():
@@ -79,11 +80,26 @@ def ConvertProjectToXquery(oData):
                 # We still have a 'where' clause, so create one condition that is always true
                 cond_list.append("true()")
 
+            # And then we add the features
+            feature_list = []
+            for ft in gateway.get_feature_list():
+                ft.refresh_from_db()
+                # Double check the include value of this option
+                if ft.include == "" or ft.include == "true":
+                    sCode = ft.get_code(format)
+                    if sCode != "":
+                        feature_list.append({'name': ft.name, 
+                                             'type': ft.feattype, 
+                                             'dvar': ft.variable,
+                                             'code': sCode})
+
+
             context = dict(gvar_list=gvars, 
                            cons_list=constructions, 
                            search_list=search_list,
                            dvar_list=dvar_list,
-                           cond_list=cond_list)
+                           cond_list=cond_list,
+                           feature_list=feature_list)
 
             # Action depends on the target type
             if targetType == "w":
@@ -115,6 +131,7 @@ def ConvertProjectToCrpx(basket):
     template_crp = "seeker/crp.xml"
     oErr = utils.ErrHandle()
     standard_features = ['searchWord', 'searchPOS']
+    iQCid = 1
 
     try:
         # Access the research project and the gateway
@@ -158,10 +175,16 @@ def ConvertProjectToCrpx(basket):
         for idx in range(0, len(standard_features)):
             dbfeat = standard_features[idx]
             iNum =idx+1
-            iQCid = 1
             oDbFeat = {"name": dbfeat, "QCid": iQCid, "FtNum": iNum}
             dbfeatlist.append(oDbFeat)
-
+        # Add the user-defined features
+        iLastNum = len(standard_features)+1
+        feature_list = gateway.get_feature_list()
+        for idx in range(0, len(feature_list)):
+            iNum = iLastNum + idx
+            ft = feature_list[idx]
+            oDbFeat = {"name": ft.name, "QCid": iQCid, "FtNum": iNum}
+            dbfeatlist.append(oDbFeat)
 
         # Create a context for the template
         context = dict(gateway=gateway, 

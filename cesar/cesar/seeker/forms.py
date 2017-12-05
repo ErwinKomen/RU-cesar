@@ -334,6 +334,46 @@ class ConditionForm(ModelForm):
         self.url_new = reverse(self.targetid)
 
 
+class FeatureForm(ModelForm):
+    """The argument to a function"""
+
+    feattype = forms.ChoiceField(choices=SEARCH_FEATTYPE, required=True)
+    targetid = "research_part_72"
+    target = "72"
+    sumid = 'feature73'
+    url_edit = ""
+    url_new = ""
+    url_summary = ""
+
+    class Meta:
+        model = Feature
+        fields = ['name', 'description', 'feattype', 'include', 'variable', 'function', 'functiondef']
+        widgets={
+          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
+          }
+
+    def __init__(self, gateway, *args, **kwargs):
+        super(FeatureForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'feattype', SEARCH_FEATTYPE, bUseAbbr=True)
+        # Set the initial querysets
+        self.fields['variable'].queryset = gateway.get_vardef_list()
+        self.fields['functiondef'].queryset = FunctionDef.get_list()
+        # Set required and optional fields
+        self.fields['name'].required = True
+        self.fields['description'].required = False
+        self.fields['feattype'].required = True
+        self.fields['variable'].required = False
+        self.fields['function'].required = False
+        self.fields['include'].required = False
+        self.fields['functiondef'].required = False
+        # Provide values for url_edit and url_new if possible
+        if self.instance and self.instance != None and self.instance.id != None:
+            self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})
+            self.url_summary = reverse(self.sumid, kwargs={"object_id": self.instance.id})
+        # THe url for new can always be given
+        self.url_new = reverse(self.targetid)
+
+
 class SeekerResearchForm(ModelForm):
     # A research form should also have the Word/Constituent choice
     targetType = forms.ChoiceField(choices=TARGET_TYPE_CHOICES, required=True)
