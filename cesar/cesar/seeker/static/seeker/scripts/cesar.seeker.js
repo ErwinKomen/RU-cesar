@@ -943,10 +943,11 @@ var ru = (function ($, ru) {
               }
             }
           });
-          $('td span.td-toggle-textarea').click(ru.cesar.seeker.toggle_textarea_click);
+          $('span.td-toggle-textarea').unbind('click').click(ru.cesar.seeker.toggle_textarea_click);
+          $('input.td-toggle-textarea').unbind('click').click(ru.cesar.seeker.toggle_textarea_click);
           // Make sure variable ordering is supported
-          $('td span.var-down').click(ru.cesar.seeker.var_down);
-          $('td span.var-up').click(ru.cesar.seeker.var_up);
+          $('td span.var-down').unbind('click').click(ru.cesar.seeker.var_down);
+          $('td span.var-up').unbind('click').click(ru.cesar.seeker.var_up);
           // NOTE: do not use the following mouseout event--it is too weird to work with
           // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
 
@@ -1188,6 +1189,7 @@ var ru = (function ($, ru) {
             sMsg = "",
             html = "",
             sAjaxMethod = "",
+            sUrl = "",
             data = {},
             frm = null,
             oTree = null,
@@ -1198,14 +1200,22 @@ var ru = (function ($, ru) {
         try {
           // Check for 'main'
           if (sPart !== undefined && sPart === "main") {
-            // THis means: return to the main center          
-            $(".result-part").addClass("hidden");
-            $(".result-part").removeClass("active");
-            $("#goto_result_details").addClass("hidden");
-            $("#action_buttons").removeClass("hidden");
-            $("#result_info").removeClass("hidden");
-            $("#result_host_containers").addClass("hidden");
-            $("#result_filter_list").removeClass("hidden");
+            // Do we have a targeturl?
+            sUrl = $(el).attr("targeturl");
+            if (sUrl === undefined || sUrl === false) {
+              // THis means: return to the main center          
+              $(".result-part").addClass("hidden");
+              $(".result-part").removeClass("active");
+              $("#goto_result_details").addClass("hidden");
+              $("#action_buttons").removeClass("hidden");
+              $("#result_info").removeClass("hidden");
+              $("#result_host_containers").addClass("hidden");
+              $("#result_filter_list").removeClass("hidden");
+            } else {
+              // Go to this url
+              window.location.href = sUrl;
+            }
+            
             return;
           }
 

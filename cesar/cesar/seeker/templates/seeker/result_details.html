@@ -52,6 +52,7 @@
           <div class="col-md-3" align="left">
             <div id="goto_result_details" class="hidden">
               <button type="button" class="btn btn-primary" 
+                      targeturl="{% url 'result_details' pk=object_id %}"
                       onclick="ru.cesar.seeker.result_wizard(this, 'main');">
                 << Result center</button>
             </div>

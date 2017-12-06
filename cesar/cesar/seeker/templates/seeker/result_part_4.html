@@ -67,25 +67,28 @@
 
   <!-- Show a bit of context as to where we are -->
   <div class="row container panel panel-default">
-    <div class="col-md-3"><label>Context of this hit</label></div>
-    <div class="col-md-6"></div>
-    <div class="col-md-3" align="right">
-      <a class="btn btn-default btn-xs" id="result_part4_button" 
-          targeturl=""
-          targetid="result_part_4"
-          resid="{{result.ResId}}"
-          onclick=""
-          title="more context">
-        <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
-      </a>
-      <a class="btn btn-default btn-xs" id="result_part5_button" 
-          targeturl="{% url 'result_part_5' object_id=kwic_id %}"
-          targetid="result_part_5"
-          resid="{{result.ResId}}"
-          onclick="ru.cesar.seeker.result_wizard(this, '5');"
-          title="tree">
-        <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
-      </a>
+    <div class="row ">
+      <div class="col-md-3"><label>Context of this hit</label></div>
+      <div class="col-md-6"></div>
+      <div class="col-md-3" align="right">
+        <a class="btn btn-default btn-xs" id="result_part4_button" 
+            targeturl=""
+            targetid="result_part_4"
+            resid="{{result.ResId}}"
+            onclick=""
+            title="more context">
+          <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+        </a>
+        <a class="btn btn-default btn-xs" id="result_part5_button" 
+            targeturl="{% url 'result_part_5' object_id=kwic_id %}"
+            targetid="result_part_5"
+            resid="{{result.ResId}}"
+            onclick="ru.cesar.seeker.result_wizard(this, '5');"
+            title="tree">
+          <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
+        </a>
+      </div>
+
     </div>
     <div class="row">
          [<span class="kwic-loc">{{result.Locw}}</span>]
@@ -97,17 +100,21 @@
   <!-- Show detailed information for this hit: feature names and values -->
   <div class="row container panel panel-default">
     <div><label>Features</label></div>
-    {% for feature in result.Features %}
-      {% for key, value in feature.items %}
-        <div class="row">
-          <div class="input-group input-group-sm">
-            <span class='input-group-addon' for='feature-{{key}}'>{{key}}</span>
-            <input name='feature-{{key}}' class='form-control' type="text" value='{{value}}'>
+    <form class="form-horizontal">
+      {% for feature in result.Features %}
+        {% for key, value in feature.items %}
+          <div class="row">
+            <label class='control-label col-sm-2' for='feature-{{key}}'>{{key}}</label>
+            <div class="col-sm-10">
+              <input name='feature-{{key}}' class='form-control td-toggle-textarea' type="text" value='{{value}}'>
+              <span class="td-textarea hidden">
+                <textarea id="feature-{{key}}" name="feature-{{key}}" cols="60" rows="1" style="height: 40px; font-family: monospace;">{{value}}</textarea>
+              </span>
+            </div>
           </div>
-          <div><label>&nbsp;</label></div>
-        </div>
+        {% endfor %}
       {% endfor %}
-    {% endfor %}
+    </form>
   </div>
 
 </div>

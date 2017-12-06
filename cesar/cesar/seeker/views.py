@@ -2908,6 +2908,11 @@ class ResultPart2(ResearchPart):
                 if not self.kwic_object.has_filter(oFilter):
                     # Apply the filter
                     self.kwic_object.apply_filter(oFilter)
+                    # Now re-calculate the numbers
+                    self.hit_count = self.kwic_object.hitcount
+                    result_number_list = list(range(1, self.hit_count))
+                    paginator = Paginator(result_number_list, self.paginate_by)
+                    self.page_obj = paginator.page(page)
 
                 # Set the number of items to be fetched
                 iCount = self.paginate_by
