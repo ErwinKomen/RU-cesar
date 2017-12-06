@@ -373,8 +373,6 @@ svg g.lithium-node:hover > text {
 .td-toggle-textarea {
     font-family: monospace;
     color: brown;
-    border: 1px solid #ddd;
-    border-radius: 3px; 
 }
 .td-textarea {
     font-family: monospace;
