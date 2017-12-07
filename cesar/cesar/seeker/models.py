@@ -250,6 +250,14 @@ class Gateway(models.Model):
         cns_set = self.constructions.all()
         for cns_this in cns_set:
             cns_this.delete()
+        # Delete the conditions (and what is under them)
+        cond_set = self.conditions.all()
+        for cond_this in cond_set:
+            cond_this.delete()
+        # Delete the features (and what is under them)
+        feat_set = self.features.all()
+        for feat_this in feat_set:
+            feat_this.delete()
         # Now perform the normal deletion
         return super().delete(using, keep_parents)
 
@@ -362,7 +370,7 @@ class Construction(models.Model):
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
 
-        # Delete the global variables
+        # Delete the related construction variables
         cvar_set = self.constructionvariables.all()
         for cvar in cvar_set:
             cvar.delete()
@@ -1154,6 +1162,9 @@ class ConstructionVariable(models.Model):
         for arg_inst in qs:
             # Delete this argument
             arg_inst.delete()
+        # Delete the function(s) pointing to me
+        if self.function != None:
+            self.function.delete()
         # Now delete myself
         return super().delete(using, keep_parents)
 
