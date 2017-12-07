@@ -159,15 +159,16 @@ class Gateway(models.Model):
         dvar_list = copy_m2m(self, new_copy, "definitionvariables", **kwargs)
         gvar_list = copy_m2m(self, new_copy, "globalvariables", **kwargs)
 
-        # Prepare an object for further processing
-        # kwargs['lst_m2m'] = ["constructionvariables"]
         # Copy all constructions + all associated construction variables
         cons_list = copy_m2m(self, new_copy, "constructions", **kwargs)
-        # Now visit all construction variables
-        cvar_list = ConstructionVariable.objects.filter(construction__gateway=self)
+
+        # Put the relevant variables into kwargs
         kwargs['dvar_list'] = dvar_list
         kwargs['gvar_list'] = gvar_list
         kwargs['cons_list'] = cons_list
+
+        # Now visit all construction variables
+        cvar_list = ConstructionVariable.objects.filter(construction__gateway=self)
         for cvar in cvar_list:
             # determine the correct (new) construction and vardef
             construction_src = cvar.construction
@@ -188,6 +189,39 @@ class Gateway(models.Model):
                 for function in Function.objects.filter(*lstQ):
                     function.root = cvar_new
                     function.save()
+
+        # Visit the conditions
+        cond_list = Condition.objects.filter(gateway=self)
+        for cond in cond_list:
+            # Keep track of Functions linked to the 'old' condition
+            func_old_id = [item.id for item in cond.functioncondroot.all()]
+            # Create a new cond using the correspondence lists
+            cond_new = cond.get_copy(**kwargs)
+            # Adapt the 'Function.root' of all 'new' FUnction instances 
+            lstQ = []
+            lstQ.append(~Q(id__in=func_old_id))
+            lstQ.append(Q(rootcond=cond))
+            with transaction.atomic():
+                for function in Function.objects.filter(*lstQ):
+                    function.rootcond = cond_new
+                    function.save()
+
+        # Visit the features
+        feat_list = Feature.objects.filter(gateway=self)
+        for feat in feat_list:
+            # Keep track of Functions linked to the 'old' feature
+            func_old_id = [item.id for item in feat.functionfeatroot.all()]
+            # Create a new feat using the correspondence lists
+            feat_new = feat.get_copy(**kwargs)
+            # Adapt the 'Function.root' of all 'new' FUnction instances 
+            lstQ = []
+            lstQ.append(~Q(id__in=func_old_id))
+            lstQ.append(Q(rootfeat=feat))
+            with transaction.atomic():
+                for function in Function.objects.filter(*lstQ):
+                    function.rootfeat = feat_new
+                    function.save()
+                    
         # Return the new copy
         return new_copy
 
@@ -866,15 +900,28 @@ class Argument(models.Model):
             return "$ERROR_ARG_{}".format(self.id)
 
     def get_copy(self, **kwargs):
+        # Possibly adapt gvar
+        gvar = self.gvar
+        if gvar != None and kwargs != None and 'gvar_list' in kwargs:
+            # REtrieve the correct gvar from the list
+            gvar = next(item for item in kwargs['gvar_list'] if item.name == self.gvar.name)
+        # Possibly adapt dvar
+        dvar = self.dvar
+        if dvar != None and kwargs != None and 'dvar_list' in kwargs:
+            # REtrieve the correct dvar from the list
+            dvar = next(item for item in kwargs['dvar_list'] if item.name == self.dvar.name)
+        if self.cvar != None:
+            iStop = True
+            # Don't know how to copy the proper CVAR yet
+
         # Make a clean copy
-        # new_copy = get_instance_copy(self)
         new_copy = Argument(argumentdef=self.argumentdef,
                             argtype=self.argtype,
                             argval=self.argval,
                             functiondef=self.functiondef,
-                            gvar=self.gvar,
+                            gvar=gvar,
                             cvar=self.cvar,
-                            dvar=self.dvar,
+                            dvar=dvar,
                             relation=self.relation)
         # Initial saving
         new_copy.save()
@@ -1032,7 +1079,7 @@ class ConstructionVariable(models.Model):
         new_copy.variable = kwargs['variable']
         # Copy the function associated with the current CVAR
         if self.function != None:
-            function = self.function.get_copy()
+            function = self.function.get_copy(**kwargs)
             # Set the function 
             new_copy.function = function
         # Only now save it
@@ -1168,10 +1215,10 @@ class Condition(models.Model):
         # If there is a function, copy it
         new_function = None
         if self.function != None:
-            new_function = self.function.get_copy()
+            new_function = self.function.get_copy(**kwargs)
         new_copy = Condition(name=self.name, description=self.description,
-                             condtype=self.condtype, cvar=self.cvar,
-                             functiondef=self.functiondef,
+                             condtype=self.condtype, variable=self.variable,
+                             functiondef=self.functiondef, order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
         # Return the new copy
         return new_copy
@@ -1266,10 +1313,11 @@ class Feature(models.Model):
         # If there is a function, copy it
         new_function = None
         if self.function != None:
-            new_function = self.function.get_copy()
+            new_function = self.function.get_copy(**kwargs)
         new_copy = Feature(name=self.name, description=self.description,
-                             feattype=self.feattype, cvar=self.cvar,
+                             feattype=self.feattype, variable=self.variable,
                              functiondef=self.functiondef,
+                             order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
         # Return the new copy
         return new_copy
@@ -1402,7 +1450,6 @@ class Research(models.Model):
         # Adapt the name of the project to reflect that this is a copy
         lstQ = []
         # Make it user-independent...
-        # lstQ.append(Q(owner=self.owner))
         lstQ.append(Q(name=self.name))
         iCount = Research.objects.filter(*lstQ).count()
         new_copy.name = "{}_{}".format(self.name, iCount+1)
@@ -1550,7 +1597,6 @@ class Research(models.Model):
 
         # Return what we have created
         return oBack
-
 
     def execute(self, partId, sFormat):
         """Send command to /crpp to start the project"""
