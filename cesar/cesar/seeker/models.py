@@ -168,7 +168,7 @@ class Gateway(models.Model):
         kwargs['cons_list'] = cons_list
 
         # Now visit all construction variables
-        cvar_list = ConstructionVariable.objects.filter(construction__gateway=self)
+        cvar_list = ConstructionVariable.objects.filter(construction__gateway=self).select_related()
         for cvar in cvar_list:
             # determine the correct (new) construction and vardef
             construction_src = cvar.construction
@@ -191,7 +191,7 @@ class Gateway(models.Model):
                     function.save()
 
         # Visit the conditions
-        cond_list = Condition.objects.filter(gateway=self)
+        cond_list = Condition.objects.filter(gateway=self).select_related()
         for cond in cond_list:
             # Keep track of Functions linked to the 'old' condition
             func_old_id = [item.id for item in cond.functioncondroot.all()]
@@ -207,7 +207,7 @@ class Gateway(models.Model):
                     function.save()
 
         # Visit the features
-        feat_list = Feature.objects.filter(gateway=self)
+        feat_list = Feature.objects.filter(gateway=self).select_related()
         for feat in feat_list:
             # Keep track of Functions linked to the 'old' feature
             func_old_id = [item.id for item in feat.functionfeatroot.all()]
@@ -607,9 +607,11 @@ class Function(models.Model):
         # Same for rootfeat
         if self.rootfeat != None and new_copy.rootfeat == None:
             new_copy.rootfeat = self.rootfeat
+
         # Process parent
         if kwargs != None and 'parent' in kwargs:
             new_copy.parent = kwargs['parent']
+
         # Copy all 12m fields
         kwargs['function'] = new_copy
         copy_m2m(self, new_copy, "functionarguments", **kwargs)    # Argument
@@ -904,12 +906,14 @@ class Argument(models.Model):
         gvar = self.gvar
         if gvar != None and kwargs != None and 'gvar_list' in kwargs:
             # REtrieve the correct gvar from the list
-            gvar = next(item for item in kwargs['gvar_list'] if item.name == self.gvar.name)
+            variable_src = gvar
+            gvar = next(x['dst'] for x in kwargs['gvar_list'] if x['src'] == variable_src)
         # Possibly adapt dvar
         dvar = self.dvar
         if dvar != None and kwargs != None and 'dvar_list' in kwargs:
             # REtrieve the correct dvar from the list
-            dvar = next(item for item in kwargs['dvar_list'] if item.name == self.dvar.name)
+            variable_src = dvar
+            dvar = next(x['dst'] for x in kwargs['dvar_list'] if x['src'] == variable_src)
         if self.cvar != None:
             iStop = True
             # Don't know how to copy the proper CVAR yet
@@ -1220,6 +1224,11 @@ class Condition(models.Model):
                              condtype=self.condtype, variable=self.variable,
                              functiondef=self.functiondef, order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
+        # Only now save it
+        try:
+            new_copy.save()
+        except:
+            sMsg = sys.exc_info()[0]
         # Return the new copy
         return new_copy
 
@@ -1319,6 +1328,11 @@ class Feature(models.Model):
                              functiondef=self.functiondef,
                              order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
+        # Only now save it
+        try:
+            new_copy.save()
+        except:
+            sMsg = sys.exc_info()[0]
         # Return the new copy
         return new_copy
 
