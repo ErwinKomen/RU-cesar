@@ -1231,8 +1231,13 @@ class Condition(models.Model):
         new_function = None
         if self.function != None:
             new_function = self.function.get_copy(**kwargs)
+        # Look for correct dvar
+        dvar = self.variable
+        if dvar != None and kwargs != None and  'dvar_list' in kwargs:
+             dvar = next(x['dst'] for x in kwargs['dvar_list'] if x['src'] == dvar)
+
         new_copy = Condition(name=self.name, description=self.description,
-                             condtype=self.condtype, variable=self.variable,
+                             condtype=self.condtype, variable=dvar,
                              functiondef=self.functiondef, order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
         # Only now save it
@@ -1334,8 +1339,14 @@ class Feature(models.Model):
         new_function = None
         if self.function != None:
             new_function = self.function.get_copy(**kwargs)
+
+        # Look for correct dvar
+        dvar = self.variable
+        if dvar != None and kwargs != None and  'dvar_list' in kwargs:
+             dvar = next(x['dst'] for x in kwargs['dvar_list'] if x['src'] == dvar)
+
         new_copy = Feature(name=self.name, description=self.description,
-                             feattype=self.feattype, variable=self.variable,
+                             feattype=self.feattype, variable=dvar,
                              functiondef=self.functiondef,
                              order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
