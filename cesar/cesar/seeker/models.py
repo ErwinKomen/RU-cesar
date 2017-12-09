@@ -168,7 +168,7 @@ class Gateway(models.Model):
         kwargs['cons_list'] = cons_list
 
         # Now visit all construction variables
-        cvar_list = ConstructionVariable.objects.filter(construction__gateway=self)
+        cvar_list = ConstructionVariable.objects.filter(construction__gateway=self).select_related()
         for cvar in cvar_list:
             # determine the correct (new) construction and vardef
             construction_src = cvar.construction
@@ -191,7 +191,7 @@ class Gateway(models.Model):
                     function.save()
 
         # Visit the conditions
-        cond_list = Condition.objects.filter(gateway=self)
+        cond_list = Condition.objects.filter(gateway=self).select_related()
         for cond in cond_list:
             # Keep track of Functions linked to the 'old' condition
             func_old_id = [item.id for item in cond.functioncondroot.all()]
@@ -207,7 +207,7 @@ class Gateway(models.Model):
                     function.save()
 
         # Visit the features
-        feat_list = Feature.objects.filter(gateway=self)
+        feat_list = Feature.objects.filter(gateway=self).select_related()
         for feat in feat_list:
             # Keep track of Functions linked to the 'old' feature
             func_old_id = [item.id for item in feat.functionfeatroot.all()]
@@ -250,6 +250,14 @@ class Gateway(models.Model):
         cns_set = self.constructions.all()
         for cns_this in cns_set:
             cns_this.delete()
+        # Delete the conditions (and what is under them)
+        cond_set = self.conditions.all()
+        for cond_this in cond_set:
+            cond_this.delete()
+        # Delete the features (and what is under them)
+        feat_set = self.features.all()
+        for feat_this in feat_set:
+            feat_this.delete()
         # Now perform the normal deletion
         return super().delete(using, keep_parents)
 
@@ -362,7 +370,7 @@ class Construction(models.Model):
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
 
-        # Delete the global variables
+        # Delete the related construction variables
         cvar_set = self.constructionvariables.all()
         for cvar in cvar_set:
             cvar.delete()
@@ -607,9 +615,11 @@ class Function(models.Model):
         # Same for rootfeat
         if self.rootfeat != None and new_copy.rootfeat == None:
             new_copy.rootfeat = self.rootfeat
+
         # Process parent
         if kwargs != None and 'parent' in kwargs:
             new_copy.parent = kwargs['parent']
+
         # Copy all 12m fields
         kwargs['function'] = new_copy
         copy_m2m(self, new_copy, "functionarguments", **kwargs)    # Argument
@@ -904,12 +914,14 @@ class Argument(models.Model):
         gvar = self.gvar
         if gvar != None and kwargs != None and 'gvar_list' in kwargs:
             # REtrieve the correct gvar from the list
-            gvar = next(item for item in kwargs['gvar_list'] if item.name == self.gvar.name)
+            variable_src = gvar
+            gvar = next(x['dst'] for x in kwargs['gvar_list'] if x['src'] == variable_src)
         # Possibly adapt dvar
         dvar = self.dvar
         if dvar != None and kwargs != None and 'dvar_list' in kwargs:
             # REtrieve the correct dvar from the list
-            dvar = next(item for item in kwargs['dvar_list'] if item.name == self.dvar.name)
+            variable_src = dvar
+            dvar = next(x['dst'] for x in kwargs['dvar_list'] if x['src'] == variable_src)
         if self.cvar != None:
             iStop = True
             # Don't know how to copy the proper CVAR yet
@@ -1150,6 +1162,9 @@ class ConstructionVariable(models.Model):
         for arg_inst in qs:
             # Delete this argument
             arg_inst.delete()
+        # Delete the function(s) pointing to me
+        if self.function != None:
+            self.function.delete()
         # Now delete myself
         return super().delete(using, keep_parents)
 
@@ -1216,10 +1231,20 @@ class Condition(models.Model):
         new_function = None
         if self.function != None:
             new_function = self.function.get_copy(**kwargs)
+        # Look for correct dvar
+        dvar = self.variable
+        if dvar != None and kwargs != None and  'dvar_list' in kwargs:
+             dvar = next(x['dst'] for x in kwargs['dvar_list'] if x['src'] == dvar)
+
         new_copy = Condition(name=self.name, description=self.description,
-                             condtype=self.condtype, variable=self.variable,
+                             condtype=self.condtype, variable=dvar,
                              functiondef=self.functiondef, order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
+        # Only now save it
+        try:
+            new_copy.save()
+        except:
+            sMsg = sys.exc_info()[0]
         # Return the new copy
         return new_copy
 
@@ -1314,11 +1339,22 @@ class Feature(models.Model):
         new_function = None
         if self.function != None:
             new_function = self.function.get_copy(**kwargs)
+
+        # Look for correct dvar
+        dvar = self.variable
+        if dvar != None and kwargs != None and  'dvar_list' in kwargs:
+             dvar = next(x['dst'] for x in kwargs['dvar_list'] if x['src'] == dvar)
+
         new_copy = Feature(name=self.name, description=self.description,
-                             feattype=self.feattype, variable=self.variable,
+                             feattype=self.feattype, variable=dvar,
                              functiondef=self.functiondef,
                              order=self.order,
                              function=new_function, gateway=kwargs['gateway'])
+        # Only now save it
+        try:
+            new_copy.save()
+        except:
+            sMsg = sys.exc_info()[0]
         # Return the new copy
         return new_copy
 
