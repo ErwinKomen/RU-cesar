@@ -920,6 +920,41 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  form_row_select
+       *      Select or unselect a form-row
+       *
+       */
+      form_row_select: function () {
+        var elTable = null,
+            elRow = null,     // The row
+            iSelCount = 0,    // Number of selected rows
+            bSelected = false;
+
+        try {
+          // Get to the row
+          elRow = $(this).closest("tr.form-row");
+          // Get current state
+          bSelected = $(elRow).hasClass("selected");
+          // FInd nearest table
+          elTable = $(elRow).closest("table");
+          // Check if anything other than me is selected
+          iSelCount = 1;
+          // Remove all selection
+          $(elTable).find(".form-row.selected").removeClass("selected");
+          // CHeck what we need to do
+          if (bSelected) {
+            // No need to do anything else: we are de-selecting
+          } else {
+            // Select the new row
+            $(elRow).addClass("selected");
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("form_row_select", ex);
+        }
+      },
+
+      /**
        *  init_events
        *      Bind main necessary events
        *
@@ -948,6 +983,12 @@ var ru = (function ($, ru) {
           // Make sure variable ordering is supported
           $('td span.var-down').unbind('click').click(ru.cesar.seeker.var_down);
           $('td span.var-up').unbind('click').click(ru.cesar.seeker.var_up);
+
+          // Allow form-row items to be selected or unselected
+          $('tr.form-row').each(function () {
+            $(this).find("td").not(".hidden").first().unbind('click').click(ru.cesar.seeker.form_row_select);
+          });
+
           // NOTE: do not use the following mouseout event--it is too weird to work with
           // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
 

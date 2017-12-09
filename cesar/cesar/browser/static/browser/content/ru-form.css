@@ -20,6 +20,13 @@ form .form-row p {
     padding-left: 0;
 }
 
+.form-row.selected {
+    background-color: yellow;
+}
+.form-row:hover {
+    background-color: palegoldenrod !important;
+}
+
 .hidden {
     display: none;
 }
