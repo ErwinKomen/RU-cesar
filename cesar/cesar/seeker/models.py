@@ -227,7 +227,7 @@ class Gateway(models.Model):
 
     def get_search_list(self):
         """List the names of the constructions plus their search group and specification"""
-        qs = self.constructions.all()
+        qs = self.constructions.all().select_related()
         lBack = []
         for item in qs:
             oSearch = item.search.get_search_spec()
@@ -302,6 +302,7 @@ class Gateway(models.Model):
         return True
 
     def get_construction_list(self):
+        # This method is nog used... :)
         return [cns for cns in self.constructions.all()]
 
     def check_cvar(self):
