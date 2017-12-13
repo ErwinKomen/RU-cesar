@@ -156,7 +156,23 @@ class Gateway(models.Model):
         # Initialize
         oJson = {}
 
-        # TODO: add global variables
+        # Get the global variables
+        gvar_list = []
+        for gvar in self.globalvariables.order_by('order', 'id'):
+            gvar_list.append({"name": gvar.name, "value": gvar.value})
+        oJson['gvars'] = gvar_list
+
+        # List the constructions
+        cons_list = []
+        for cons in self.get_construction_list():
+            cons_list.append({"name": cons.name})
+        oJson['constructions'] = cons_list
+
+        # List the data-dependant variables
+        dvar_list = []
+        for dvar in self.get_vardef_list():
+            dvar_list.append({"name": dvar.name})
+        oJson['dvars'] = dvar_list
 
         # Get the construction variables
         cvar_list = []
@@ -619,7 +635,7 @@ class Function(models.Model):
         # REturn the output
         return self.output
 
-    def get_code(self, format):
+    def get_code(self, format, method="recursive"):
         """Create and return the required Xquery"""
         oErr = ErrHandle()
         sCode = ""
@@ -630,13 +646,14 @@ class Function(models.Model):
                 # SOmething went wrong, so I am not able to get the code for this function
                 self.root.construction.gateway.error_add("Cannot get the Xquery translation for function [{}]".format(self.functiondef.name))
             else:
+                # Get the code of this current function
                 sCode = code.xquery
                 # Get and replace the code for the arguments
                 for idx, arg in enumerate(self.get_arguments()):
                     sArg = "$__arg[{}]".format(idx+1)
                     sAlt = "$_arg[{}]".format(idx+1)
                     # Get argument code
-                    sArgCode = arg.get_code(format)
+                    sArgCode = arg.get_code(format, method)
                     # Replace the code in the basis
                     sCode = sCode.replace(sArg, sArgCode)
                     sCode = sCode.replace(sAlt, sArgCode)
@@ -953,7 +970,7 @@ class Argument(models.Model):
             self.argval = json.dumps(oCode)
         return self.argval
 
-    def get_code(self, format):
+    def get_code(self, format, method="recursive"):
         """Create and return the required Xquery for this argument"""
 
         oErr = ErrHandle()
@@ -966,9 +983,12 @@ class Argument(models.Model):
                 argfunction = self.functionparent.all().first()
                 if argfunction == None:
                     sCode = ""
-                else:
+                elif method == "recursive":
                     # Get the format-dependant Xquery for this function
                     sCode = argfunction.get_code(format)
+                else:
+                    # The code simply consists of the function's id
+                    sCode = "$__arg_{}".format(argfunction.id)
             elif self.argtype == "fixed":
                 # Get the basic value
                 sValue = self.argval
