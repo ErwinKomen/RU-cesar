@@ -18,6 +18,7 @@ def ConvertProjectToXquery(oData):
     sCodeQry = ""
     template_main = ""
     template_def = ""
+    method = "plain"    # Methods: 'recursive', 'plain'
     oErr = utils.ErrHandle()
 
     try:
@@ -53,7 +54,7 @@ def ConvertProjectToXquery(oData):
                     # Determine what the construction variable is
                     cvar = ConstructionVariable.objects.filter(construction=cons, variable=var).first()
                     try:
-                        oCvarInfo = {'grp': cons.name, 'code': cvar.get_code(format)}
+                        oCvarInfo = {'grp': cons.name, 'code': cvar.get_code(format, method)}
                         # Check for possible error(s)
                         if gateway.get_errors() != "":
                             return "", ERROR_CODE
@@ -72,7 +73,7 @@ def ConvertProjectToXquery(oData):
                 cnd.refresh_from_db()
                 # Double check the include value of this option
                 if cnd.include == "" or cnd.include == "true":
-                    sCode = cnd.get_code(format)
+                    sCode = cnd.get_code(format, method)
                     if sCode != "":
                         cond_list.append(sCode)
             # Check for an empty condition list
@@ -86,7 +87,7 @@ def ConvertProjectToXquery(oData):
                 ft.refresh_from_db()
                 # Double check the include value of this option
                 if ft.include == "" or ft.include == "true":
-                    sCode = ft.get_code(format)
+                    sCode = ft.get_code(format, method)
                     if sCode != "":
                         feature_list.append({'name': ft.name, 
                                              'type': ft.feattype, 

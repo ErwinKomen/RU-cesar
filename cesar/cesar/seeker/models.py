@@ -441,11 +441,6 @@ class Construction(models.Model):
         qs = ConstructionVariable.objects.filter(construction=self).order_by('variable__order')
         return qs
 
-    def get_code(self, format):
-        """Produce the Xuery code for the indicated format"""
-
-        return ""
-
       
 class Variable(models.Model):
     """A variable has a name and a value, possibly combined with a function and a condition"""
@@ -650,10 +645,13 @@ class Function(models.Model):
                 sCode = code.xquery
                 # Get and replace the code for the arguments
                 for idx, arg in enumerate(self.get_arguments()):
+                    # Two alternatives for the argument-encoding
                     sArg = "$__arg[{}]".format(idx+1)
                     sAlt = "$_arg[{}]".format(idx+1)
-                    # Get argument code
+
+                    # Get argument code: NOTE: pass on the method
                     sArgCode = arg.get_code(format, method)
+
                     # Replace the code in the basis
                     sCode = sCode.replace(sArg, sArgCode)
                     sCode = sCode.replace(sAlt, sArgCode)
@@ -1266,7 +1264,7 @@ class ConstructionVariable(models.Model):
         # Return the new copy
         return new_copy
 
-    def get_code(self, format):
+    def get_code(self, format, method):
         """Provide Xquery code for this cns var"""
 
         oErr = ErrHandle()
@@ -1300,8 +1298,15 @@ class ConstructionVariable(models.Model):
                     self.construction.gateway.error_add("The data-dependant variable {} for search element {} is not defined correctly (function)".format(
                       self.variable.name, self.construction.name))
                     return ERROR_CODE
+                elif method == "recursive":
+                    sCode = self.function.get_code(format, method)
                 else:
-                    sCode = self.function.get_code(format)
+                    # Method is plain: get the code for the function call
+                    sMain = self.function.get_code(format, method)
+                    # Append the code for the definition
+                    sDef = self.function.get_codedef(format)
+                    # COmbine
+                    sCode = "{}\n{}".format(sMain, sDef)
             return sCode
         except:
             oErr.DoError("cvar/get_code error")
@@ -1423,7 +1428,7 @@ class Condition(models.Model):
         # Return the new copy
         return new_copy
 
-    def get_code(self, format):
+    def get_code(self, format, method):
         """Create and return the required Xquery"""
         sCode = ""
         if self.condtype == "dvar":
@@ -1434,8 +1439,16 @@ class Condition(models.Model):
                 # A variable has been defined
                 sCode = "${}".format(self.variable.name)
         elif self.condtype == "func":
-            # REturn the code of this function
-            sCode = self.function.get_code(format)
+            if method == "recursive":
+                # REturn the code of this function
+                sCode = self.function.get_code(format, method)
+            else:
+                # Method is plain: get the code for the function call
+                sMain = self.function.get_code(format, method)
+                # Append the code for the definition
+                sDef = self.function.get_codedef(format)
+                # COmbine
+                sCode = "{}\n{}".format(sMain, sDef)
         else:
             # This is something else
             sCode = "$UnknownCode"
@@ -1472,6 +1485,17 @@ class Condition(models.Model):
                             for func in arg_func_list:
                                 func_list.append(func)
         return func_list
+
+
+def get_function_main(function, format, cvar_until):
+    """Get the function call in Xquery"""
+
+    # Validate
+    if function == None: return ""
+    # Create correct function name
+    sCode = "tb:function_{}({})".format(function.name, get_cvar_list(cvar_until))
+    # REturn the code
+    return sBasCodeck
 
 
 class Feature(models.Model):
@@ -1551,7 +1575,7 @@ class Feature(models.Model):
         # Return the new copy
         return new_copy
 
-    def get_code(self, format):
+    def get_code(self, format, method):
         """Create and return the required Xquery"""
         sCode = ""
         if self.feattype == "dvar":
@@ -1561,8 +1585,16 @@ class Feature(models.Model):
                 # A variable has been defined
                 sCode = "${}".format(self.variable.name)
         elif self.feattype == "func":
-            # REturn the code of this function
-            sCode = self.function.get_code(format)
+            if method == "recursive":
+                # REturn the code of this function
+                sCode = self.function.get_code(format, method)
+            else:
+                # Method is plain: get the code for the function call
+                sMain = self.function.get_code(format, method)
+                # Append the code for the definition
+                sDef = self.function.get_codedef(format)
+                # COmbine
+                sCode = "{}\n{}".format(sMain, sDef)
         else:
             # This is something else
             sCode = "$UnknownCode"
