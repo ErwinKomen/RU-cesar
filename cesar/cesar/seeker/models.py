@@ -601,6 +601,8 @@ class Function(models.Model):
     # [0-1] The output type of the function. May be unknown initially and then calculated
     type = models.CharField("Type", blank=True, choices=build_choice_list(SEARCH_TYPE), 
                               max_length=5, help_text=get_help(SEARCH_TYPE))
+    # [0-1] FIlled-in line number
+    line = models.IntegerField("Line number", default=0)
     # [1] The value that is the outcome of this function
     #     This is a JSON list, so can be bool, int, string of any number
     output = models.TextField("JSON value", null=False, blank=True, default="[]")
@@ -655,11 +657,27 @@ class Function(models.Model):
                     # Replace the code in the basis
                     sCode = sCode.replace(sArg, sArgCode)
                     sCode = sCode.replace(sAlt, sArgCode)
+
+                # If plain method, add assignment
+                if method == "plain":
+                    sCode = "let $__line{} := {}".format(self.get_line(), sCode)
             # Return the code that we have produced
             return sCode
         except:
             oErr.DoError("Function/get_code error")
             return "$ERROR_FUNCTION_{}".format(self.id)
+
+    def get_codedef(self, format):
+        """Create and return the required Xquery for the 'definition' part of a function
+        
+        Note: this is only for the 'plain' method;
+              the recursive method does not require pre-calculation of the definition part
+        """
+
+        sCode = ""
+
+        # Return what has been made
+        return sCode
 
     def get_copy(self, **kwargs):
         # Make a clean copy
@@ -789,23 +807,26 @@ class Function(models.Model):
 
     def get_line(self):
         """Determine which line in the function table this is at"""
-        iLine = 0
-        id = self.id
-        # The start function depends on there being a root or rootcond
-        start_function = None
-        if self.root != None:
-            start_function = self.root.function
-        elif self.rootcond != None:
-            start_function = self.rootcond.function
-        elif self.rootfeat != None:
-            start_function = self.rootfeat.function
-        # Double check: do we have a start_function?
-        if start_function != None:
-            lFunc = start_function.get_functions()
-            for idx in range(len(lFunc)):
-                if lFunc[idx].id == id:
-                    iLine = idx+1
-                    break
+        iLine = self.line
+        if iLine == 0:
+            id = self.id
+            # The start function depends on there being a root or rootcond
+            start_function = None
+            if self.root != None:
+                start_function = self.root.function
+            elif self.rootcond != None:
+                start_function = self.rootcond.function
+            elif self.rootfeat != None:
+                start_function = self.rootfeat.function
+            # Double check: do we have a start_function?
+            if start_function != None:
+                lFunc = start_function.get_functions()
+                for idx in range(len(lFunc)):
+                    if lFunc[idx].id == id:
+                        iLine = idx+1
+                        break
+            self.line = iLine
+            self.save()
         return iLine
 
     def get_functions(self):
@@ -814,7 +835,7 @@ class Function(models.Model):
         func_this = self
         func_list = [func_this]
         # Walk all arguments
-        for arg_this in func_this.functionarguments.all():
+        for arg_this in func_this.functionarguments.all().select_related():
             # CHeck if this is a function argument
             if arg_this.argtype == "func":
                 # Then add the function pointed to by the argument
@@ -863,7 +884,7 @@ class Function(models.Model):
         return anc_list
 
     def get_arguments(self):
-        qs = self.functionarguments.all().order_by('argumentdef__order')
+        qs = self.functionarguments.all().select_related().order_by('argumentdef__order')
         return qs
 
           
@@ -985,8 +1006,8 @@ class Argument(models.Model):
                     # Get the format-dependant Xquery for this function
                     sCode = argfunction.get_code(format)
                 else:
-                    # The code simply consists of the function's id
-                    sCode = "$__arg_{}".format(argfunction.id)
+                    # The code: use the line where the function is defined
+                    sCode = "$__line{}".format(argfunction.get_line())
             elif self.argtype == "fixed":
                 # Get the basic value
                 sValue = self.argval
@@ -1265,11 +1286,13 @@ class ConstructionVariable(models.Model):
         return new_copy
 
     def get_code(self, format, method):
-        """Provide Xquery code for this cns var"""
+        """Provide Xquery 'main' and 'def' code for this cns var"""
 
         oErr = ErrHandle()
+        oBack = {'main': "", 'def': "", 'dvars': []}
+        sDef = ""
+        sMain = ""
         try:
-            sCode = "concat('{}', '{}')".format(self.type, format)
             if self.type == "gvar":
                 if self.gvar == None:
                     # This is not good. The CVAR points to a gvar that does not exist
@@ -1277,20 +1300,20 @@ class ConstructionVariable(models.Model):
                       self.variable.name, self.construction.name))
                     return ERROR_CODE
                 else:
-                    sCode = "$_{}".format(self.gvar.name)
+                    sMain = "$_{}".format(self.gvar.name)
             elif self.type == "fixed":
                 sValue = self.svalue
                 # Make sure booleans are translated correctly
                 if sValue.lower() == "true" or sValue.lower() == "true()":
-                    sCode = "true()"
+                    sMain = "true()"
                 elif sValue.lower() == "false" or sValue.lower() == "false()":
-                    sCode = "false()"
+                    sMain = "false()"
                 elif re.match(integer_format, sValue):
                     # THis is an integer
-                    sCode = sValue
+                    sMain = sValue
                 else:
                     # String value -- must be between quotes
-                    sCode = "'{}'".format(sValue.replace("'", "''"))
+                    sMain = "'{}'".format(sValue.replace("'", "''"))
             elif self.type == "calc":
                 # Check if a function has been defined
                 if self.function == None:
@@ -1299,18 +1322,31 @@ class ConstructionVariable(models.Model):
                       self.variable.name, self.construction.name))
                     return ERROR_CODE
                 elif method == "recursive":
-                    sCode = self.function.get_code(format, method)
-                else:
-                    # Method is plain: get the code for the function call
                     sMain = self.function.get_code(format, method)
+                else:
+                    # Method is plain: get the code for all the functions with me as 'root'
+                    func_list = [item.get_code(format, method) 
+                                 for item in Function.objects.filter(root=self).order_by('id') ]
+                    sMain = func_list
+                    # sMain = self.function.get_code(format, method)
                     # Append the code for the definition
                     sDef = self.function.get_codedef(format)
-                    # COmbine
-                    sCode = "{}\n{}".format(sMain, sDef)
-            return sCode
+                    oBack['def'] = sDef
+                    # Find out which definition variables are available for me
+                    lstQ = []
+                    lstQ.append(Q(gateway=self.construction.gateway))
+                    lstQ.append(Q(order__lt=self.variable.order))
+                    qs = VarDef.objects.filter(*lstQ).order_by('order')
+                    oBack['dvars'] = ["$" + item.name for item in qs]
+            else:
+                sMain = "concat('{}', '{}')".format(self.type, format)
+            # Store code and definition
+            oBack['main'] = sMain
+            return oBack
         except:
             oErr.DoError("cvar/get_code error")
-            return ""
+            oBack['error'] = True
+            return oBack
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         return super().save(force_insert, force_update, using, update_fields)
@@ -1429,30 +1465,41 @@ class Condition(models.Model):
         return new_copy
 
     def get_code(self, format, method):
-        """Create and return the required Xquery"""
-        sCode = ""
+        """Create and return the required Xquery for main and def"""
+
+        oBack = {'main': "", 'def': "", 'dvars': []}
+        sDef = ""
+        sMain = ""
         if self.condtype == "dvar":
             if self.variable == None:
-                # sCode = "$undefined_{}".format(self.name)
-                sCode = ""
+                # sMain = "$undefined_{}".format(self.name)
+                sMain = ""
             else:
                 # A variable has been defined
-                sCode = "${}".format(self.variable.name)
+                sMain = "${}".format(self.variable.name)
         elif self.condtype == "func":
             if method == "recursive":
                 # REturn the code of this function
-                sCode = self.function.get_code(format, method)
-            else:
-                # Method is plain: get the code for the function call
                 sMain = self.function.get_code(format, method)
+            else:
+                # Method is plain: get the code for all the functions with me as 'root'
+                func_list = [item.get_code(format, method) 
+                              for item in Function.objects.filter(rootcond=self).order_by('id') ]
+                sMain = func_list
+                # sMain = self.function.get_code(format, method)
                 # Append the code for the definition
                 sDef = self.function.get_codedef(format)
-                # COmbine
-                sCode = "{}\n{}".format(sMain, sDef)
+                oBack['def'] = sDef
+                # Find out which definition variables are available for me
+                lstQ = []
+                lstQ.append(Q(gateway=self.gateway))
+                qs = VarDef.objects.filter(*lstQ).order_by('order')
+                oBack['dvars'] = ["$" + item.name for item in qs]
         else:
             # This is something else
-            sCode = "$UnknownCode"
-        return sCode
+            sMain = "$UnknownCode"
+        oBack['main'] = sMain
+        return oBack
       
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
@@ -1577,28 +1624,39 @@ class Feature(models.Model):
 
     def get_code(self, format, method):
         """Create and return the required Xquery"""
-        sCode = ""
+
+        oBack = {'main': "", 'def': "", 'dvars': []}
+        sDef = ""
+        sMain = ""
         if self.feattype == "dvar":
             if self.variable == None:
-                sCode = ""
+                sMain = ""
             else:
                 # A variable has been defined
-                sCode = "${}".format(self.variable.name)
+                sMain = "${}".format(self.variable.name)
         elif self.feattype == "func":
             if method == "recursive":
                 # REturn the code of this function
-                sCode = self.function.get_code(format, method)
-            else:
-                # Method is plain: get the code for the function call
                 sMain = self.function.get_code(format, method)
+            else:
+                # Method is plain: get the code for all the functions with me as 'root'
+                func_list = [item.get_code(format, method) 
+                              for item in Function.objects.filter(rootfeat=self).order_by('id') ]
+                sMain = func_list
+                # sMain = self.function.get_code(format, method)
                 # Append the code for the definition
                 sDef = self.function.get_codedef(format)
-                # COmbine
-                sCode = "{}\n{}".format(sMain, sDef)
+                oBack['def'] = sDef
+                # Find out which definition variables are available for me
+                lstQ = []
+                lstQ.append(Q(gateway=self.gateway))
+                qs = VarDef.objects.filter(*lstQ).order_by('order')
+                oBack['dvars'] = ["$" + item.name for item in qs]
         else:
             # This is something else
-            sCode = "$UnknownCode"
-        return sCode
+            sMain = "$UnknownCode"
+        oBack['main'] = sMain
+        return oBack
       
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""

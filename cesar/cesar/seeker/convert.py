@@ -54,7 +54,10 @@ def ConvertProjectToXquery(oData):
                     # Determine what the construction variable is
                     cvar = ConstructionVariable.objects.filter(construction=cons, variable=var).first()
                     try:
-                        oCvarInfo = {'grp': cons.name, 'code': cvar.get_code(format, method)}
+                        oCode = cvar.get_code(format, method)
+                        oCvarInfo = {'grp': cons.name, 
+                                     'code': oCode['main'],
+                                     'dvars': oCode['dvars']}
                         # Check for possible error(s)
                         if gateway.get_errors() != "":
                             return "", ERROR_CODE
@@ -73,7 +76,8 @@ def ConvertProjectToXquery(oData):
                 cnd.refresh_from_db()
                 # Double check the include value of this option
                 if cnd.include == "" or cnd.include == "true":
-                    sCode = cnd.get_code(format, method)
+                    oCode = cnd.get_code(format, method)
+                    sCode = oCode['main']
                     if sCode != "":
                         cond_list.append(sCode)
             # Check for an empty condition list
@@ -87,7 +91,8 @@ def ConvertProjectToXquery(oData):
                 ft.refresh_from_db()
                 # Double check the include value of this option
                 if ft.include == "" or ft.include == "true":
-                    sCode = ft.get_code(format, method)
+                    oCode = ft.get_code(format, method)
+                    sCode = oCode['main']
                     if sCode != "":
                         feature_list.append({'name': ft.name, 
                                              'type': ft.feattype, 
