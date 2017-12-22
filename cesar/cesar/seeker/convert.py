@@ -18,7 +18,7 @@ def ConvertProjectToXquery(oData):
     sCodeQry = ""
     template_main = ""
     template_def = ""
-    method = "plain"    # Methods: 'recursive', 'plain'
+    method = 'recursive'   #  "plain"    # Methods: 'recursive', 'plain'
     oErr = utils.ErrHandle()
 
     try:

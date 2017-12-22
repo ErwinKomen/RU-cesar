@@ -454,6 +454,9 @@ class ResearchExe(View):
     def initializations(self, request, object_id):
         # Clear errors
         self.arErr = []
+        self.data['status'] = "ok"
+        self.data['html'] = ""
+        self.data['statuscode'] = ""
         # COpy the request
         self.request = request
         # Copy any object id

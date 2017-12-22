@@ -10,7 +10,9 @@
       {% for item in dvar_list %}
         let ${{item.name}} := 
           {% for cvar in item.cvar_list %}
-            {% if forloop.first %}
+            {% if item.cvar_list|length == 1 %}
+              ({{cvar.code|safe}})
+            {% elif forloop.first %}
               if ($searchgroup = '{{cvar.grp}}') then ({{cvar.code|safe}})
             {% elif forloop.last %}
               else ({{cvar.code|safe}})
