@@ -18,7 +18,8 @@ def ConvertProjectToXquery(oData):
     sCodeQry = ""
     template_main = ""
     template_def = ""
-    method = 'recursive'   #  "plain"    # Methods: 'recursive', 'plain'
+    method = 'recursive'            #  "plain"    # Methods: 'recursive', 'plain'
+    bUseDefinitionFunctions = True  # Make use of the definition part to have functions
     oErr = utils.ErrHandle()
 
     try:
@@ -32,8 +33,12 @@ def ConvertProjectToXquery(oData):
             template_main = 'seeker/main_psdx.xq'
             template_def = 'seeker/def_psdx.xq'
         elif format == 'folia':
-            template_main = 'seeker/main_folia.xq'
-            template_def = 'seeker/def_folia.xq'
+            if bUseDefinitionFunctions:
+                template_main = 'seeker/xqmain_folia.xq'
+                template_def = 'seeker/xqdef_folia.xq'
+            else:
+                template_main = 'seeker/main_folia.xq'
+                template_def = 'seeker/def_folia.xq'
         
         # Is everything okay?
         if template_main != "":
@@ -46,6 +51,7 @@ def ConvertProjectToXquery(oData):
             constructions = gateway.constructions.all()
             # the names of the constructions plus their search group and specification
             search_list = gateway.get_search_list()
+
             # The data-dependant variables need to be divided over the search elements
             dvar_list = []
             for var in gateway.get_vardef_list():
@@ -57,7 +63,9 @@ def ConvertProjectToXquery(oData):
                         oCode = cvar.get_code(format, method)
                         oCvarInfo = {'grp': cons.name, 
                                      'code': oCode['main'],
-                                     'dvars': oCode['dvars']}
+                                     'type': cvar.type,
+                                     'dvars': oCode['dvars'],
+                                     'fname': "tb:dvar_{}_cons_{}".format(var.name, cons.name)}
                         # Check for possible error(s)
                         if gateway.get_errors() != "":
                             return "", ERROR_CODE
@@ -68,6 +76,7 @@ def ConvertProjectToXquery(oData):
                 # Add the cvar_list to the dvar_list
                 oDvarInfo = {'name': var.name, 'cvar_list': cvar_list}
                 dvar_list.append(oDvarInfo)
+            dvar_all = ", ".join(["$"+item['name'] for item in dvar_list])
 
             # Also add the conditions
             cond_list = []
@@ -94,16 +103,19 @@ def ConvertProjectToXquery(oData):
                     oCode = ft.get_code(format, method)
                     sCode = oCode['main']
                     if sCode != "":
-                        feature_list.append({'name': ft.name, 
-                                             'type': ft.feattype, 
-                                             'dvar': ft.variable,
-                                             'code': sCode})
+                        feature_list.append({
+                          'name': ft.name, 
+                          'type': ft.feattype, 
+                          'dvar': ft.variable,
+                          'code': sCode,
+                          'fname': "tb:feat_{}".format(ft.name)})
 
-
+            # Specify the context variable for the Xquery template determination
             context = dict(gvar_list=gvars, 
                            cons_list=constructions, 
                            search_list=search_list,
                            dvar_list=dvar_list,
+                           dvar_all=dvar_all,
                            cond_list=cond_list,
                            feature_list=feature_list)
 

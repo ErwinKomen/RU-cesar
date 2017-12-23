@@ -1315,6 +1315,12 @@ class ConstructionVariable(models.Model):
                     # String value -- must be between quotes
                     sMain = "'{}'".format(sValue.replace("'", "''"))
             elif self.type == "calc":
+                # Find out which definition variables are available for me
+                lstQ = []
+                lstQ.append(Q(gateway=self.construction.gateway))
+                lstQ.append(Q(order__lt=self.variable.order))
+                qs = VarDef.objects.filter(*lstQ).order_by('order')
+                oBack['dvars'] = ", ".join( ["$" + item.name for item in qs])
                 # Check if a function has been defined
                 if self.function == None:
                     # This is not good: no function specified
@@ -1332,12 +1338,6 @@ class ConstructionVariable(models.Model):
                     # Append the code for the definition
                     sDef = self.function.get_codedef(format)
                     oBack['def'] = sDef
-                    # Find out which definition variables are available for me
-                    lstQ = []
-                    lstQ.append(Q(gateway=self.construction.gateway))
-                    lstQ.append(Q(order__lt=self.variable.order))
-                    qs = VarDef.objects.filter(*lstQ).order_by('order')
-                    oBack['dvars'] = ["$" + item.name for item in qs]
             else:
                 sMain = "concat('{}', '{}')".format(self.type, format)
             # Store code and definition

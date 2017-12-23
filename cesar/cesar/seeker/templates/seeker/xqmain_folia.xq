@@ -10,12 +10,14 @@
       {% for item in dvar_list %}
         let ${{item.name}} := 
           {% for cvar in item.cvar_list %}
-            {% if forloop.first %}
-              if ($searchgroup = '{{cvar.grp}}') then ({{cvar.code|safe}})
+            {% if item.cvar_list|length == 1 %} then 
+              {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
+            {% elif forloop.first %}
+              if ($searchgroup = '{{cvar.grp}}') then {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% elif forloop.last %}
-              else ({{cvar.code|safe}})
+              else {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% else %}
-              else if ($searchgroup = '{{cvar.grp}}') then ({{cvar.code|safe}})
+              else if ($searchgroup = '{{cvar.grp}}') then {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% endif %}
           {% endfor %}
       {% endfor %}

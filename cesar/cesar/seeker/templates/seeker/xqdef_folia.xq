@@ -59,6 +59,29 @@ declare function tb:foliaw($ndThis as node()?) as node()? {
 	return $ndThis/ancestor::s/descendant::w[@xml:id = $sId]
 };
 
+{% for item in dvar_list %}    {% for cvar in item.cvar_list %} {% if cvar.type == "calc" %}
+(: ----------------------------------------
+   Name: {{cvar.fname}}
+   Goal: calculate value for variable {{item.name}}, searchgroup {{cvar.grp}}
+   ---------------------------------------- :)
+declare function {{cvar.fname}}($search, {{cvar.dvars}}) {
+  {{cvar.code|safe}}
+};
+{% endif %} {% endfor %}  {% endfor %}
+
+{% for item in feature_list %}
+{% if item.type == 'func' %}
+(: ----------------------------------------
+   Name: {{item.fname}}
+   Goal: calculate feature {{item.name}}
+   ---------------------------------------- :)
+declare function {{item.fname}}($search, {{dvar_all}}) {
+  {{item.code|safe}}
+};
+{% endif %}
+{% endfor %}
+
+
 (: ----------------------------------------------
     Name: getFtList
     Goal: Create a list of features
@@ -72,7 +95,7 @@ declare function tb:getFtList($search, $searchgroup
   let $ft_search_pos := $search/@class
   (: Include the user-specified features here :)
   {% for feat in feature_list %}
-  let $ft_{{feat.name}} := {% if feat.type == 'dvar' %}${{feat.dvar.name}}{% else %}{{feat.code|safe}} {% endif %}
+  let $ft_{{feat.name}} := {% if feat.type == 'dvar' %}${{feat.dvar.name}}{% else %}{{feat.fname}}($search, {{dvar_all}}) {% endif %}
   {% endfor %}
 
   return concat($ft_search, ';', $ft_search_pos
