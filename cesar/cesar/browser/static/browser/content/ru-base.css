@@ -17,7 +17,7 @@ input[type=text], input[type=password], input[type=email], input[type=url],
 input[type=number], textarea, select, .vTextField {
     border: 1px solid #ccc;
     border-radius: 4px;
-    padding: 5px 6px;
+    padding: 2px  3px;
     margin-top: 0;
 }
 
@@ -28,7 +28,7 @@ input[type=url]:focus, input[type=number]:focus, textarea:focus, select:focus,
 }
 
 select {
-    height: 30px;
+    height: 25px;
 }
 
 select[multiple] {
