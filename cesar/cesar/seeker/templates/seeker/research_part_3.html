@@ -23,19 +23,19 @@
                   {% for gvar_this in gvar_formset %}
                   <tr class="form-row">
                     <td class="hidden">{{gvar_this.variable_ptr}}</td>
-                    <td valign="top" class="col-md-2">{{gvar_this.name}}</td>
-                    <td valign="top" class="col-md-4">{{gvar_this.description}}</td>
-                    <td valign="top" class="col-md-5">{{gvar_this.value}}</td>
-                    <td valign="top" align="center" class="col-md-1">{{gvar_this.DELETE}}</td>
+                    <td valign="top" class="col-ru-2">{{gvar_this.name}}</td>
+                    <td valign="top" class="col-ru-4">{{gvar_this.description}}</td>
+                    <td valign="top" class="col-ru-5">{{gvar_this.value}}</td>
+                    <td valign="top" align="center" class="col-ru-1">{{gvar_this.DELETE}}</td>
                   </tr>
                   {% endfor %}
                   {% if currentowner == user %}
                   <tr id="arguments-empty" class="form-row empty-form row1">
                     <td class="hidden">{{gvar_formset.empty_form.variable_ptr}}</td>
-                    <td valign="top" class="col-md-2">{{gvar_formset.empty_form.name}}</td>
-                    <td valign="top" class="col-md-4">{{gvar_formset.empty_form.description}}</td>
-                    <td valign="top" class="col-md-5">{{gvar_formset.empty_form.value}}</td>
-                    <td valign="top" align="center" class="col-md-1">{{gvar_formset.empty_form.DELETE}}</td>
+                    <td valign="top" class="col-ru-2">{{gvar_formset.empty_form.name}}</td>
+                    <td valign="top" class="col-ru-4">{{gvar_formset.empty_form.description}}</td>
+                    <td valign="top" class="col-ru-5">{{gvar_formset.empty_form.value}}</td>
+                    <td valign="top" align="center" class="col-ru-1">{{gvar_formset.empty_form.DELETE}}</td>
                   </tr>
                   <tr class="add-row">
                     <td colspan="4">

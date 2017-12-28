@@ -20,7 +20,7 @@
             Make sure they are defined in the right <b>order</b>: any variable can only make use of other variables that are <em>above</em> it.</p>
           </div>
           <table>
-            <thead><tr><th>Name</th><th>Order</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
+            <thead><tr><th>Name</th><th>Description</th><th></th><th>DELETE?</th></tr></thead>
             <tbody>
               {% for vardef_this in vardef_ordered %}
                 {% if not vardef_this.DELETE.value %}
@@ -28,10 +28,8 @@
                     <td class="hidden">{{vardef_this.variable_ptr}}</td>
                     <td id="vardefid" class="hidden">{{vardef_this.instance.id}}</td>
                     <td valign="top">{{vardef_this.name}}</td>
-                    <td valign="top" align="left">
+                    <td class="hidden">
                       <span class="var-order hidden">{{vardef_this.ORDER}}</span>
-                      <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
-                      <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right {% if forloop.first %}hidden{% endif%}"></span>
                     </td>
                     <td valign="top">{{vardef_this.description}}</td>
                     <td valign="top" align="left">
@@ -51,10 +49,8 @@
               <tr id="arguments-empty" class="form-row empty-form row1">
                 <td class="hidden">{{vardef_formset.empty_form.variable_ptr}}</td>
                 <td valign="top">{{vardef_formset.empty_form.name}}</td>
-                <td valign="top" align="left">
+                <td class="hidden">
                   <span class="var-order hidden">{{new_order_number}}</span>
-                  <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
-                  <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right"></span>
                 </td>
                 <td valign="top">{{vardef_formset.empty_form.description}}</td>
                 <td valign="top" align="left"><!-- no button here unless saved--></td>

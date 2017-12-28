@@ -24,3 +24,4 @@ class SeekerTextarea(Textarea):
           output.append("</span>")
       # Combine and return
       return mark_safe('\n'.join(output))
+

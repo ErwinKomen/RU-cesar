@@ -29,21 +29,21 @@
               {% for wrd_form in construction_formset %}
               <tr class="form-row">
                 <td class="hidden">{{wrd_form.id}}</td>
-                <td valign="top" class="col-md-1">{{forloop.counter}}</td>
-                <td valign="top" class="col-md-2">{{wrd_form.name}}</td>
-                <td valign="top" class="col-md-8">{{wrd_form.value}}</td>
+                <td valign="top" class="col-ru-1">{{forloop.counter}}</td>
+                <td valign="top" class="col-ru-2">{{wrd_form.name}}</td>
+                <td valign="top" class="col-ru-8">{{wrd_form.value}}</td>
                 {% if currentowner == user %}
-                <td valign="top" align="center" class="col-md-1">{{wrd_form.DELETE}}</td>
+                <td valign="top" align="center" class="col-ru-1">{{wrd_form.DELETE}}</td>
                 {% endif %}
               </tr>
               {% endfor %}
               {% if currentowner == user %}
               <tr id="arguments-empty" class="form-row empty-form row1">
                   <td class="hidden">{{construction_formset.empty_form.id}}</td>
-                  <td valign="top" class="col-md-1">__counter__</td>
-                  <td valign="top" class="col-md-2">{{construction_formset.empty_form.name}}</td>
-                  <td valign="top" class="col-md-8">{{construction_formset.empty_form.value}}</td>
-                  <td valign="top" align="center" class="col-md-1">{{construction_formset.empty_form.DELETE}}</td>
+                  <td valign="top" class="col-ru-1">__counter__</td>
+                  <td valign="top" class="col-ru-2">{{construction_formset.empty_form.name}}</td>
+                  <td valign="top" class="col-ru-8">{{construction_formset.empty_form.value}}</td>
+                  <td valign="top" align="center" class="col-ru-1">{{construction_formset.empty_form.DELETE}}</td>
               </tr>
               <tr class="add-row">
                 <td colspan="4">

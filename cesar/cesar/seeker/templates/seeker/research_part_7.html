@@ -22,17 +22,15 @@
                 No features of other types (e.g. boolean, number, node) are allowed.</p>
             </div>
             <table>
-              <thead><tr><th>#</th><th>Name</th><th>Order</th><th>Description</th><th>Feature type</th><th>Value</th><th>Include</th><th>DELETE</th></tr></thead>
+              <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Feature type</th><th>Value</th><th>Include</th><th>DELETE</th></tr></thead>
               <tbody>
                 {% for feat_form in feat_ordered %}
                   <tr class="form-row feat-item">
                     <td class="hidden">{{feat_form.id}}</td>
-                    <td valign="top">{{forloop.counter}}</td>
+                    <td valign="top" class="counter">{{forloop.counter}}</td>
                     <td valign="top">{{feat_form.name}}</td>
-                    <td valign="top" align="left">
+                    <td class="hidden">
                       <span class="var-order hidden">{{feat_form.ORDER}}</span>
-                      <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
-                      <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right {% if forloop.first %}hidden{% endif%}"></span>
                     </td>
                     <td valign="top">{{feat_form.description}}</td>
                     <td valign="top" class="feat-type">{{feat_form.feattype}}</td>
@@ -55,12 +53,10 @@
 
                 <tr id="feature-empty" class="form-row empty-form feat-item row1">
                   <td class="hidden">{{feat_formset.empty_form.id}}</td>
-                  <td valign="top">__counter__</td>
+                  <td valign="top" class="counter">__counter__</td>
                   <td valign="top">{{feat_formset.empty_form.name}}</td>
-                  <td valign="top" align="left">
+                  <td class="hidden">
                     <span class="var-order hidden">{{new_order_number}}</span>
-                    <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
-                    <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right"></span>
                   </td>
                   <td valign="top">{{feat_formset.empty_form.description}}</td>
                   <td valign="top" class="feat-type">{{feat_formset.empty_form.feattype}}</td>

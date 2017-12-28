@@ -44,14 +44,31 @@ var ru = (function ($, ru) {
        *      Move variable row one step down or up
        *      This means the 'order' attribute changes
        */
-      var_move: function (el, sDirection) {
+      var_move: function (elStart, sDirection, sType) {
         var elRow = null,
+            el = null,
+            tdCounter = null,
             rowSet = null,
             iLen = 0;
 
         try {
-          // Find the current row
-          elRow = $(el).closest("tr");
+          // Find out what type we have
+          if (sType === undefined) { sType = ""; }
+          switch (sType) {
+            case "selected":
+              // Find the selected row
+              elRow = $(elStart).closest("form").find("tr.selected").first();
+              // The element is below
+              el = $(elRow).find(".var-order input").parent();
+              break;
+            default:
+              // THe [el] is where we start
+              el = elStart;
+              // The row is above me
+              elRow = $(el).closest("tr");
+              break;
+          }
+          // Perform the action immediately
           switch (sDirection) {
             case "down":
               // Put the 'other' (=next) row before me
@@ -74,15 +91,22 @@ var ru = (function ($, ru) {
             if (parseInt(sOrder, 10) !== index + 1) {
               $(elInput).attr("value", index + 1);
               $(elInput).val(index + 1);
+              // Look for a <td> element with class "counter"
+              tdCounter = $(el).find("td.counter");
+              if (tdCounter.length > 0) {
+                $(tdCounter).html(index+1);
+              }
             }
-            // Check visibility of up and down
-            $(el).find(".var-down").removeClass("hidden");
-            $(el).find(".var-up").removeClass("hidden");
-            if (index === 0) {
-              $(el).find(".var-up").addClass("hidden");
-            }
-            if (index === iLen - 1) {
-              $(el).find(".var-down").addClass("hidden");
+            if (sType === "") {
+              // Check visibility of up and down
+              $(el).find(".var-down").removeClass("hidden");
+              $(el).find(".var-up").removeClass("hidden");
+              if (index === 0) {
+                $(el).find(".var-up").addClass("hidden");
+              }
+              if (index === iLen - 1) {
+                $(el).find(".var-down").addClass("hidden");
+              }
             }
           });
         } catch (ex) {
@@ -943,14 +967,72 @@ var ru = (function ($, ru) {
           $(elTable).find(".form-row.selected").removeClass("selected");
           // CHeck what we need to do
           if (bSelected) {
-            // No need to do anything else: we are de-selecting
+            // We are de-selecting: hide the 'Up' and 'Down' buttons if needed
+            ru.cesar.seeker.show_up_down(this,false);
           } else {
             // Select the new row
             $(elRow).addClass("selected");
+            // SHow the 'Up' and 'Down' buttons if needed
+            ru.cesar.seeker.show_up_down(this,true);
           }
 
         } catch (ex) {
           private_methods.errMsg("form_row_select", ex);
+        }
+      },
+
+      /**
+       *  show_up_down
+       *      Show or hide up/down buttons
+       *      But only do this if the table has a row that has elements with class ".var-order"
+       *
+       */
+      show_up_down: function (el, bShow) {
+        var bHasOrder = false,  // THis table has 'order'
+            divSubmit = null,   // Submit row
+            divUp = null,       // Button to move up
+            divDown = null;     // Button to move down
+
+        try {
+          // DO we have order?
+          bHasOrder = ($(el).closest("table").find(".var-order").first().length > 0);
+          if (!bHasOrder) { return; }
+          // We have order: find the buttons
+          divSubmit = $(el).closest("form").find("div.submit-row").first();
+          if (divSubmit.length === 0) { return;}
+          divUp = $(divSubmit).find("span.row-up").first();
+          divDown = $(divSubmit).find("span.row-down").first();
+          // Check out the buttons
+          if (divUp.length === 0) {
+            // Create an UP button
+            $(divSubmit).prepend("<span class='btn btn-primary row-up glyphicon glyphicon-chevron-up'></span>");
+            divUp = $(divSubmit).find("span.row-up").first();
+            // bind click event
+            $(divUp).on("click", function () {
+              private_methods.var_move(this, 'up', 'selected');
+            });
+          }
+          if (divDown.length === 0) {
+            // create a DOWN button
+            $(divSubmit).prepend("<span class='btn btn-primary row-down glyphicon glyphicon-chevron-down'></span>");
+            divDown = $(divSubmit).find("span.row-down").first();
+            // bind click event
+            $(divDown).on("click", function () {
+              private_methods.var_move(this, 'down', 'selected');
+            });
+          }
+          // We have order: show or hide buttons
+          if (bShow) {
+            // Show the buttons
+            divUp.removeClass("hidden");
+            divDown.removeClass("hidden");
+          } else {
+            // Hide the buttons
+            divUp.addClass("hidden");
+            divDown.addClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("show_up_down", ex);
         }
       },
 
@@ -986,7 +1068,56 @@ var ru = (function ($, ru) {
 
           // Allow form-row items to be selected or unselected
           $('tr.form-row').each(function () {
+            // Add it to the first visible cell
             $(this).find("td").not(".hidden").first().unbind('click').click(ru.cesar.seeker.form_row_select);
+            // Make sure any other cells  that have an <input> or a <td-toggle-textarea> are set too
+            $(this).find("td").not(".hidden").each(function () {
+              if ($(this).find("input").length > 0 ||
+                  $(this).find("span.td-toggle-textarea").length > 0) {
+                $(this).unbind("click").click(ru.cesar.seeker.form_row_select);
+              }
+            });
+          });
+
+          // Make sure all <input> elements in a <form> are treated uniformly
+          $("form input[type='text']").each(function () {
+            var $this = $(this),
+                $span = $this.prev("span");
+            // Create span if not existing
+            if ($span === undefined || $span === null || $span.length === 0) {
+              $span = $this.before("<span></span");
+              // Still need to go to the correct function
+              $span = $this.prev("span");
+            }
+            // Set the value of the span
+            $span.html($this.val());
+            // Now specify the action on clicking the span
+            $span.on("click", function () {
+              var $this = $(this);
+              $this.hide().siblings("input").show().focus().select();
+            });
+            // Specify what to do on blurring the input
+            $this.on("blur", function () {
+              var $this = $(this);
+              // Show the value of the input in the span
+              $this.hide().siblings("span").text($this.val()).show();
+            }).on("keydown", function (e) {
+              // SPecify what to do if the tab is pressed
+              if (e.which === 9) {
+                e.preventDefault();
+                if (e.shiftKey) {
+                  // Need to go backwards
+                  $(this).blur().closest("tr").prev("tr").find("input[type='text']").not(".hidden").first().prev("span").click();
+                } else {
+                  // Move forwards
+                  $(this).blur().closest("tr").next("tr").find("input[type='text']").not(".hidden").first().prev("span").click();
+                }
+              }
+            });
+            // Make sure the <input> is hidden, unless it is empty
+            if ($this.val() !== "") {
+              $this.hide();
+            }
           });
 
           // NOTE: do not use the following mouseout event--it is too weird to work with

@@ -20,17 +20,15 @@
               <p>Specify the conditions that <em>all</em> need to be met before the found word or constituent can be regarded as an actual search hit.</p>
             </div>
             <table>
-              <thead><tr><th>#</th><th>Name</th><th>Order</th><th>Description</th><th>Condition type</th><th>Value</th><th>Include</th><th>DELETE</th></tr></thead>
+              <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Condition type</th><th>Value</th><th>Include</th><th>DELETE</th></tr></thead>
               <tbody>
                 {% for cond_form in cond_ordered %}
                   <tr class="form-row cond-item">
                     <td class="hidden">{{cond_form.id}}</td>
-                    <td valign="top">{{forloop.counter}}</td>
+                    <td valign="top" class="counter">{{forloop.counter}}</td>
                     <td valign="top">{{cond_form.name}}</td>
-                    <td valign="top" align="left">
+                    <td class="hidden">
                       <span class="var-order hidden">{{cond_form.ORDER}}</span>
-                      <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down {% if forloop.last %}hidden{% endif%}"></span>
-                      <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right {% if forloop.first %}hidden{% endif%}"></span>
                     </td>
                     <td valign="top">{{cond_form.description}}</td>
                     <td valign="top" class="cond-type">{{cond_form.condtype}}</td>
@@ -53,12 +51,10 @@
 
                 <tr id="condition-empty" class="form-row empty-form cond-item row1">
                   <td class="hidden">{{cond_formset.empty_form.id}}</td>
-                  <td valign="top">__counter__</td>
+                  <td valign="top" class="counter">__counter__</td>
                   <td valign="top">{{cond_formset.empty_form.name}}</td>
-                  <td valign="top" align="left">
+                  <td class="hidden">
                     <span class="var-order hidden">{{new_order_number}}</span>
-                    <span class="var-down btn btn-xs glyphicon glyphicon-chevron-down hidden"></span>
-                    <span class="var-up btn btn-xs glyphicon glyphicon-chevron-up pull-right"></span>
                   </td>
                   <td valign="top">{{cond_formset.empty_form.description}}</td>
                   <td valign="top" class="cond-type">{{cond_formset.empty_form.condtype}}</td>
