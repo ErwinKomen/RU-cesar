@@ -1751,6 +1751,7 @@ var ru = (function ($, ru) {
             response = null,
             basket_id = -1,
             frm = null,
+            oBack = null,
             sMsg = "",
             data = [];
 
@@ -1761,16 +1762,21 @@ var ru = (function ($, ru) {
           // obligatory parameter: ajaxurl
           ajaxurl = $(elStart).attr("ajaxurl");
 
-          // Need to add the 'qc_select' value
-          // var iQcSelect = $("#qc_select").val();
-          // data.push({ 'name': 'qc_select', 'value': iQcSelect });
+          // Get the download type and put it in the <input>
+          $("#downloadtype").val($(elStart).attr("downloadtype"));
 
           // Gather the information
           frm = $(elStart).closest(".container.body-content").find("form");
           // Set the 'action; attribute in the form
           frm.attr("action", ajaxurl);
-          frm.submit();
+          // Make sure we do a POST
+          frm.attr("method", "POST");
+          // Now submit the form
+          oBack = frm.submit();
+          // Check on what has been returned
+          if (oBack !== null) {
 
+          }
         } catch (ex) {
           private_methods.errMsg("result_download", ex);
         }

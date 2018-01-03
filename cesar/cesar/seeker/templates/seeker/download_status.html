@@ -1,0 +1,34 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
+      &rsaquo; <a href="{{search_edit_url}}">{{search_name}}</a>
+      &rsaquo; results [{{basket.part.corpus.get_lng_display}}, {{basket.part.name}}]
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+    <h4>Report</h4>
+    <p>Downloading could not be started. Please see the error(s) below.</p>
+    <div class="errors">
+      {% if error_list %} 
+        <b>Errors:</b>
+        {% for item in error_list %}
+        <div class="error-item"><code>{{item|safe}}</code></div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <div>&nbsp;</div>
+    <h4>Back</h4>
+    <div>
+      <p>Return to the result details of 
+      <a href="{% url 'result_details' pk=basket.pk %}">
+      [{{search_name}}, {{basket.part.corpus.get_lng_display}}, {{basket.part.name}}]</a></p>
+    </div>
+  </div>
+{% endblock content %}

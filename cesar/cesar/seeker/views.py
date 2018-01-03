@@ -18,15 +18,19 @@ from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
 from django import template
+import zipfile
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
+from cesar.seeker.convert import decompressSafe
 from cesar.browser.models import Part, Corpus
 from cesar.browser.views import get_item_list, adapt_search
 from cesar.browser.services import get_crpp_sent_info
+from cesar.seeker.services import crpp_dbget
 from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
+
 
 def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
 
@@ -509,9 +513,11 @@ class ResearchPart(View):
     savedate = None         # When saving information, the savedate is returned in the context
     add = False             # Are we adding a new record or editing an existing one?
     obj = None              # The instance of the MainModel
+    action = ""             # The action to be undertaken
     MainModel = None        # The model that is mainly used for this form
     form_objects = []       # List of forms to be processed
     formset_objects = []    # List of formsets to be processed
+    bDebug = False          # Debugging information
     data = {'status': 'ok', 'html': ''}       # Create data to be returned    
     
     def post(self, request, object_id=None):
@@ -521,114 +527,154 @@ class ResearchPart(View):
         if self.checkAuthentication(request):
             # Build the context
             context = dict(object_id = object_id, savedate=None)
-            # Walk all the forms for preparation of the formObj contents
-            for formObj in self.form_objects:
-                # Are we SAVING a NEW item?
-                if self.add:
-                    # We are saving a NEW item
-                    formObj['forminstance'] = formObj['form'](request.POST, prefix=formObj['prefix'])
-                else:
-                    # We are saving an EXISTING item
-                    # Determine the instance to be passed on
-                    instance = self.get_instance(formObj['prefix'])
-                    # Make the instance available in the form-object
-                    formObj['instance'] = instance
-                    # Get an instance of the form
-                    formObj['forminstance'] = formObj['form'](request.POST, prefix=formObj['prefix'], instance=instance)
-
-            # Initially we are assuming this just is a review
-            context['savedate']="reviewed at {}".format(datetime.now().strftime("%X"))
-
-            # Iterate again
-            for formObj in self.form_objects:
-                prefix = formObj['prefix']
-                # Adapt if it is not readonly
-                if not formObj['readonly']:
-                    # Check validity of form
-                    if formObj['forminstance'].is_valid():
-                        # Save it preliminarily
-                        instance = formObj['forminstance'].save(commit=False)
-                        # The instance must be made available (even though it is only 'preliminary')
+            # Action depends on 'action' value
+            if self.action == "":
+                if self.bDebug: self.oErr.Status("ResearchPart: action=" + self.action)
+                # Walk all the forms for preparation of the formObj contents
+                for formObj in self.form_objects:
+                    # Are we SAVING a NEW item?
+                    if self.add:
+                        # We are saving a NEW item
+                        formObj['forminstance'] = formObj['form'](request.POST, prefix=formObj['prefix'])
+                    else:
+                        # We are saving an EXISTING item
+                        # Determine the instance to be passed on
+                        instance = self.get_instance(formObj['prefix'])
+                        # Make the instance available in the form-object
                         formObj['instance'] = instance
-                        # Perform actions to this form BEFORE FINAL saving
-                        bNeedSaving = formObj['forminstance'].has_changed()
-                        if self.before_save(prefix, request, instance=instance): bNeedSaving = True
-                        if formObj['forminstance'].instance.id == None: bNeedSaving = True
-                        if bNeedSaving:
-                            # Perform the saving
-                            instance.save()
-                            # Set the context
-                            context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
-                            # Put the instance in the form object
-                            formObj['instance'] = instance
-                            # Store the instance id in the data
-                            self.data[prefix + '_instanceid'] = instance.id
-                            # Any action after saving this form
-                            self.after_save(prefix, instance)
-                    else:
-                        self.arErr.append(formObj['forminstance'].errors)
-                        self.form_validated = False
+                        # Get an instance of the form
+                        formObj['forminstance'] = formObj['form'](request.POST, prefix=formObj['prefix'], instance=instance)
 
-                # Add instance to the context object
-                context[prefix + "Form"] = formObj['forminstance']
-            # Walk all the formset objects
-            for formsetObj in self.formset_objects:
-                formsetClass = formsetObj['formsetClass']
-                prefix  = formsetObj['prefix']
-                form_kwargs = self.get_form_kwargs(prefix)
-                if self.add:
-                    # Saving a NEW item
-                    formset = formsetClass(request.POST, request.FILES, prefix=prefix, form_kwargs = form_kwargs)
-                else:
-                    # Saving an EXISTING item
-                    instance = self.get_instance(prefix)
-                    qs = self.get_queryset(prefix)
-                    if qs == None:
-                        formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, form_kwargs = form_kwargs)
+                # Initially we are assuming this just is a review
+                context['savedate']="reviewed at {}".format(datetime.now().strftime("%X"))
+
+                # Iterate again
+                for formObj in self.form_objects:
+                    prefix = formObj['prefix']
+                    # Adapt if it is not readonly
+                    if not formObj['readonly']:
+                        # Check validity of form
+                        if formObj['forminstance'].is_valid():
+                            # Save it preliminarily
+                            instance = formObj['forminstance'].save(commit=False)
+                            # The instance must be made available (even though it is only 'preliminary')
+                            formObj['instance'] = instance
+                            # Perform actions to this form BEFORE FINAL saving
+                            bNeedSaving = formObj['forminstance'].has_changed()
+                            if self.before_save(prefix, request, instance=instance): bNeedSaving = True
+                            if formObj['forminstance'].instance.id == None: bNeedSaving = True
+                            if bNeedSaving:
+                                # Perform the saving
+                                instance.save()
+                                # Set the context
+                                context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                                # Put the instance in the form object
+                                formObj['instance'] = instance
+                                # Store the instance id in the data
+                                self.data[prefix + '_instanceid'] = instance.id
+                                # Any action after saving this form
+                                self.after_save(prefix, instance)
+                        else:
+                            self.arErr.append(formObj['forminstance'].errors)
+                            self.form_validated = False
+
+                    # Add instance to the context object
+                    context[prefix + "Form"] = formObj['forminstance']
+                # Walk all the formset objects
+                for formsetObj in self.formset_objects:
+                    formsetClass = formsetObj['formsetClass']
+                    prefix  = formsetObj['prefix']
+                    form_kwargs = self.get_form_kwargs(prefix)
+                    if self.add:
+                        # Saving a NEW item
+                        formset = formsetClass(request.POST, request.FILES, prefix=prefix, form_kwargs = form_kwargs)
                     else:
-                        formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, queryset=qs, form_kwargs = form_kwargs)
-                # Process all the forms in the formset
-                self.process_formset(prefix, request, formset)
-                # Store the instance
-                formsetObj['formsetinstance'] = formset
-                # Adapt the formset contents only, when it is NOT READONLY
-                if not formsetObj['readonly']:
-                    # Is the formset valid?
-                    if formset.is_valid():
-                        # Make sure all changes are saved in one database-go
-                        with transaction.atomic():
-                            # Walk all the forms in the formset
-                            for form in formset:
-                                # At least check for validity
-                                if form.is_valid():
-                                    # Should we delete?
-                                    if form.cleaned_data['DELETE']:
-                                        # Delete this one
-                                        form.instance.delete()
-                                        # NOTE: the template knows this one is deleted by looking at form.DELETE
-                                        # form.delete()
+                        # Saving an EXISTING item
+                        instance = self.get_instance(prefix)
+                        qs = self.get_queryset(prefix)
+                        if qs == None:
+                            formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, form_kwargs = form_kwargs)
+                        else:
+                            formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, queryset=qs, form_kwargs = form_kwargs)
+                    # Process all the forms in the formset
+                    self.process_formset(prefix, request, formset)
+                    # Store the instance
+                    formsetObj['formsetinstance'] = formset
+                    # Adapt the formset contents only, when it is NOT READONLY
+                    if not formsetObj['readonly']:
+                        # Is the formset valid?
+                        if formset.is_valid():
+                            # Make sure all changes are saved in one database-go
+                            with transaction.atomic():
+                                # Walk all the forms in the formset
+                                for form in formset:
+                                    # At least check for validity
+                                    if form.is_valid():
+                                        # Should we delete?
+                                        if form.cleaned_data['DELETE']:
+                                            # Delete this one
+                                            form.instance.delete()
+                                            # NOTE: the template knows this one is deleted by looking at form.DELETE
+                                            # form.delete()
+                                        else:
+                                            # Check if anything has changed so far
+                                            has_changed = form.has_changed()
+                                            # Save it preliminarily
+                                            instance = form.save(commit=False)
+                                            # Any actions before saving
+                                            if self.before_save(prefix, request, instance, form):
+                                                has_changed = True
+                                            # Save this construction
+                                            if has_changed: 
+                                                # Save the instance
+                                                instance.save()
+                                                # Adapt the last save time
+                                                context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                                                # Store the instance id in the data
+                                                self.data[prefix + '_instanceid'] = instance.id
                                     else:
-                                        # Check if anything has changed so far
-                                        has_changed = form.has_changed()
-                                        # Save it preliminarily
-                                        instance = form.save(commit=False)
-                                        # Any actions before saving
-                                        if self.before_save(prefix, request, instance, form):
-                                            has_changed = True
-                                        # Save this construction
-                                        if has_changed: 
-                                            # Save the instance
-                                            instance.save()
-                                            # Adapt the last save time
-                                            context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
-                                            # Store the instance id in the data
-                                            self.data[prefix + '_instanceid'] = instance.id
-                                else:
-                                    self.arErr.append(form.errors)
+                                        self.arErr.append(form.errors)
+                        else:
+                            self.arErr.append(formset.errors)
+                    # Add the formset to the context
+                    context[prefix + "_formset"] = formset
+            elif self.action == "download":
+                # We are being asked to download something
+                if self.dtype != "" and self.qcTarget and self.qcTarget > 0:
+                    # Get the name of the CRP, starting from basket
+                    sCrpName = self.basket.research.name
+                    sUserName = self.basket.research.owner.username
+                    oBack = {'status': 'ok'}
+                    # Download the requested information
+                    oData = crpp_dbget(sUserName, sCrpName, self.qcTarget, self.dtype)
+                    if oData == None or oData['commandstatus'] != 'ok' or not 'db' in oData:
+                        # Allow user to add to the context
+                        context = self.add_to_context(context)
+                        # Something went wrong
+                        sMsg = ""
+                        oBack['status'] = 'error'
+                        oBack['commandstatus'] = sMsg
+                        if 'code' in oData:
+                            oBack['code'] = oData['code']
+                            sMsg += " code: " + oBack['code']   
+                        if 'message' in oData:
+                            sMsg += "<br>" + oData['message']                     
+                        self.arErr.append(sMsg)
+                        context['error_list'] = [str(item) for item in self.arErr]
+                        context['errors'] = self.arErr
+                        return render(request, self.template_name, context)
                     else:
-                        self.arErr.append(formset.errors)
-                # Add the formset to the context
-                context[prefix + "_formset"] = formset
+                        # All should be fine...
+                        sData = oData['db']
+                        # Decode the data and compress it using gzip
+                        bUtf8 = (self.dtype != "db")
+                        compressed_content = decompressSafe(sData, True, bUtf8)
+                        # Get the name adn the contents
+                        sDbName = oData['name']
+                        response = HttpResponse(compressed_content, content_type='application/gzip')
+                        response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
+                        # return gzip_middleware.process_response(request, response)
+                        return response
 
             # Allow user to add to the context
             context = self.add_to_context(context)
@@ -3115,7 +3161,9 @@ class ResultPart5(ResearchPart):
 
 class ResultDownload(ResearchPart):
     MainModel = Basket
+    template_name = "seeker/download_status.html"
     qcTarget = 1
+    dtype = "csv"           # downloadtype
     basket = None
     action = "download"
 
@@ -3125,8 +3173,18 @@ class ResultDownload(ResearchPart):
         qc = self.qd['qc_select']
         if qc != None and qc != '':
             self.qcTarget = int(qc)
+        dt = self.qd['downloadtype']
+        if dt != None and dt != '':
+            self.dtype = dt
         # Set the basket-object
         self.basket = self.obj
+
+    def add_to_context(self, context):
+        # Provide search URL and search name
+        context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": self.basket.research.id})
+        context['search_name'] = self.basket.research.name
+        context['basket'] = self.basket
+        return context
 
 
 

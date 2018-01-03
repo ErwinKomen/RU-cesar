@@ -3,6 +3,9 @@
 # General Django/Python
 from django.template import loader, Context
 from django.utils import timezone
+import base64, gzip, zlib
+import io
+# from io import StringIO
 import json
 import xml
 import re
@@ -239,3 +242,28 @@ def get_crpp_date(dtThis):
     # Model: yyyy-MM-dd'T'HH:mm:ss
     sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
     return sDate
+
+def decompressSafe(sInput, bKeepGzip = False, bUtf8 = False):
+    """Convert string that has been treated with 'compressSafe()' by /crpp"""
+    data = None
+
+    try:
+        # Perform standard base64 decoding
+        data = base64.b64decode(sInput, "~/")
+        if bUtf8 and bKeepGzip:
+            # We must decode from the zlib
+            data = zlib.decompress(data)
+            if bUtf8:
+                data = data.decode("utf-8")
+            if bKeepGzip:
+                # Perform gzip compression
+                if bUtf8:
+                    data = gzip.compress(bytes(data.encode("utf8")))
+                else:
+                    data = gzip.compress(data)
+        elif not bUtf8:
+            pass
+    except:
+        pass
+    # Return the result
+    return data

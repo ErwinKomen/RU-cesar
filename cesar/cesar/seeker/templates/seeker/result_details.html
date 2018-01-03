@@ -40,8 +40,42 @@
               </select>
           </div>
 
+          <!-- Allow for downloading -->
+          <div class="col-md-3" align="left">
+            <div class="hidden">
+              <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-default btn-sm dropdown-toggle"
+                      type="button" id="downloadmenu"
+                      data-toggle="dropdown" aria-haspopup="true"
+                      aria-expanded="true">download&nbsp;<span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+                <li>
+                  <a href="#" id="result_download_csv"
+                      downloadtype="csv"
+                      ajaxurl="{% url 'result_download' object_id %}"
+                      onclick="ru.cesar.seeker.result_download(this);" >csv</a>
+                </li>
+                <li>
+                  <a href="#"  id="result_download_csv"
+                      downloadtype="xml"
+                      ajaxurl="{% url 'result_download' object_id %}"
+                      onclick="ru.cesar.seeker.result_download(this);" >xml</a>
+                </li>
+                <li>
+                  <a href="#"  id="result_download_csv"
+                      downloadtype="db"
+                      ajaxurl="{% url 'result_download' object_id %}"
+                      onclick="ru.cesar.seeker.result_download(this);" >SQlite</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
           <!-- Show we are waiting -->
-          <div class="col-md-6" align="center">
+          <div class="col-md-3" align="left">
             <div id="kwic-fetch" class="row hidden">
               <span>Loading...</span>
               <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
@@ -127,9 +161,6 @@
               <tr>
                 <td>Line {{line.qc}}</td>
                 <td align="right">{{line.count}}</td>
-                <td><a class="btn btn-default btn-xs" id="result_download_csv"
-                       ajaxurl="{% url 'result_download' object_id %}"
-                       onclick="ru.cesar.seeker.result_download(this);" >CSV...</a></td>
               </tr>
             {% for scat in line.qsubcats.all %}
               <tr><td>{{scat.name}}</td><td align="right">{{scat.count}}</td></tr>
