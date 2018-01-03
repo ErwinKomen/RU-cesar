@@ -60,6 +60,16 @@ def crpp_exe(sUser, sCrpName, sLng, sPart):
     # Send and return the reply
     return crpp_command("exe", oToCrpp)
 
+def crpp_getcsv(sUser, sCrpName, iQC):
+    """Get the /crpp to fetch the database results"""
+
+    # Construct the object to be passed along
+    oToCrpp = { 'userid': sUser,
+                'name': "{}_QC{}_Dbase.xml".format(sCrpName, iQC),
+                'type': "csv" }
+    # Send and return the reply
+    return crpp_command("dbget", oToCrpp)
+
 def crpp_status(sUser, sJobId):
     """Send a status request to /crpp for the job with indicated id
     

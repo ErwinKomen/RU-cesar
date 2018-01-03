@@ -3113,6 +3113,21 @@ class ResultPart5(ResearchPart):
         return context
 
 
+class ResultDownload(ResearchPart):
+    MainModel = Basket
+    qcTarget = 1
+    basket = None
+    action = "download"
+
+    def custom_init(self):
+        """Calculate stuff"""
+
+        qc = self.qd['qc_select']
+        if qc != None and qc != '':
+            self.qcTarget = int(qc)
+        # Set the basket-object
+        self.basket = self.obj
+
 
 
 def research_oview(request, object_id=None):

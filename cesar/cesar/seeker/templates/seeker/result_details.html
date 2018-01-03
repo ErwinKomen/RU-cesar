@@ -124,7 +124,13 @@
         <div><label>Hit counts</label></div>
         <table>
           {% for line in quantor.qclines.all %}
-              <tr><td>Line {{line.qc}}</td><td align="right">{{line.count}}</td></tr>
+              <tr>
+                <td>Line {{line.qc}}</td>
+                <td align="right">{{line.count}}</td>
+                <td><a class="btn btn-default btn-xs" id="result_download_csv"
+                       ajaxurl="{% url 'result_download' object_id %}"
+                       onclick="ru.cesar.seeker.result_download(this);" >CSV...</a></td>
+              </tr>
             {% for scat in line.qsubcats.all %}
               <tr><td>{{scat.name}}</td><td align="right">{{scat.count}}</td></tr>
             {% endfor %}

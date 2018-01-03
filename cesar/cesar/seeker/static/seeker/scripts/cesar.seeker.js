@@ -1742,6 +1742,41 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * result_download
+       *   Trigger creating and downloading a result CSV
+       *
+       */
+      result_download: function (elStart) {
+        var ajaxurl = "",
+            response = null,
+            basket_id = -1,
+            frm = null,
+            sMsg = "",
+            data = [];
+
+        try {
+          // Clear the errors
+          private_methods.errClear();
+
+          // obligatory parameter: ajaxurl
+          ajaxurl = $(elStart).attr("ajaxurl");
+
+          // Need to add the 'qc_select' value
+          // var iQcSelect = $("#qc_select").val();
+          // data.push({ 'name': 'qc_select', 'value': iQcSelect });
+
+          // Gather the information
+          frm = $(elStart).closest(".container.body-content").find("form");
+          // Set the 'action; attribute in the form
+          frm.attr("action", ajaxurl);
+          frm.submit();
+
+        } catch (ex) {
+          private_methods.errMsg("result_download", ex);
+        }
+      },
+
+      /**
        * search_start
        *   Check and then start a search
        *
