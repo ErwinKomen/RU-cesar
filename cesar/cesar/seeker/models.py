@@ -2164,7 +2164,8 @@ class Basket(models.Model):
             # Get the /crpp/dbinfo count for this QC line
             sUser = self.research.owner.username
             sCrpName = self.research.name
-            oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0)
+            sPartDir = self.part.dir
+            oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0,sPart=sPartDir)
             if oDbInfoBack['commandstatus'] != 'ok':
                 oErr.DoError("set_kwic: didn't get a positive reply from /crpp/dbinfo")
                 # Cannot get a positive reply
@@ -2263,8 +2264,9 @@ class Kwic(models.Model):
         # Send to /crpp/dbinfo to get the correct amounts
         sUser = self.basket.research.owner.username
         sCrpName = self.basket.research.name
+        sPartDir = self.basket.part.dir
         iQcLine = self.qc
-        oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0, filter=oFilter)
+        oDbInfoBack = crpp_dbinfo(sUser, sCrpName, iQcLine, -1, 0, filter=oFilter, sPart=sPartDir)
         if oDbInfoBack['commandstatus'] != 'ok':
             oErr.DoError("apply_filter: didn't get a positive reply from /crpp/dbinfo")
             # Cannot get a positive reply

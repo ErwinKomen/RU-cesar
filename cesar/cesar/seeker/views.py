@@ -644,9 +644,10 @@ class ResearchPart(View):
                     # Get the name of the CRP, starting from basket
                     sCrpName = self.basket.research.name
                     sUserName = self.basket.research.owner.username
+                    sPartDir = self.basket.part.dir
                     oBack = {'status': 'ok'}
                     # Download the requested information
-                    oData = crpp_dbget(sUserName, sCrpName, self.qcTarget, self.dtype)
+                    oData = crpp_dbget(sUserName, sCrpName, self.qcTarget, sType=self.dtype, sPart=sPartDir)
                     if oData == None or oData['commandstatus'] != 'ok' or not 'db' in oData:
                         # Allow user to add to the context
                         context = self.add_to_context(context)
@@ -2563,7 +2564,8 @@ class KwicListView(View):
                                 qcNumber, 
                                 iStart,
                                 iCount,
-                                filter=oFilter)
+                                filter=oFilter,
+                                sPart=self.basket.part.dir)
             if oData['commandstatus'] == "ok" and oData['status']['code'] == "completed":
                 # Provide all the information needed to create the Html presentation of the data
                 context['result_list'] = oData['Results']
@@ -2972,7 +2974,8 @@ class ResultPart2(ResearchPart):
                                     qc, 
                                     iStart,
                                     iCount,
-                                    filter=oFilter)
+                                    filter=oFilter,
+                                    sPart=self.basket.part.dir)
                 if oData['commandstatus'] == "ok" and oData['code'] == "completed":
                     self.result_list = oData['Results']
                     self.feature_list = oData['Features']

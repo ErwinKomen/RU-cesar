@@ -60,7 +60,7 @@ def crpp_exe(sUser, sCrpName, sLng, sPart):
     # Send and return the reply
     return crpp_command("exe", oToCrpp)
 
-def crpp_dbget(sUser, sCrpName, iQC, sType='csv'):
+def crpp_dbget(sUser, sCrpName, iQC, sType='csv', sPart=''):
     """Get the /crpp to fetch the database results"""
 
     # Make sure we get the correct database-name
@@ -68,6 +68,7 @@ def crpp_dbget(sUser, sCrpName, iQC, sType='csv'):
     # Construct the object to be passed along
     oToCrpp = { 'userid': sUser,
                 'name': sDbName,
+                'part': sPart,
                 'type': sType }
     # Send and return the reply
     oBack = crpp_command("dbget", oToCrpp)
@@ -140,12 +141,13 @@ def crpp_status(sUser, sJobId):
     # Send and return the reply
     return crpp_command("statusxq", oToCrpp)
 
-def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount, filter=None, sort=None):
+def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount, sPart='', filter=None, sort=None):
     """Ask the /crpp/dbinfo service for the count it has for the result combination"""
 
     # Construct the object we pass along
     oToCrpp = { 'userid': sUser,
                 'name':   "{}_QC{}_Dbase".format(sCrpName, iQcNum),
+                'part': sPart,
                 'start':  iStart,
                 'count':  iCount }
     # Possibly add filter
@@ -156,7 +158,6 @@ def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount, filter=None, sort=None)
         oToCrpp['sort'] = sort
     # Send and return the reply
     return crpp_command("dbinfo", oToCrpp)
-
 
 def crpp_hitinfo(sUser, sCrpName, sLng, iQcNum, iStart, iCount, filter=None, sort=None):
     """Ask the /crpp/dbinfo service for the count it has for the result combination"""
@@ -176,7 +177,6 @@ def crpp_hitinfo(sUser, sCrpName, sLng, iQcNum, iStart, iCount, filter=None, sor
         oToCrpp['sort'] = sort
     # Send and return the reply
     return crpp_command("dbinfo", oToCrpp)
-
 
 def crpp_command(sCommand, oToCrpp):
     # Set the correct URL
@@ -221,8 +221,7 @@ def crpp_command(sCommand, oToCrpp):
         oBack['code'] = "The server returns error {}: {}".format(r.status_code, r.reason)
     # REturn what we have
     return oBack
-   
-  
+     
 def CompressAndBase64(sText):
     """Compress the string and then encode it into base64"""
     
