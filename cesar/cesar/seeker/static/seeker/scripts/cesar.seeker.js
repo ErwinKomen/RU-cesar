@@ -1383,6 +1383,7 @@ var ru = (function ($, ru) {
               $("#result_info").removeClass("hidden");
               $("#result_host_containers").addClass("hidden");
               $("#result_filter_list").removeClass("hidden");
+              $("#downloadcenter").removeClass("hidden");
             } else {
               // Go to this url
               window.location.href = sUrl;
@@ -1397,6 +1398,7 @@ var ru = (function ($, ru) {
           $("#result_host_containers").removeClass("hidden");
           $("#result_wait_message").removeClass("hidden");
           $("#result_filter_list").addClass("hidden");
+          $("#downloadcenter").addClass("hidden");
 
           frm = $("#qc_form");
           if (frm !== undefined) {
