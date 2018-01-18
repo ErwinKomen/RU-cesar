@@ -1455,6 +1455,7 @@ class Condition(models.Model):
         new_copy = Condition(name=self.name, description=self.description,
                              condtype=self.condtype, variable=dvar,
                              functiondef=self.functiondef, order=self.order,
+                             include=self.include,
                              function=new_function, gateway=kwargs['gateway'])
         # Only now save it
         try:
