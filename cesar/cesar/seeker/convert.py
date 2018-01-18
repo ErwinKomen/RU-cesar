@@ -17,6 +17,7 @@ from cesar.seeker.models import Construction, ConstructionVariable, ERROR_CODE
 def ConvertProjectToXquery(oData):
     """Convert the project oData.gateway of type oData.targetType into Xquery suitable for oData.format"""
 
+    arErr = []
     sCodeDef = ""
     sCodeQry = ""
     template_main = ""
@@ -69,6 +70,10 @@ def ConvertProjectToXquery(oData):
                                      'type': cvar.type,
                                      'dvars': oCode['dvars'],
                                      'fname': "tb:dvar_{}_cons_{}".format(var.name, cons.name)}
+                        # Check for coding errors
+                        if 'error' in oCode:
+                            arErr.append("Error in the definition of variable {} for search element {}: {}".format(
+                                var.name,cons.name, oCode['error']))
                         # Check for possible error(s)
                         if gateway.get_errors() != "":
                             return "", ERROR_CODE
@@ -92,6 +97,10 @@ def ConvertProjectToXquery(oData):
                     sCode = oCode['main']
                     if sCode != "":
                         cond_list.append(sCode)
+                    # Check for coding errors
+                    if 'error' in oCode:
+                        arErr.append("Error in the definition of condition {}: {}".format(
+                            cnd.name, oCode['error']))
             # Check for an empty condition list
             if len(cond_list) == 0:
                 # We still have a 'where' clause, so create one condition that is always true
@@ -112,6 +121,10 @@ def ConvertProjectToXquery(oData):
                           'dvar': ft.variable,
                           'code': sCode,
                           'fname': "tb:feat_{}".format(ft.name)})
+                    # Check for coding errors
+                    if 'error' in oCode:
+                        arErr.append("Error in the definition of feature {}: {}".format(
+                            ft.name, oCode['error']))
 
             # Specify the context variable for the Xquery template determination
             context = dict(gvar_list=gvars, 
@@ -142,7 +155,7 @@ def ConvertProjectToXquery(oData):
         sCodeQry = ""
 
     # Return what has been produced
-    return sCodeDef, sCodeQry
+    return sCodeDef, sCodeQry, arErr
 
 def ConvertProjectToCrpx(basket):
     """Convert the research project oDate.research_id to a CRPX file"""

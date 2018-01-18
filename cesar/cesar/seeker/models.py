@@ -12,7 +12,7 @@ from datetime import datetime
 from cesar.utils import *
 from cesar.settings import APP_PREFIX
 from cesar.browser.models import build_choice_list, build_abbr_list, \
-                                 get_help, choice_value, get_instance_copy, \
+                                 get_help, choice_value, choice_abbreviation, get_instance_copy, \
                                  copy_m2m, copy_fk, Part, CORPUS_FORMAT, Text
 from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_dbinfo
 import sys
@@ -139,6 +139,16 @@ class Gateway(models.Model):
     def error_add(self, sMsg):
         lErrors = [] if self.errors == "" else json.loads(self.errors)
         lErrors.append(sMsg)
+        self.errors = json.dumps(lErrors)
+        self.save()
+
+    def add_errors(self, arErr):
+        # Get the errors that are already here
+        lErrors = [] if self.errors == "" else json.loads(self.errors)
+        # Add errors
+        for err in arErr:
+            lErrors.append(err)
+        # Turn into string
         self.errors = json.dumps(lErrors)
         self.save()
 
@@ -636,6 +646,7 @@ class Function(models.Model):
         """Create and return the required Xquery"""
         oErr = ErrHandle()
         sCode = ""
+        oBack = {'code': ''}
         try:
             # Get the basis from the correct format part of the FunctionDef
             code = self.functiondef.functioncodings.filter(format=format).first()
@@ -643,10 +654,22 @@ class Function(models.Model):
                 # SOmething went wrong, so I am not able to get the code for this function
                 self.root.construction.gateway.error_add("Cannot get the Xquery translation for function [{}]".format(self.functiondef.name))
             else:
+                # Check: compare the number of arguments
+                iArgNumReal = self.functionarguments.all().count()
+                iArgNumDef = self.functiondef.arguments.all().count()
+                if iArgNumDef != iArgNumReal:
+                    oBack['error'] = "Function {} expects {} arguments, but gets {}".format(
+                        self.functiondef.name, iArgNumDef, iArgNumReal)
                 # Get the code of this current function
                 sCode = code.xquery
                 # Get and replace the code for the arguments
                 for idx, arg in enumerate(self.get_arguments()):
+                    # Check this argument for validity
+                    sArgErr = arg.get_argument_error()
+                    if sArgErr != "":
+                        # Process the argument error
+                        oBack['error'] = "Function {} reports an error in argument {}: {}".format(
+                            self.functiondef.name, idx+1, sArgErr)
                     # Two alternatives for the argument-encoding
                     sArg = "$__arg[{}]".format(idx+1)
                     sAlt = "$_arg[{}]".format(idx+1)
@@ -662,10 +685,12 @@ class Function(models.Model):
                 if method == "plain":
                     sCode = "let $__line{} := {}".format(self.get_line(), sCode)
             # Return the code that we have produced
-            return sCode
+            oBack['code'] = sCode
+            return oBack
         except:
             oErr.DoError("Function/get_code error")
-            return "$ERROR_FUNCTION_{}".format(self.id)
+            oBack['error'] = "function/get_code error: $ERROR_FUNCTION_{}".format(self.id)
+            return oBack
 
     def get_codedef(self, format):
         """Create and return the required Xquery for the 'definition' part of a function
@@ -926,8 +951,6 @@ class Argument(models.Model):
     cvar = models.ForeignKey("ConstructionVariable", null=True)
     # [0-1] This argument may link to a Data-dependant Variable
     dvar = models.ForeignKey("VarDef", null=True)
-    ## [0-1] This argument may link to a Constituent
-    #constituent = models.ForeignKey("Constituent", null=True)
     # [0-1] This argument may link to a Hierarchical Relation
     relation = models.ForeignKey("Relation", null=True)
     # [0-1] This argument may link to a Function (not its definition)
@@ -989,6 +1012,27 @@ class Argument(models.Model):
             self.argval = json.dumps(oCode)
         return self.argval
 
+    def get_argument_error(self):
+        """Check and report an error in this argument"""
+
+        sError = ""
+        # Check the argument type
+        sArgType = self.argtype
+        if sArgType == None or sArgType == "" or sArgType == "-":
+            sError = "No argument specified"
+        elif sArgType == "cnst":
+            # THis is not in use, so report error
+            sError = "Argument is defined as constituent, but no constituent is specified (e.g. through dvar or search)"
+        elif sArgType == "gvar" and (self.gvar == None or self.gvar == None):
+            sError = "Argument should be a global variable, but it is not specified"
+        elif sArgType == "cvar" and (self.cvar == None or self.cvar == None):
+            sError = "Argument should be a data-dependant variable, but it is not specified"
+        elif sArgType == "axis" and (self.relation == None or self.relation == None):
+            sError = "Argument should be a hierarchical relation, but it is not specified"
+        elif sArgType == "dvar" and (self.dvar == None or self.dvar == None):
+            sError = "Argument should be a data-dependant  variable, but it is not specified"
+        return sError
+
     def get_code(self, format, method="recursive"):
         """Create and return the required Xquery for this argument"""
 
@@ -1004,7 +1048,8 @@ class Argument(models.Model):
                     sCode = ""
                 elif method == "recursive":
                     # Get the format-dependant Xquery for this function
-                    sCode = argfunction.get_code(format)
+                    oCode = argfunction.get_code(format)
+                    sCode = oCode['code']
                 else:
                     # The code: use the line where the function is defined
                     sCode = "$__line{}".format(argfunction.get_line())
@@ -1328,7 +1373,10 @@ class ConstructionVariable(models.Model):
                       self.variable.name, self.construction.name))
                     return ERROR_CODE
                 elif method == "recursive":
-                    sMain = self.function.get_code(format, method)
+                    oMain = self.function.get_code(format, method)
+                    sMain = oMain['code']
+                    if 'error' in oMain:
+                        oBack['error'] = oMain['error']
                 else:
                     # Method is plain: get the code for all the functions with me as 'root'
                     func_list = [item.get_code(format, method) 
@@ -1345,7 +1393,7 @@ class ConstructionVariable(models.Model):
             return oBack
         except:
             oErr.DoError("cvar/get_code error")
-            oBack['error'] = True
+            oBack['error'] = "cvar/get_code error" 
             return oBack
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
@@ -1481,7 +1529,10 @@ class Condition(models.Model):
         elif self.condtype == "func":
             if method == "recursive":
                 # REturn the code of this function
-                sMain = self.function.get_code(format, method)
+                oMain = self.function.get_code(format, method)
+                sMain = oMain['code']
+                if 'error' in oMain:
+                    oBack['error'] = oMain['error']
             else:
                 # Method is plain: get the code for all the functions with me as 'root'
                 func_list = [item.get_code(format, method) 
@@ -1638,7 +1689,10 @@ class Feature(models.Model):
         elif self.feattype == "func":
             if method == "recursive":
                 # REturn the code of this function
-                sMain = self.function.get_code(format, method)
+                oMain = self.function.get_code(format, method)
+                sMain = oMain['code']
+                if 'error' in oMain:
+                    oBack['error'] = oMain['error']
             else:
                 # Method is plain: get the code for all the functions with me as 'root'
                 func_list = [item.get_code(format, method) 
@@ -1844,7 +1898,12 @@ class Research(models.Model):
             basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
             basket.set_status("Creating Xquery code")
             # Create the Xquery code
-            basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
+            basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
+            # Possibly add errors to gateway
+            self.gateway.add_errors(arErr)
+            # Check errors
+            if self.gateway.errors != "":
+                return None
             # Save the basket
             basket.save()
         else:
@@ -1854,7 +1913,9 @@ class Research(models.Model):
             if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
                 # Create the Xquery code
                 basket.set_status("Creating Xquery code")
-                basket.codedef, basket.codeqry = ConvertProjectToXquery(oData)
+                basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
+                # Possibly add errors to gateway
+                self.gateway.add_errors(arErr)
                 # Check errors
                 if self.gateway.errors != "":
                     return None
