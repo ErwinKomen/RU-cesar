@@ -90,13 +90,13 @@
             </defs>
 
             <g id="main_about" class="jumbo-1 main-el"
-               info="Define the search project's name and its purpose.\nSpecify whom to share it with."
+               info="Define the name of this search and its purpose.\nWhat is the output it will give?\nSpecify whom to share it with."
                targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
                targetid="research_part_1"
                onclick="ru.cesar.seeker.research_wizard(this, '1');">  
 	            <rect x="0" y="0" width="1680" height="220" rx="30" ry="30" stroke-width="0"></rect>
 	            <text x="840" y="100" text-anchor="middle" font-family="sans-serif" font-size="40">About</text>
-	            <text x="840" y="150" text-anchor="middle" font-family="sans-serif" font-size="25">Information on this search project</text>
+	            <text x="840" y="150" text-anchor="middle" font-family="sans-serif" font-size="25">Information about this search</text>
             </g>
   
             <g id="main_elements" class="jumbo-2 main-el" 
@@ -120,7 +120,7 @@
             </g>
   
             <g id="main_variables" class="jumbo-3 main-el"
-               info="Data-dependant variables are the key elements to refer back to from:\n- Conditions\n- Features."
+               info="Define data-dependant variables to easily determine:\n- Conditions\n- Features.\nVariables can include nodes that are syntactically related to the search element."
                targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
                targetid="research_part_4"
                onclick="ru.cesar.seeker.research_wizard(this, '4');">
