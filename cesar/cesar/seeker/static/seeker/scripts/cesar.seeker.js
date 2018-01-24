@@ -126,6 +126,18 @@ var ru = (function ($, ru) {
       errClear: function () {
         $("#" + loc_divErr).html("");
       },
+      mainWaitStart : function() {
+        var elWait = $(".main-wait").first();
+        if (elWait !== undefined && elWait !== null) {
+          $(elWait).removeClass("hidden");
+        }
+      },
+      mainWaitStop: function () {
+        var elWait = $(".main-wait").first();
+        if (elWait !== undefined && elWait !== null) {
+          $(elWait).addClass("hidden");
+        }
+      },
       waitInit: function (el) {
         var elResPart = null,
             elWait = null;
@@ -1335,20 +1347,52 @@ var ru = (function ($, ru) {
        *   Show the tiles-overview
        *
        */
-      research_overview(el) {
+      research_overview : function(el) {
         var sTargetUrl = "";
 
         try {
+          /* Old code
           // Try get the target url
           sTargetUrl = $(el).attr("targeturl");
           // Open this page
-          window.location.href = sTargetUrl;
+          window.location.href = sTargetUrl; */
+
+          // New code: just show all the relevant places and hide the others
+          ru.cesar.seeker.main_show_hide({
+            "research_tiles": true, "action_buttons": true, "edit_buttons": true,
+            "exe_dashboard": false, "goto_overview": false, "goto_finetune": false,
+            "research_conditions": false, "research_contents": false
+          });
         } catch (ex) {
           private_methods.errMsg("research_overview", ex);
         }
       },
 
-
+      /**
+       * main_show_hide
+       *    Show/hide elements on the main panel
+       *
+       */
+      main_show_hide(options) {
+        var sDiv = "",
+            bShow = true;
+        try {
+          for (var item in options) {
+            if (options.hasOwnProperty(item)) {
+              sDiv = "#" + item;
+              bShow = options[item];
+              if (bShow) {
+                $(sDiv).removeClass("hidden");
+              } else {
+                $(sDiv).addClass("hidden");
+              }
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("main_show_hide", ex);
+        }
+      },
+      
       /**
        * result_wizard
        *    Select one item from the result wizard
@@ -1499,6 +1543,9 @@ var ru = (function ($, ru) {
           elWait = private_methods.waitInit(el);
           // Start waiting
           private_methods.waitStart(elWait);
+
+          // If this comes from the main dashboard, show waiting over there
+          private_methods.mainWaitStart();
           
           // Get the correct target id
           sTargetId = "#" + sTargetId + sPart;
@@ -1521,6 +1568,8 @@ var ru = (function ($, ru) {
                 private_methods.errMsg("Choose the main element type");
                 // Stop waiting
                 private_methods.waitStop(elWait);
+                // If this comes from the main dashboard, show waiting over there
+                private_methods.mainWaitStop();
                 // We need to LEAVE at this point
                 return;
             }
@@ -1553,6 +1602,8 @@ var ru = (function ($, ru) {
                     private_methods.errMsg("research_wizard[" + sPart + "]: could not save the data for this function");
                     // Stop waiting
                     private_methods.waitStop(elWait);
+                    // If this comes from the main dashboard, show waiting over there
+                    private_methods.mainWaitStop();
                     // And leave...
                     return;
                   }
@@ -1691,12 +1742,18 @@ var ru = (function ($, ru) {
               break;
             case "3": case "4": case "42": case "43":
             case "44": case "6":
+              $("#goto_overview").removeClass("hidden");
+              $("#goto_finetune").addClass("hidden");
+              /* OLD code 
               $("#goto_overview").addClass("hidden");
               $("#goto_finetune").removeClass("hidden");
+              */
               break;
           }
           // Stop waiting
           private_methods.waitStop(elWait);
+          // If this comes from the main dashboard, show waiting over there
+          private_methods.mainWaitStop();
         } catch (ex) {
           private_methods.errMsg("research_wizard", ex);
           // Stop waiting

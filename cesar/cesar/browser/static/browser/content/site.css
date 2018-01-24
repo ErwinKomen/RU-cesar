@@ -437,35 +437,52 @@ form .panel-heading.row {
 .jumbo-1 {
   background-color: lavender;
   color: chocolate;
+  fill: lavender;
+}
+.jumbo-1 text {
+  fill: goldenrod;
 }
 .jumbo-2 {
   background-color: chocolate;
   color: lavender;
+  fill: chocolate;
 }
 .jumbo-3 {
   background-color: #355e3b;
   color: lavender;
+  fill: #355e3b;
 }
 .jumbo-4 {
   background-color: #ff2400;
   color: lavender;
+  fill: #ff2400;
 }
+.jumbo-2 text, .jumbo-3 text, .jumbo-4 text {
+  fill: lavender;
+}
+
 .jumbo-1:hover {
     color: black;
     background-color: goldenrod;
+    fill: goldenrod;
+    cursor: pointer;
 }
-.jumbo-2:hover {
+.jumbo-1:hover text {
+  fill: black;
+}
+.jumbo-2:hover, .jumbo-3:hover, .jumbo-4:hover {
     color: white;
     background-color: goldenrod;
+    fill: goldenrod;
+    cursor: pointer;
+    /* stroke: white; */
 }
-.jumbo-3:hover {
-    color: white;
-    background-color: goldenrod;
+
+.main-arrow {
+  stroke: black;
+  stroke-width: 1px;
 }
-.jumbo-4:hover {
-    color: white;
-    background-color: goldenrod;
-}
+
 a.jumbotron:visited {color:inherit;}
 a.jumbotron:hover {
     text-decoration: none;
