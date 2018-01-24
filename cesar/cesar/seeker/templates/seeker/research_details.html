@@ -89,7 +89,8 @@
 	          </marker>
             </defs>
 
-            <g id="main_about" class="jumbo-1"
+            <g id="main_about" class="jumbo-1 main-el"
+               info="Define the search project's name and its purpose.\nSpecify whom to share it with."
                targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
                targetid="research_part_1"
                onclick="ru.cesar.seeker.research_wizard(this, '1');">  
@@ -98,7 +99,8 @@
 	            <text x="840" y="150" text-anchor="middle" font-family="sans-serif" font-size="25">Information on this search project</text>
             </g>
   
-            <g id="main_elements" class="jumbo-2" 
+            <g id="main_elements" class="jumbo-2 main-el" 
+               info="The main search elements can be:\n- words\n- POS-tags\n- syntactic components"
                targeturl="{% if object_id %}{% url 'research_part_2' object_id %}{% else %}{% url 'research_part_2' %}{% endif %}"
                targetid="research_part_2"
                onclick="ru.cesar.seeker.research_wizard(this, '2');">
@@ -107,7 +109,8 @@
 	            <text x="230" y="460" text-anchor="middle" font-family="sans-serif" font-size="25">what are the elements of interest</text>
             </g>
   
-            <g id="main_fixed" class="jumbo-1"
+            <g id="main_fixed" class="jumbo-1 main-el"
+               info="Define fixed (or global) constants.\nThis may be helpful in defining data-dependant Variables."
                targeturl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
                targetid="research_part_3"
                onclick="ru.cesar.seeker.research_wizard(this, '3');">
@@ -116,7 +119,8 @@
 	            <text x="230" y="780" text-anchor="middle" font-family="sans-serif" font-size="25">Constants for convenience</text>
             </g>
   
-            <g id="main_variables" class="jumbo-3"
+            <g id="main_variables" class="jumbo-3 main-el"
+               info="Data-dependant variables are the key elements to refer back to from:\n- Conditions\n- Features."
                targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
                targetid="research_part_4"
                onclick="ru.cesar.seeker.research_wizard(this, '4');">
@@ -125,7 +129,8 @@
 	            <text x="840" y="620" text-anchor="middle" font-family="sans-serif" font-size="25">data-dependant</text>
             </g>
 
-            <g id="main_conditions" class="jumbo-4"
+            <g id="main_conditions" class="jumbo-4 main-el"
+               info="Specify conditions that need to be met before\na found search element constitutes a 'hit'."
                targeturl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
                targetid="research_part_6"
                onclick="ru.cesar.seeker.research_wizard(this, '6');">
@@ -134,12 +139,13 @@
 	            <text x="1450" y="460" text-anchor="middle" font-family="sans-serif" font-size="25">to keep a search element</text>
             </g>
 
-            <g id="main_features" class="jumbo-1"
+            <g id="main_features" class="jumbo-1 main-el"
+               info="Each search element that satisfies the conditions is a hit.\nEach 'hit' may be accompanied in the output by any number of (textual)'features'.\nThese features can e.g. be\n- syntactic category labels\n- texts of nodes\n- other elements relating to the hit\n- anything that can be calculated"
                targeturl="{% if object_id %}{% url 'research_part_7' object_id %}{% else %}{% url 'research_part_7' %}{% endif %}"
                targetid="research_part_7"
                onclick="ru.cesar.seeker.research_wizard(this, '7');">
 	            <rect x="1220" y="600" width="460" height="260" rx="30" ry="30" stroke-width="1"></rect>
-	            <text x="1450" y="730" text-anchor="middle" font-family="sans-serif" font-size="40">Features</text>
+	            <text x="1450" y="730" text-anchor="middle" font-family="sans-serif" font-size="40">Output Features</text>
 	            <text x="1450" y="780" text-anchor="middle" font-family="sans-serif" font-size="25">that are calculated per find</text>
             </g>
   
@@ -352,6 +358,7 @@
 
       </div>
 
+      <div id="main_info_div" class="hidden"></div>
 
     </div>
   </div>

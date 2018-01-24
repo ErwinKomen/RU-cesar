@@ -341,6 +341,23 @@ svg g.lithium-node:hover > text {
     font-family: monospace;
 }
 
+.svg-main {
+    background: lightgreen none repeat scroll 0 0;
+    border: none;
+    border-radius: 3px;
+    display: block;
+    font-size: 12px;
+    opacity: 0.9;
+    padding: 5px;
+    position: absolute;
+    text-decoration: none !important;
+    max-width: 600px;
+}
+.svg-main .cellvalue {
+    font-family: monospace;
+}
+
+
 /*  cesar.seeker */
 .research-part {
   padding: 5px 30px;

@@ -40,6 +40,36 @@ var ru = (function ($, ru) {
         return "something";
       },
       /**
+       * screenCoordsForRect
+       *    Get the correct screen coordinates for the indicated <svg> <rect> element
+       * 
+       * @param {el} svgRect
+       * @returns {object}
+       */
+      screenCoordsForRect: function (svgRect) {
+        var pt = null,
+            elSvg = null,
+            rect = null,
+            oBound = {},
+            matrix;
+
+        try {
+          // Get the root <svg>
+          elSvg = $(svgRect).closest("svg").get(0);
+
+          rect = svgRect.get(0);
+          oBound = rect.getBoundingClientRect();
+
+          // Take into account scrolling
+          oBound['x'] += document.documentElement.scrollLeft || document.body.scrollLeft;
+          oBound['y'] += document.documentElement.scrollTop || document.body.scrollTop;
+          return oBound;
+        } catch (ex) {
+          private_methods.showError("screenCoordsForRect", ex);
+          return oBound;
+        }
+
+      },      /**
        *  var_move
        *      Move variable row one step down or up
        *      This means the 'order' attribute changes
@@ -1132,6 +1162,10 @@ var ru = (function ($, ru) {
             }
           });
 
+          // Attach an event handler to all the NODES
+          $("g.main-el").mouseover(function () { ru.cesar.seeker.main_info_show(this) });
+          $("g.main-el").mouseout(function () { ru.cesar.seeker.main_info_hide(this) });
+
           // NOTE: do not use the following mouseout event--it is too weird to work with
           // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
 
@@ -1760,7 +1794,80 @@ var ru = (function ($, ru) {
           private_methods.waitStop(elWait);
         }
       },
+      /**
+      * main_info_hide
+      *    Behaviour when there is a mouse-out on a main blob
+      * 
+      * @param {element} elRect
+      * @returns {undefined}
+      */
+      main_info_hide: function (elRect) {
+        try {
+          $("#main_info_div").addClass("hidden");
+        } catch (ex) {
+          // Show the error at the indicated place
+          $(errDiv).html("main_info_hide error: " + ex.message);
+        }
+      },
+      /**
+      * main_info_show
+      *    Behaviour when there is a mouse-over on a main blob
+      * 
+      * @param {element} elRect
+      * @returns {undefined}
+      */
+      main_info_show: function (elRect) {
+        var sPart,        // Counter
+            i,            // Counter
+            sInfoDiv = "#main_info_div",
+            sInfo = "",
+            lInfo = [],
+            lHtml = [],   // Where we gather HTML
+            oSvg,         // Coordinates of the svg rect element
+            elTarget,     // The <div> we want to position
+            oFeat = {},   // Feature object
+            sId = "";     // Identifier of the element that has been hit
 
+        try {
+          // Validate: this must be a <g> element with class ".main-el"
+          if (!$(elRect).is("g.main-el")) {
+            return;
+          }
+          // The node must have an identifier
+          sId = $(elRect).attr("id");
+          // The text to be shown is in the @info attribute of the <g> element
+          sInfo = $(elRect).attr("info");
+          if (sInfo !== undefined && sInfo !== "") {
+            // There is some text to be shown
+            lInfo = sInfo.split("\\n");
+            lHtml.push("<div id='info-" + sId + "' class='svg-main'><table>");
+            for (i = 0; i < lInfo.length; i++) {
+              sPart = lInfo[i];
+              lHtml.push("<tr><td class='cellvalue'>" + sPart + "</td></tr>");
+            }
+            lHtml.push("</table></div>");
+
+            // Add this element at an appropriate place
+            $(sInfoDiv).html(lHtml.join("\n"));
+            elTarget = $(sInfoDiv).find(".svg-main").get(0);
+
+            // Get screen coordinates
+            oSvg = private_methods.screenCoordsForRect($(elRect).children("rect").first());
+            elTarget.style.left = oSvg['x'] + 'px';
+            elTarget.style.top = (oSvg['y'] - 10 - 20 * lInfo.length).toString() + 'px';
+            $(sInfoDiv).removeClass("hidden");
+
+            // Now adjust the position based on the shown div
+            oSvg = private_methods.fitFeatureBox(oSvg, elTarget);
+            elTarget.style.left = oSvg['x'] + 'px';
+            elTarget.style.top = oSvg['y'] + 'px';
+          }
+
+        } catch (ex) {
+          // Show the error at the indicated place
+          $(errDiv).html("main_info_show error: " + ex.message);
+        }
+      },
       /**
        * search_download
        *   Trigger creating and downloading the CRPX
