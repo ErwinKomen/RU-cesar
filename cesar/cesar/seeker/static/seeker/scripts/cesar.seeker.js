@@ -368,6 +368,8 @@ var ru = (function ($, ru) {
               var sOviewUrl = $(elOview).attr("targeturl");
               sOviewUrl = sOviewUrl.replace("/new/", "/" + instanceid + "/");
               $(elOview).attr("targeturl", sOviewUrl);
+              // Set a tag to indicate that we need to jump to a new item when returning
+              $(elOview).attr("isnew", true);
             }
           }
           // Check whether we need to show the error response
@@ -461,7 +463,7 @@ var ru = (function ($, ru) {
           // data.push({ 'name': 'object_id', 'value': instanceid });
 
           // If there is an instance ID, then make sure the URL ends with that id
-          if (instanceid !== undefined && instanceid !== '') {
+          if (instanceid !== undefined && instanceid !== '' && instanceid !== "None" ) {
             // First check if we already have a sequence of /nnn/
             if (!/\/\d+\//.test(ajaxurl) && ajaxurl.indexOf('/' + instanceid + "/") < 0) {
               ajaxurl += instanceid + "/";
@@ -1382,21 +1384,26 @@ var ru = (function ($, ru) {
        *
        */
       research_overview : function(el) {
-        var sTargetUrl = "";
+        var sTargetUrl = "",
+            bIsNew = false;
 
         try {
-          /* Old code
-          // Try get the target url
-          sTargetUrl = $(el).attr("targeturl");
-          // Open this page
-          window.location.href = sTargetUrl; */
+          // Check if this is a new one
+          bIsNew = $(el).attr("isnew");
+          if (typeof bIsNew !== typeof undefined && bIsNew !== false) {
+            // Try get the target url
+            sTargetUrl = $(el).attr("targeturl");
+            // Open this page
+            window.location.href = sTargetUrl;
+          } else {
+            // New code: just show all the relevant places and hide the others
+            ru.cesar.seeker.main_show_hide({
+              "research_tiles": true, "action_buttons": true, "edit_buttons": true,
+              "exe_dashboard": false, "goto_overview": false, "goto_finetune": false,
+              "research_conditions": false, "research_contents": false
+            });
+          }
 
-          // New code: just show all the relevant places and hide the others
-          ru.cesar.seeker.main_show_hide({
-            "research_tiles": true, "action_buttons": true, "edit_buttons": true,
-            "exe_dashboard": false, "goto_overview": false, "goto_finetune": false,
-            "research_conditions": false, "research_contents": false
-          });
         } catch (ex) {
           private_methods.errMsg("research_overview", ex);
         }
@@ -1565,6 +1572,7 @@ var ru = (function ($, ru) {
             sObjectId = "",
             sMsg = "",
             html = "",
+            sUrl = "",
             data = {},
             frm = null,
             response = null,
@@ -1588,6 +1596,9 @@ var ru = (function ($, ru) {
           // If it is undefined, try to get the target type from the input
           if (sTargetType === undefined || sTargetType === "") {
             sTargetType = $("#targettype").text().trim();
+            if (sTargetType === "") {
+              sTargetType = "w";  // Take words as default
+            }
           }
           // Before continuing: has the targettype been chosen?
           if (sPart !== "1") {
@@ -1628,8 +1639,10 @@ var ru = (function ($, ru) {
                   // Indicate we are saving
                   $(".save-warning").html("Processing... " + sMsg + loc_sWaiting);
                   data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
+                  // Determine the URL
+                  sUrl = $(button).attr("ajaxurl");
                   // Process this information: save the data!
-                  response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
+                  response = ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
                   // Check the response
                   if (response.status === undefined || response.status !== "ok") {
                     // Action to undertake if we have not been successfull
@@ -1671,8 +1684,13 @@ var ru = (function ($, ru) {
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
               // Indicate we are saving/preparing
               $(".save-warning").html("Processing... " + sPart + loc_sWaiting);
+              // Determine the URL
+              sUrl = $(el).attr("ajaxurl");
+              if (sUrl === undefined) {
+                sUrl = $(el).attr("targeturl");
+              }
               // Fetch the corr
-              response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId, data);
+              response = ru.cesar.seeker.ajaxform_load(sUrl, sObjectId, data);
               if (response.status && response.status === "ok") {
                 // Make the HTML response visible
                 $(sTargetId).html(response.html);

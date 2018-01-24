@@ -74,6 +74,7 @@ urlpatterns = [
     url(r'^ajax/stop(?:/(?P<object_id>\d+))?/$', ResearchStop.as_view(), name='search_stop'),
     url(r'^ajax/download/(?P<object_id>\d+)/$', ResearchDownload.as_view(), name='search_download'),
     url(r'^ajax/progress(?:/(?P<object_id>\d+))?/$', ResearchProgress.as_view(), name='search_progress'),
+    url(r'^ajax/researchpart1/$', ResearchPart1.as_view(), name='research_new'),
     url(r'^ajax/researchpart1(?:/(?P<object_id>\d+))?/$', ResearchPart1.as_view(), name='research_part_1'),
     url(r'^ajax/researchpart2(?:/(?P<object_id>\d+))?/$', ResearchPart2.as_view(), name='research_part_2'),
     url(r'^ajax/researchpart3(?:/(?P<object_id>\d+))?/$', ResearchPart3.as_view(), name='research_part_3'),
