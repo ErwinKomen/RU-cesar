@@ -1929,6 +1929,10 @@ class Research(models.Model):
             # Return the basket
             return basket
         except:
+            self.gateway.error_add("Research/to_xquery error")
+            sError = errHandle.get_error_message()
+            if sError != "":
+                self.gateway.error_add(sError)
             errHandle.DoError("Research/to_xquery error")
             return None
 
@@ -1942,6 +1946,9 @@ class Research(models.Model):
         oBack = {'status': 'ok', 'msg': ''}
         # Get the correct Basket
         try:
+            # Clear the errors
+            self.gateway.error_clear()
+            # Other initialisations
             bRefresh = True # Make sure that Xquery is calculated afresh
             basket = self.to_xquery(partId, sFormat, bRefresh)
             # Check on what was returned
@@ -1949,10 +1956,10 @@ class Research(models.Model):
                 if partId == None or partId == "":
                     sMsg = "First specify a corpus (or a part of a corpus) to search in"
                 else:
-                    sMsg = "Something is wrong. Cesar is unable to execute."
+                    sMsg = "to_crpx: Something is wrong. Cesar is unable to execute."
                     # sErrors = self.gateway.errors
                     sErrors = self.gateway.get_errors()
-                    if sErrors != "":
+                    if sErrors != "" and sErrors != "[]":
                         lErrors = json.loads(sErrors)
                         lErrors.append(sMsg)
                         sMsg = "<br>\n".join(lErrors)

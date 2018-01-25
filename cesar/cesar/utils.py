@@ -39,3 +39,9 @@ class ErrHandle:
         # Otherwise: return the string that has been made
         return "<br>".join(self.loc_errStack)
 
+    def get_error_message(self):
+        arInfo = sys.exc_info()
+        if len(arInfo) == 3:
+            return str(arInfo[1])
+        else:
+            return ""
