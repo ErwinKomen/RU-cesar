@@ -1,38 +1,53 @@
 {% extends "layout.html" %}
+{% load staticfiles %}
 
 {% block content %}
 
-<div class="jumbotron">
-    <h1>CESAR</h1>
-    <p class="lead">The Cesar web application provides a low-level way to do syntactic research in a number of text corpora.</p>
-    <p><a href="{% url 'more' %}" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
-</div>
+<div class="container body-content">
+  <div class="jumbotron">
+      <h1>CESAR</h1>
+      <p class="lead">The Cesar web application provides a low-level way to do syntactic research in annotated text corpora.</p>
+      <p><a href="{% url 'about' %}" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+  </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <h2>Getting started</h2>
-        <p>
-            The CESAR application has been designed by the Technical Service Group of the Humanities Lab at the Radboud University Nijmegen.
-          Any researcher is invited to registrate (create an account) and maintain his or her own research projects.
-          Projects of one researcher are by default <i>not</i> visible to other researchers, but it is possible to specify a different accessibility level.
-        </p>
-        <p>Pfx={{pfx}}</p>
-        <p>site_url={{site_url}}</p>
-        <p>
-          {% if user.is_authenticated %}
-          (See the <b>Extra</b> menu for logout and other options)
-          {% else %}
-          <a class="btn btn-default" href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a>
-          <a class="btn btn-default" href="{% url 'signup' %}">Sign up</a>
-          {% endif %}
-        </p>
-    </div>
-    <div class="col-md-6">
-        <h2>Define Cesar items</h2>
-        <p> (Explanation follows)
-        </p>
-        <p><a class="btn btn-default" href="mailto:e.komen@let.ru.nl">Request assistance &raquo;</a></p>
-    </div>
-</div>
+  <div class="row">
+      <div class="col-md-6 bgimg">
+          <h2>What can I do?</h2>
+          <p>The Cesar application offers a set of tools, all combined around syntactically annotated texts:
+            <ul>
+              <li>Define and host corpora. See the currently hosted list in <b>B</b>rowse/CorpusParts.</li>
+              <li>Look for texts satisfying metadata criteria such as genre and language. See <b>B</b>rowse/AllTexts.</li>
+              <li>Review the syntactic annotation of a sentence in a text (see the example at the bottom right).</li>
+              <li>Define a search that takes into account syntactic conditions. See <b>S</b>earch/Specify or <b>S</b>earch/List</li>
+              <li>Specify how to have output features calculated for search hits</li>
+              <li>Make searches available for other Cesar users</li>
+              <li>Execute a search on a part or the whole of any of the corpora available</li>
+              <li>Download results as CSV, Excel or SQlite database</li>
+              <li>Review the results online as KWIC, review the output for each hit. See <b>S</b>earch/Results</li>
+            </ul>
+          </p>
+          <p>
+            {% if user.is_authenticated %}
+            (See the <b>Extra</b> menu for logout and other options)
+            {% else %}
+            <a class="btn btn-default" href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a>
+            <a class="btn btn-default" href="{% url 'signup' %}">Sign up</a>
+            {% endif %}
+          </p>
+      </div>
+      <div class="col-md-6">
+          <h2>Getting started</h2>
+          <p>
+              The CESAR application has been designed by the Technical Service Group of the Humanities Lab at the Radboud University Nijmegen.
+            Any researcher is invited to registrate (create an account) and maintain his or her own research projects.
+            Projects of one researcher are by default <i>not</i> visible to other researchers, but it is possible to specify a different accessibility level.
+          </p>
+      <img src="{% static  'browser/content/tree_example.png' %}"
+           alt="Syntactic structure of a sentence"
+           title="Syntactic structure of a sentence"
+           style="width:500px;z-index:-2" />
 
+      </div>
+  </div>
+</div>
 {% endblock %}
