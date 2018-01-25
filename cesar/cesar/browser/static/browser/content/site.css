@@ -612,3 +612,13 @@ body > div > footer a {
   position: relative;
   z-index: 1000;
 }
+
+.citation {
+  color: darkblue;
+  font-family: monospace;
+  font-size: small;
+}
+
+.signup input {
+  width: 700px;
+}

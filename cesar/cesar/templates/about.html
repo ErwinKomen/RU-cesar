@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+﻿{% extends "layout.html" %}
 {% load staticfiles %}
 
 
@@ -9,7 +9,7 @@
 
     <h2>{{ title }}</h2>
 
-    <div class="col-md-7">
+    <div class="col-md-6">
       <p>The CESAR program is being developed as part of the <a href="https://www.clariah.nl/projecten/research-pilots/acad/acad">ACAD research pilot</a> of CLARIAH.</p>
       <p>ACAD stands for <b>Automatic Coherence Analysis of Dutch</b> and it serves a number of goals:
         <ul>
@@ -35,12 +35,13 @@
       </p>
       <p><a class="btn btn-default" href="mailto:e.komen@let.ru.nl">Request assistance &raquo;</a></p>
     </div>
-    <div class="col-md-4" align="right">
+    <div class="col-md-6">
+      <div  align="right">
       <img src="{% static  'browser/content/acad.png' %}"
            alt="Overview of the ACAD components"
            title="Overview of the ACAD components"
            style="width:500px;z-index:-2" />
-
+      </div>
       <p>
         The CESAR application builds on previous programs:
         <ul>
@@ -49,14 +50,30 @@
           <li>CorpusStudioWeb: a web application developed through the sponsorship of <a href="https://dev.clarin.nl/node/4239">CLARIN-NL</a> that allows specifying complex queries in the Xquery language</li>
         </ul>
       </p>
-      <p>When making use of CESAR for your research, please use the following reference:
-        <code>TODO</code>
-      </p>
       <p>
-        The source code of Cesar is available at <a href="https://github.com/ErwinKomen/RU-cesar">github</a>
+        The source code of Cesar is available at <a href="https://github.com/ErwinKomen/RU-cesar">github</a>.
       </p>
     </div>
 
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <h4>References</h4>
+      <div class="citation">
+        Komen, Erwin R. 2013. “Corpus Databases with Feature Pre-Calculation.” 
+        The Twelfth Workshop on Treebanks and Linguistic Theories (TLT12). 
+        Bulgary. <a href="http://erwinkomen.ruhosting.nl/doc/2013_CorpusDbases_TLT12.pdf">pdf</a>.
+      </div>
+      <div class="citation">
+        Komen, Erwin R. 2017. “Beyond Counting Syntactic Hits.” 
+        In <i>CLARIN in the Low Countries</i>, edited by J. Odijk and Hessen, A. van. Netherlands: Ubiquity press.
+        <a href="https://www.ubiquitypress.com/site/chapters/10.5334/bbi.21/download/1037/">pdf</a>.
+      </div>
+      <div class="citation">
+          Komen, Erwin R., and Jet Hoek. 2018. <i>Automatic Coherence Analysis for the Computationally Challenged</i>. http://clin28.cls.ru.nl.
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
