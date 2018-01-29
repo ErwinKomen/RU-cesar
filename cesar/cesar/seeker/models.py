@@ -2469,7 +2469,7 @@ class Quantor(models.Model):
     qcNum = models.IntegerField("Number of query lines", default=1)
 
     def __str__(self):
-        return "{}".format(self.count)
+        return "{}".format(self.total)
 
     def get_quantor(basket):
         # CHeck if this exists
