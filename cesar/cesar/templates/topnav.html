@@ -18,15 +18,83 @@
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
                          aria-haspopup="true" aria-expanded="false">Browse<span class="caret"></span></a>
                       <ul class="dropdown-menu">
-                          <li><a href="{% url 'text_list' %}?part=1&format=0">English: YCOE</a></li>
-                          <li><a href="{% url 'text_list' %}?part=4&format=0">English: PPCMBE</a></li>
-                          <li><a href="{% url 'text_list' %}?part=14&format=0">Chechen</a></li>
+                          <li class="dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Caucasian</a>
+                            <ul class="dropdown-menu">
+                              <li><a href="{% url 'text_list' %}?part=14&format=0">Chechen</a></li>
+                              <li><a href="{% url 'text_list' %}?part=5&format=0">Lak</a></li>
+                            </ul>
+                          </li>
                           <li><a href="{% url 'text_list' %}?part=7&format=1">Dutch: LassyKlein</a></li>
-                          <li><a href="{% url 'text_list' %}?part=8&format=1">Dutch: Sonar (all)</a></li>
-                          <li><a href="{% url 'text_list' %}?part=9&format=1">Dutch: Sonar (books)</a></li>
-                          <li><a href="{% url 'text_list' %}?part=19&format=1">Dutch: Sonar (brochures)</a></li>
-                          <li><a href="{% url 'text_list' %}?part=13&format=1">Dutch: Sonar (newsletters)</a></li>
-                          <li><a href="{% url 'text_list' %}">All Texts</a></li>
+                          <li class="dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dutch: NRC 2011</a>
+                            <ul class="dropdown-menu">
+                              <li><a href="{% url 'text_list' %}?part=70&format=1">hard - digital</a></li>
+                              <li><a href="{% url 'text_list' %}?part=71&format=1">hard - paper</a></li>
+                              <li><a href="{% url 'text_list' %}?part=72&format=1">opinion - digital</a></li>
+                              <li><a href="{% url 'text_list' %}?part=73&format=1">opinion - paper</a></li>
+                              <li><a href="{% url 'text_list' %}?part=57&format=1">NRC 2011: all</a></li>
+                            </ul>
+                          </li>
+                          <li class="dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dutch: Sonar</a>
+                            <ul class="dropdown-menu">
+                              <li><a href="{% url 'text_list' %}?part=10&format=1">e-magazines p-e-c</a></li>
+                              <li><a href="{% url 'text_list' %}?part=15&format=1">newsletters p-e-e</a></li>
+                              <li><a href="{% url 'text_list' %}?part=16&format=1">press releases p-e-f</a></li>
+                              <li><a href="{% url 'text_list' %}?part=17&format=1">teletext pages p-e-h</a></li>
+                              <li><a href="{% url 'text_list' %}?part=18&format=1">blogs p-e-k</a></li>
+                              <li><a href="{% url 'text_list' %}?part=9&format=1">books p-p-b</a></li>
+                              <li><a href="{% url 'text_list' %}?part=19&format=1">brochures p-p-c</a></li>
+                              <li><a href="{% url 'text_list' %}?part=13&format=1">newsletters p-p-d</a></li>
+                              <li><a href="{% url 'text_list' %}?part=20&format=1">guides/manuals p-p-e</a></li>
+                              <li><a href="{% url 'text_list' %}?part=21&format=1">legal texts p-p-f</a></li>
+                              <li><a href="">newspapers p-p-g</a></li>
+                              <li><a href="{% url 'text_list' %}?part=22&format=1">periodicals/magazins p-p-h</a></li>
+                              <li><a href="{% url 'text_list' %}?part=23&format=1">policy documents p-p-i</a></li>
+                              <li><a href="{% url 'text_list' %}?part=11&format=1">proceedings p-p-j</a></li>
+                              <li><a href="{% url 'text_list' %}?part=12&format=1">reports p-p-k</a></li>
+                              <li><a href="{% url 'text_list' %}?part=42&format=1">chats u-e-a</a></li>
+                              <li><a href="{% url 'text_list' %}?part=43&format=1">sms u-e-d</a></li>
+                              <li><a href="{% url 'text_list' %}?part=24&format=1">written assignments u-e-e</a></li>
+                              <li><a href="{% url 'text_list' %}?part=25&format=1">texts for the visually impaired u-t-b</a></li>
+                              <li><a href="{% url 'text_list' %}?part=8&format=1" title="huge data set">All of Sonar</a></li>
+                            </ul>
+                          </li>
+                          <li class="dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dutch: VU-DNC</a>
+                            <ul class="dropdown-menu">
+                              <li><a href="{% url 'text_list' %}?part=27&format=1">Alg Dagblad 1951</a></li>
+                              <li><a href="{% url 'text_list' %}?part=28&format=1">Alg Dagblad 2002</a></li>
+                              <li><a href="{% url 'text_list' %}?part=29&format=1">NRC 1951</a></li>
+                              <li><a href="{% url 'text_list' %}?part=30&format=1">NRC 2002</a></li>
+                              <li><a href="{% url 'text_list' %}?part=31&format=1">Telegraaf 1950</a></li>
+                              <li><a href="{% url 'text_list' %}?part=32&format=1">Telegraaf 2002</a></li>
+                              <li><a href="{% url 'text_list' %}?part=33&format=1">Trouw 1950</a></li>
+                              <li><a href="{% url 'text_list' %}?part=34&format=1">Trouw 2002</a></li>
+                              <li><a href="{% url 'text_list' %}?part=35&format=1">Volkskrant 1951</a></li>
+                              <li><a href="{% url 'text_list' %}?part=36&format=1">Volkskrant 2002</a></li>
+                              <li><a href="{% url 'text_list' %}?part=26&format=1">VU-DNC (all)</a></li>
+                            </ul>
+                          </li>
+                          <li class="dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dutch: whatsapp</a>
+                            <ul class="dropdown-menu">
+                              <li><a href="{% url 'text_list' %}?part=41&format=0">Lieke</a></li>
+                              <li><a href="">Other</a></li>
+                            </ul>
+                          </li>
+                          <li class="dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">English</a>
+                            <ul class="dropdown-menu">
+                              <li><a href="{% url 'text_list' %}?part=1&format=0">OE</a></li>
+                              <li><a href="{% url 'text_list' %}?part=2&format=0">ME</a></li>
+                              <li><a href="{% url 'text_list' %}?part=3&format=0">eModE</a></li>
+                              <li><a href="{% url 'text_list' %}?part=4&format=0">lModE</a></li>
+                            </ul>
+                          </li>
+                          <li role="separator" class="divider"></li>
+                          <li><a href="{% url 'text_list' %}" title="This takes a while to load...">All Texts</a></li>
                           <li role="separator" class="divider"></li>
                           <li><a href="{% url 'part_list' %}">Corpus parts</a></li>
                       </ul>
@@ -38,7 +106,7 @@
                           <li><a href="{% url 'seeker_list' %}">List</a></li>
                           <li><a href="{% url 'seeker_define' %}">Specify</a></li>
                           <li><a href="{% url 'result_list' %}">Results</a></li>
-                        <li role="separator" class="divider"></li>
+                          <li role="separator" class="divider"></li>
                           <li><a href="{% url 'function_list' %}">Functions</a></li>
                       </ul>
                     </li>
