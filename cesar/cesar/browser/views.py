@@ -637,18 +637,22 @@ class SentenceDetailView(DetailView):
         if oInfo != None and oInfo['status'] == "ok":
             # Make sure that 'object' sections are translated to proper JSON
             oSentInfo = oInfo['info']
-            # Get the sentence tree and extract any top-node features from it
-            treeSent = oSentInfo['allT']
-            context['eng'] = ""
-            if treeSent != None and treeSent['f'] != None:
-                f = treeSent['f']
-                if 'eng' in f and f['eng'] != "":
-                    # We have an 'eng' translation: make it available
-                    context['eng'] = f['eng']
-            # Replace the 'allT' and 'hitT' with STRING json
-            if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
-            if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])
-            context['sent_info'] = oSentInfo
+            if 'code' in oSentInfo and 'ERROR' in oSentInfo['code']:
+                # There is an error nevertheless
+                context['sent_info'] = oSentInfo['code']
+            else:
+                # Get the sentence tree and extract any top-node features from it
+                treeSent = oSentInfo['allT']
+                context['eng'] = ""
+                if treeSent != None and treeSent['f'] != None:
+                    f = treeSent['f']
+                    if 'eng' in f and f['eng'] != "":
+                        # We have an 'eng' translation: make it available
+                        context['eng'] = f['eng']
+                # Replace the 'allT' and 'hitT' with STRING json
+                if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
+                if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])
+                context['sent_info'] = oSentInfo
         else:
             context['sent_info'] = None
 

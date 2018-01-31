@@ -69,6 +69,9 @@
               <div class="col-md-2 ">
                 <button type="button" class="btn jumbo-3" onclick="ru.cesar.seeker.research_open('exe_dashboard', 'edit_buttons');">Search...</button>
               </div>
+              <div class="col-md-2">
+                <span class="main-wait glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+              </div>
             </div>
             <div class="row">&nbsp;</div>
           </div>
@@ -77,45 +80,83 @@
         
         <!-- The buttons to be able to edit the search -->
         <div id="edit_buttons" class="hidden">
-          <!-- Jumbo buttons to project parts -->
-          <div class="row container">
-            <a class="col-md-4 jumbotron jumbo-1"
-                      id="button_part_1"
-                      targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
-                      targetid="research_part_1"
-                      onclick="ru.cesar.seeker.research_wizard(this, '1');">
-              <h2>About</h2>
-              <p>Information on this project</p>
-            </a>
-            {% if object_id  %}
-            <a class="col-md-4  col-md-offset-1 jumbotron jumbo-2"
-                      id="button_part_2"
-                      targeturl="{% if object_id %}{% url 'research_part_2' object_id %}{% else %}{% url 'research_part_2' %}{% endif %}"
-                      targetid="research_part_2"
-                      onclick="ru.cesar.seeker.research_wizard(this, '2');">
-              <h2>Define</h2>
-              <p>Indicate what elements we are interested in</p>
-            </a>
-            {% endif %}
-          </div>
-          {% if object_id %}
-          <div class="row container">
-            <a class="col-md-4 jumbotron jumbo-3"
-                      id="button_part_345"
-                      onclick="ru.cesar.seeker.research_finetune(this);">
-              <h2>Fine-tune</h2>
-              <p>Specify detailed requirements of a hit</p>
-            </a>
-            <a class="col-md-4  col-md-offset-1 jumbotron jumbo-4"
-                      id="button_part_7"
-                      targeturl="{% if object_id %}{% url 'research_part_7' object_id %}{% else %}{% url 'research_part_7' %}{% endif %}"
-                      targetid="research_part_7"
-                      onclick="ru.cesar.seeker.research_wizard(this, '7');">
-              <h2>Add features</h2>
-              <p>Specify the features to be added to a search hit</p>
-            </a>
-          </div>
-          {% endif %}
+          <!-- SVG code to access all different parts -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="475" viewBox="-5 0 2200 950" >
+            <defs>
+              <marker id="main_arrowhead"  markerWidth="50" markerHeight="30"
+	                  refX="50" refY="15">
+	            <path d="M0,0 L50,15 L0,30 L0,0 Z" fill="black" />
+	          </marker>
+            </defs>
+
+            <g id="main_about" class="jumbo-1 main-el"
+               info="Define the name of this search and its purpose.\nWhat is the output it will give?\nSpecify whom to share it with."
+               targeturl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
+               targetid="research_part_1"
+               onclick="ru.cesar.seeker.research_wizard(this, '1');">  
+	            <rect x="0" y="0" width="1680" height="220" rx="30" ry="30" stroke-width="0"></rect>
+	            <text x="840" y="100" text-anchor="middle" font-family="sans-serif" font-size="40">About</text>
+	            <text x="840" y="150" text-anchor="middle" font-family="sans-serif" font-size="25">Information about this search</text>
+            </g>
+  
+            <g id="main_elements" class="jumbo-2 main-el" 
+               info="The main search elements can be:\n- words\n- POS-tags\n- syntactic components"
+               targeturl="{% if object_id %}{% url 'research_part_2' object_id %}{% else %}{% url 'research_part_2' %}{% endif %}"
+               targetid="research_part_2"
+               onclick="ru.cesar.seeker.research_wizard(this, '2');">
+	            <rect x="0" y="280" width="460" height="260" rx="30" ry="30" stroke-width="0"></rect>
+	            <text x="230" y="410" text-anchor="middle" font-family="sans-serif" font-size="40">Search Elements</text>
+	            <text x="230" y="460" text-anchor="middle" font-family="sans-serif" font-size="25">what are the elements of interest</text>
+            </g>
+  
+            <g id="main_fixed" class="jumbo-1 main-el"
+               info="Define fixed (or global) constants.\nThis may be helpful in defining data-dependant Variables."
+               targeturl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
+               targetid="research_part_3"
+               onclick="ru.cesar.seeker.research_wizard(this, '3');">
+	            <rect x="0" y="600" width="460" height="260" rx="30" ry="30" stroke-width="0"></rect>
+	            <text x="230" y="730" text-anchor="middle" font-family="sans-serif" font-size="40">Fixed</text>
+	            <text x="230" y="780" text-anchor="middle" font-family="sans-serif" font-size="25">Constants for convenience</text>
+            </g>
+  
+            <g id="main_variables" class="jumbo-3 main-el"
+               info="Define data-dependant variables to easily determine:\n- Conditions\n- Features.\nVariables can include nodes that are syntactically related to the search element."
+               targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
+               targetid="research_part_4"
+               onclick="ru.cesar.seeker.research_wizard(this, '4');">
+	            <rect x="610" y="280" width="460" height="580" rx="30" ry="30" stroke-width="1"></rect>
+	            <text x="840" y="570" text-anchor="middle" font-family="sans-serif" font-size="40">Variables</text>
+	            <text x="840" y="620" text-anchor="middle" font-family="sans-serif" font-size="25">data-dependant</text>
+            </g>
+
+            <g id="main_conditions" class="jumbo-4 main-el"
+               info="Specify conditions that need to be met before\na found search element constitutes a 'hit'."
+               targeturl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
+               targetid="research_part_6"
+               onclick="ru.cesar.seeker.research_wizard(this, '6');">
+	            <rect x="1220" y="280" width="460" height="260" rx="30" ry="30" stroke-width="1"></rect>
+	            <text x="1450" y="410" text-anchor="middle" font-family="sans-serif" font-size="40">Conditions</text>
+	            <text x="1450" y="460" text-anchor="middle" font-family="sans-serif" font-size="25">to keep a search element</text>
+            </g>
+
+            <g id="main_features" class="jumbo-1 main-el"
+               info="Each search element that satisfies the conditions is a hit.\nEach 'hit' may be accompanied in the output by any number of (textual)'features'.\nThese features can e.g. be\n- syntactic category labels\n- texts of nodes\n- other elements relating to the hit\n- anything that can be calculated"
+               targeturl="{% if object_id %}{% url 'research_part_7' object_id %}{% else %}{% url 'research_part_7' %}{% endif %}"
+               targetid="research_part_7"
+               onclick="ru.cesar.seeker.research_wizard(this, '7');">
+	            <rect x="1220" y="600" width="460" height="260" rx="30" ry="30" stroke-width="1"></rect>
+	            <text x="1450" y="730" text-anchor="middle" font-family="sans-serif" font-size="40">Output Features</text>
+	            <text x="1450" y="780" text-anchor="middle" font-family="sans-serif" font-size="25">that are calculated per find</text>
+            </g>
+  
+            <g id="main_arrows" class="main-arrow">
+	            <line x1="460" y1="410" x2="610" y2="410" marker-end='url(#main_arrowhead)' />
+	            <line x1="460" y1="730" x2="610" y2="730" marker-end='url(#main_arrowhead)' />
+	            <line x1="1070" y1="410" x2="1220" y2="410" marker-end='url(#main_arrowhead)' />
+	            <line x1="1070" y1="730" x2="1220" y2="730" marker-end='url(#main_arrowhead)' />
+            </g>
+  
+          </svg> 
         </div>
 
         <!-- Dashboard to specify the corpus and then execute the search -->
@@ -217,6 +258,7 @@
             <a href="{% url 'seeker_oview' object_id=object_id %}" 
                role="button" 
                class="btn btn-info pull-right"
+               title="Creating a summary may take some time..."
                target="_blank">Show summary</a>
           {% endif %}
       </div>
@@ -273,20 +315,6 @@
         </div>
       </div>
 
-      <div id="research_conditions_old" class="hidden col-md-offset-3 col-md-6 pull-right" aria-label="Research specification">
-        <button type="button" class="btn btn-primary" 
-                id="button_part_3"
-                targeturl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
-                targetid="research_part_3"
-                onclick="ru.cesar.seeker.research_wizard(this, '3');">Global >></button>
-        <button type="button" class="btn btn-primary" 
-                id="button_part_4"
-                targeturl="{% if object_id %}{% url 'research_part_4' object_id %}{% else %}{% url 'research_part_4' %}{% endif %}"
-                targetid="research_part_4"
-                onclick="ru.cesar.seeker.research_wizard(this, '4');">Variables >></button>
-        <button type="button" class="btn btn-primary" disabled onclick="ru.cesar.seeker.research_wizard(this, '6');">Conditions >></button>
-      </div>
-
       <div id="research_contents" class="panel panel-default hidden">
 
         <!-- Part 1: Research + Gateway -->
@@ -330,13 +358,15 @@
 
       </div>
 
+      <div id="main_info_div" class="hidden"></div>
 
     </div>
   </div>
 
 <script>
   ru.cesar.seeker.init_events();
-  ru.cesar.seeker.click_if_new("researchid","button_part_1");
+  /* ru.cesar.seeker.click_if_new("researchid", "button_part_1"); */
+  ru.cesar.seeker.click_if_new("researchid", "main_about");
 </script>
 
 {% endblock content %}

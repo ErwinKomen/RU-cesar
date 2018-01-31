@@ -2,23 +2,32 @@
 
 {% block content %}
 
+<div class="container body-content">
+
   <h2>Sign up</h2>
   <form method="post">
     {% csrf_token %}
-    {% for field in form %}
-      <p>
-        {{ field.label_tag }}<br>
-        {{ field }}
-        {% if field.help_text %}
-          <small style="color: grey">{{ field.help_text }}</small>
-        {% endif %}
-        {% for error in field.errors %}
-          <p style="color: red">{{ error }}</p>
+
+    <div class="signup">
+      <table>
+        {% for field in form %}
+          <tr>
+            <td valign="top"><div>{{field.label}}</div></td>
+            <td valign="top">
+              <div>{{field}}</div>
+              <div>{% if field.help_text %}<small style="color: grey;font-size: x-small">{{ field.help_text }}</small>{% endif %}</div>
+              <div>
+                {% for error in field.errors %}<p style="color: red">{{ error }}</p>{% endfor %}
+              </div>
+            </td>
+          </tr>
+          <tr><td colspan="2">&nbsp;</td></tr>
         {% endfor %}
-      </p>
-    {% endfor %}
-    <button type="submit">Sign up</button>
+      </table>
+    </div>
+    <button type="submit" class="btn jumbo-3">Sign up</button>
   </form>
+</div>
 
 {% endblock %}
 

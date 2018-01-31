@@ -137,12 +137,14 @@ class Gateway(models.Model):
         return "{}:{}".format(self.id, self.name)
 
     def error_add(self, sMsg):
+        self.refresh_from_db()
         lErrors = [] if self.errors == "" else json.loads(self.errors)
         lErrors.append(sMsg)
         self.errors = json.dumps(lErrors)
         self.save()
 
     def add_errors(self, arErr):
+        self.refresh_from_db()
         # Get the errors that are already here
         lErrors = [] if self.errors == "" else json.loads(self.errors)
         # Add errors
@@ -153,6 +155,7 @@ class Gateway(models.Model):
         self.save()
 
     def error_clear(self):
+        self.refresh_from_db()
         self.errors = ""
         self.save()
 
@@ -1877,52 +1880,61 @@ class Research(models.Model):
 
         # Import the correct function
         from cesar.seeker.convert import ConvertProjectToXquery
-
+        
         # Validate
         if partId == None or partId == "" or sFormat == None or sFormat == "":
             return None
-
-        # Prepare data
-        oData = {'targetType': self.targetType,
-                 'format': sFormat,
-                 'gateway': self.gateway}
-        # First: check and see if there is no 'basket' yet for the combination of part/format
-        part = Part.objects.filter(id=partId).first()
-        lstQ = []
-        lstQ.append(Q(research=self))
-        lstQ.append(Q(format=sFormat))
-        lstQ.append(Q(part=part))
-        qs = Basket.objects.filter(*lstQ)
-        if qs.count() == 0:
-            # So: create one
-            basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
-            basket.set_status("Creating Xquery code")
-            # Create the Xquery code
-            basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
-            # Possibly add errors to gateway
-            self.gateway.add_errors(arErr)
-            # Check errors
-            if self.gateway.errors != "":
-                return None
-            # Save the basket
-            basket.save()
-        else:
-            # Return the existing one
-            basket = qs[0]
-            # Check if we have Xquery code and there is no 'error' status
-            if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
-                # Create the Xquery code
+        try:
+            # Prepare data
+            oData = {'targetType': self.targetType,
+                     'format': sFormat,
+                     'gateway': self.gateway}
+            # First: check and see if there is no 'basket' yet for the combination of part/format
+            part = Part.objects.filter(id=partId).first()
+            lstQ = []
+            lstQ.append(Q(research=self))
+            lstQ.append(Q(format=sFormat))
+            lstQ.append(Q(part=part))
+            qs = Basket.objects.filter(*lstQ)
+            if qs.count() == 0:
+                # So: create one
+                basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
                 basket.set_status("Creating Xquery code")
+                # Create the Xquery code
                 basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
                 # Possibly add errors to gateway
                 self.gateway.add_errors(arErr)
                 # Check errors
-                if self.gateway.errors != "":
+                errors = self.gateway.get_errors()
+                if errors != "" and errors != "[]":
                     return None
                 # Save the basket
                 basket.save()
-        # Return the basket
-        return basket
+            else:
+                # Return the existing one
+                basket = qs[0]
+                # Check if we have Xquery code and there is no 'error' status
+                if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
+                    # Create the Xquery code
+                    basket.set_status("Creating Xquery code")
+                    basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
+                    # Possibly add errors to gateway
+                    self.gateway.add_errors(arErr)
+                    # Check errors
+                    errors = self.gateway.get_errors()
+                    if errors != "" and errors != "[]":
+                        return None
+                    # Save the basket
+                    basket.save()
+            # Return the basket
+            return basket
+        except:
+            self.gateway.error_add("Research/to_xquery error")
+            sError = errHandle.get_error_message()
+            if sError != "":
+                self.gateway.error_add(sError)
+            errHandle.DoError("Research/to_xquery error")
+            return None
 
     def to_crpx(self, partId, sFormat):
         """Send command to /crpp to start the project"""
@@ -1934,6 +1946,9 @@ class Research(models.Model):
         oBack = {'status': 'ok', 'msg': ''}
         # Get the correct Basket
         try:
+            # Clear the errors
+            self.gateway.error_clear()
+            # Other initialisations
             bRefresh = True # Make sure that Xquery is calculated afresh
             basket = self.to_xquery(partId, sFormat, bRefresh)
             # Check on what was returned
@@ -1941,9 +1956,10 @@ class Research(models.Model):
                 if partId == None or partId == "":
                     sMsg = "First specify a corpus (or a part of a corpus) to search in"
                 else:
-                    sMsg = "Something is wrong. Cesar is unable to execute."
-                    sErrors = self.gateway.errors
-                    if sErrors != "":
+                    sMsg = "to_crpx: Something is wrong. Cesar is unable to execute."
+                    # sErrors = self.gateway.errors
+                    sErrors = self.gateway.get_errors()
+                    if sErrors != "" and sErrors != "[]":
                         lErrors = json.loads(sErrors)
                         lErrors.append(sMsg)
                         sMsg = "<br>\n".join(lErrors)
@@ -2453,7 +2469,7 @@ class Quantor(models.Model):
     qcNum = models.IntegerField("Number of query lines", default=1)
 
     def __str__(self):
-        return "{}".format(self.count)
+        return "{}".format(self.total)
 
     def get_quantor(basket):
         # CHeck if this exists

@@ -341,6 +341,23 @@ svg g.lithium-node:hover > text {
     font-family: monospace;
 }
 
+.svg-main {
+    background: lightgoldenrodyellow none repeat scroll 0 0;
+    border: none;
+    border-radius: 3px;
+    display: block;
+    font-size: 12px;
+    opacity: 0.9;
+    padding: 5px;
+    position: absolute;
+    text-decoration: none !important;
+    max-width: 600px;
+}
+.svg-main .cellvalue {
+    font-family: monospace;
+}
+
+
 /*  cesar.seeker */
 .research-part {
   padding: 5px 30px;
@@ -437,35 +454,52 @@ form .panel-heading.row {
 .jumbo-1 {
   background-color: lavender;
   color: chocolate;
+  fill: lavender;
+}
+.jumbo-1 text {
+  fill: goldenrod;
 }
 .jumbo-2 {
   background-color: chocolate;
   color: lavender;
+  fill: chocolate;
 }
 .jumbo-3 {
   background-color: #355e3b;
   color: lavender;
+  fill: #355e3b;
 }
 .jumbo-4 {
   background-color: #ff2400;
   color: lavender;
+  fill: #ff2400;
 }
+.jumbo-2 text, .jumbo-3 text, .jumbo-4 text {
+  fill: lavender;
+}
+
 .jumbo-1:hover {
     color: black;
     background-color: goldenrod;
+    fill: goldenrod;
+    cursor: pointer;
 }
-.jumbo-2:hover {
+.jumbo-1:hover text {
+  fill: black;
+}
+.jumbo-2:hover, .jumbo-3:hover, .jumbo-4:hover {
     color: white;
     background-color: goldenrod;
+    fill: goldenrod;
+    cursor: pointer;
+    /* stroke: white; */
 }
-.jumbo-3:hover {
-    color: white;
-    background-color: goldenrod;
+
+.main-arrow {
+  stroke: black;
+  stroke-width: 1px;
 }
-.jumbo-4:hover {
-    color: white;
-    background-color: goldenrod;
-}
+
 a.jumbotron:visited {color:inherit;}
 a.jumbotron:hover {
     text-decoration: none;
@@ -560,4 +594,80 @@ table td.kwic-fol {
 .kwic-filter-value {
     color: darkgreen;
     font-family: monospace;
+}
+
+body > div > footer {
+  height: 18px;
+  padding-top: 4px;
+  background: darkgoldenrod;
+  color: white;
+  font-size: x-small;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  text-align: center;
+}
+body > div > footer a {
+  color: #355e3b;
+  position: relative;
+  z-index: 1000;
+}
+
+.citation {
+  color: darkblue;
+  font-family: monospace;
+  font-size: small;
+}
+
+.signup input {
+  width: 700px;
+}
+
+/* Dropdown submenu extension from: https://bootsnipp.com/snippets/oPWaZ */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu>.dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -6px;
+    margin-left: -1px;
+    -webkit-border-radius: 0 6px 6px 6px;
+    -moz-border-radius: 0 6px 6px;
+    border-radius: 0 6px 6px 6px;
+}
+
+.dropdown-submenu:hover>.dropdown-menu {
+    display: block;
+}
+
+.dropdown-submenu>a:after {
+    display: block;
+    content: " ";
+    float: right;
+    width: 0;
+    height: 0;
+    border-color: transparent;
+    border-style: solid;
+    border-width: 5px 0 5px 5px;
+    border-left-color: #ccc;
+    margin-top: 5px;
+    margin-right: -10px;
+}
+
+.dropdown-submenu:hover>a:after {
+    border-left-color: #fff;
+}
+
+.dropdown-submenu.pull-left {
+    float: none;
+}
+
+.dropdown-submenu.pull-left>.dropdown-menu {
+    left: -100%;
+    margin-left: 10px;
+    -webkit-border-radius: 6px 0 6px 6px;
+    -moz-border-radius: 6px 0 6px 6px;
+    border-radius: 6px 0 6px 6px;
 }

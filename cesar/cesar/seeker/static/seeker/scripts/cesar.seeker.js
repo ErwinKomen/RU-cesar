@@ -40,6 +40,36 @@ var ru = (function ($, ru) {
         return "something";
       },
       /**
+       * screenCoordsForRect
+       *    Get the correct screen coordinates for the indicated <svg> <rect> element
+       * 
+       * @param {el} svgRect
+       * @returns {object}
+       */
+      screenCoordsForRect: function (svgRect) {
+        var pt = null,
+            elSvg = null,
+            rect = null,
+            oBound = {},
+            matrix;
+
+        try {
+          // Get the root <svg>
+          elSvg = $(svgRect).closest("svg").get(0);
+
+          rect = svgRect.get(0);
+          oBound = rect.getBoundingClientRect();
+
+          // Take into account scrolling
+          oBound['x'] += document.documentElement.scrollLeft || document.body.scrollLeft;
+          oBound['y'] += document.documentElement.scrollTop || document.body.scrollTop;
+          return oBound;
+        } catch (ex) {
+          private_methods.showError("screenCoordsForRect", ex);
+          return oBound;
+        }
+
+      },      /**
        *  var_move
        *      Move variable row one step down or up
        *      This means the 'order' attribute changes
@@ -125,6 +155,18 @@ var ru = (function ($, ru) {
       },
       errClear: function () {
         $("#" + loc_divErr).html("");
+      },
+      mainWaitStart : function() {
+        var elWait = $(".main-wait").first();
+        if (elWait !== undefined && elWait !== null) {
+          $(elWait).removeClass("hidden");
+        }
+      },
+      mainWaitStop: function () {
+        var elWait = $(".main-wait").first();
+        if (elWait !== undefined && elWait !== null) {
+          $(elWait).addClass("hidden");
+        }
       },
       waitInit: function (el) {
         var elResPart = null,
@@ -326,6 +368,8 @@ var ru = (function ($, ru) {
               var sOviewUrl = $(elOview).attr("targeturl");
               sOviewUrl = sOviewUrl.replace("/new/", "/" + instanceid + "/");
               $(elOview).attr("targeturl", sOviewUrl);
+              // Set a tag to indicate that we need to jump to a new item when returning
+              $(elOview).attr("isnew", true);
             }
           }
           // Check whether we need to show the error response
@@ -419,7 +463,7 @@ var ru = (function ($, ru) {
           // data.push({ 'name': 'object_id', 'value': instanceid });
 
           // If there is an instance ID, then make sure the URL ends with that id
-          if (instanceid !== undefined && instanceid !== '') {
+          if (instanceid !== undefined && instanceid !== '' && instanceid !== "None" ) {
             // First check if we already have a sequence of /nnn/
             if (!/\/\d+\//.test(ajaxurl) && ajaxurl.indexOf('/' + instanceid + "/") < 0) {
               ajaxurl += instanceid + "/";
@@ -1120,6 +1164,10 @@ var ru = (function ($, ru) {
             }
           });
 
+          // Attach an event handler to all the NODES
+          $("g.main-el").mouseover(function () { ru.cesar.seeker.main_info_show(this) });
+          $("g.main-el").mouseout(function () { ru.cesar.seeker.main_info_hide(this) });
+
           // NOTE: do not use the following mouseout event--it is too weird to work with
           // $('td span.td-textarea').mouseout(ru.cesar.seeker.toggle_textarea_out);
 
@@ -1335,20 +1383,57 @@ var ru = (function ($, ru) {
        *   Show the tiles-overview
        *
        */
-      research_overview(el) {
-        var sTargetUrl = "";
+      research_overview : function(el) {
+        var sTargetUrl = "",
+            bIsNew = false;
 
         try {
-          // Try get the target url
-          sTargetUrl = $(el).attr("targeturl");
-          // Open this page
-          window.location.href = sTargetUrl;
+          // Check if this is a new one
+          bIsNew = $(el).attr("isnew");
+          if (typeof bIsNew !== typeof undefined && bIsNew !== false) {
+            // Try get the target url
+            sTargetUrl = $(el).attr("targeturl");
+            // Open this page
+            window.location.href = sTargetUrl;
+          } else {
+            // New code: just show all the relevant places and hide the others
+            ru.cesar.seeker.main_show_hide({
+              "research_tiles": true, "action_buttons": true, "edit_buttons": true,
+              "exe_dashboard": false, "goto_overview": false, "goto_finetune": false,
+              "research_conditions": false, "research_contents": false
+            });
+          }
+
         } catch (ex) {
           private_methods.errMsg("research_overview", ex);
         }
       },
 
-
+      /**
+       * main_show_hide
+       *    Show/hide elements on the main panel
+       *
+       */
+      main_show_hide(options) {
+        var sDiv = "",
+            bShow = true;
+        try {
+          for (var item in options) {
+            if (options.hasOwnProperty(item)) {
+              sDiv = "#" + item;
+              bShow = options[item];
+              if (bShow) {
+                $(sDiv).removeClass("hidden");
+              } else {
+                $(sDiv).addClass("hidden");
+              }
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("main_show_hide", ex);
+        }
+      },
+      
       /**
        * result_wizard
        *    Select one item from the result wizard
@@ -1487,6 +1572,7 @@ var ru = (function ($, ru) {
             sObjectId = "",
             sMsg = "",
             html = "",
+            sUrl = "",
             data = {},
             frm = null,
             response = null,
@@ -1499,6 +1585,9 @@ var ru = (function ($, ru) {
           elWait = private_methods.waitInit(el);
           // Start waiting
           private_methods.waitStart(elWait);
+
+          // If this comes from the main dashboard, show waiting over there
+          private_methods.mainWaitStart();
           
           // Get the correct target id
           sTargetId = "#" + sTargetId + sPart;
@@ -1507,6 +1596,9 @@ var ru = (function ($, ru) {
           // If it is undefined, try to get the target type from the input
           if (sTargetType === undefined || sTargetType === "") {
             sTargetType = $("#targettype").text().trim();
+            if (sTargetType === "") {
+              sTargetType = "w";  // Take words as default
+            }
           }
           // Before continuing: has the targettype been chosen?
           if (sPart !== "1") {
@@ -1521,6 +1613,8 @@ var ru = (function ($, ru) {
                 private_methods.errMsg("Choose the main element type");
                 // Stop waiting
                 private_methods.waitStop(elWait);
+                // If this comes from the main dashboard, show waiting over there
+                private_methods.mainWaitStop();
                 // We need to LEAVE at this point
                 return;
             }
@@ -1545,14 +1639,18 @@ var ru = (function ($, ru) {
                   // Indicate we are saving
                   $(".save-warning").html("Processing... " + sMsg + loc_sWaiting);
                   data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
+                  // Determine the URL
+                  sUrl = $(button).attr("ajaxurl");
                   // Process this information: save the data!
-                  response = ru.cesar.seeker.ajaxcall($(button).attr("ajaxurl"), data, "POST");
+                  response = ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
                   // Check the response
                   if (response.status === undefined || response.status !== "ok") {
                     // Action to undertake if we have not been successfull
                     private_methods.errMsg("research_wizard[" + sPart + "]: could not save the data for this function");
                     // Stop waiting
                     private_methods.waitStop(elWait);
+                    // If this comes from the main dashboard, show waiting over there
+                    private_methods.mainWaitStop();
                     // And leave...
                     return;
                   }
@@ -1586,8 +1684,13 @@ var ru = (function ($, ru) {
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
               // Indicate we are saving/preparing
               $(".save-warning").html("Processing... " + sPart + loc_sWaiting);
+              // Determine the URL
+              sUrl = $(el).attr("ajaxurl");
+              if (sUrl === undefined) {
+                sUrl = $(el).attr("targeturl");
+              }
               // Fetch the corr
-              response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"), sObjectId, data);
+              response = ru.cesar.seeker.ajaxform_load(sUrl, sObjectId, data);
               if (response.status && response.status === "ok") {
                 // Make the HTML response visible
                 $(sTargetId).html(response.html);
@@ -1691,19 +1794,98 @@ var ru = (function ($, ru) {
               break;
             case "3": case "4": case "42": case "43":
             case "44": case "6":
+              $("#goto_overview").removeClass("hidden");
+              $("#goto_finetune").addClass("hidden");
+              /* OLD code 
               $("#goto_overview").addClass("hidden");
               $("#goto_finetune").removeClass("hidden");
+              */
               break;
           }
           // Stop waiting
           private_methods.waitStop(elWait);
+          // If this comes from the main dashboard, show waiting over there
+          private_methods.mainWaitStop();
         } catch (ex) {
           private_methods.errMsg("research_wizard", ex);
           // Stop waiting
           private_methods.waitStop(elWait);
         }
       },
+      /**
+      * main_info_hide
+      *    Behaviour when there is a mouse-out on a main blob
+      * 
+      * @param {element} elRect
+      * @returns {undefined}
+      */
+      main_info_hide: function (elRect) {
+        try {
+          $("#main_info_div").addClass("hidden");
+        } catch (ex) {
+          // Show the error at the indicated place
+          $(errDiv).html("main_info_hide error: " + ex.message);
+        }
+      },
+      /**
+      * main_info_show
+      *    Behaviour when there is a mouse-over on a main blob
+      * 
+      * @param {element} elRect
+      * @returns {undefined}
+      */
+      main_info_show: function (elRect) {
+        var sPart,        // Counter
+            i,            // Counter
+            sInfoDiv = "#main_info_div",
+            sInfo = "",
+            lInfo = [],
+            lHtml = [],   // Where we gather HTML
+            oSvg,         // Coordinates of the svg rect element
+            elTarget,     // The <div> we want to position
+            oFeat = {},   // Feature object
+            sId = "";     // Identifier of the element that has been hit
 
+        try {
+          // Validate: this must be a <g> element with class ".main-el"
+          if (!$(elRect).is("g.main-el")) {
+            return;
+          }
+          // The node must have an identifier
+          sId = $(elRect).attr("id");
+          // The text to be shown is in the @info attribute of the <g> element
+          sInfo = $(elRect).attr("info");
+          if (sInfo !== undefined && sInfo !== "") {
+            // There is some text to be shown
+            lInfo = sInfo.split("\\n");
+            lHtml.push("<div id='info-" + sId + "' class='svg-main'><table>");
+            for (i = 0; i < lInfo.length; i++) {
+              sPart = lInfo[i];
+              lHtml.push("<tr><td class='cellvalue'>" + sPart + "</td></tr>");
+            }
+            lHtml.push("</table></div>");
+
+            // Add this element at an appropriate place
+            $(sInfoDiv).html(lHtml.join("\n"));
+            elTarget = $(sInfoDiv).find(".svg-main").get(0);
+
+            // Get screen coordinates
+            oSvg = private_methods.screenCoordsForRect($(elRect).children("rect").first());
+            elTarget.style.left = oSvg['x'] + 'px';
+            elTarget.style.top = (oSvg['y'] - 10 - 20 * lInfo.length).toString() + 'px';
+            $(sInfoDiv).removeClass("hidden");
+
+            // Now adjust the position based on the shown div
+            oSvg = private_methods.fitFeatureBox(oSvg, elTarget);
+            elTarget.style.left = oSvg['x'] + 'px';
+            elTarget.style.top = oSvg['y'] + 'px';
+          }
+
+        } catch (ex) {
+          // Show the error at the indicated place
+          $(errDiv).html("main_info_show error: " + ex.message);
+        }
+      },
       /**
        * search_download
        *   Trigger creating and downloading the CRPX

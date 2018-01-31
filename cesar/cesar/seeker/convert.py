@@ -75,7 +75,8 @@ def ConvertProjectToXquery(oData):
                             arErr.append("Error in the definition of variable {} for search element {}: {}".format(
                                 var.name,cons.name, oCode['error']))
                         # Check for possible error(s)
-                        if gateway.get_errors() != "":
+                        errors = gateway.get_errors()
+                        if errors != "" and errors != "[]":
                             return "", ERROR_CODE
                         else:
                             cvar_list.append(oCvarInfo)

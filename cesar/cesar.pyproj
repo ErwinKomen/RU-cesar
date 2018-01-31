@@ -106,12 +106,14 @@
     <Folder Include="cesar\viewer\templates\viewer\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="cesar\browser\static\browser\content\acad.png" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.css" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.min.css" />
     <Content Include="cesar\browser\static\browser\content\ru-base.css" />
     <Content Include="cesar\browser\static\browser\content\ru-form.css" />
     <Content Include="cesar\browser\static\browser\content\ru-widgets.css" />
     <Content Include="cesar\browser\static\browser\content\site.css" />
+    <Content Include="cesar\browser\static\browser\content\tree_example.png" />
     <Content Include="cesar\browser\static\browser\fonts\glyphicons-halflings-regular.eot" />
     <Content Include="cesar\browser\static\browser\fonts\glyphicons-halflings-regular.svg" />
     <Content Include="cesar\browser\static\browser\fonts\glyphicons-halflings-regular.ttf" />

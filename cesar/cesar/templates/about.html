@@ -1,10 +1,79 @@
-{% extends "layout.html" %}
+﻿{% extends "layout.html" %}
+{% load staticfiles %}
+
 
 {% block content %}
 
-<h2>{{ title }}.</h2>
-<h3>{{ message }}</h3>
+<div class="container body-content">
+  <div class="row">
 
-<p>Use this area to provide additional information.</p>
+    <h2>{{ title }}</h2>
 
+    <div class="col-md-6">
+      <p>The CESAR program is being developed as part of the <a href="https://www.clariah.nl/projecten/research-pilots/acad/acad">ACAD research pilot</a> of CLARIAH.</p>
+      <p>ACAD stands for <b>Automatic Coherence Analysis of Dutch</b> and it serves a number of goals:
+        <ul>
+          <li>develop a web application that allows computationally naive linguists to define complex syntactic searches</li>
+          <li>use the application for automatic analysis of causal coherence in discourse</li>
+          <li>add parsed corpora of underrepresented categories (whatsapp and high-quality newspapers)</li>
+        </ul>
+      </p>
+      <p>The <u>first goal</u> concentrates on a web application, which is <b>Cesar</b>: 
+         a <b>C</b>orpus <b>E</b>ditor for <b>S</b>yntactically <b>A</b>nnotated <b>R</b>esources. 
+        The Cesar application allows for defining, hosting and browsing syntactically annotated text corpora (see the <b>B</b>rowse menu item),
+        and it allows for editing and executing searches through these corpora, as well as viewing the results.
+
+      </p>
+      <p>The <u>second goal</u> of ACAD is to allow for automatic anaylsis of <b>causal coherence</b> in discourse.
+        This goal is accomplished by developing a number of searches for the different causal connectives under review (e.g. <i>omdat</i>, <i>want</i>).
+        These searches are made available to different groups of CESAR users, such as researchers and students.
+        Users can copy a search to their own account, adapt it and use it on a corpus to perform the automatic analysis.
+      </p>
+      <p>ACAD provides the first part of a coherence analysis.
+      It not only finds all occurrences of the causal marker that is being investigated, but it supplements each of those finds with a user-programmable number of output features.
+      The table of the found markers and their output features can be exported from Cesar as a CSV (or Excel) file, and it are these data that can then be analysed further by statistical tools.
+      </p>
+      <p><a class="btn btn-default" href="mailto:e.komen@let.ru.nl">Request assistance &raquo;</a></p>
+    </div>
+    <div class="col-md-6">
+      <div  align="right">
+      <img src="{% static  'browser/content/acad.png' %}"
+           alt="Overview of the ACAD components"
+           title="Overview of the ACAD components"
+           style="width:500px;z-index:-2" />
+      </div>
+      <p>
+        The CESAR application builds on previous programs:
+        <ul>
+          <li>Cesax: coreference editor for syntactically annotated XML corpora. A Windows application (<a href="http://erwinkomen.ruhosting.nl/software/Cesax">url</a>)</li>
+          <li>CorpusStudio: a Windows application to search corpora on one's computer (<a href="http://erwinkomen.ruhosting.nl/software/CorpusStudio">url</a>) </li>
+          <li>CorpusStudioWeb: a web application developed through the sponsorship of <a href="https://dev.clarin.nl/node/4239">CLARIN-NL</a> that allows specifying complex queries in the Xquery language</li>
+        </ul>
+      </p>
+      <p>
+        The source code of Cesar is available at <a href="https://github.com/ErwinKomen/RU-cesar">github</a>.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <h4>References</h4>
+      <div class="citation">
+        Komen, Erwin R. 2013. “Corpus Databases with Feature Pre-Calculation.” 
+        The Twelfth Workshop on Treebanks and Linguistic Theories (TLT12). 
+        Bulgary. <a href="http://erwinkomen.ruhosting.nl/doc/2013_CorpusDbases_TLT12.pdf">pdf</a>.
+      </div>
+      <div class="citation">
+        Komen, Erwin R. 2017. “Beyond Counting Syntactic Hits.” 
+        In <i>CLARIN in the Low Countries</i>, edited by J. Odijk and Hessen, A. van. Netherlands: Ubiquity press.
+        <a href="https://www.ubiquitypress.com/site/chapters/10.5334/bbi.21/download/1037/">pdf</a>.
+      </div>
+      <div class="citation">
+          Komen, Erwin R., and Jet Hoek. 2018. <i>Automatic Coherence Analysis for the Computationally Challenged</i>. http://clin28.cls.ru.nl.
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

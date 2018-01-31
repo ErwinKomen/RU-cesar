@@ -3273,6 +3273,7 @@ def research_edit(request, object_id=None):
     context = dict(
         object_id = object_id,
         original=obj,
+        is_new=(obj==None),
         intro_message=intro_message,
         intro_breadcrumb=intro_breadcrumb,
         part_list=part_list,
