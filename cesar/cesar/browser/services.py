@@ -3,6 +3,7 @@ import json
 from cesar.settings import CRPP_HOME
 import requests
 import sys
+import time
 
 
 def get_crpp_info():
@@ -110,7 +111,8 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                             oBack['count'] = oContent['total']
                             status.set("crpp", oBack)
 
-
+                            # Make sure we wait some time before making the next request
+                            time.sleep(0.200)   # wait for 200 milliseconds
                     else:
                         # There is an error
                         oBack['status'] = 'error'
