@@ -191,10 +191,7 @@ var ru = (function ($, ru) {
             sUrl = "";
 
         // Indicate that we are starting
-        $("#sync_progress_" + sSyncType).html("Repair is starting: " + sSyncType);
-        // Start looking only after some time
-        oJson = { 'status': 'started' };
-        ru.cesar.oSyncTimer = window.setTimeout(function () { ru.cesar.sync_progress(sSyncType, oJson); }, 3000);
+        $("#sync_progress_" + sSyncType).html("Synchronization is starting: " + sSyncType);
 
         // Make sure that at the end: we stop
         oData = { 'type': sSyncType };
@@ -212,15 +209,27 @@ var ru = (function ($, ru) {
             break;
         }
 
+        // Start looking only after some time
+        oJson = { 'status': 'started' };
+        ru.cesar.oSyncTimer = window.setTimeout(function () { ru.cesar.sync_progress(sSyncType, oJson); }, 3000);
+
         // Define the URL
         sUrl = $("#sync_start_" + sSyncType).attr('sync-start');
         $.ajax({
           "url": sUrl,
+          "async": true,
           "dataType": "json",
           "data": oData,      // This sends the parameters in the data object
           "cache": false,
-          "success": function (json) { ru.cesar.sync_stop(sSyncType, json); }
+          "success": function (json) {
+            $("#sync_details_" + sSyncType).html("start >> sync_stop");
+            ru.cesar.sync_stop(sSyncType, json);
+          },
+          failure: function () {
+            $("#sync_details_" + sSyncType).html("Ajax failure");
+          }
         })(jQuery);
+
       },
 
       /**
@@ -228,7 +237,7 @@ var ru = (function ($, ru) {
        *      Return the progress of synchronization
        *
        */
-      sync_progress: function (sSyncType) {
+      sync_progress: function (sSyncType, options) {
         var oData = {},
             sUrl = "";
 
@@ -236,11 +245,16 @@ var ru = (function ($, ru) {
         sUrl = $("#sync_start_" + sSyncType).attr('sync-progress');
         $.ajax({
           "url": sUrl,
+          "async": true,
           "dataType": "json",
           "data": oData,
           "cache": false,
           "success": function (json) {
+            $("#sync_details_" + sSyncType).html("progress >> sync_handle");
             ru.cesar.sync_handle(sSyncType, json);
+          },
+          failure: function () {
+            $("#sync_details_" + sSyncType).html("Ajax failure");
           }
         })(jQuery);
       },
@@ -251,7 +265,8 @@ var ru = (function ($, ru) {
        *
        */
       sync_handle: function (sSyncType, json) {
-        var sStatus = "";
+        var sStatus = "",
+            options = {};
 
         // Validate
         if (json === undefined) {
@@ -271,13 +286,13 @@ var ru = (function ($, ru) {
             return;
           case "done":
             // Finish nicely
-            sync_stop(sSyncType, json);
+            ru.cesar.sync_stop(sSyncType, json);
             return;
           default:
             // Default action is to show the status
             $("#sync_progress_" + sSyncType).html(json.status);
             $("#sync_details_" + sSyncType).html(ru.cesar.sync_details(json));
-            ru.cesar.oSyncTimer = window.setTimeout(function (json) { ru.cesar.sync_progress(sSyncType); }, 1000);
+            ru.cesar.oSyncTimer = window.setTimeout(function () { ru.cesar.sync_progress(sSyncType, options); }, 1000);
             break;
         }
       },

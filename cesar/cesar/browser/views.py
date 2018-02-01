@@ -212,12 +212,16 @@ def sync_crpp(request):
         }
     )
 
+
+
 def sync_crpp_start(request):
     """Synchronize information FROM /crpp"""
 
     oErr = ErrHandle()
     data = {'status': 'starting'}
     try:
+        # Get the user
+        username = request.user.username
         # Get the synchronization type
         get = request.GET
         synctype = ""
@@ -229,6 +233,17 @@ def sync_crpp_start(request):
             data['status'] = 'no sync type specified'
 
         else:
+            # Remove previous status objects for this combination of user/type
+            lstQ = []
+            lstQ.append(Q(user=username))
+            lstQ.append(Q(type=synctype))
+            qs = Status.objects.filter(*lstQ)
+            qs.delete()
+
+            # Create a status object for this combination of synctype/user
+            oStatus = Status(user=username, type=synctype, status="preparing")
+            oStatus.save()
+
             # Formulate a response
             data['status'] = 'done'
 
@@ -236,9 +251,8 @@ def sync_crpp_start(request):
                 # Get the data from the CRPP api
                 crpp_info = get_crpp_info()
 
-                # Create a new synchronisation object that contains all relevant information
-                oStatus = Status(status="loading")
-                oStatus.save()
+                # Use the synchronisation object that contains all relevant information
+                oStatus.set("loading")
 
                 # Update the models with the new information
                 oResult = process_corpusinfo(crpp_info)
@@ -255,43 +269,46 @@ def sync_crpp_start(request):
                     sLng = choice_english(CORPUS_LANGUAGE, part.corpus.lng)
                     sFormat = choice_english(CORPUS_FORMAT, get['format'])
 
-                    # Create a new synchronisation object that contains all relevant information
-                    oStatus = Status(status="contacting", msg="Obtaining data from /crpp" )
-                    oStatus.save()
+                    # Use the appropriate synchronisation object that contains all relevant information
+                    oStatus.set("contacting", msg="Obtaining data from /crpp")
 
                     # Get the data from the CRPP api: this only returns a JOBID
                     crpp_texts = get_crpp_texts(sLng, sPart, sFormat, oStatus)
 
-                    # Now loop until we get the correct status
+                    # Check what we get here
+                    if 'status' in crpp_texts and crpp_texts['status'] == 'error':
+                        # There is an error
+                        data['status'] = 'error'
+                        data['msg'] = json.dumps(crpp_texts)
+                        oStatus.set("error", msg=data['msg'] )
+                    else:
+                        # Seem to have a good response
 
+                        # Create a new synchronisation object that contains all relevant information
+                        oStatus.set("loading", msg="Updating the existing models with this new information")
 
-                    # Create a new synchronisation object that contains all relevant information
-                    oStatus.status="loading"
-                    oStatus.msg="Updating the existing models with this new information"
-                    oStatus.save()
+                        # Update the models with the /crpp/txtlist information
+                        oResult = process_textlist(crpp_texts, part, sFormat, oStatus, False)
 
-                    # Update the models with the /crpp/txtlist information
-                    oResult = process_textlist(crpp_texts, part, sFormat, oStatus, False)
+                        # Process the reply from [process_textlist()]
+                        if oResult == None or ('result' in oResult and oResult['result'] == False):
+                            data['status'] = 'error'
+                        elif not 'count' in oResult:
+                            data['status'] = 'error'
+                        elif oResult != None:
+                            data['count'] = oResult
 
-                    # Process the reply from [process_textlist()]
-                    if oResult == None or oResult['result'] == False:
-                        data.status = 'error'
-                    elif oResult != None:
-                        data['count'] = oResult
-
-                    # Completely ready
-                    oStatus.set("done", oResult)
+                        # Completely ready
+                        oStatus.set("done", oResult)
 
                 else:
                     # Create a new synchronisation object that contains all relevant information
-                    oStatus = Status(status="error", msg="Cannot find [part] information" )
-                    oStatus.save()
+                    oStatus.set("error", msg="Cannot find [part] information" )
                     data['status'] = 'error'
 
             elif synctype == "alltexts":
                 # Create a new synchronisation object that contains all relevant information
-                oStatus = Status(status="contacting", msg="Obtaining data from /crpp" )
-                oStatus.save()
+                oStatus.set("contacting", msg="Obtaining data from /crpp")
 
                 data['count'] = 0
                 oBack = {}
@@ -352,34 +369,47 @@ def sync_crpp_start(request):
 def sync_crpp_progress(request):
     """Get the progress on the /crpp synchronisation process"""
 
-    # Get the synchronization type
-    get = request.GET
-    synctype = ""
-    if 'synctype' in get:
-        synctype = get['synctype']
+    data = {'status': 'preparing'}
 
-    if synctype == '':
-        # Formulate a response
-        data = {'status': 'no sync type specified'}
+    try:
+        # Get the user
+        username = request.user.username
+        # Get the synchronization type
+        get = request.GET
+        synctype = ""
+        if 'synctype' in get:
+            synctype = get['synctype']
 
-    else:
-        # Formulate a response
-        data = {'status': 'unknown'}
+        if synctype == '':
+            # Formulate a response
+            data = {'status': 'error',
+                    'msg': 'no sync type specified'}
 
-        bDone = False
-        while not bDone:
-            try:
-                # Find the currently being used status:
-                # Note: THAT MUST BE THE LAST STATUS OBJECT
-                oStatus = Status.objects.last()
-                if oStatus != None:
-                    # Get the last status information
-                    data['status'] = oStatus.status
-                    data['msg'] = oStatus.msg
-                    data['count'] = oStatus.count
-                bDone = True
-            except:
-                sleep(0.05)
+        else:
+            # Formulate a response
+            data = {'status': 'unknown'}
+
+            # Get the appropriate status object
+            # sleep(1)
+            oStatus = Status.objects.filter(user=username, type=synctype).first()
+
+            # Check what we received
+            if oStatus == None:
+                # There is no status object for this type
+                data['status'] = 'error'
+                data['msg'] = "Cannot find status for {}/{}".format(
+                    username, synctype)
+            else:
+                # Get the last status information
+                data['status'] = oStatus.status
+                data['msg'] = oStatus.msg
+                data['count'] = oStatus.count
+
+        # Return this response
+        return JsonResponse(data)
+    except:
+        oErr.DoError("sync_crpp_start error")
+        data['status'] = "error"
 
     # Return this response
     return JsonResponse(data)

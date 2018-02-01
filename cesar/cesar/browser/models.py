@@ -276,16 +276,25 @@ class Status(models.Model):
     status = models.CharField("Status of synchronization", max_length=50)
     # [1] Counts (as stringified JSON object)
     count = models.TextField("Count details", default="{}")
+    # [0-1] Synchronisation type
+    type = models.CharField("Type", max_length=255, default="")
+    # [0-1] User
+    user = models.CharField("User", max_length=255, default="")
     # [0-1] Error message (if any)
     msg = models.TextField("Error message", blank=True, null=True)
 
     def __str__(self):
+        # Refresh the DB connection
+        self.refresh_from_db()
+        # Only now provide the status
         return self.status
 
-    def set(self, sStatus, oCount = None):
+    def set(self, sStatus, oCount = None, msg = None):
         self.status = sStatus
         if oCount != None:
             self.count = json.dumps(oCount)
+        if msg != None:
+            self.msg = msg
         self.save()
 
 def chunks(l, n):
@@ -321,7 +330,7 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting = False):
         # Validate the [oTxtList] object
         if oTxtlist == None or not 'paths' in oTxtlist or not 'count' in oTxtlist:
             # We miss information
-            oStatus.set("information is missing")
+            oStatus.set("error", msg="information is missing (paths, count)")
             return oBack
 
         # Take the genre and the subtype lists

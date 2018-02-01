@@ -4,6 +4,7 @@ from cesar.settings import CRPP_HOME
 import requests
 import sys
 import time
+import threading
 
 
 def get_crpp_info():
@@ -77,7 +78,11 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                 bDone = False
                 while not bDone:
                     # Get the data from the CRPP api
-                    r = requests.get(url)
+                    try:
+                        r = requests.get(url)
+                    except:
+                        oErr = sys.exc_info()
+                        iStop = True
                     # Action depends on what we receive
                     if r.status_code == 200:
                         # Convert the reply to JSON
@@ -112,7 +117,13 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                             status.set("crpp", oBack)
 
                             # Make sure we wait some time before making the next request
-                            time.sleep(0.200)   # wait for 200 milliseconds
+                            period = 0.400
+                            nexttime = time.time() + period
+                            bReady = False
+                            while not bReady:
+                                now = time.time()
+                                bReady = (now > nexttime)
+                            
                     else:
                         # There is an error
                         oBack['status'] = 'error'
