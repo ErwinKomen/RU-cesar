@@ -44,9 +44,17 @@ TARGET_TYPE_CHOICES = (
     (CONSTITUENT_ORIENTED, 'Constituent(s)'),
 )
 
+
+
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
 integer_format = re.compile(r'^\-?[0-9]+')
+
+def is_integer(sInput):
+    if sInput == None:
+        return false
+    else:
+        return (integer_format.search(sInput) != None)
 
 class SearchMain(models.Model):
     """The main search item defined for this gateway"""
@@ -494,7 +502,6 @@ class VarDef(Variable):
         cvar = ConstructionVariable.objects.filter(*lstQ).first()
         return cvar.get_code(format)
 
-
     def get_copy(self, **kwargs):
         # Test
         if kwargs == None or 'gateway' not in kwargs:
@@ -517,6 +524,18 @@ class VarDef(Variable):
         gateway.order_dvar()
         # Return the result
         return result
+
+    def get_outputtype(self):
+
+        # Default value
+        sType = "-"
+        # Get the *FIRST* construction variable under the dvar
+        cvar = self.variablenames.first()
+        if cvar != None:
+            # take over the type of this cvar
+            sType = cvar.get_outputtype()
+        return sType
+
 
 
 class GlobalVariable(Variable):
@@ -554,6 +573,13 @@ class GlobalVariable(Variable):
         gateway.order_gvar()
         # Return the deletion result
         return result
+
+    def get_outputtype(self):
+        """Calculate the output type of a function"""
+
+        # Look at the value
+        sType = "int" if is_integer(self.value) else "str"
+        return sType
 
 
 class FunctionDef(models.Model):
@@ -915,6 +941,51 @@ class Function(models.Model):
         qs = self.functionarguments.all().select_related().order_by('argumentdef__order')
         return qs
 
+    def get_outputtype(self):
+        """Calculate the output type of a function"""
+
+        # Initial guess: unknown
+        sType = "-"
+        # Check if we have a type that is specified
+        if self.type and self.type != "":
+            # There already is a type, so return the abbreviation:
+            #   'str', 'int', 'bool', 'cnst' (=constituent)
+            sType = choice_abbreviation(SEARCH_TYPE, self.type)
+        else:
+            # Look for the first Argument that should have the output type
+            qs = self.get_arguments()
+            arg = qs.filter(Q(argumentdef__hasoutputvalue=True)).first()
+            if arg != None:
+                # Get the abbreviation of the argtype (fixed, gvar, cvar, func, cnst, axis, hit, dvar)
+                sArgType = choice_abbreviation(SEARCH_ARGTYPE, arg.argtype)
+                if sArgType == "fixed":
+                    sType = "int" if is_integer(arg.value) else "str"
+                elif sArgType == "gvar":
+                    # Global variables are always strings
+                    if arg.gvar:
+                        sType =arg.gvar.get_outputtype()
+                elif sArgType == "cvar":
+                    # The argtype 'cvar' should not be used
+                    pass
+                elif sArgType == "func":
+                    # Return the output type of the function the argument points to
+                    argfun = self.functionparent.all().first()
+                    if argfun != None:
+                        # Yes, there is a function pointing to me as parent
+                        sType = argfun.get_outputtype()
+                elif sArgType == "hit" or sArgType == "cnst":
+                    # The argtype "constituent" is not really used now, is it...
+                    sType = "cnst"
+                elif sArgType == "axis":
+                    # The argtype 'axis' does not lead to a valid output type
+                    pass
+                elif sArgType == "dvar" and arg.dvar != None:
+                    # Get the *FIRST* construction variable under the dvar
+                    sType = arg.dvar.get_outputtype()
+        
+        # Return what we found
+        return sType
+
           
 class ArgumentDef(models.Model):
     """Definition of one argument for a function"""
@@ -928,6 +999,8 @@ class ArgumentDef(models.Model):
     # [1] The value can be of type: fixed, global variable, construction variable, function-output
     argtype = models.CharField("Variable type", choices=build_abbr_list(SEARCH_ARGTYPE), 
                               max_length=5, help_text=get_help(SEARCH_ARGTYPE))
+    # [1] Boolean that says whether this argument should be equal to the [outputtype] of this function
+    hasoutputtype = models.BooleanField("This type equals outputtype", default=False)
     # [1] The value that is the outcome of this function: 
     #     This is a JSON list, it can contain any number of bool, int, string
     argval = models.TextField("JSON value", blank=True, default="[]")
@@ -1439,6 +1512,25 @@ class ConstructionVariable(models.Model):
                                 func_list.append(func)
         return func_list
 
+    def get_outputtype(self):
+        """Calculate the output type of a function"""
+
+        # Initial guess: unknown
+        sType = "-"
+        if self.type != None:
+            # Action depends on which type we have
+            if self.type == "fixed":
+                # Look at the string value of [svalue]
+                sType = "int" if is_integer(self.svalue) else "str"
+            elif self.type == "calc" and self.function != None:
+                # Take over the value from the function attached to me
+                sType = self.function.get_outputtype()
+            elif self.type == "gvar" and self.gvar != None:
+                sType = self.gvar.get_outputtype()
+        # Return the type we found
+        return sType
+
+
     
 class Condition(models.Model):
     """Each research project may contain any number of conditions defining a search hit"""
@@ -1447,7 +1539,7 @@ class Condition(models.Model):
     name = models.CharField("Name", max_length=MAX_TEXT_LEN)
     # [0-1] Description of the condition
     description = models.TextField("Description", blank=True)
-    # [1] A condition is a boolean, and can be of two types: Function or Cvar
+    # [1] A condition is a boolean, and can be of two types: Function or Dvar
     condtype = models.CharField("Condition type", choices=build_abbr_list(SEARCH_CONDTYPE), 
                               max_length=5, help_text=get_help(SEARCH_CONDTYPE))
     # [0-1] One option for a condition is to be equal to the value of a data-dependant variable
@@ -1588,6 +1680,17 @@ class Condition(models.Model):
                                 func_list.append(func)
         return func_list
 
+    def get_outputtype(self):
+        """Get the output type of myself"""
+
+        sType = "-"
+        if self.condtype:
+            if self.condtype == "func" and self.function != None:
+                sType = self.function.get_outputtype()
+            elif self.condtype == "dvar" and self.variable != None:
+                # Get the first cvar attached to this dvar
+                sType = self.variable.get_outputtype()
+        return sType
 
 def get_function_main(function, format, cvar_until):
     """Get the function call in Xquery"""
@@ -1747,6 +1850,19 @@ class Feature(models.Model):
                             for func in arg_func_list:
                                 func_list.append(func)
         return func_list
+
+    def get_outputtype(self):
+        """Get the output type of myself"""
+
+        sType = "-"
+        if self.feattype:
+            if self.feattype == "func" and self.function != None:
+                sType = self.function.get_outputtype()
+            elif self.feattype == "dvar" and self.variable != None:
+                # Get the first cvar attached to this dvar
+                sType = self.variable.get_outputtype()
+        return sType
+
 
       
 class SearchItem(models.Model):
