@@ -439,14 +439,16 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting = False):
         return oBack
 
 
-def process_corpusinfo(oCorpusInfo):
+def process_corpusinfo(oStatus, oCorpusInfo):
     """Update our own models with the information in [oCorpusInfo]"""
 
     oBack = {}      # What we return
 
     try:
         # Retrieve the correct instance of the status object
-        oStatus = Status.objects.last()
+        # oStatus = Status.objects.last()
+
+        # oStatus = Status.objects.filter(user=username, type=synctype).first()
         oStatus.set("preparing")
 
         # Initialise what we return
@@ -457,9 +459,18 @@ def process_corpusinfo(oCorpusInfo):
         # Validate
         if not 'indices' in oCorpusInfo or not 'corpora' in oCorpusInfo \
             or not 'metavar' in oCorpusInfo or not 'constituents' in oCorpusInfo:
+            mis_list = []
+            element_list = ['indices', 'corpora', 'metavar', 'constituents']
+            for el in element_list:
+                if not el in oCorpusInfo:
+                    mis_list.append(el)
+            missing = " ".join(mis_list)
+
             # We miss information
-            oStatus.status = "information is missing"
-            oStatus.save()
+            msg = "process_corpusinfo: information is missing ({})".format(missing)
+            oStatus.set('error', msg=msg)
+            # Just to be sure, indicate that we have no result
+            oBack['result'] = False
             return oBack
 
         # Process the 'constituents' part - most basic and not dependant of other things
@@ -916,6 +927,10 @@ class Part(models.Model):
 
     def language(self):
         return self.corpus.get_lng_display()
+
+    def get_parts():
+        qs = Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')
+        return qs
 
 
 class Download(models.Model):

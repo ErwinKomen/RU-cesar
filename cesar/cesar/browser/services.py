@@ -1,11 +1,16 @@
 import os
 import json
-from cesar.settings import CRPP_HOME
 import requests
 import sys
 import time
 import threading
+from cesar.settings import CRPP_HOME
+from cesar.utils import ErrHandle
 
+def get_exc_message():
+    exc_type, exc_value = sys.exc_info()[:2]
+    sMsg = "Handling {} exception with message '{}'".format(exc_type.__name__, exc_value)
+    return sMsg
 
 def get_crpp_info():
     """Read the list of available corpora from the /crpp service (if available)"""
@@ -20,7 +25,8 @@ def get_crpp_info():
     except:
         # Getting an exception here probably means that the back-end is not reachable (down)
         oBack['status'] = 'error'
-        oBack['code'] = "The back-end server (crpp) cannot be reached. Is it running?"
+        oBack['code'] = "get_crpp_info(): The back-end server (crpp) cannot be reached. Is it running? {}".format(
+            get_exc_message())
         return oBack
     # Action depends on what we receive
     if r.status_code == 200:
@@ -39,10 +45,10 @@ def get_crpp_info():
     # REturn what we have
     return oBack
 
-
 def get_crpp_texts(sLng, sPart, sFormat, status):
     """Read the list of texts from the /crpp service (if available)"""
 
+    oErr = ErrHandle()
     try:
         # Construct the object we pass along
         oTxtList = {'userid': "erwin",
@@ -61,7 +67,8 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
         except:
             # Getting an exception here probably means that the back-end is not reachable (down)
             oBack['status'] = 'error'
-            oBack['code'] = "The back-end server (crpp) cannot be reached. Is it running?"
+            oBack['code'] = "get_crpp_texts(): The back-end server (crpp) cannot be reached. Is it running? \n{} \nURL={}".format(
+                get_exc_message(), url)
             return oBack
         # Action depends on what we receive
         if r.status_code == 200:
@@ -96,6 +103,8 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                             oBack['status'] = 'error'
                             oBack['code'] = oContent['code'] + oContent['msg']
                             bDone = True
+                            # Need to store this status!!!
+                            status.set("crpp", oBack)
                         elif oStatus['code'] == "finished":
                             # The process is ready
                             bDone = True
@@ -108,13 +117,25 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                             oBack['paths'] = oTextList['paths']
                             oBack['txtlist'] = oTextList['list']
                             oBack['status'] = 'ok'
+                            # Need to store this status!!!
+                            status.set("crpp", oBack)
                         else:
                             # Update the synchronisation object that contains all relevant information
                             oBack['lng'] = sLng
                             oBack['part'] = sPart
                             oBack['format'] = sFormat
                             oBack['count'] = oContent['total']
+                            oBack['status.code'] = oStatus['code']
+                            oBack['last.url'] = url
                             status.set("crpp", oBack)
+
+                            # DEBUGGING
+                            sMsg = oStatus['code'] 
+                            if 'msg' in oContent:
+                                sMsg += " " + oContent['msg']
+                            if 'msg' in oStatus:
+                                sMsg += " " + oStatus['msg']
+                            oErr.Status(sMsg)
 
                             # Make sure we wait some time before making the next request
                             period = 0.400
@@ -167,7 +188,8 @@ def get_crpp_text(sLng, sPart, sFormat, sName):
     except:
         # Getting an exception here probably means that the back-end is not reachable (down)
         oBack['status'] = 'error'
-        oBack['code'] = "The back-end server (crpp) cannot be reached. Is it running?"
+        oBack['code'] = "get_crpp_text(): The back-end server (crpp) cannot be reached. Is it running? {}".format(
+            get_exc_message())
         return oBack
     # Action depends on what we receive
     if r.status_code == 200:

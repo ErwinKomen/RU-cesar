@@ -29,6 +29,7 @@ class ErrHandle:
         self.loc_errStack.append(msg)
         # Print the error message for the user
         print("Error: "+msg+"\nSystem:", file=sys.stderr)
+        # Note: exc_info gives a tuple (type, value, traceback)
         for nErr in sys.exc_info():
             if (nErr != None):
                 print(nErr, file=sys.stderr)

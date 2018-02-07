@@ -198,19 +198,18 @@ def sync_crpp(request):
     """Synchronize information FROM /crpp"""
 
     assert isinstance(request, HttpRequest)
-    # Add the information in the 'context' of the web page
-    return render(
-        request,
-        'browser/crppsync.html',
-        {
-            'title':'Sync-Crpp',
+    # Gather info
+    context =  { 'title':'Sync-Crpp',
             'message':'Radboud University CESAR utility.',
             'year':datetime.now().year,
             'lng_list': build_choice_list(CORPUS_LANGUAGE),
-            'part_list': Part.objects.all(),
+            'part_list': Part.get_parts(),
             'format_list': build_choice_list(CORPUS_FORMAT)
         }
-    )
+    template_name = 'browser/crppsync.html'
+
+    # Add the information in the 'context' of the web page
+    return render(request, template_name, context)
 
 
 
@@ -255,7 +254,7 @@ def sync_crpp_start(request):
                 oStatus.set("loading")
 
                 # Update the models with the new information
-                oResult = process_corpusinfo(crpp_info)
+                oResult = process_corpusinfo(oStatus, crpp_info)
                 if oResult == None or oResult['result'] == False:
                     data.status = 'error'
                 elif oResult != None:
@@ -369,6 +368,7 @@ def sync_crpp_start(request):
 def sync_crpp_progress(request):
     """Get the progress on the /crpp synchronisation process"""
 
+    oErr = ErrHandle()
     data = {'status': 'preparing'}
 
     try:
@@ -382,12 +382,12 @@ def sync_crpp_progress(request):
 
         if synctype == '':
             # Formulate a response
-            data = {'status': 'error',
-                    'msg': 'no sync type specified'}
+            data['status'] = 'error'
+            data['msg'] = "no sync type specified" 
 
         else:
             # Formulate a response
-            data = {'status': 'unknown'}
+            data['status'] = 'UNKNOWN'
 
             # Get the appropriate status object
             # sleep(1)
@@ -409,7 +409,7 @@ def sync_crpp_progress(request):
         return JsonResponse(data)
     except:
         oErr.DoError("sync_crpp_start error")
-        data['status'] = "error"
+        data = {'status': 'error'}
 
     # Return this response
     return JsonResponse(data)

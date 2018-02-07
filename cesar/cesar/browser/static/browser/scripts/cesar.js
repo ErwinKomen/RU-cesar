@@ -216,19 +216,20 @@ var ru = (function ($, ru) {
         // Define the URL
         sUrl = $("#sync_start_" + sSyncType).attr('sync-start');
         $.ajax({
-          "url": sUrl,
-          "async": true,
-          "dataType": "json",
-          "data": oData,      // This sends the parameters in the data object
-          "cache": false,
-          "success": function (json) {
+          url: sUrl,
+          type: "GET",
+          async: true,
+          dataType: "json",
+          data: oData,      // This sends the parameters in the data object
+          cache: false,
+          success: function (json) {
             $("#sync_details_" + sSyncType).html("start >> sync_stop");
             ru.cesar.sync_stop(sSyncType, json);
           },
           failure: function () {
             $("#sync_details_" + sSyncType).html("Ajax failure");
           }
-        })(jQuery);
+        });
 
       },
 
@@ -244,19 +245,20 @@ var ru = (function ($, ru) {
         oData = { 'type': sSyncType };
         sUrl = $("#sync_start_" + sSyncType).attr('sync-progress');
         $.ajax({
-          "url": sUrl,
-          "async": true,
-          "dataType": "json",
-          "data": oData,
-          "cache": false,
-          "success": function (json) {
+          url: sUrl,
+          type: "GET",
+          async: true,
+          dataType: "json",
+          data: oData,
+          cache: false,
+          success: function (json) {
             $("#sync_details_" + sSyncType).html("progress >> sync_handle");
             ru.cesar.sync_handle(sSyncType, json);
           },
           failure: function () {
             $("#sync_details_" + sSyncType).html("Ajax failure");
           }
-        })(jQuery);
+        });
       },
 
       /**
@@ -285,6 +287,10 @@ var ru = (function ($, ru) {
             // Leave the routine, and don't return anymore
             return;
           case "done":
+          case "finished":
+            // Default action is to show the status
+            $("#sync_progress_" + sSyncType).html(json.status);
+            $("#sync_details_" + sSyncType).html(ru.cesar.sync_details(json));
             // Finish nicely
             ru.cesar.sync_stop(sSyncType, json);
             return;
