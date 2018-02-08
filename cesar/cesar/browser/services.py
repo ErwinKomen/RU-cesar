@@ -88,7 +88,7 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                     try:
                         r = requests.get(url)
                     except:
-                        oErr = sys.exc_info()
+                        error_info = sys.exc_info()
                         iStop = True
                     # Action depends on what we receive
                     if r.status_code == 200:
@@ -117,8 +117,15 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                             oBack['paths'] = oTextList['paths']
                             oBack['txtlist'] = oTextList['list']
                             oBack['status'] = 'ok'
+
+                            # What we show in the end is not what needs to be returned
+                            oShow = dict(count=oTextList['texts'],
+                                         subtype=oTextList['subtype'],
+                                         paths=oTextList['paths'])
+                            oShow['status'] = 'ok'
+                            oShow['status.code'] = oStatus['code']
                             # Need to store this status!!!
-                            status.set("crpp", oBack)
+                            status.set("crpp", oShow)
                         else:
                             # Update the synchronisation object that contains all relevant information
                             oBack['lng'] = sLng

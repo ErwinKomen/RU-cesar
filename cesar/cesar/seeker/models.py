@@ -1027,7 +1027,9 @@ class Argument(models.Model):
     cvar = models.ForeignKey("ConstructionVariable", null=True)
     # [0-1] This argument may link to a Data-dependant Variable
     dvar = models.ForeignKey("VarDef", null=True)
-    # [0-1] This argument may link to a Hierarchical Relation
+    # [0-1] This is basically an Xpath axis
+    axis = models.ForeignKey("Axis", null=True)
+    # [0-1] This argument may link to a simple Relation like <<, >>, is
     relation = models.ForeignKey("Relation", null=True)
     # [0-1] This argument may link to a Function (not its definition)
     function = models.ForeignKey("Function", null=True, related_name ="functionarguments")
@@ -1310,10 +1312,21 @@ class Argument(models.Model):
             if self.relation != None:
                 avalue = ""
         return avalue
-
-
+    
 
 class Relation(models.Model):
+    """Simple relation like preceding and following"""
+
+    # [1] The descriptive name of this argument
+    name = models.CharField("Name", max_length=MAX_TEXT_LEN)
+    # [1] Xpath implementation
+    xpath = models.TextField("Implementation", null=False, blank=False, default=".")
+
+    def __str__(self):
+        return "{}".format(self.name)
+    
+
+class Axis(models.Model):
     """Hierarchical relation such as the Xpath axes"""
 
     # [1] The descriptive name of this argument
@@ -1991,7 +2004,7 @@ class Research(models.Model):
         """Reset project"""
         pass
 
-    def to_xquery(self, partId, sFormat, bRefresh):
+    def to_xquery(self, partId, sFormat, bRefresh, basket):
         """Translate project into Xquery"""
 
         # Import the correct function
@@ -2005,18 +2018,50 @@ class Research(models.Model):
             oData = {'targetType': self.targetType,
                      'format': sFormat,
                      'gateway': self.gateway}
-            # First: check and see if there is no 'basket' yet for the combination of part/format
-            part = Part.objects.filter(id=partId).first()
-            lstQ = []
-            lstQ.append(Q(research=self))
-            lstQ.append(Q(format=sFormat))
-            lstQ.append(Q(part=part))
-            qs = Basket.objects.filter(*lstQ)
-            if qs.count() == 0:
-                # So: create one
-                basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
-                basket.set_status("Creating Xquery code")
+
+            ## First: check and see if there is no 'basket' yet for the combination of part/format
+            #part = Part.objects.filter(id=partId).first()
+            #lstQ = []
+            #lstQ.append(Q(research=self))
+            #lstQ.append(Q(format=sFormat))
+            #lstQ.append(Q(part=part))
+            #
+            #qs = Basket.objects.filter(*lstQ)
+            #if qs.count() == 0:
+            #    # So: create one
+            #    basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
+            #    basket.set_status("Creating Xquery code")
+            #    # Create the Xquery code
+            #    basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
+            #    # Possibly add errors to gateway
+            #    self.gateway.add_errors(arErr)
+            #    # Check errors
+            #    errors = self.gateway.get_errors()
+            #    if errors != "" and errors != "[]":
+            #        return None
+            #    # Save the basket
+            #    basket.save()
+            #else:
+            #    # Return the existing one
+            #    basket = qs[0]
+            #    # Check if we have Xquery code and there is no 'error' status
+            #    if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
+            #        # Create the Xquery code
+            #        basket.set_status("Creating Xquery code")
+            #        basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
+            #        # Possibly add errors to gateway
+            #        self.gateway.add_errors(arErr)
+            #        # Check errors
+            #        errors = self.gateway.get_errors()
+            #        if errors != "" and errors != "[]":
+            #            return None
+            #        # Save the basket
+            #        basket.save()
+
+            # Check if we have Xquery code and there is no 'error' status
+            if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
                 # Create the Xquery code
+                basket.set_status("convert_xq")
                 basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
                 # Possibly add errors to gateway
                 self.gateway.add_errors(arErr)
@@ -2026,22 +2071,8 @@ class Research(models.Model):
                     return None
                 # Save the basket
                 basket.save()
-            else:
-                # Return the existing one
-                basket = qs[0]
-                # Check if we have Xquery code and there is no 'error' status
-                if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
-                    # Create the Xquery code
-                    basket.set_status("Creating Xquery code")
-                    basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
-                    # Possibly add errors to gateway
-                    self.gateway.add_errors(arErr)
-                    # Check errors
-                    errors = self.gateway.get_errors()
-                    if errors != "" and errors != "[]":
-                        return None
-                    # Save the basket
-                    basket.save()
+
+
             # Return the basket
             return basket
         except:
@@ -2052,7 +2083,7 @@ class Research(models.Model):
             errHandle.DoError("Research/to_xquery error")
             return None
 
-    def to_crpx(self, partId, sFormat):
+    def to_crpx(self, partId, sFormat, basket):
         """Send command to /crpp to start the project"""
 
         oErr = ErrHandle()
@@ -2066,7 +2097,7 @@ class Research(models.Model):
             self.gateway.error_clear()
             # Other initialisations
             bRefresh = True # Make sure that Xquery is calculated afresh
-            basket = self.to_xquery(partId, sFormat, bRefresh)
+            basket = self.to_xquery(partId, sFormat, bRefresh, basket)
             # Check on what was returned
             if basket == None:
                 if partId == None or partId == "":
@@ -2111,18 +2142,22 @@ class Research(models.Model):
         # Return what we have created
         return oBack
 
-    def execute(self, partId, sFormat):
+    def execute(self, basket):
         """Send command to /crpp to start the project"""
 
         oErr = ErrHandle()
+        # Get the part and the format from the basket
+        partId = basket.part.id
+        sFormat = basket.format
+
         # Convert the project
-        oBack = self.to_crpx(partId, sFormat)
+        oBack = self.to_crpx(partId, sFormat, basket)
 
         # Al okay?
         if oBack['status'] == "error": return oBack
 
         # GEt the basket
-        basket = oBack['basket']
+        # basket = oBack['basket']
         sCrpxText = oBack['crpx_text']
         sCrpxName = oBack['crpx_name']
 
@@ -2181,7 +2216,7 @@ class Research(models.Model):
                     basket.set_status('error')
             else:
                 oBack['status'] = 'error'
-                oBack['msg'] = 'Could not send CRP to /crpp'
+                oBack['msg'] = 'Could not send CRP to /crpp. Status=['+oCrpp['commandstatus'] +']'
                 basket.set_status('error')
         except:
             # Could not send this to the CRPX
@@ -2240,9 +2275,21 @@ class Basket(models.Model):
         # Initialise the status
         oBack = {'commandstatus': 'ok'}
         oErr = ErrHandle()
-        # Issue a status request
-        sUser = self.research.owner.username
-        oCrpp = crpp_status(sUser, self.jobid)
+
+        # Do we have a jobid already?
+        if self.jobid == None or self.jobid == "":
+            oCrpp = dict(commandstatus="ok",
+                         status="preparing",
+                         code="preparing",
+                         message="Converting",
+                         userid="erwin") 
+        else:
+
+            # Issue a status request
+            sUser = self.research.owner.username
+            oCrpp = crpp_status(sUser, self.jobid)
+
+        # Now process the [oCrpp]
         try:
             if oCrpp['commandstatus'] == 'ok':
                 for item in oCrpp:
@@ -2250,7 +2297,10 @@ class Basket(models.Model):
                         oBack[item] = oCrpp[item]
             else:
                 oBack['commandstatus'] = 'error'
-                oBack['msg'] = oCrpp['message']
+                if 'message' in oCrpp:
+                    oBack['msg'] = oCrpp['message']
+                elif 'code' in oCrpp:
+                    oBack['msg'] = oCrpp['code']
 
         except:
             oBack['commandstatus'] = "error"

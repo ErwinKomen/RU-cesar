@@ -287,7 +287,8 @@ def sync_crpp_start(request):
                         oStatus.set("loading", msg="Updating the existing models with this new information")
 
                         # Update the models with the /crpp/txtlist information
-                        oResult = process_textlist(crpp_texts, part, sFormat, oStatus, False)
+                        bNoDeleting = True
+                        oResult = process_textlist(crpp_texts, part, sFormat, oStatus, bNoDeleting)
 
                         # Process the reply from [process_textlist()]
                         if oResult == None or ('result' in oResult and oResult['result'] == False):

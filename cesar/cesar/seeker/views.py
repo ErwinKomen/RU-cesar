@@ -275,37 +275,66 @@ class ResearchExe(View):
             # Action depends on 'action' value
             if self.action != "" and self.obj != None:
                 if self.bDebug: self.oErr.Status("ResearchExe: action=" + self.action)
-                if self.action == "start":
-                    # Check if this object is not currently being executed
-                    if self.obj.get_status() != "":
-                        # Stop it
-                        self.obj.stop()
+                if self.action == "prepare":
+                    # Make sure we have the right paramters to work with
                     if "select_part" in self.qd:
+                        research = self.obj
+                        # Check if this object is not currently being executed
+                        if research.get_status() != "":
+                            # Stop it
+                            research.stop()
                         # Find out which corpus/part has been chosen
                         select_part = self.qd.get("select_part")
                         select_format = self.qd.get("searchFormat")
-                        # Translate project to Xquery
-                        # self.obj.to_xquery(select_part, select_format)
-                        # Start execution
-                        oBack = self.obj.execute(select_part, select_format)
-                        if self.bDebug: 
-                            self.oErr.Status("ResearchExe: start...")
-                            for key in oBack:
-                                self.oErr.Status("   {}={}".format(key, str(oBack[key])[:20]))
-                        # Check for errors
-                        if oBack['status'] == "error":
-                            # Add error to the error array
-                            self.arErr.append(oBack['msg'])
-                        elif 'basket' in oBack:
-                            # Retrieve the basket-id to be returned to our caller
-                            basket_id = oBack['basket'].id
-                            self.data['basket_id'] = basket_id
-                            # Also provide the status and the stop commands for the caller
-                            self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket_id})
-                            self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket_id})
-                            self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket_id})
+                        # Check if the necessary ingredient(s) are there
+                        lstQ = []
+                        lstQ.append(Q(research=research))
+                        lstQ.append(Q(format=select_format))
+                        lstQ.append(Q(part=select_part))
+                        basket = Basket.objects.filter(*lstQ).first()
+                        if basket == None:
+                            # Create a new basket
+                            basket = Basket(research=self.obj, part=select_part, format=select_format, status="prepared", jobid="")
+                        else:
+                            # Make sure the status is correct
+                            basket.status = "prepared"
+                            basket.jobid = ""
+                        # Save it 
+                        basket.save()
+                        context['statuscode'] = "prepared"
+                        self.data['status'] = "prepared"
+                        self.data['basket_id'] = basket.id
+                        # Also provide all relevent command urls for the caller
+                        self.data['basket_start'] = reverse("search_start", kwargs={'object_id': basket.id})
+                        self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket.id})
+                        self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
+                        self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
                     else:
                         self.arErr.append("No corpus part to be searched has been selected")
+
+                elif self.action == "start":
+                    # the basket is the object
+                    basket = self.obj
+                    # Start translation + execution
+                    oBack = basket.research.execute(basket)
+                    if self.bDebug: 
+                        self.oErr.Status("ResearchExe: start...")
+                        for key in oBack:
+                            self.oErr.Status("   {}={}".format(key, str(oBack[key])[:20]))
+                    # Check for errors
+                    if oBack['status'] == "error":
+                        # Add error to the error array
+                        self.arErr.append(oBack['msg'])
+                    #elif 'basket' in oBack:
+                    #    # Retrieve the basket-id to be returned to our caller
+                    #    basket_id = oBack['basket'].id
+                    #    self.data['basket_id'] = basket_id
+                    #    # Also provide the status and the stop commands for the caller
+                    #    self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket_id})
+                    #    self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket_id})
+                    #    self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket_id})
+                    #else:
+                    #    self.arErr.append("No corpus part to be searched has been selected")
                 elif self.action == "stop":
                     # Need to stop the execution of the project
                     x=2
@@ -339,6 +368,9 @@ class ResearchExe(View):
                             context['pipecount'] = oBack['count'] - oBack['ready']
                             context['ptc_done'] = int(context['ptc_ready'])
                             context['found'] = oBack['found']
+                        elif sStatusCode == "preparing":
+                            # all is well
+                            pass
                         elif sStatusCode == "error":
                             # Add the error description to the list
                             if 'message' in oBack:
@@ -465,7 +497,8 @@ class ResearchExe(View):
         self.request = request
         # Copy any object id
         self.object_id = object_id
-        if self.action == "start" or self.action == "download":
+        # if self.action == "start" or self.action == "download":
+        if self.action == "prepare" or self.action == "download":
             # Get the instance of the Main Model object
             self.obj =  self.MainModel.objects.get(pk=object_id)
         else:
@@ -482,6 +515,11 @@ class ResearchExe(View):
     def custom_init(self):
         pass
 
+
+class ResearchPrepare(ResearchExe):
+    MainModel = Research
+    action = "prepare"
+    template_name = "seeker/exe_status.html"
         
 
 class ResearchStart(ResearchExe):

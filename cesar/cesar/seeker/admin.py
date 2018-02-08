@@ -48,6 +48,13 @@ class RelationAdmin(admin.ModelAdmin):
     search_fields = ['name', 'xpath']
     fields = ['name', 'xpath']
 
+class AxisAdmin(admin.ModelAdmin):
+    """Display and edit [Axis] definitions"""
+
+    list_display = ['name', 'xpath']
+    search_fields = ['name', 'xpath']
+    fields = ['name', 'xpath']
+
 
 
 # Models for Cesar Browser
@@ -55,4 +62,5 @@ admin.site.register(Research, ResearchAdmin)
 # admin.site.register(Gateway)
 # admin.site.register(Construction)
 admin.site.register(FunctionDef, FunctionDefAdmin)
+admin.site.register(Axis, AxisAdmin)
 admin.site.register(Relation, RelationAdmin)

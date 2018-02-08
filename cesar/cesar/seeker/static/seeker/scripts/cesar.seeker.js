@@ -14,6 +14,7 @@ var ru = (function ($, ru) {
         oSyncTimer = null,
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         basket_progress = "",         // URL to get progress
+        basket_start = "",            // URL to start Translation + Execution
         basket_stop = "",             // URL to stop the basket
         basket_result = "",           // URL to the results for this basket
         basket_data = null,           // DATA to be sent along
@@ -226,6 +227,7 @@ var ru = (function ($, ru) {
           $(elVal).find(".arg-cnst").addClass("hidden");
           $(elVal).find(".arg-search").addClass("hidden");
           $(elVal).find(".arg-axis").addClass("hidden");
+          $(elVal).find(".arg-relation").addClass("hidden");
           switch (elArgTypeVal) {
             case "fixed": // Fixed value
               $(elVal).find(".arg-value").removeClass("hidden");
@@ -248,6 +250,9 @@ var ru = (function ($, ru) {
             case "axis":  // Axis
               $(elVal).find(".arg-axis").removeClass("hidden");
               break;
+            case "relation":  // Relation
+              $(elVal).find(".arg-relation").removeClass("hidden");
+              break;
             case "hit":  // Search hit
               $(elVal).find(".arg-search").removeClass("hidden");
               break;
@@ -267,6 +272,9 @@ var ru = (function ($, ru) {
         var response = {};
 
         try {
+          // Initialisations
+          response['status'] = "initializing";
+          // Validate
           if (sUrl === undefined || sUrl === "" || data === undefined) {
             // Cannot do anything with this, so respond with a bad status
             response['status'] = "error";
@@ -283,8 +291,9 @@ var ru = (function ($, ru) {
             success: function (data) {
               response = data;
             },
-            failure: function () {
-              var iStop = 1;
+            error: function (jqXHR, textStatus, errorThrown) {
+              var sMsg = "The ajaxcall [" + textStatus + "] returns an error response: " + jqXHR.responseText;
+              private_methods.errMsg(sMsg);
             }
           });
           // Return the response
@@ -1998,6 +2007,39 @@ var ru = (function ($, ru) {
           $("#research_stop").addClass("hidden");
           $("#research_results").addClass("hidden");
 
+          // Make an ASYNCHRONOUS ajax call to START OFF the search
+          $.post(ajaxurl, data, function (response) {
+            if (response.status === undefined) {
+              // Show an error somewhere
+              private_methods.errMsg("Bad execute response");
+              $(sDivProgress).html("Bad execute response:<br>" + response);
+            } else if (response.status === "error") {
+              // Show the error that has occurred
+              if ("html" in response) { sMsg = response['html']; }
+              if ("error_list" in response) { sMsg += response['error_list']; }
+              private_methods.errMsg("Execute error: " + sMsg);
+              $(sDivProgress).html("execution error");
+            } else {
+              // All went well -- get the basket id
+              basket_id = response.basket_id;
+              basket_start = response.basket_start;
+              basket_progress = response.basket_progress;
+              basket_stop = response.basket_stop;
+              basket_result = response.basket_result;
+              basket_data = data;
+              // Make the stop button available
+              $("#research_stop").removeClass("hidden");
+              $(sDivProgress).html("Conversion to Xquery...");
+
+              // Start the next call for status after 2 seconds
+              setTimeout(function () { ru.cesar.seeker.search_progress(); }, 2000);
+
+              // Now make sure that the Translation + Execution starts
+              $.post(basket_start, data);
+            }
+          });
+
+          /*
           // Make an AJAX call to get an existing or new specification element HTML code
           response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
           if (response.status === undefined) {
@@ -2022,13 +2064,14 @@ var ru = (function ($, ru) {
 
             // Start the next call for status after 1 second
             setTimeout(function () { ru.cesar.seeker.search_progress(); }, 1000);
-          }
+          }*/
 
 
         } catch (ex) {
           private_methods.errMsg("search_start", ex);
         }
       },
+
 
       /**
        * search_stop
@@ -2074,6 +2117,7 @@ var ru = (function ($, ru) {
                 // Action depends on the statuscode
                 switch (response.statuscode) {
                   case "working":
+                  case "preparing":
                     // Show the status of the project
                     $(sDivProgress).html(response.html);
                     // Make sure we are called again

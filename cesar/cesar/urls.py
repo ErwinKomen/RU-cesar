@@ -70,6 +70,7 @@ urlpatterns = [
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),
+    url(r'^ajax/prepare(?:/(?P<object_id>\d+))?/$', ResearchPrepare.as_view(), name='search_prepare'),
     url(r'^ajax/start(?:/(?P<object_id>\d+))?/$', ResearchStart.as_view(), name='search_start'),
     url(r'^ajax/stop(?:/(?P<object_id>\d+))?/$', ResearchStop.as_view(), name='search_stop'),
     url(r'^ajax/download/(?P<object_id>\d+)/$', ResearchDownload.as_view(), name='search_download'),
