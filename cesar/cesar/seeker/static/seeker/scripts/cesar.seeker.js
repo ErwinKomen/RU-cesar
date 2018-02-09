@@ -2037,7 +2037,7 @@ var ru = (function ($, ru) {
               $("#research_start").prop("disabled", true);
 
               // Start the next call for status after 2 seconds
-              setTimeout(function () { ru.cesar.seeker.search_progress(); }, 2000);
+              setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
 
               // Now make sure that the Translation + Execution starts
               $.post(basket_start, data, function (response) {

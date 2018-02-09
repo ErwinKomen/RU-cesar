@@ -2019,45 +2019,6 @@ class Research(models.Model):
                      'format': sFormat,
                      'gateway': self.gateway}
 
-            ## First: check and see if there is no 'basket' yet for the combination of part/format
-            #part = Part.objects.filter(id=partId).first()
-            #lstQ = []
-            #lstQ.append(Q(research=self))
-            #lstQ.append(Q(format=sFormat))
-            #lstQ.append(Q(part=part))
-            #
-            #qs = Basket.objects.filter(*lstQ)
-            #if qs.count() == 0:
-            #    # So: create one
-            #    basket = Basket(research=self, part=part, format=sFormat, status="created", jobid="")
-            #    basket.set_status("Creating Xquery code")
-            #    # Create the Xquery code
-            #    basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
-            #    # Possibly add errors to gateway
-            #    self.gateway.add_errors(arErr)
-            #    # Check errors
-            #    errors = self.gateway.get_errors()
-            #    if errors != "" and errors != "[]":
-            #        return None
-            #    # Save the basket
-            #    basket.save()
-            #else:
-            #    # Return the existing one
-            #    basket = qs[0]
-            #    # Check if we have Xquery code and there is no 'error' status
-            #    if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
-            #        # Create the Xquery code
-            #        basket.set_status("Creating Xquery code")
-            #        basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
-            #        # Possibly add errors to gateway
-            #        self.gateway.add_errors(arErr)
-            #        # Check errors
-            #        errors = self.gateway.get_errors()
-            #        if errors != "" and errors != "[]":
-            #            return None
-            #        # Save the basket
-            #        basket.save()
-
             # Check if we have Xquery code and there is no 'error' status
             if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.get_status() == "error":
                 # Create the Xquery code
@@ -2151,6 +2112,7 @@ class Research(models.Model):
         sFormat = basket.format
 
         # Convert the project
+        basket.set_status("creating crpx")
         oBack = self.to_crpx(partId, sFormat, basket)
 
         # Al okay?
@@ -2169,7 +2131,7 @@ class Research(models.Model):
             basket.set_status("send_crpx")
             oCrpp = crpp_send_crp(sUser, sCrpxText, sCrpxName)
             if oCrpp['commandstatus'] == 'ok':
-                basket.set_status("issue_exe")
+                basket.set_status("asking crpp to start execution...")
                 # Last information
                 sLng = basket.part.corpus.get_lng_display()   # Language of the corpus
                 sDir = basket.part.dir          # Directory where the part is located
@@ -2267,8 +2229,10 @@ class Basket(models.Model):
         return response
 
     def set_status(self, sStatus):
+        oErr = ErrHandle()
         self.status = sStatus
         self.save()
+        oErr.Status("Basket status="+sStatus)
         return True
 
     def get_status(self):

@@ -22,7 +22,7 @@ import zipfile
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
-from cesar.seeker.convert import decompressSafe
+from cesar.seeker.convert import decompressSafe, get_crpp_date
 from cesar.browser.models import Part, Corpus
 from cesar.browser.views import get_item_list, adapt_search
 from cesar.browser.services import get_crpp_sent_info
@@ -274,7 +274,9 @@ class ResearchExe(View):
             context = dict(object_id = object_id, savedate=None, statuscode=sStatusCode)
             # Action depends on 'action' value
             if self.action != "" and self.obj != None:
-                if self.bDebug: self.oErr.Status("ResearchExe: action=" + self.action)
+                if self.bDebug: 
+                    sNowTime = get_crpp_date(timezone.now())
+                    self.oErr.Status("ResearchExe: action={} at [{}]".format(self.action, sNowTime))
                 if self.action == "prepare":
                     # Make sure we have the right paramters to work with
                     if "select_part" in self.qd:
@@ -379,7 +381,7 @@ class ResearchExe(View):
                             # Show where we are in preparing
                             sStatus = self.obj.get_status()
                             context['prep_status'] = sStatus
-                            context['prep_job'] = "not sent yet" if self.obj.jobid == "" else self.obj.jobid
+                            context['prep_job'] = "no job running yet" if self.obj.jobid == "" else self.obj.jobid
                             if sStatus == "error":
                                 sStatusCode = "stop"
                         elif sStatusCode == "error":
