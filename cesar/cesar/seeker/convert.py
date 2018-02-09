@@ -14,7 +14,7 @@ import re
 from cesar import utils
 from cesar.seeker.models import Construction, ConstructionVariable, ERROR_CODE
 
-def ConvertProjectToXquery(oData):
+def ConvertProjectToXquery(oData, basket):
     """Convert the project oData.gateway of type oData.targetType into Xquery suitable for oData.format"""
 
     arErr = []
@@ -50,13 +50,17 @@ def ConvertProjectToXquery(oData):
             gateway.error_clear()
             
             # Collect all relevant information
+            basket.set_status("collecting global variables")
             gvars = gateway.globalvariables.all()
+
             # Search elements are the 'constructions'
+            basket.set_status("collecting constructions")
             constructions = gateway.constructions.all()
             # the names of the constructions plus their search group and specification
             search_list = gateway.get_search_list()
 
             # The data-dependant variables need to be divided over the search elements
+            basket.set_status("converting data-dependant variables")
             dvar_list = []
             for var in gateway.get_vardef_list():
                 cvar_list = []
@@ -88,6 +92,7 @@ def ConvertProjectToXquery(oData):
             dvar_all = ", ".join(["$"+item['name'] for item in dvar_list])
 
             # Also add the conditions
+            basket.set_status("converting conditions")
             cond_list = []
             for cnd in gateway.get_condition_list():
                 # make sure we have the latest version
@@ -108,6 +113,7 @@ def ConvertProjectToXquery(oData):
                 cond_list.append("true()")
 
             # And then we add the features
+            basket.set_status("converting features")
             feature_list = []
             for ft in gateway.get_feature_list():
                 ft.refresh_from_db()
@@ -139,9 +145,12 @@ def ConvertProjectToXquery(oData):
             # Action depends on the target type
             if targetType == "w":
                 # Step #1: make the start of the main query
+                basket.set_status("Combining Main query")
                 sCodeQry = loader.get_template(template_main).render(context)
                 sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
+
                 # Step #2: create the definitions part
+                basket.set_status("Combining Definitions")
                 sCodeDef = loader.get_template(template_def).render(context)
                 sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
             elif targetType == "c":

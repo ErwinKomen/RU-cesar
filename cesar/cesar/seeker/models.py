@@ -2059,10 +2059,10 @@ class Research(models.Model):
             #        basket.save()
 
             # Check if we have Xquery code and there is no 'error' status
-            if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.status == "error":
+            if bRefresh or basket.codedef == "" or basket.codeqry == "" or basket.get_status() == "error":
                 # Create the Xquery code
                 basket.set_status("convert_xq")
-                basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData)
+                basket.codedef, basket.codeqry, arErr = ConvertProjectToXquery(oData, basket)
                 # Possibly add errors to gateway
                 self.gateway.add_errors(arErr)
                 # Check errors
@@ -2181,10 +2181,12 @@ class Research(models.Model):
                     # NOTE: the exeStatus may be a string or an object (hmmm)
                     if oExeStatus == "error":
                         # The server is complaining, it seems
-                        oBack['msg'] = 'The server gives an error'
+                        msg_list = ['The server gives an error']
+                        # oBack['msg'] = msg_part
                         if 'code' in oCrpp:
-                            oBack['msg'] += "<br>Code: " + oCrpp['code']
+                            msg_list.append("Code: " + oCrpp['code'])
                         if 'message' in oCrpp:
+                            msg_list.append("Message from the server:")
                             sMsg = oCrpp['message']
                             try:
                                 if sMsg.startswith("{"):
@@ -2192,10 +2194,15 @@ class Research(models.Model):
                                     lMsg = []
                                     for key, value in oMsg:
                                         lMsg.append("{}: {}<br>".format(key,value))
+                                        msg_list.append("{}: {}".format(key,value))
                                     sMsg = "\n".join(lMsg)
+                                else:
+                                    msg_list.append(sMsg)
                             except:
                                 sMsg = oCrpp['message']
-                            oBack['msg'] += "<br>Message from the server:<br>" + sMsg
+                                msg_list.append(sMsg)
+                        oBack['msg'] = "<br>".join(msg_list)
+                        oBack['msg_list'] = msg_list
                         oBack['status'] = 'error'
                         basket.set_status('error')
                     else:
@@ -2263,6 +2270,10 @@ class Basket(models.Model):
         self.status = sStatus
         self.save()
         return True
+
+    def get_status(self):
+        self.refresh_from_db()
+        return self.status
 
     def set_jobid(self, jobid):
         self.jobid = jobid

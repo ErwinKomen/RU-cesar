@@ -286,15 +286,18 @@ class ResearchExe(View):
                         # Find out which corpus/part has been chosen
                         select_part = self.qd.get("select_part")
                         select_format = self.qd.get("searchFormat")
+                        # Get the partId
+                        if select_part != "":
+                            part = Part.objects.filter(Q(id=select_part)).first()
                         # Check if the necessary ingredient(s) are there
                         lstQ = []
                         lstQ.append(Q(research=research))
                         lstQ.append(Q(format=select_format))
-                        lstQ.append(Q(part=select_part))
+                        lstQ.append(Q(part=part))
                         basket = Basket.objects.filter(*lstQ).first()
                         if basket == None:
                             # Create a new basket
-                            basket = Basket(research=self.obj, part=select_part, format=select_format, status="prepared", jobid="")
+                            basket = Basket(research=research, part=part, format=select_format, status="prepared", jobid="")
                         else:
                             # Make sure the status is correct
                             basket.status = "prepared"
@@ -309,6 +312,8 @@ class ResearchExe(View):
                         self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket.id})
                         self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
                         self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
+                        # Also indicate the statuscode
+                        sStatusCode = "preparing" 
                     else:
                         self.arErr.append("No corpus part to be searched has been selected")
 
@@ -325,20 +330,22 @@ class ResearchExe(View):
                     if oBack['status'] == "error":
                         # Add error to the error array
                         self.arErr.append(oBack['msg'])
-                    #elif 'basket' in oBack:
-                    #    # Retrieve the basket-id to be returned to our caller
-                    #    basket_id = oBack['basket'].id
-                    #    self.data['basket_id'] = basket_id
-                    #    # Also provide the status and the stop commands for the caller
-                    #    self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket_id})
-                    #    self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket_id})
-                    #    self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket_id})
-                    #else:
-                    #    self.arErr.append("No corpus part to be searched has been selected")
+                        sStatusCode = "error"
+                        self.data['statuscode'] = "error"
+                        self.oErr.Status("ResearchExe error: " + oBack['msg'])
+                        if 'msg_list' in oBack:
+                            context['msg_list'] = oBack['msg_list']
+                        context['msg'] = oBack['msg']
                 elif self.action == "stop":
                     # Need to stop the execution of the project
                     x=2
                 elif self.action == "progress":
+                    ## First check: if we are in error, then do not continue
+                    #if self.obj.get_status() == "error":
+                    #    sStatusCode = "error"
+                    #    self.data['status'] = "error"
+                    #else:
+
                     # Need to get the status of the project
                     # NOTE: the self.obj now is the BASKET!!
                     oBack = self.obj.get_progress()
@@ -369,8 +376,12 @@ class ResearchExe(View):
                             context['ptc_done'] = int(context['ptc_ready'])
                             context['found'] = oBack['found']
                         elif sStatusCode == "preparing":
-                            # all is well
-                            pass
+                            # Show where we are in preparing
+                            sStatus = self.obj.get_status()
+                            context['prep_status'] = sStatus
+                            context['prep_job'] = "not sent yet" if self.obj.jobid == "" else self.obj.jobid
+                            if sStatus == "error":
+                                sStatusCode = "stop"
                         elif sStatusCode == "error":
                             # Add the error description to the list
                             if 'message' in oBack:
@@ -437,16 +448,25 @@ class ResearchExe(View):
             self.data['error_list'] = error_list
             self.data['errors'] = self.arErr
             if len(self.arErr) >0:
+                # debugging error stuff
+                self.oErr.Status("ResearchExe error loc=1")
+                # Pass on the statuscode to the context for the template rendering
+                context['status'] = "error"
+                # Pass on the status to the calling function through [self.data]
                 self.data['status'] = "error"
+                self.data['statuscode'] = "error"
+                context['statuscode'] = "error"
+            else:
+                # Pass on the statuscode
+                self.data['statuscode'] = sStatusCode
+                context['status'] = self.data['status']
 
             # Add items to context
             context['error_list'] = error_list
-            context['status'] = self.data['status']
-
+            
             # Get the HTML response
             self.data['html'] = render_to_string(self.template_name, context, request)
-            # Pass on the statuscode
-            self.data['statuscode'] = sStatusCode
+            
         else:
             self.data['html'] = "Please log in before continuing"
 
@@ -523,7 +543,7 @@ class ResearchPrepare(ResearchExe):
         
 
 class ResearchStart(ResearchExe):
-    MainModel = Research
+    MainModel = Basket
     action = "start"
     template_name = "seeker/exe_status.html"
     

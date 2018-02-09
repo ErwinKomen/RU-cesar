@@ -1978,6 +1978,8 @@ var ru = (function ($, ru) {
       /**
        * search_start
        *   Check and then start a search
+       *   Note: returning from the $.post call only means
+       *         that a BASKET object has been created...
        *
        */
       search_start(elStart) {
@@ -2027,45 +2029,43 @@ var ru = (function ($, ru) {
               basket_stop = response.basket_stop;
               basket_result = response.basket_result;
               basket_data = data;
+
               // Make the stop button available
               $("#research_stop").removeClass("hidden");
               $(sDivProgress).html("Conversion to Xquery...");
+              // Disable the START button
+              $("#research_start").prop("disabled", true);
 
               // Start the next call for status after 2 seconds
               setTimeout(function () { ru.cesar.seeker.search_progress(); }, 2000);
 
               // Now make sure that the Translation + Execution starts
-              $.post(basket_start, data);
+              $.post(basket_start, data, function (response) {
+                // Interpret the response that is returned
+                if (response.status === undefined) {
+                  // Show an error somewhere
+                  private_methods.errMsg("Basket-start response status undefined");
+                  $(sDivProgress).html("Bad execute response:<br>" + response);
+                } else if (response.status === "error") {
+                  // Show the error that has occurred
+                  if ("html" in response) { sMsg = response['html']; }
+                  if ("error_list" in response) { sMsg += response['error_list']; }
+                  // Show that the project has finished
+                  if ("html" in response) {
+                    $(sDivProgress).html(response.html);
+                  } else {
+                    private_methods.errMsg("Execute error: " + sMsg);
+                    $(sDivProgress).html("execution error (see above)");
+                  }
+                } else {
+                  // All went well, and the search has finished
+                  // No further action is needed
+                }
+                // Re-enable the START button in all cases
+                $("#research_start").prop("disabled", false);
+              });
             }
           });
-
-          /*
-          // Make an AJAX call to get an existing or new specification element HTML code
-          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
-          if (response.status === undefined) {
-            // Show an error somewhere
-            private_methods.errMsg("Bad execute response");
-            $(sDivProgress).html("Bad execute response:<br>"+response);
-          } else if (response.status === "error") {
-            // Show the error that has occurred
-            if ("html" in response) { sMsg = response['html']; }
-            if ("error_list" in response) { sMsg += response['error_list']; }
-            private_methods.errMsg("Execute error: " + sMsg);
-            $(sDivProgress).html("execution error");
-          } else {
-            // All went well -- get the basket id
-            basket_id = response.basket_id;
-            basket_progress = response.basket_progress;
-            basket_stop = response.basket_stop;
-            basket_result = response.basket_result;
-            basket_data = data;
-            // Make the stop button available
-            $("#research_stop").removeClass("hidden");
-
-            // Start the next call for status after 1 second
-            setTimeout(function () { ru.cesar.seeker.search_progress(); }, 1000);
-          }*/
-
 
         } catch (ex) {
           private_methods.errMsg("search_start", ex);
@@ -2082,14 +2082,21 @@ var ru = (function ($, ru) {
         var sDivProgress = "#research_progress",
             response = null;
         try {
+          // Enable the START button
+          $("#research_start").prop("disabled", false);
           // Make an AJAX call by using the already stored basket_stop URL
-          response = ru.cesar.seeker.ajaxcall(basket_stop, basket_data, "POST");
-          if (response.status !== undefined) {
-            switch (response.status) {
-              case "ok": break;
-              case "error": break;
+          $.post(basket_stop, basket_data, function (response) {
+            if (response.status !== undefined) {
+              switch (response.status) {
+                case "ok":
+                  $(sDivProgress).html("Stopped gracefully");
+                  break;
+                case "error":
+                  $(sDivProgress).html("Stopped with an error");
+                  break;
+              }
             }
-          }
+          });
 
         } catch (ex) {
           private_methods.errMsg("search_stop", ex);
@@ -2109,50 +2116,60 @@ var ru = (function ($, ru) {
 
         try {
           // Make an AJAX call by using the already stored basket_stop URL
-          response = ru.cesar.seeker.ajaxcall(basket_progress, basket_data, "POST");
-          if (response.status !== undefined) {
-            if ('html' in response) { sMsg = response.html; }
-            switch (response.status) {
-              case "ok":
-                // Action depends on the statuscode
-                switch (response.statuscode) {
-                  case "working":
-                  case "preparing":
-                    // Show the status of the project
-                    $(sDivProgress).html(response.html);
-                    // Make sure we are called again
-                    setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
-                    break;
-                  case "completed":
-                    // Show that the project has finished
-                    $(sDivProgress).html(response.html);
-                    // Hide the STOP button
-                    $("#research_stop").addClass("hidden");
-                    // Show the RESULTS button
-                    $("#research_results").removeClass("hidden");
-                    // Set the correct href for the button
-                    $("#research_results").attr("href", basket_result);
-                    break;
-                  case "error":
-                    // THis is an Xquery error
-                    // Show that the project has finished
-                    $(sDivProgress).html("Sorry, but there is an error");
-                    // Hide the STOP button
-                    $("#research_stop").addClass("hidden");
-                    // Do NOT shoe the RESULTS button
-                    break;
-                  default:
-                    // Show the current status
-                    private_methods.errMsg("Unknown statuscode: [" + response.statuscode+"]");
-                    break;
-                }
-                break;
-              case "error":
-                if ('error_list' in response) { sMsg += response.error_list; }
-                private_methods.errMsg("Progress error: " + sMsg);
-                break;
+          // response = ru.cesar.seeker.ajaxcall(basket_progress, basket_data, "POST");
+          $.post(basket_progress, basket_data, function (response) {
+            if (response.status !== undefined) {
+              if ('html' in response) { sMsg = response.html; }
+              switch (response.status) {
+                case "ok":
+                  // Action depends on the statuscode
+                  switch (response.statuscode) {
+                    case "working":
+                    case "preparing":
+                      // Show the status of the project
+                      $(sDivProgress).html(response.html);
+                      // Make sure we are called again
+                      setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
+                      break;
+                    case "completed":
+                      // Show that the project has finished
+                      $(sDivProgress).html(response.html);
+                      // Hide the STOP button
+                      $("#research_stop").addClass("hidden");
+                      // Show the RESULTS button
+                      $("#research_results").removeClass("hidden");
+                      // Set the correct href for the button
+                      $("#research_results").attr("href", basket_result);
+                      break;
+                    case "error":
+                      // THis is an Xquery error
+                      // Show that the project has finished
+                      $(sDivProgress).html("Sorry, but there is an error");
+                      // Hide the STOP button
+                      $("#research_stop").addClass("hidden");
+                      // Do NOT shoe the RESULTS button
+                      break;
+                    case "stop":
+                      // Stop asking for progress
+                      // Hide the STOP button
+                      $("#research_stop").addClass("hidden");
+                      break;
+                    default:
+                      // Show the current status
+                      private_methods.errMsg("Unknown statuscode: [" + response.statuscode + "]");
+                      break;
+                  }
+                  break;
+                case "error":
+                  if ('error_list' in response) { sMsg += response.error_list; }
+                  private_methods.errMsg("Progress error: " + sMsg);
+                  break;
+                case "stop":
+                  // No further action is needed unless there is a message??
+                  break;
+              }
             }
-          }
+          });
 
         } catch (ex) {
           private_methods.errMsg("search_progress", ex);

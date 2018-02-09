@@ -17,6 +17,37 @@
       {% if ptc_done > 5 %}{{ptc_done}}%{% endif %}
     </div>
   </div>
+{% elif statuscode == "preparing" %}
+  <div class='col-md-12'>
+    <table class='seeker-choice'>
+      <tbody>
+        <tr><td>Preparing:</td><td>{{prep_status}}</td></tr>
+        <tr><td>Crpp job:</td><td>{{prep_job}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+{% elif statuscode == "stop" %}
+  <div class='col-md-12'>
+    <table class='seeker-choice'>
+      <tbody>
+        <tr><td>Notification:</td><td>preparation and/or execution have stopped</td></tr>
+      </tbody>
+    </table>
+  </div>
+{% elif statuscode == "error" %}
+  <div class='col-md-12'>
+    {% if msg_list %}
+      <table class='seeker-choice'>
+        <tbody>
+          {% for msg_item in msg_list %}
+          <tr><td>{{forloop.counter}}</td><td>{{msg_item}}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <code>{{msg}}</code>
+    {% endif %}
+  </div>
 {% elif statuscode == "completed" %}
   <div class='col-md-12'>
     The search has finished in {{searchTime|floatformat:3}} seconds.
@@ -36,7 +67,7 @@
   </div>
 {% endif %}
 <div class="errors">
-  {% if error_list %} 
+  {% if error_list and statuscode != "error" %} 
     <h4>Errors:</h4>
     {% for item in error_list %}
     <div class="error-item">{{item}}</div>
