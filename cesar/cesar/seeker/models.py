@@ -1314,6 +1314,37 @@ class Argument(models.Model):
                 avalue = ""
         return avalue
 
+    def get_outputtype(self):
+        """Return the output type of this argument"""
+
+        if self.argtype == "cnst":
+            # This is not in use (yet)
+            return ""
+        elif self.argtype == "cvar":
+            # Don't think this should work
+            return ""
+        elif self.argtype == "dvar":
+            return self.dvar.get_outputtype()
+        elif self.argtype == "fixed":
+            return "int" if is_integer(self.argval) else "str"
+        elif self.argtype == "func":
+            p = self.functionparent.first()
+            return "" if p == None else p.get_outputtype()
+        elif self.argtype == "gvar":
+            return self.gvar.get_outputtype()
+        elif self.argtype == "hit":
+            return "cnst"
+        elif self.argtype == "raxis":
+            # This is not a returnable type
+            return ""
+        elif self.argtype == "rcnst":
+            return "cnst"
+        elif self.argtype == "rcond":
+            return "bool"
+        else:
+            return ""
+
+
     
 
 class Relation(models.Model):
