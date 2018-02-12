@@ -27,6 +27,7 @@ SEARCH_FUNCTION = "search.function"                 # woordgroep
 SEARCH_OPERATOR = "search.operator"                 # groeplijktop
 SEARCH_PERMISSION = "search.permission"
 SEARCH_VARIABLE_TYPE = "search.variabletype"        # fixed, calc, gvar
+SEARCH_RELATION_TYPE = "search.relationtype"        # axis, const, cond
 SEARCH_ARGTYPE = "search.argtype"                   # fixed, gvar, cvar, dvar, func, cnst, axis, hit
 SEARCH_CONDTYPE = "search.condtype"                 # func, dvar
 SEARCH_FEATTYPE = "search.feattype"                 # func, dvar
@@ -1027,10 +1028,10 @@ class Argument(models.Model):
     cvar = models.ForeignKey("ConstructionVariable", null=True)
     # [0-1] This argument may link to a Data-dependant Variable
     dvar = models.ForeignKey("VarDef", null=True)
-    # [0-1] This is basically an Xpath axis
-    axis = models.ForeignKey("Axis", null=True)
-    # [0-1] This argument may link to a simple Relation like <<, >>, is
-    relation = models.ForeignKey("Relation", null=True)
+    # [0-1] This argument is any of the three relation types (axis, const, cond)
+    raxis = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'axis' }, related_name='arg_raxis')
+    rcond = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'cond' }, related_name='arg_rcond')
+    rconst = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'const' }, related_name='arg_rconst')
     # [0-1] This argument may link to a Function (not its definition)
     function = models.ForeignKey("Function", null=True, related_name ="functionarguments")
     # [0-1] If a function is needed, we need to have a link to its definition
@@ -1083,9 +1084,9 @@ class Argument(models.Model):
                 if self.dvar != None:
                     # Return the name of the variable
                     oCode['value'] =  "${}".format(self.dvar.name)
-            elif self.argtype == "axis":
-                if self.relation != None:
-                    oCode['value'] = self.relation.xpath
+            elif self.argtype == "raxis":
+                if self.raxis != None:
+                    oCode['value'] = self.raxis.xpath
             # Assign the code to me
             self.argval = json.dumps(oCode)
         return self.argval
@@ -1105,7 +1106,7 @@ class Argument(models.Model):
             sError = "Argument should be a global variable, but it is not specified"
         elif sArgType == "cvar" and (self.cvar == None or self.cvar == None):
             sError = "Argument should be a data-dependant variable, but it is not specified"
-        elif sArgType == "axis" and (self.relation == None or self.relation == None):
+        elif sArgType == "raxis" and (self.raxis == None or self.raxis == None):
             sError = "Argument should be a hierarchical relation, but it is not specified"
         elif sArgType == "dvar" and (self.dvar == None or self.dvar == None):
             sError = "Argument should be a data-dependant  variable, but it is not specified"
@@ -1162,9 +1163,9 @@ class Argument(models.Model):
                 if self.dvar != None:
                     # Return the name of the variable
                     sCode = "${}".format(self.dvar.name)
-            elif self.argtype == "axis":
-                if self.relation != None:
-                    sXpath = self.relation.xpath
+            elif self.argtype == "raxis":
+                if self.raxis != None:
+                    sXpath = self.raxis.xpath
                     if "$cns$" in sXpath:
                         sTag = "su" if format == "folia" else "eTree"
                         sXpath = sXpath.replace("$cns$", sTag)
@@ -1202,7 +1203,7 @@ class Argument(models.Model):
                             gvar=gvar,
                             cvar=self.cvar,
                             dvar=dvar,
-                            relation=self.relation)
+                            raxis=self.raxis)
         # Initial saving
         new_copy.save()
         # Check if we have a new function parent
@@ -1250,8 +1251,8 @@ class Argument(models.Model):
             avalue = "DVAR"
             # Return the name of the variable
             avalue = self.dvar.name
-        elif self.argtype == "axis":
-            avalue = self.relation.name
+        elif self.argtype == "raxis":
+            avalue = self.raxis.name
         return "{}: {}".format(atype, avalue)
 
     def get_view(self):
@@ -1282,9 +1283,9 @@ class Argument(models.Model):
             if self.dvar != None:
                 # Return the name of the variable
                 avalue = "${}".format(self.dvar.name)
-        elif self.argtype == "axis":
-            if self.relation != None:
-                avalue = "r:{}".format(self.relation.name)
+        elif self.argtype == "raxis":
+            if self.raxis != None:
+                avalue = "r:{}".format(self.raxis.name)
         return avalue
 
     def get_title(self):
@@ -1308,10 +1309,11 @@ class Argument(models.Model):
             if self.dvar != None:
                 # Return the name of the variable
                 avalue = ""
-        elif self.argtype == "axis":
-            if self.relation != None:
+        elif self.argtype == "raxis":
+            if self.raxis != None:
                 avalue = ""
         return avalue
+
     
 
 class Relation(models.Model):
@@ -1319,23 +1321,22 @@ class Relation(models.Model):
 
     # [1] The descriptive name of this argument
     name = models.CharField("Name", max_length=MAX_TEXT_LEN)
+    # [1] Relation type: 'axis', 'constituent', 'condition'
+    type = models.CharField("Relation type", choices=build_abbr_list(SEARCH_RELATION_TYPE), 
+                              max_length=5, help_text=get_help(SEARCH_RELATION_TYPE), default='axis')
     # [1] Xpath implementation
     xpath = models.TextField("Implementation", null=False, blank=False, default=".")
 
     def __str__(self):
         return "{}".format(self.name)
-    
 
-class Axis(models.Model):
-    """Hierarchical relation such as the Xpath axes"""
+    def get_subset(sType):
+        return Relation.objects.filter(type=sType).order_by('name')
 
-    # [1] The descriptive name of this argument
-    name = models.CharField("Name", max_length=MAX_TEXT_LEN)
-    # [1] Xpath implementation
-    xpath = models.TextField("Implementation", null=False, blank=False, default=".")
-
-    def __str__(self):
-        return "{}".format(self.name)
+    def get_choices(sType):
+        qs = Relation.objects.filter(type=sType).order_by('name')
+        choices = [(item.id, item.name) for item in qs]
+        return choices
     
 
 class ConstructionVariable(models.Model):

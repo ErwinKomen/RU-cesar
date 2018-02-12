@@ -274,10 +274,14 @@ class ArgumentForm(ModelForm):
 
     class Meta:
         model = Argument
-        fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'dvar', 'relation', 'function', 'functiondef']
+        fields = ['argumentdef', 'argtype', 'argval', 'gvar', 'cvar', 'dvar', 'raxis', 'rcond', 'rconst', 'function', 'functiondef']
         widgets={
           'argval': SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'})
           }
+
+    # raxis = forms.ChoiceField()
+    #rcond = forms.ChoiceField()
+    #rcnst = forms.ChoiceField()
 
     def __init__(self, *args, **kwargs):
         super(ArgumentForm, self).__init__(*args, **kwargs)
@@ -288,10 +292,19 @@ class ArgumentForm(ModelForm):
         self.fields['cvar'].required = False
         self.fields['dvar'].required = False
         self.fields['gvar'].required = False
-        self.fields['relation'].required = False
+        self.fields['raxis'].required = False
+        self.fields['rcond'].required = False
+        self.fields['rconst'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+        # define lists
         self.fields['functiondef'].queryset=FunctionDef.get_list()
+        self.fields['raxis'].queryset=Relation.get_subset('axis')
+        self.fields['rcond'].queryset=Relation.get_subset('cond')
+        self.fields['rconst'].queryset=Relation.get_subset('const')
+        # self.fields['raxis'].choices=Relation.get_choices('raxis')
+        #self.fields['rcond'].choices=Relation.get_choices('rcond')
+        #self.fields['rcnst'].choices=Relation.get_choices('rcnst')
 
 
 class ConditionForm(ModelForm):

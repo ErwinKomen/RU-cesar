@@ -224,10 +224,10 @@ var ru = (function ($, ru) {
           $(elVal).find(".arg-gvar").addClass("hidden");
           $(elVal).find(".arg-cvar").addClass("hidden");
           $(elVal).find(".arg-dvar").addClass("hidden");
-          $(elVal).find(".arg-cnst").addClass("hidden");
+          $(elVal).find(".arg-rcnst").addClass("hidden");
+          $(elVal).find(".arg-raxis").addClass("hidden");
+          $(elVal).find(".arg-rcond").addClass("hidden");
           $(elVal).find(".arg-search").addClass("hidden");
-          $(elVal).find(".arg-axis").addClass("hidden");
-          $(elVal).find(".arg-relation").addClass("hidden");
           switch (elArgTypeVal) {
             case "fixed": // Fixed value
               $(elVal).find(".arg-value").removeClass("hidden");
@@ -247,18 +247,21 @@ var ru = (function ($, ru) {
             case "cnst":  // Constituent
               $(elVal).find(".arg-cnst").removeClass("hidden");
               break;
-            case "axis":  // Axis
-              $(elVal).find(".arg-axis").removeClass("hidden");
+            case "raxis":  // Relation - axis
+              $(elVal).find(".arg-raxis").removeClass("hidden");
               break;
-            case "relation":  // Relation
-              $(elVal).find(".arg-relation").removeClass("hidden");
+            case "rcond":  // Relation - condition
+              $(elVal).find(".arg-rcond").removeClass("hidden");
+              break;
+            case "rcnst":  // Relation - constituent
+              $(elVal).find(".arg-rcnst").removeClass("hidden");
               break;
             case "hit":  // Search hit
               $(elVal).find(".arg-search").removeClass("hidden");
               break;
           }
         } catch (ex) {
-          private_methods.errMsg("argtyp_click", ex);
+          private_methods.errMsg("argtype_click", ex);
         }
       },
 
