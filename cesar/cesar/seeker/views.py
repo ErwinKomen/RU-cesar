@@ -292,20 +292,25 @@ class ResearchExe(View):
                         if select_part != "":
                             part = Part.objects.filter(Q(id=select_part)).first()
                         # Check if the necessary ingredient(s) are there
-                        lstQ = []
-                        lstQ.append(Q(research=research))
-                        lstQ.append(Q(format=select_format))
-                        lstQ.append(Q(part=part))
-                        basket = Basket.objects.filter(*lstQ).first()
-                        if basket == None:
-                            # Create a new basket
-                            basket = Basket(research=research, part=part, format=select_format, status="prepared", jobid="")
-                        else:
-                            # Make sure the status is correct
-                            basket.status = "prepared"
-                            basket.jobid = ""
-                        # Save it 
+                        basket = self.get_basket(select_format, part)
+                        # Set the status and the jobid
+                        basket.status = "prepared"
+                        basket.jobid = ""
                         basket.save()
+                        #lstQ = []
+                        #lstQ.append(Q(research=research))
+                        #lstQ.append(Q(format=select_format))
+                        #lstQ.append(Q(part=part))
+                        #basket = Basket.objects.filter(*lstQ).first()
+                        #if basket == None:
+                        #    # Create a new basket
+                        #    basket = Basket(research=research, part=part, format=select_format, status="prepared", jobid="")
+                        #else:
+                        #    # Make sure the status is correct
+                        #    basket.status = "prepared"
+                        #    basket.jobid = ""
+                        ## Save it 
+                        #basket.save()
                         context['statuscode'] = "prepared"
                         self.data['status'] = "prepared"
                         self.data['basket_id'] = basket.id
@@ -429,10 +434,10 @@ class ResearchExe(View):
                         # Find out which corpus/part has been chosen
                         select_part = self.qd.get("select_part")
                         select_format = self.qd.get("searchFormat")
+                        # Determine which basket this is in
+                        basket = self.get_basket(select_format, select_part)
                         # Translate project to Xquery
-                        # self.obj.to_xquery(select_part, select_format)
-                        # Start execution
-                        oBack = self.obj.to_crpx(select_part, select_format)
+                        oBack = self.obj.to_crpx(select_part, select_format, basket)
                         # Check for errors
                         if oBack['status'] == "error":
                             # Add error to the error array
@@ -474,6 +479,23 @@ class ResearchExe(View):
 
         # Return the information
         return JsonResponse(self.data)
+
+    def get_basket(self, sFormat, part):
+
+        # Get the research object
+        research = self.obj
+        # Prepare query
+        lstQ = []
+        lstQ.append(Q(research=research))
+        lstQ.append(Q(format=sFormat))
+        lstQ.append(Q(part=part))
+        basket = Basket.objects.filter(*lstQ).first()
+        if basket == None:
+            # Create a new basket
+            basket = Basket(research=research, part=part, format=sFormat, status="created", jobid="")
+            basket.save()
+        # Return the basket
+        return basket
 
     def get(self, request, object_id=None): 
         self.initializations(request, object_id)

@@ -1087,6 +1087,12 @@ class Argument(models.Model):
             elif self.argtype == "raxis":
                 if self.raxis != None:
                     oCode['value'] = self.raxis.xpath
+            elif self.argtype == "rcnst":
+                if self.rconst != None:
+                    oCode['value'] = self.rconst.xpath
+            elif self.argtype == "rcond":
+                if self.rcond != None:
+                    oCode['value'] = self.rcond.xpath
             # Assign the code to me
             self.argval = json.dumps(oCode)
         return self.argval
@@ -1106,8 +1112,12 @@ class Argument(models.Model):
             sError = "Argument should be a global variable, but it is not specified"
         elif sArgType == "cvar" and (self.cvar == None or self.cvar == None):
             sError = "Argument should be a data-dependant variable, but it is not specified"
-        elif sArgType == "raxis" and (self.raxis == None or self.raxis == None):
-            sError = "Argument should be a hierarchical relation, but it is not specified"
+        elif sArgType == "raxis" and (self.raxis == None ):
+            sError = "Argument should be a relation axis, but it is not specified"
+        elif sArgType == "rcnst" and (self.rconst == None ):
+            sError = "Argument should be a relation constituent, but it is not specified"
+        elif sArgType == "rcond" and (self.rcond == None ):
+            sError = "Argument should be a relation condition, but it is not specified"
         elif sArgType == "dvar" and (self.dvar == None or self.dvar == None):
             sError = "Argument should be a data-dependant  variable, but it is not specified"
         return sError
@@ -1165,7 +1175,10 @@ class Argument(models.Model):
                     sCode = "${}".format(self.dvar.name)
             elif self.argtype == "raxis":
                 if self.raxis != None:
-                    sXpath = self.raxis.xpath
+                    sCode = self.raxis.xpath
+            elif self.argtype =="rcnst":
+                if self.rconst != None:
+                    sXpath = self.rconst.xpath
                     if "$cns$" in sXpath:
                         sTag = "su" if format == "folia" else "eTree"
                         sXpath = sXpath.replace("$cns$", sTag)
@@ -1173,6 +1186,10 @@ class Argument(models.Model):
                         sTag = "wref" if format == "folia" else "eLeaf"
                         sXpath = sXpath.replace("$wrd$", sTag)
                     sCode = sXpath
+            elif self.argtype == "rcond":
+                if self.rcond != None:
+                    sXpath = self.rcond.xpath
+
             return sCode
         except:
             oErr.DoError("Argument/get_code error")
@@ -1253,6 +1270,10 @@ class Argument(models.Model):
             avalue = self.dvar.name
         elif self.argtype == "raxis":
             avalue = self.raxis.name
+        elif self.argtype == "rcnst":
+            avalue = self.rconst.name
+        elif self.argtype == "rcond":
+            avalue = self.rcond.name
         return "{}: {}".format(atype, avalue)
 
     def get_view(self):
@@ -1285,7 +1306,13 @@ class Argument(models.Model):
                 avalue = "${}".format(self.dvar.name)
         elif self.argtype == "raxis":
             if self.raxis != None:
-                avalue = "r:{}".format(self.raxis.name)
+                avalue = "x:{}".format(self.raxis.name)
+        elif self.argtype == "rcnst":
+            if self.rconst != None:
+                avalue = "rc:{}".format(self.rconst.name)
+        elif self.argtype == "rcond":
+            if self.rcond != None:
+                avalue = "rb:{}".format(self.rcond.name)
         return avalue
 
     def get_title(self):
@@ -1311,6 +1338,12 @@ class Argument(models.Model):
                 avalue = ""
         elif self.argtype == "raxis":
             if self.raxis != None:
+                avalue = ""
+        elif self.argtype == "rcnst":
+            if self.rconst != None:
+                avalue = ""
+        elif self.argtype == "rcond":
+            if self.rcond != None:
                 avalue = ""
         return avalue
 
