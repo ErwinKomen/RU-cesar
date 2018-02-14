@@ -952,15 +952,20 @@ class Function(models.Model):
             # There already is a type, so return the abbreviation:
             #   'str', 'int', 'bool', 'cnst' (=constituent)
             sType = choice_abbreviation(SEARCH_TYPE, self.type)
+        elif self.functiondef:
+            # So: have a look at what *should* be the output type of this function
+            #     given its definition
+            sType = choice_abbreviation(SEARCH_TYPE, self.functiondef.type)
         else:
             # Look for the first Argument that should have the output type
             qs = self.get_arguments()
-            arg = qs.filter(Q(argumentdef__hasoutputvalue=True)).first()
+            arg = qs.filter(Q(argumentdef__hasoutputtype=True)).first()
             if arg != None:
                 # Get the abbreviation of the argtype (fixed, gvar, cvar, func, cnst, axis, hit, dvar)
-                sArgType = choice_abbreviation(SEARCH_ARGTYPE, arg.argtype)
+                # sArgType = choice_abbreviation(SEARCH_ARGTYPE, arg.argtype)
+                sArgType = arg.argtype
                 if sArgType == "fixed":
-                    sType = "int" if is_integer(arg.value) else "str"
+                    sType = "int" if is_integer(arg.argval) else "str"
                 elif sArgType == "gvar":
                     # Global variables are always strings
                     if arg.gvar:
@@ -977,12 +982,19 @@ class Function(models.Model):
                 elif sArgType == "hit" or sArgType == "cnst":
                     # The argtype "constituent" is not really used now, is it...
                     sType = "cnst"
-                elif sArgType == "axis":
-                    # The argtype 'axis' does not lead to a valid output type
-                    pass
+                elif sArgType == "raxis":
+                    # The argtype 'raxis' has a special 'search.type'
+                    sType = "raxis"
+                elif sArgType == "rcond":
+                    # The argtype 'rcond' has a special 'search.type'
+                    sType = "rcond"
+                elif sArgType == "rcnst":
+                    # The argtype 'rcnst' boils down to constituent
+                    sType = "cnst"
                 elif sArgType == "dvar" and arg.dvar != None:
                     # Get the *FIRST* construction variable under the dvar
                     sType = arg.dvar.get_outputtype()
+
         
         # Return what we found
         return sType
@@ -998,10 +1010,14 @@ class ArgumentDef(models.Model):
     # [1] The numerical order of this argument
     order = models.IntegerField("Order", blank=False, default=0)
     # [1] The value can be of type: fixed, global variable, construction variable, function-output
-    argtype = models.CharField("Variable type", choices=build_abbr_list(SEARCH_ARGTYPE), 
+    argtype = models.CharField("Default variable type", choices=build_abbr_list(SEARCH_ARGTYPE), 
                               max_length=5, help_text=get_help(SEARCH_ARGTYPE))
+    # [0-1] If specified, the argument MUST have this type
+    obltype = models.CharField("Type", choices=build_abbr_list(SEARCH_TYPE), 
+                              max_length=5, help_text=get_help(SEARCH_TYPE), 
+                              blank=True, null=True)
     # [1] Boolean that says whether this argument should be equal to the [outputtype] of this function
-    hasoutputtype = models.BooleanField("This type equals outputtype", default=False)
+    hasoutputtype = models.BooleanField("Equals outputtype", default=False)
     # [1] The value that is the outcome of this function: 
     #     This is a JSON list, it can contain any number of bool, int, string
     argval = models.TextField("JSON value", blank=True, default="[]")
@@ -1368,12 +1384,11 @@ class Argument(models.Model):
         elif self.argtype == "hit":
             return "cnst"
         elif self.argtype == "raxis":
-            # This is not a returnable type
-            return ""
+            return "raxis"
         elif self.argtype == "rcnst":
             return "cnst"
         elif self.argtype == "rcond":
-            return "bool"
+            return "rcond"
         else:
             return ""
 

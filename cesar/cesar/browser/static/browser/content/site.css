@@ -679,3 +679,9 @@ body > div > footer a {
     -moz-border-radius: 6px 0 6px 6px;
     border-radius: 6px 0 6px 6px;
 }
+
+.function-arg-type {
+  font-family: monospace;
+  font-size: small;
+  color: darkblue;
+}

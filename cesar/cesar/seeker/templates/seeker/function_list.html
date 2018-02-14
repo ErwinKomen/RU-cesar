@@ -61,6 +61,7 @@
                         <span>{{arg.text}}</span>
                         <span><code>{{arg.name}}</code></span>
                       </td>
+                      <td>{% if arg.obltype %}(type: <span class="function-arg-type">{{arg.get_obltype_display}}</span>){% endif %}</td>
                     </tr>
                     {% endfor %}
                   </table>

@@ -109,6 +109,58 @@
           {% endfor %}
         </div>
 
+        <!-- Features -->
+        <div class="row">
+          <h3>Features</h3>
+          <table>
+            <thead><tr><th>Feature</th><th>Description</th><th>Definition</th></tr></thead>
+            <tbody>
+              {% for feat in gateway.features.all %}
+              <tr>
+                <td valign='top' class='tdnowrap'>{{feat.name}}</td>
+                <td valign='top'>{{feat.description}}</td>
+                <td valign='top'>-</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <!-- Walk all features -->
+          <h4>Definitions of features per search element</h4>
+          {% for feat in gateway.features.all  %}
+            <p>Feature <code>{{feat.name}}</code>:
+            {% if feat.feattype == "dvar" %}
+              <code>{{feat.variable.name}}</code>
+            {% elif feat.feattype == "func" %}
+              {% if feat.get_functions %}
+                <div class="panel panel-default">
+                  <table>
+                    <thead><tr><th>#</th><th>Function</th><th>Layout</th></tr></thead>
+                    <tbody id="feature_definition">
+                      <!-- This is where the feature definition table should come -->
+                      {% for function_this in feat.get_functions %}
+                      <tr class="function-item">
+                        <td valign="top" class="function-intro"><code>line_{{forloop.counter}}</code></td>
+                        <td valign="top" class="function-name">{{function_this.functiondef.name}}</td>
+                        <td valign="top" class="function-layout">
+                          {% for level in function_this.get_level_range %}&bull;&nbsp;&nbsp;{% endfor %}
+                          {% for arg_this in function_this.get_arguments %}
+                            <span class="function-arg-text">{{arg_this.argumentdef.text}}</span>
+                            <span class="function-arg-view"><code>{{arg_this.get_view}}</code></span>
+                          {% endfor %}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}<i>(not yet defined)</i>{% endif %}
+            {% else %}
+              <i>(unknown type)</i>
+            {% endif %}
+          {% endfor %}
+        </div>
+
         <!-- Data-dependant variables -->
         <div class="row">
           <h3>Data-dependant variables</h3>
