@@ -18,6 +18,8 @@ from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
 from django import template
+from functools import reduce
+from operator import __or__ as OR
 import zipfile
 
 from cesar.seeker.forms import *
@@ -81,11 +83,33 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
             # Get the list of choices
             choice_list = arg_form.fields['argtype'].choices
             choices = []
+            bShowFunctions = False
             for choice in choice_list:
                 # Each choice is a tuple -- look at the first part of the tuple
                 if keep_argtype(choice[0], obltype, arg_form):
                     choices.append(choice)
+                    if choice[0] == "func" or choice[0] == "calc":
+                        bShowFunctions = True
+            # Take over the choices for argtype
             arg_form.fields['argtype'].choices = choices
+            # Are functions going to be included?
+            if bShowFunctions:
+                # Since we are restricting choice, make sure that only those functions are offered
+                #   at this level, that return a matching type
+                # Any function delivering the exact type is okay
+                query = Q(type=choice_value(SEARCH_TYPE, obltype))
+                # Any function that has NO type is okay too
+                query |= Q(type="")
+                # Some other types are intercompatible too
+                if obltype == 'str':
+                    query |= Q(type=choice_value(SEARCH_TYPE,'int'))
+                    query |= Q(type=choice_value(SEARCH_TYPE,'bool'))
+                elif obltype == 'clist':
+                    # If we expect a clist, then one cnst is okay too
+                    query |= Q(type=choice_value(SEARCH_TYPE,'cnst'))
+                # COmbine the possiblities with 'or' signs
+                qs = FunctionDef.objects.filter(query).order_by('name')
+                arg_form.fields['functiondef'].queryset = qs
 
         # Add the information required by 'seeker/function_args.html' for each argument
         arg_form.target = target

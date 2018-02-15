@@ -151,7 +151,7 @@ def choice_value(field, term):
 
     try:
         result_list = FieldChoice.objects.filter(field__iexact=field).filter(english_name__iexact=term)
-        if result_list == None:
+        if result_list == None or result_list.count() == 0:
             # Try looking at abbreviation
             result_list = FieldChoice.objects.filter(field__iexact=field).filter(abbr__iexact=term)
         if result_list == None:
