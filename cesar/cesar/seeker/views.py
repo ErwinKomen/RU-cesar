@@ -60,23 +60,8 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
             arg_form.fields['cvar'].queryset = qs_cvar
 
         # Look at data-dependant variables: only accept those that have the correct output type
-        dvar_list = []
-        for dvar in qs_dvar:
-            if obltype == None:
-                # Just add it
-                dvar_list.append(dvar.id)
-            else:
-                # Check the output type
-                otype = dvar.get_outputtype()
-                if otype == None:
-                    pass
-                else:
-                    # This dvar has a specific output type 
-                    if otype == obltype or (obltype == 'clist' and otype =='cnst'):
-                        dvar_list.append(dvar.id)
-        # Recombine into a new list
-        qs_dvar = VarDef.objects.filter(Q(id__in=dvar_list)).order_by('order')
-        arg_form.fields['dvar'].queryset = qs_dvar
+        # qs_dvar = VarDef.objects.filter(Q(id__in=dvar_list)).order_by('order')
+        arg_form.fields['dvar'].queryset = VarDef.get_restricted_vardef_list( qs_dvar, obltype)
 
         # If we have an obligatory type, then limit the possibilities for the user
         if obltype != None and obltype != '':
@@ -96,20 +81,7 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
             if bShowFunctions:
                 # Since we are restricting choice, make sure that only those functions are offered
                 #   at this level, that return a matching type
-                # Any function delivering the exact type is okay
-                query = Q(type=choice_value(SEARCH_TYPE, obltype))
-                # Any function that has NO type is okay too
-                query |= Q(type="")
-                # Some other types are intercompatible too
-                if obltype == 'str':
-                    query |= Q(type=choice_value(SEARCH_TYPE,'int'))
-                    query |= Q(type=choice_value(SEARCH_TYPE,'bool'))
-                elif obltype == 'clist':
-                    # If we expect a clist, then one cnst is okay too
-                    query |= Q(type=choice_value(SEARCH_TYPE,'cnst'))
-                # COmbine the possiblities with 'or' signs
-                qs = FunctionDef.objects.filter(query).order_by('name')
-                arg_form.fields['functiondef'].queryset = qs
+                arg_form.fields['functiondef'].queryset = FunctionDef.get_functions_with_type(obltype)
 
         # Add the information required by 'seeker/function_args.html' for each argument
         arg_form.target = target
@@ -133,6 +105,7 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
 
     # Return the adatpted formset
     return arg_formset
+
 
 
 def keep_argtype(sChoice, sOblType, arg_form):
@@ -579,6 +552,9 @@ class ResearchExe(View):
 
         # Get the research object
         research = self.obj
+        # Check if 'part'is a string or not
+        if isinstance(part, str):
+            part = Part.objects.filter(id=part).first()
         # Prepare query
         lstQ = []
         lstQ.append(Q(research=research))
@@ -1466,36 +1442,6 @@ class ResearchPart43(ResearchPart):
         context['targettype'] = targettype
         return context
     
-    #def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
-    #    # Take the functiondef as available in this argument
-    #    # arg_defs = functiondef.arguments.all()
-    #    arg_defs = ArgumentDef.objects.filter(function=functiondef)
-
-    #    for index, arg_form in enumerate(arg_formset):
-    #        # Initialise the querysets
-    #        arg_form.fields['gvar'].queryset = qs_gvar
-    #        if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
-    #        arg_form.fields['dvar'].queryset = qs_dvar
-    #        # Add the information required by 'seeker/function_args.html' for each argument
-    #        arg_form.target = target
-    #        arg_form.targetid = 'research_part_' + arg_form.target
-    #        if arg_form.instance != None:
-    #            arg_form.url_edit = reverse(arg_form.targetid, kwargs={'object_id': arg_form.instance.id})
-    #        arg_form.url_new = reverse(arg_form.targetid)
-    #        # Get the instance from this form
-    #        arg = arg_form.save(commit=False)
-    #        # Check if the argument definition is set
-    #        if arg.id == None or arg.argumentdef_id == None:
-    #            # Get the argument definition for this particular argument
-    #            arg.argumentdef = arg_defs[index]
-    #            arg_form.initial['argumentdef'] = arg_defs[index]
-    #            arg_form.initial['argtype'] = arg_defs[index].argtype
-    #            # Preliminarily save
-    #            arg_form.save(commit=False)
-
-    #    # Return the adapted formset
-    #    return arg_formset
-
     def before_save(self, prefix, request, instance=None, form=None):
         # NOTE: the 'instance' is the CVAR instance
 
@@ -2322,35 +2268,6 @@ class ResearchPart72(ResearchPart):
         context['object_id'] = self.object_id
         context['targettype'] = targettype
         return context
-
-    #def check_arguments(self, arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
-    #    # Take the functiondef as available in this argument
-    #    arg_defs = ArgumentDef.objects.filter(function=functiondef)
-
-    #    for index, arg_form in enumerate(arg_formset):
-    #        # Initialise the querysets
-    #        arg_form.fields['gvar'].queryset = qs_gvar
-    #        if qs_cvar != None: arg_form.fields['cvar'].queryset = qs_cvar
-    #        arg_form.fields['dvar'].queryset = qs_dvar
-    #        # Add the information required by 'seeker/function_args.html' for each argument
-    #        arg_form.target = target
-    #        arg_form.targetid = 'research_part_' + arg_form.target
-    #        if arg_form.instance != None:
-    #            arg_form.url_edit = reverse(arg_form.targetid, kwargs={'object_id': arg_form.instance.id})
-    #        arg_form.url_new = reverse(arg_form.targetid)
-    #        # Get the instance from this form
-    #        arg = arg_form.save(commit=False)
-    #        # Check if the argument definition is set
-    #        if arg.id == None or arg.argumentdef_id == None or arg.argumentdef_id != arg_defs[index].id:
-    #            # Get the argument definition for this particular argument
-    #            arg.argumentdef = arg_defs[index]
-    #            arg_form.initial['argumentdef'] = arg_defs[index]
-    #            arg_form.initial['argtype'] = arg_defs[index].argtype
-    #            # Preliminarily save
-    #            arg_form.save(commit=False)
-
-    #    # Return the adatpted formset
-    #    return arg_formset
 
     def before_save(self, prefix, request, instance=None, form=None):
         has_changed = False

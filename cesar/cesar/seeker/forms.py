@@ -200,6 +200,11 @@ class CvarForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+        # Get the gateway...
+        if self.instance and self.instance.construction and self.instance.construction.gateway:
+            gateway = self.instance.construction.gateway
+            # Adapt the list of global variables
+            self.fields['gvar'].queryset = GlobalVariable.objects.filter(gateway=gateway).order_by('name')
         # self.fields['copyto'].required = False
         # make sure all the available function-definitions are shown
         self.fields['functiondef'].queryset = FunctionDef.get_list()
@@ -322,8 +327,8 @@ class ConditionForm(ModelForm):
         super(ConditionForm, self).__init__(*args, **kwargs)
         init_choices(self, 'condtype', SEARCH_CONDTYPE, bUseAbbr=True)
         # Set the initial querysets
-        self.fields['variable'].queryset = gateway.get_vardef_list()
-        self.fields['functiondef'].queryset = FunctionDef.get_list()
+        self.fields['variable'].queryset = VarDef.get_restricted_vardef_list( gateway.get_vardef_list(), 'bool')
+        self.fields['functiondef'].queryset = FunctionDef.get_functions_with_type('bool') # FunctionDef.get_list()
         # Set required and optional fields
         self.fields['name'].required = True
         self.fields['description'].required = False
@@ -362,8 +367,8 @@ class FeatureForm(ModelForm):
         super(FeatureForm, self).__init__(*args, **kwargs)
         init_choices(self, 'feattype', SEARCH_FEATTYPE, bUseAbbr=True)
         # Set the initial querysets
-        self.fields['variable'].queryset = gateway.get_vardef_list()
-        self.fields['functiondef'].queryset = FunctionDef.get_list()
+        self.fields['variable'].queryset = VarDef.get_restricted_vardef_list( gateway.get_vardef_list(), 'str')
+        self.fields['functiondef'].queryset = FunctionDef.get_functions_with_type('str') # FunctionDef.get_list()
         # Set required and optional fields
         self.fields['name'].required = True
         self.fields['description'].required = False

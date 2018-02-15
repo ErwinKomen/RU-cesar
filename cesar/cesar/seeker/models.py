@@ -53,9 +53,16 @@ integer_format = re.compile(r'^\-?[0-9]+')
 
 def is_integer(sInput):
     if sInput == None:
-        return false
+        return False
     else:
         return (integer_format.search(sInput) != None)
+
+def is_boolean(sInput):
+    if sInput == None:
+        return False
+    else:
+        sInput = sInput.lower()
+        return sInput == 'false' or sInput == 'true'
 
 class SearchMain(models.Model):
     """The main search item defined for this gateway"""
@@ -332,11 +339,10 @@ class Gateway(models.Model):
         return super().delete(using, keep_parents)
 
     def get_vardef_list(self):
+
         # Get a list of all variables for this gateway
-        #var_pk_list = [var.pk for var in self.gatewayvariables.all()]
-        ## Now get the list of vardef variables coinciding with this
-        #vardef_list = [var for var in VarDef.objects.filter(pk__in=var_pk_list)]
         vardef_list = self.definitionvariables.all().order_by('order')
+        # Return this list
         return vardef_list
 
     def get_condition_list(self):
@@ -508,7 +514,7 @@ class VarDef(Variable):
         if kwargs == None or 'gateway' not in kwargs:
             return None
         # Make a clean copy
-        new_copy = VarDef(name=self.name, description=self.description, order=self.order, gateway=kwargs['gateway'])
+        new_copy = VarDef(name=self.name, description=self.description, order=self.order, type=self.type, gateway=kwargs['gateway'])
         new_copy.save()
         # Return the new copy
         return new_copy
@@ -537,6 +543,25 @@ class VarDef(Variable):
             sType = cvar.get_outputtype()
         return sType
 
+    def get_restricted_vardef_list(qs_dvar, obltype):
+        dvar_list = []
+        for dvar in qs_dvar:
+            if obltype == None:
+                # Just add it
+                dvar_list.append(dvar.id)
+            else:
+                # Check the output type
+                otype = dvar.get_outputtype()
+                if otype == None:
+                    pass
+                else:
+                    # This dvar has a specific output type 
+                    if otype == obltype or (obltype == 'clist' and otype =='cnst') or (otype == "-") or (obltype == 'str' and (otype == 'bool' or otype == 'int')):
+                        dvar_list.append(dvar.id)
+
+        # Recombine into a new list
+        return VarDef.objects.filter(Q(id__in=dvar_list)).order_by('order')
+
 
 
 class GlobalVariable(Variable):
@@ -556,7 +581,7 @@ class GlobalVariable(Variable):
         if kwargs == None or 'gateway' not in kwargs:
             return None
         # Make a clean copy
-        new_copy = GlobalVariable(name=self.name, description=self.description, order=self.order, value=self.value, gateway=kwargs['gateway'])
+        new_copy = GlobalVariable(name=self.name, description=self.description, order=self.order, value=self.value, type=self.type, gateway=kwargs['gateway'])
         new_copy.save()
         # Return the new copy
         return new_copy
@@ -578,8 +603,13 @@ class GlobalVariable(Variable):
     def get_outputtype(self):
         """Calculate the output type of a function"""
 
-        # Look at the value
-        sType = "int" if is_integer(self.value) else "str"
+        # Look at the string value of [svalue]
+        if is_integer(self.value):
+            sType = "int"
+        elif is_boolean(self.value):
+            sType = "bool"
+        else:
+            sType = "str"
         return sType
 
 
@@ -607,6 +637,28 @@ class FunctionDef(models.Model):
 
         cnt = Function.objects.filter(functiondef=self).count()
         return cnt
+
+    def get_functions_with_type(obltype):
+        """Get a queryset of functiondef objects returning [obltype]"""
+
+        # Any function delivering the exact type is okay
+        query = Q(type=choice_value(SEARCH_TYPE, obltype))
+        # Any function that has NO type is okay too
+        query |= Q(type="")
+        # Some other types are intercompatible too
+        if obltype == 'str':
+            query |= Q(type=choice_value(SEARCH_TYPE,'int'))
+            query |= Q(type=choice_value(SEARCH_TYPE,'bool'))
+        elif obltype == 'clist':
+            # If we expect a clist, then one cnst is okay too
+            query |= Q(type=choice_value(SEARCH_TYPE,'cnst'))
+        elif obltype == 'cnst':
+            # If we expect a constituent (cnst), then also allow [clist], but we need to take the *first* one...
+            query |= Q(type=choice_value(SEARCH_TYPE,'clist'))
+        # COmbine the possiblities with 'or' signs
+        qs = FunctionDef.objects.filter(query).order_by('name')
+        return qs
+
 
 
 class FunctionCode(models.Model):
@@ -953,9 +1005,16 @@ class Function(models.Model):
             #   'str', 'int', 'bool', 'cnst' (=constituent)
             sType = choice_abbreviation(SEARCH_TYPE, self.type)
         elif self.functiondef:
-            # So: have a look at what *should* be the output type of this function
-            #     given its definition
-            sType = choice_abbreviation(SEARCH_TYPE, self.functiondef.type)
+            # Does this functiondef come with an actual type?
+            if self.functiondef.type == "":
+                # No it does not -- try to look at its first argument with hasoutputtype set
+                arg = self.functionarguments.filter(Q(argumentdef__hasoutputtype=True)).first()
+                # Return the type of this argument
+                sType = arg.get_outputtype()
+            else:
+                # So: have a look at what *should* be the output type of this function
+                #     given its definition
+                sType = choice_abbreviation(SEARCH_TYPE, self.functiondef.type)
         else:
             # Look for the first Argument that should have the output type
             qs = self.get_arguments()
@@ -965,7 +1024,13 @@ class Function(models.Model):
                 # sArgType = choice_abbreviation(SEARCH_ARGTYPE, arg.argtype)
                 sArgType = arg.argtype
                 if sArgType == "fixed":
-                    sType = "int" if is_integer(arg.argval) else "str"
+                    # Look at the string value of [argval]
+                    if is_integer(arg.argval):
+                        sType = "int"
+                    elif is_boolean(arg.argval):
+                        sType = "bool"
+                    else:
+                        sType = "str"
                 elif sArgType == "gvar":
                     # Global variables are always strings
                     if arg.gvar:
@@ -1236,7 +1301,9 @@ class Argument(models.Model):
                             gvar=gvar,
                             cvar=self.cvar,
                             dvar=dvar,
-                            raxis=self.raxis)
+                            raxis=self.raxis,
+                            rcond=self.rcond,
+                            rconst=self.rconst)
         # Initial saving
         new_copy.save()
         # Check if we have a new function parent
@@ -1375,7 +1442,14 @@ class Argument(models.Model):
         elif self.argtype == "dvar":
             return self.dvar.get_outputtype()
         elif self.argtype == "fixed":
-            return "int" if is_integer(self.argval) else "str"
+            # Look at the string value of [argval]
+            if is_integer(self.argval):
+                sType = "int"
+            elif is_boolean(self.argval):
+                sType = "bool"
+            else:
+                sType = "str"
+            return sType
         elif self.argtype == "func":
             p = self.functionparent.first()
             return "" if p == None else p.get_outputtype()
@@ -1614,7 +1688,12 @@ class ConstructionVariable(models.Model):
             # Action depends on which type we have
             if self.type == "fixed":
                 # Look at the string value of [svalue]
-                sType = "int" if is_integer(self.svalue) else "str"
+                if is_integer(self.svalue):
+                    sType = "int"
+                elif is_boolean(self.svalue):
+                    sType = "bool"
+                else:
+                    sType = "str"
             elif self.type == "calc" and self.function != None:
                 # Take over the value from the function attached to me
                 sType = self.function.get_outputtype()
