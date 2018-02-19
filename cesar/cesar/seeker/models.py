@@ -64,6 +64,25 @@ def is_boolean(sInput):
         sInput = sInput.lower()
         return sInput == 'false' or sInput == 'true'
 
+def arg_matches(expected, actual):
+    """Does the actual argument match the expected one?"""
+
+    bMatch = (expected == actual)
+    # Check if no match
+    if not bMatch:
+        # If str is expected, then int or bool are okay
+        if expected == 'str':
+            bMatch = (actual == 'int' or actual == 'bool')
+        elif expected == 'clist':
+            # If [clist] expected, one single [cnst] is okay too
+            bMatch = (actual == 'cnst')
+        elif expected == 'cnst':
+            # If [cnst] expected, and we have a [clist], then that is okay, but we do need to take the FIRST
+            bMatch = (actual == 'clist')
+
+    return bMatch
+
+
 class SearchMain(models.Model):
     """The main search item defined for this gateway"""
 
@@ -416,6 +435,45 @@ class Gateway(models.Model):
           self.research.save()
       return response
 
+    def get_status(self):
+        """The status of a gateway consists of checking arguments for cvar, condition, feature"""
+
+        # Initialize
+        oStatus = {'status': "ok", 'msg': ''}
+        # Check all cvars
+        for cns in self.constructions.all():
+            for dvar in self.definitionvariables.all():
+                cvar = ConstructionVariable.objects.filter(construction=cns, variable=dvar).first()
+                if cvar != None:
+                    oCvarStatus = cvar.argcheck()
+                    if oCvarStatus != None and 'status' in oCvarStatus and oCvarStatus['status'] != "ok":
+                        # Adapt the status
+                        oStatus['status'] = "error"
+                        oStatus['msg'] = oCvarStatus['msg']
+                        # And immediately return the status
+                        return oStatus
+        # Check all conditions
+        for cnd in self.conditions.all():
+            if cnd != None:
+                oCondStatus = cnd.argcheck()
+                if oCondStatus != None and 'status' in oCondStatus and oCondStatus['status'] != "ok":
+                    # Adapt the status
+                    oStatus['status'] = "error"
+                    oStatus['msg'] = oCondStatus['msg']
+                    # And immediately return the status
+                    return oStatus
+        # Check all features
+        for feat in self.features.all():
+            if feat != None:
+                oFeatStatus = feat.argcheck()
+                if oFeatStatus != None and 'status' in oFeatStatus and oFeatStatus['status'] != "ok":
+                    # Adapt the status
+                    oStatus['status'] = "error"
+                    oStatus['msg'] = oFeatStatus['msg']
+                    # And immediately return the status
+                    return oStatus
+        return oStatus
+
 
 class Construction(models.Model):
     """A search construction consists of a [search] element and one or more search items"""
@@ -638,6 +696,10 @@ class FunctionDef(models.Model):
         cnt = Function.objects.filter(functiondef=self).count()
         return cnt
 
+    def get_arguments(self):
+        qs = self.arguments.all().select_related().order_by('order')
+        return qs
+
     def get_functions_with_type(obltype):
         """Get a queryset of functiondef objects returning [obltype]"""
 
@@ -698,9 +760,61 @@ class Function(models.Model):
     # [1] The value that is the outcome of this function
     #     This is a JSON list, so can be bool, int, string of any number
     output = models.TextField("JSON value", null=False, blank=True, default="[]")
+    # [1] Text-json to indicate the status of this 
+    status = models.TextField("Status", default="{}")
 
     def __str__(self):
         return "f_{}:{}".format(self.id,self.output)
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        # Any change in the function results in the status being set to 'stale'
+        myStatus = json.loads(self.status)
+        myStatus['status'] = "stale"
+        self.status = json.dumps(myStatus)
+        return super().save(force_insert, force_update, using, update_fields)
+
+    def set_status(self, sStatus):
+        """Set the status to the one indicated in [sStatus]"""
+
+        myStatus = json.loads(self.status)
+        myStatus['status'] = sStatus
+        self.status = json.dumps(myStatus)
+        self.save()
+
+    def argcheck(self):
+        """Check the argument-compatibility of this function"""
+
+        # Assume the best
+        oStatus = {'status': "ok", 'msg': ''}
+        myStatus = json.loads(self.status)
+        if not 'status' in myStatus or myStatus['status'] != "ok":
+            # Get all the arguments in the argdef order
+            arg_list = self.get_arguments()
+            # Get all the argument definitions for this functiondef in the argdef order
+            argdef_list = self.functiondef.get_arguments()
+            # Compare the numbers
+            if arg_list.count() != argdef_list.count():
+                oStatus['status'] = "error"
+                oStatus['msg'] = "Function [{}] of line {} has {} arguments, but {} are required".format(
+                    self.functiondef.name, self.line, arg_list.count(), argdef_list.count())
+            else:
+                # The argument number is okay, now check the type of each argument
+                for idx, arg in enumerate(arg_list):
+                    # Also get the argdef
+                    argdef = argdef_list[idx]
+                    # Check if the argdef type is equal to my own arg's type
+                    if argdef.obltype != None:
+                        # We need to compare types
+                        arg_outputtype = arg.get_outputtype()
+                        if not arg_matches(argdef.obltype, arg_outputtype):
+                        # if argdef.obltype != arg_outputtype:
+                            # Type mismatch
+                            oStatus['status'] = "error"
+                            oStatus['msg'] = "Function [{}], line {}, argument {}: argument type is {} but should be {}".format(
+                                self.functiondef.name, self.line+1, idx+1, arg_outputtype, argdef.obltype)
+                            # Break out of the for-loop
+                            break
+        return oStatus
 
     def get_output(self):
         """Calculate or return the stored output of me"""
@@ -1121,6 +1235,14 @@ class Argument(models.Model):
     def __str__(self):
         return "arg_{}".format(self.id)
 
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        response = super().save(force_insert, force_update, using, update_fields)
+        # Any change in the status of an argument results in the status of the function it belongs to changing
+        if self.function:
+            self.function.set_status('stale')
+        # Return the save response
+        return response
+
     def get_output(self):
         """Get or produce the JSON representing me"""
 
@@ -1465,8 +1587,6 @@ class Argument(models.Model):
             return "rcond"
         else:
             return ""
-
-
     
 
 class Relation(models.Model):
@@ -1510,11 +1630,55 @@ class ConstructionVariable(models.Model):
     function = models.OneToOneField(Function, null=True)
     # [0-1] If a function is supplied, then here's the place to define the function def to be used
     functiondef = models.ForeignKey(FunctionDef, null=True)
+    # [1] Text-json to indicate the status of this 
+    status = models.TextField("Status", default="{}")
 
     def __str__(self):
         sConstruction = self.construction.name
         sVariable = self.variable.name
         return "[{}|{}]".format(sConstruction, sVariable)
+
+    def argcheck(self):
+        """Check the argument-compatibility of this function"""
+
+        # Assume the best
+        oStatus = {'status': "ok", 'msg': ''}
+        # Check if status needs to be calculated
+        self.refresh_from_db()
+        myStatus = json.loads(self.status)
+        if not 'status' in myStatus or myStatus['status'] != "ok":
+            # first check if we have a function or not
+            if self.type == "func":
+                func_this = self.function
+                if func_this != None:
+                    # Get all functions that have this cvar as root
+                    function_list = Function.objects.filter(root=self)
+                    # Assume all is well
+                    bArgCheck = True
+                    for func in function_list:
+                        # Check this function
+                        oCheck = func_this.argcheck()
+                        if oCheck['status'] != "ok":
+                            # Copy the status and the message
+                            oStatus['status'] = "error"
+                            oStatus['msg'] = "Search construction {}, variable {}: {}".format(
+                                self.construction.name, self.variable.name, oCheck['msg'])
+                            # Do not look any further
+                            bArgCheck = False
+                            break
+                    # Make sure the status gets stored
+                    self.status = json.dumps(oStatus)
+                    self.save()
+
+        return oStatus
+
+    def set_status(self, sStatus):
+        """Set the status to the one indicated in [sStatus]"""
+
+        myStatus = json.loads(self.status)
+        myStatus['status'] = sStatus
+        self.status = json.dumps(myStatus)
+        self.save()
 
     def get_json(self):
         """Get the output of this feature in JSON form"""
@@ -1639,9 +1803,6 @@ class ConstructionVariable(models.Model):
             oBack['error'] = "cvar/get_code error" 
             return oBack
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        return super().save(force_insert, force_update, using, update_fields)
-
     def delete(self, using = None, keep_parents = False):
         """Delete a CVAR"""
 
@@ -1701,8 +1862,7 @@ class ConstructionVariable(models.Model):
                 sType = self.gvar.get_outputtype()
         # Return the type we found
         return sType
-
-
+    
     
 class Condition(models.Model):
     """Each research project may contain any number of conditions defining a search hit"""
@@ -1728,11 +1888,55 @@ class Condition(models.Model):
     include = models.CharField("Include", choices=build_abbr_list(SEARCH_INCLUDE), 
                               max_length=5, help_text=get_help(SEARCH_INCLUDE), default="true")
 
+    # [1] Text-json to indicate the status of this 
+    status = models.TextField("Status", default="{}")
     # [1] Every gateway has zero or more conditions it may look for
     gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="conditions")
 
     def __str__(self):
         return self.name
+
+    def argcheck(self):
+        """Check the argument-compatibility of this function"""
+
+        # Assume the best
+        oStatus = {'status': "ok", 'msg': ''}
+        # Check if status needs to be calculated
+        self.refresh_from_db()
+        myStatus = json.loads(self.status)
+        if not 'status' in myStatus or myStatus['status'] != "ok":
+            # first check if we have a function or not
+            if self.condtype == "func":
+                func_this = self.function
+                if func_this != None:
+                    # Get all functions that have this condition as root
+                    function_list = Function.objects.filter(rootcond=self)
+                    # Assume all is well
+                    bArgCheck = True
+                    for func in function_list:
+                        # Check this function
+                        oCheck = func_this.argcheck()
+                        if oCheck['status'] != "ok":
+                            # Copy the status and the message
+                            oStatus['status'] = "error"
+                            oStatus['msg'] = "Feature {}: {}".format(
+                                self.name, oCheck['msg'])
+                            # Do not look any further
+                            bArgCheck = False
+                            break
+                    # Make sure the status gets stored
+                    self.status = json.dumps(oStatus)
+                    self.save()
+
+        return oStatus
+
+    def set_status(self, sStatus):
+        """Set the status to the one indicated in [sStatus]"""
+
+        myStatus = json.loads(self.status)
+        myStatus['status'] = sStatus
+        self.status = json.dumps(myStatus)
+        self.save()
 
     def get_json(self):
         """Get the output of this feature in JSON form"""
@@ -1864,6 +2068,7 @@ class Condition(models.Model):
                 sType = self.variable.get_outputtype()
         return sType
 
+
 def get_function_main(function, format, cvar_until):
     """Get the function call in Xquery"""
 
@@ -1899,11 +2104,55 @@ class Feature(models.Model):
     include = models.CharField("Include", choices=build_abbr_list(SEARCH_INCLUDE), 
                               max_length=5, help_text=get_help(SEARCH_INCLUDE), default="true")
 
-    # [1] Every gateway has zero or more conditions it may look for
+    # [1] Boolean to indicate this feature has been checked
+    status = models.TextField("Status", default="{}")
+    # [1] Every gateway has zero or more output features
     gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="features")
 
     def __str__(self):
         return self.name
+
+    def argcheck(self):
+        """Check the argument-compatibility of this function"""
+
+        # Assume the best
+        oStatus = {'status': "ok", 'msg': ''}
+        # Check if status needs to be calculated
+        self.refresh_from_db()
+        myStatus = json.loads(self.status)
+        if not 'status' in myStatus or myStatus['status'] != "ok":
+            # first check if we have a function or not
+            if self.feattype == "func":
+                func_this = self.function
+                if func_this != None:
+                    # Get all functions that have this feature as root
+                    function_list = Function.objects.filter(rootfeat=self)
+                    # Assume all is well
+                    bArgCheck = True
+                    for func in function_list:
+                        # Check this function
+                        oCheck = func_this.argcheck()
+                        if oCheck['status'] != "ok":
+                            # Copy the status and the message
+                            oStatus['status'] = "error"
+                            oStatus['msg'] = "Feature {}: {}".format(
+                                self.name, oCheck['msg'])
+                            # Do not look any further
+                            bArgCheck = False
+                            break
+                    # Make sure the status gets stored
+                    self.status = json.dumps(oStatus)
+                    self.save()
+
+        return oStatus
+
+    def set_status(self, sStatus):
+        """Set the status to the one indicated in [sStatus]"""
+
+        myStatus = json.loads(self.status)
+        myStatus['status'] = sStatus
+        self.status = json.dumps(myStatus)
+        self.save()
 
     def get_json(self):
         """Get the output of this feature in JSON form"""
@@ -2034,7 +2283,6 @@ class Feature(models.Model):
                 # Get the first cvar attached to this dvar
                 sType = self.variable.get_outputtype()
         return sType
-
 
       
 class SearchItem(models.Model):
@@ -2215,6 +2463,14 @@ class Research(models.Model):
         try:
             # Clear the errors
             self.gateway.error_clear()
+
+            # Check the status = the functions and arguments
+            oArgStatus = self.gateway.get_status()
+            if oArgStatus != None and 'status' in oArgStatus and oArgStatus['status'] != "ok":
+                oBack['status'] = "error"
+                oBack['msg'] = oArgStatus['msg']
+                return oBack
+
             # Other initialisations
             bRefresh = True # Make sure that Xquery is calculated afresh
             basket = self.to_xquery(partId, sFormat, bRefresh, basket)
@@ -2236,7 +2492,8 @@ class Research(models.Model):
                 oBack['status'] = 'error'
                 return oBack
         except:
-            oBack['msg'] = 'Failed to convert project to Xquery'
+            sErr = oErr.get_error_message()
+            oBack['msg'] = 'Failed to convert project to Xquery: {}'.format(sErr)
             oBack['status'] = 'error'
             return oBack
         # Add basket to the return object, provided all went well
@@ -2275,7 +2532,10 @@ class Research(models.Model):
         oBack = self.to_crpx(partId, sFormat, basket)
 
         # Al okay?
-        if oBack['status'] == "error": return oBack
+        if oBack['status'] == "error": 
+            # Set the status of the basket to error
+            basket.set_status('error')
+            return oBack
 
         # GEt the basket
         # basket = oBack['basket']
@@ -2352,7 +2612,6 @@ class Research(models.Model):
             oBack['msg'] = oErr.DoError('Failed to send or execute the project to /crpp')
         # Return the status
         return oBack
-
 
 
 class Basket(models.Model):
