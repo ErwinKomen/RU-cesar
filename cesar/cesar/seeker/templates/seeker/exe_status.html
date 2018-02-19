@@ -48,7 +48,14 @@
       <code>{{msg}}</code>
     {% endif %}
     {% if error_jumpto %}
-      <p>Edit the <a href="{{error_jumpto}}">culprit</a></p>
+      <button type="button" 
+              class="btn btn-primary"
+              ajaxurl="{{error_jumpto}}"
+              jumptype="{{error_jumptype}}"
+              instanceid="{{error_jumpid}}"
+              onclick="ru.cesar.seeker.jumpto_item(this);">
+        Jump to the definition
+      </button>
     {% endif %}
   </div>
 {% elif statuscode == "completed" %}

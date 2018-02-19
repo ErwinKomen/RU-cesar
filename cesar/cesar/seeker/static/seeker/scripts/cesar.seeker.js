@@ -1578,7 +1578,7 @@ var ru = (function ($, ru) {
        *    Select one item from the research project wizard
        *
        */
-      research_wizard: function (el, sPart) {
+      research_wizard: function (el, sPart, bOnlyOpen) {
         var sTargetId = "research_container_",
             sTargetType = "",
             sObjectId = "",
@@ -1604,86 +1604,90 @@ var ru = (function ($, ru) {
           // Get the correct target id
           sTargetId = "#" + sTargetId + sPart;
           sObjectId = $("#researchid").text().trim();
-          sTargetType = $("#id_research-targetType").val();
-          // If it is undefined, try to get the target type from the input
-          if (sTargetType === undefined || sTargetType === "") {
-            sTargetType = $("#targettype").text().trim();
-            if (sTargetType === "") {
-              sTargetType = "w";  // Take words as default
+
+          if (bOnlyOpen === undefined || bOnlyOpen === false) {
+            sTargetType = $("#id_research-targetType").val();
+            // If it is undefined, try to get the target type from the input
+            if (sTargetType === undefined || sTargetType === "") {
+              sTargetType = $("#targettype").text().trim();
+              if (sTargetType === "") {
+                sTargetType = "w";  // Take words as default
+              }
             }
-          }
-          // Before continuing: has the targettype been chosen?
-          if (sPart !== "1") {
-            // Sanity check          
-            switch (sTargetType) {
-              case "w":
-              case "c":
-                private_methods.errClear();
-                break;
-              default:
-                // There really is no other option, so warn the user and do not change place
-                private_methods.errMsg("Choose the main element type");
-                // Stop waiting
-                private_methods.waitStop(elWait);
-                // If this comes from the main dashboard, show waiting over there
-                private_methods.mainWaitStop();
-                // We need to LEAVE at this point
-                return;
+            // Before continuing: has the targettype been chosen?
+            if (sPart !== "1") {
+              // Sanity check          
+              switch (sTargetType) {
+                case "w":
+                case "c":
+                  private_methods.errClear();
+                  break;
+                default:
+                  // There really is no other option, so warn the user and do not change place
+                  private_methods.errMsg("Choose the main element type");
+                  // Stop waiting
+                  private_methods.waitStop(elWait);
+                  // If this comes from the main dashboard, show waiting over there
+                  private_methods.mainWaitStop();
+                  // We need to LEAVE at this point
+                  return;
+              }
             }
-          }
-          // Find the currently shown 'research-part' form
-          frm = $(".research-part").not(".hidden").find("form");
-          // [1] Some (increasingly many) calls require FIRST saving of the currently loaded information
-          sMsg = "";
-          switch (sPart) {
-            case "42": sMsg = "4-before-42";
-            case "43": if (sMsg === "") sMsg = "42-before-43";
-            case "44": if (sMsg === "") sMsg = "43-before-44";
-            case "62": if (sMsg === "") sMsg = "6-before-62";
-            case "63": if (sMsg === "") sMsg = "62-before-63";
-            case "72": if (sMsg === "") sMsg = "7-before-72";
-            case "73": if (sMsg === "") sMsg = "72-before-73";
-              // Opening a new form requires prior processing of the current form
-              if (frm !== undefined) {
-                data = $(frm).serializeArray();
-                var button = $(frm).find(".submit-row .ajaxform");
-                if (button !== undefined) {
-                  // Indicate we are saving
-                  $(".save-warning").html("Processing... " + sMsg + loc_sWaiting);
-                  data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
-                  // Determine the URL
-                  sUrl = $(button).attr("ajaxurl");
-                  // Process this information: save the data!
-                  response = ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
-                  // Check the response
-                  if (response.status === undefined || response.status !== "ok") {
-                    // Action to undertake if we have not been successfull
-                    private_methods.errMsg("research_wizard[" + sPart + "]: could not save the data for this function");
-                    // Stop waiting
-                    private_methods.waitStop(elWait);
-                    // If this comes from the main dashboard, show waiting over there
-                    private_methods.mainWaitStop();
-                    // And leave...
-                    return;
+            // Find the currently shown 'research-part' form
+            frm = $(".research-part").not(".hidden").find("form");
+            // [1] Some (increasingly many) calls require FIRST saving of the currently loaded information
+            sMsg = "";
+            switch (sPart) {
+              case "42": sMsg = "4-before-42";
+              case "43": if (sMsg === "") sMsg = "42-before-43";
+              case "44": if (sMsg === "") sMsg = "43-before-44";
+              case "62": if (sMsg === "") sMsg = "6-before-62";
+              case "63": if (sMsg === "") sMsg = "62-before-63";
+              case "72": if (sMsg === "") sMsg = "7-before-72";
+              case "73": if (sMsg === "") sMsg = "72-before-73";
+                // Opening a new form requires prior processing of the current form
+                if (frm !== undefined) {
+                  data = $(frm).serializeArray();
+                  var button = $(frm).find(".submit-row .ajaxform");
+                  if (button !== undefined) {
+                    // Indicate we are saving
+                    $(".save-warning").html("Processing... " + sMsg + loc_sWaiting);
+                    data.push({ 'name': 'instanceid', 'value': $(button).attr("instanceid") });
+                    // Determine the URL
+                    sUrl = $(button).attr("ajaxurl");
+                    // Process this information: save the data!
+                    response = ru.cesar.seeker.ajaxcall(sUrl, data, "POST");
+                    // Check the response
+                    if (response.status === undefined || response.status !== "ok") {
+                      // Action to undertake if we have not been successfull
+                      private_methods.errMsg("research_wizard[" + sPart + "]: could not save the data for this function");
+                      // Stop waiting
+                      private_methods.waitStop(elWait);
+                      // If this comes from the main dashboard, show waiting over there
+                      private_methods.mainWaitStop();
+                      // And leave...
+                      return;
+                    }
                   }
                 }
-              }
-              break;
+                break;
+            }
+            switch (sPart) {
+              case "62":
+                // If a new condition has been created, then this is where we expect the instance number to appear
+                if ('cond_instanceid' in response) {
+                  $(el).attr("instanceid", response['cond_instanceid']);
+                }
+                break;
+              case "72":
+                // If a new feature has been created, then this is where we expect the instance number to appear
+                if ('feat_instanceid' in response) {
+                  $(el).attr("instanceid", response['feat_instanceid']);
+                }
+                break;
+            }
           }
-          switch (sPart) {
-            case "62":
-              // If a new condition has been created, then this is where we expect the instance number to appear
-              if ('cond_instanceid' in response) {
-                $(el).attr("instanceid", response['cond_instanceid']);
-              }
-              break;
-            case "72":
-              // If a new feature has been created, then this is where we expect the instance number to appear
-              if ('feat_instanceid' in response) {
-                $(el).attr("instanceid", response['feat_instanceid']);
-              }
-              break;
-          }
+
           // [2] Load the new form through an AJAX call
           data = [];
           switch (sPart) {
@@ -1923,17 +1927,41 @@ var ru = (function ($, ru) {
           // Set the 'action; attribute in the form
           frm.attr("action", ajaxurl);
           frm.submit();
-          //if (frm !== undefined) { data = $(frm).serializeArray(); }
-          //// Make an AJAX call to start the downloading
-          //response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "POST");
-          //if (response.status === undefined) {
-          //  // Show an error somewhere
-          //  private_methods.errMsg("Bad execute response");
-          //  $(sDivProgress).html("Bad execute response:<br>" + response);
-          //}
 
         } catch (ex) {
           private_methods.errMsg("search_download", ex);
+        }
+      },
+
+      /**
+       * jumpto_item
+       *   Jump to the indicated item
+       *
+       */
+      jumpto_item: function (el) {
+        var inst_type = "", // Instance type
+            sPart = "",
+            sUrl = "";      // URL to jump to
+
+        try {
+          if (el !== undefined) {
+            inst_type = $(el).attr("jumptype");
+            sUrl = $(el).attr("ajaxurl");
+            if (inst_type !== undefined && inst_type !== "" && 
+                sUrl !== undefined && sUrl !== "") {
+              switch (inst_type) {
+                case "cvar": sPart = "43"; break;
+                case "cond": sPart = "62"; break;
+                case "feat": sPart = "72"; break;
+              }
+              if (sPart !== "") {
+                // Ask the wizard to open appropriately
+                ru.cesar.seeker.research_wizard(el, sPart, true);
+              }
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("jumpto_item", ex);
         }
       },
 

@@ -412,20 +412,22 @@ class ResearchExe(View):
                             context['msg_list'] = oBack['msg_list']
                         context['msg'] = oBack['msg']
                         # If we have an instance, then provide that in the context
-                        if 'instance' in oBack and 'type' in oBack:
+                        if 'id' in oBack and 'type' in oBack:
                             # Get the type and the instance
                             inst_type = oBack['type']
-                            inst = oBack['instance']
+                            inst_id = oBack['id']
+                            context['error_jumptype'] = inst_type
+                            context['error_jumpid'] = inst_id
                             # Provide a jump to the correction of the function
                             if inst_type == "feat":
                                 # Jump to 72 with the correct object_id
-                                context['error_jumpto'] = reverse("research_part_72", kwargs={'object_id': inst.id})
+                                context['error_jumpto'] = reverse("research_part_72", kwargs={'object_id': inst_id})
                             elif inst_type == "cond":
                                 # Jump to a condition
-                                context['error_jumpto'] = reverse("research_part_62", kwargs={'object_id': inst.id})
+                                context['error_jumpto'] = reverse("research_part_62", kwargs={'object_id': inst_id})
                             elif inst_type == "cvar":
                                 # Jump to a construction variable
-                                context['error_jumpto'] = reverse("research_part_43", kwargs={'object_id': inst.id})
+                                context['error_jumpto'] = reverse("research_part_43", kwargs={'object_id': inst_id})
 
                 elif self.action == "stop":
                     # Need to stop the execution of the project
@@ -671,6 +673,7 @@ class ResearchProgress(ResearchExe):
 
 class ResearchDownload(ResearchExe):
     MainModel = Research
+    template_name = "seeker/exe_status.html"
     action = "download"
 
 

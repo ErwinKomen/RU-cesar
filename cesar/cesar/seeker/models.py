@@ -440,51 +440,58 @@ class Gateway(models.Model):
 
         # Initialize
         oStatus = {'status': "ok", 'msg': ''}
-        # Check all cvars
-        for cns in self.constructions.all():
-            for dvar in self.definitionvariables.all():
-                cvar = ConstructionVariable.objects.filter(construction=cns, variable=dvar).first()
-                if cvar != None:
-                    oCvarStatus = cvar.argcheck()
-                    if oCvarStatus != None and 'status' in oCvarStatus and oCvarStatus['status'] != "ok":
+        oErr = ErrHandle()
+        try:
+            # Check all cvars
+            for cns in self.constructions.all():
+                for dvar in self.definitionvariables.all():
+                    cvar = ConstructionVariable.objects.filter(construction=cns, variable=dvar).first()
+                    if cvar != None:
+                        oCvarStatus = cvar.argcheck()
+                        if oCvarStatus != None and 'status' in oCvarStatus and oCvarStatus['status'] != "ok":
+                            # Adapt the status
+                            oStatus['status'] = "error"
+                            oStatus['msg'] = oCvarStatus['msg']
+                            if 'type' in oCvarStatus:
+                                oStatus['type'] = oCvarStatus['type']
+                            if 'id' in oCvarStatus:
+                                oStatus['id'] = oCvarStatus['id']
+                            # And immediately return the status
+                            return oStatus
+            # Check all conditions
+            for cnd in self.conditions.all():
+                if cnd != None:
+                    oCondStatus = cnd.argcheck()
+                    if oCondStatus != None and 'status' in oCondStatus and oCondStatus['status'] != "ok":
                         # Adapt the status
                         oStatus['status'] = "error"
-                        oStatus['msg'] = oCvarStatus['msg']
-                        if 'type' in oCvarStatus:
-                            oStatus['type'] = oCvarStatus['type']
-                        if 'instance' in oCvarStatus:
-                            oStatus['instance'] = oCvarStatus['instance']
+                        oStatus['msg'] = oCondStatus['msg']
+                        if 'type' in oCondStatus:
+                            oStatus['type'] = oCondStatus['type']
+                        if 'id' in oCondStatus:
+                            oStatus['id'] = oCondStatus['id']
                         # And immediately return the status
                         return oStatus
-        # Check all conditions
-        for cnd in self.conditions.all():
-            if cnd != None:
-                oCondStatus = cnd.argcheck()
-                if oCondStatus != None and 'status' in oCondStatus and oCondStatus['status'] != "ok":
-                    # Adapt the status
-                    oStatus['status'] = "error"
-                    oStatus['msg'] = oCondStatus['msg']
-                    if 'type' in oCondStatus:
-                        oStatus['type'] = oCondStatus['type']
-                    if 'instance' in oCondStatus:
-                        oStatus['instance'] = oCondStatus['instance']
-                    # And immediately return the status
-                    return oStatus
-        # Check all features
-        for feat in self.features.all():
-            if feat != None:
-                oFeatStatus = feat.argcheck()
-                if oFeatStatus != None and 'status' in oFeatStatus and oFeatStatus['status'] != "ok":
-                    # Adapt the status
-                    oStatus['status'] = "error"
-                    oStatus['msg'] = oFeatStatus['msg']
-                    if 'type' in oFeatStatus:
-                        oStatus['type'] = oFeatStatus['type']
-                    if 'instance' in oFeatStatus:
-                        oStatus['instance'] = oFeatStatus['instance']
-                    # And immediately return the status
-                    return oStatus
-        return oStatus
+            # Check all features
+            for feat in self.features.all():
+                if feat != None:
+                    oFeatStatus = feat.argcheck()
+                    if oFeatStatus != None and 'status' in oFeatStatus and oFeatStatus['status'] != "ok":
+                        # Adapt the status
+                        oStatus['status'] = "error"
+                        oStatus['msg'] = oFeatStatus['msg']
+                        if 'type' in oFeatStatus:
+                            oStatus['type'] = oFeatStatus['type']
+                        if 'id' in oFeatStatus:
+                            oStatus['id'] = oFeatStatus['id']
+                        # And immediately return the status
+                        return oStatus
+            return oStatus
+        except:
+            sMsg = oErr.get_error_message()
+            oStatus['status'] = "error"
+            oStatus['msg'] = sMsg
+            return oStatus
 
 
 class Construction(models.Model):
@@ -1676,7 +1683,7 @@ class ConstructionVariable(models.Model):
                             oStatus['msg'] = "Search construction {}, variable {}: {}".format(
                                 self.construction.name, self.variable.name, oCheck['msg'])
                             oStatus['type'] = 'cvar'
-                            oStatus['instance'] = self
+                            oStatus['id'] = self.id
                             # Do not look any further
                             bArgCheck = False
                             break
@@ -1936,7 +1943,7 @@ class Condition(models.Model):
                             oStatus['msg'] = "Feature {}: {}".format(
                                 self.name, oCheck['msg'])
                             oStatus['type'] = 'cond'
-                            oStatus['instance'] = self
+                            oStatus['id'] = self.id
                             # Do not look any further
                             bArgCheck = False
                             break
@@ -2133,36 +2140,43 @@ class Feature(models.Model):
 
         # Assume the best
         oStatus = {'status': "ok", 'msg': ''}
-        # Check if status needs to be calculated
-        self.refresh_from_db()
-        myStatus = json.loads(self.status)
-        if not 'status' in myStatus or myStatus['status'] != "ok":
-            # first check if we have a function or not
-            if self.feattype == "func":
-                func_this = self.function
-                if func_this != None:
-                    # Get all functions that have this feature as root
-                    function_list = Function.objects.filter(rootfeat=self)
-                    # Assume all is well
-                    bArgCheck = True
-                    for func in function_list:
-                        # Check this function
-                        oCheck = func_this.argcheck()
-                        if oCheck['status'] != "ok":
-                            # Copy the status and the message
-                            oStatus['status'] = "error"
-                            oStatus['msg'] = "Feature {}: {}".format(
-                                self.name, oCheck['msg'])
-                            oStatus['type'] = 'feat'
-                            oStatus['instance'] = self
-                            # Do not look any further
-                            bArgCheck = False
-                            break
-                    # Make sure the status gets stored
-                    self.status = json.dumps(oStatus)
-                    self.save()
+        oErr = ErrHandle()
+        try:
+            # Check if status needs to be calculated
+            self.refresh_from_db()
+            myStatus = json.loads(self.status)
+            if not 'status' in myStatus or myStatus['status'] != "ok":
+                # first check if we have a function or not
+                if self.feattype == "func":
+                    func_this = self.function
+                    if func_this != None:
+                        # Get all functions that have this feature as root
+                        function_list = Function.objects.filter(rootfeat=self)
+                        # Assume all is well
+                        bArgCheck = True
+                        for func in function_list:
+                            # Check this function
+                            oCheck = func_this.argcheck()
+                            if oCheck['status'] != "ok":
+                                # Copy the status and the message
+                                oStatus['status'] = "error"
+                                oStatus['msg'] = "Feature {}: {}".format(
+                                    self.name, oCheck['msg'])
+                                oStatus['type'] = 'feat'
+                                oStatus['id'] = self.id
+                                # Do not look any further
+                                bArgCheck = False
+                                break
+                        # Make sure the status gets stored
+                        self.status = json.dumps(oStatus)
+                        self.save()
 
-        return oStatus
+            return oStatus
+        except:
+            sMsg = oErr.get_error_message()
+            oStatus['status'] = "error"
+            oStatus['msg'] = sMsg
+            return oStatus
 
     def set_status(self, sStatus):
         """Set the status to the one indicated in [sStatus]"""
@@ -2489,8 +2503,8 @@ class Research(models.Model):
                 oBack['msg'] = oArgStatus['msg']
                 if 'type' in oArgStatus:
                     oBack['type'] = oArgStatus['type']
-                if 'instance' in oArgStatus:
-                    oBack['instance'] = oArgStatus['instance']
+                if 'id' in oArgStatus:
+                    oBack['id'] = oArgStatus['id']
                 return oBack
 
             # Other initialisations
@@ -2514,8 +2528,12 @@ class Research(models.Model):
                 oBack['status'] = 'error'
                 return oBack
         except:
+            msg_list = []
+            msg_list.append("Failed to convert project to Xquery. Python error:")
             sErr = oErr.get_error_message()
-            oBack['msg'] = 'Failed to convert project to Xquery: {}'.format(sErr)
+            msg_list.append(sErr)
+            oBack['msg_list'] = msg_list
+            oBack['msg'] = " ".join(msg_list)
             oBack['status'] = 'error'
             return oBack
         # Add basket to the return object, provided all went well
