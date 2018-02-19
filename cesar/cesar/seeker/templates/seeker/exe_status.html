@@ -47,6 +47,9 @@
     {% else %}
       <code>{{msg}}</code>
     {% endif %}
+    {% if error_jumpto %}
+      <p>Edit the <a href="{{error_jumpto}}">culprit</a></p>
+    {% endif %}
   </div>
 {% elif statuscode == "completed" %}
   <div class='col-md-12'>

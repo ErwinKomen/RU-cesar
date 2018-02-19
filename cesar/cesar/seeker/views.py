@@ -411,6 +411,22 @@ class ResearchExe(View):
                         if 'msg_list' in oBack:
                             context['msg_list'] = oBack['msg_list']
                         context['msg'] = oBack['msg']
+                        # If we have an instance, then provide that in the context
+                        if 'instance' in oBack and 'type' in oBack:
+                            # Get the type and the instance
+                            inst_type = oBack['type']
+                            inst = oBack['instance']
+                            # Provide a jump to the correction of the function
+                            if inst_type == "feat":
+                                # Jump to 72 with the correct object_id
+                                context['error_jumpto'] = reverse("research_part_72", kwargs={'object_id': inst.id})
+                            elif inst_type == "cond":
+                                # Jump to a condition
+                                context['error_jumpto'] = reverse("research_part_62", kwargs={'object_id': inst.id})
+                            elif inst_type == "cvar":
+                                # Jump to a construction variable
+                                context['error_jumpto'] = reverse("research_part_43", kwargs={'object_id': inst.id})
+
                 elif self.action == "stop":
                     # Need to stop the execution of the project
                     x=2

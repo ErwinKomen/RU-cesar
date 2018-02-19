@@ -450,6 +450,10 @@ class Gateway(models.Model):
                         # Adapt the status
                         oStatus['status'] = "error"
                         oStatus['msg'] = oCvarStatus['msg']
+                        if 'type' in oCvarStatus:
+                            oStatus['type'] = oCvarStatus['type']
+                        if 'instance' in oCvarStatus:
+                            oStatus['instance'] = oCvarStatus['instance']
                         # And immediately return the status
                         return oStatus
         # Check all conditions
@@ -460,6 +464,10 @@ class Gateway(models.Model):
                     # Adapt the status
                     oStatus['status'] = "error"
                     oStatus['msg'] = oCondStatus['msg']
+                    if 'type' in oCondStatus:
+                        oStatus['type'] = oCondStatus['type']
+                    if 'instance' in oCondStatus:
+                        oStatus['instance'] = oCondStatus['instance']
                     # And immediately return the status
                     return oStatus
         # Check all features
@@ -470,6 +478,10 @@ class Gateway(models.Model):
                     # Adapt the status
                     oStatus['status'] = "error"
                     oStatus['msg'] = oFeatStatus['msg']
+                    if 'type' in oFeatStatus:
+                        oStatus['type'] = oFeatStatus['type']
+                    if 'instance' in oFeatStatus:
+                        oStatus['instance'] = oFeatStatus['instance']
                     # And immediately return the status
                     return oStatus
         return oStatus
@@ -1663,6 +1675,8 @@ class ConstructionVariable(models.Model):
                             oStatus['status'] = "error"
                             oStatus['msg'] = "Search construction {}, variable {}: {}".format(
                                 self.construction.name, self.variable.name, oCheck['msg'])
+                            oStatus['type'] = 'cvar'
+                            oStatus['instance'] = self
                             # Do not look any further
                             bArgCheck = False
                             break
@@ -1921,6 +1935,8 @@ class Condition(models.Model):
                             oStatus['status'] = "error"
                             oStatus['msg'] = "Feature {}: {}".format(
                                 self.name, oCheck['msg'])
+                            oStatus['type'] = 'cond'
+                            oStatus['instance'] = self
                             # Do not look any further
                             bArgCheck = False
                             break
@@ -2137,6 +2153,8 @@ class Feature(models.Model):
                             oStatus['status'] = "error"
                             oStatus['msg'] = "Feature {}: {}".format(
                                 self.name, oCheck['msg'])
+                            oStatus['type'] = 'feat'
+                            oStatus['instance'] = self
                             # Do not look any further
                             bArgCheck = False
                             break
@@ -2469,6 +2487,10 @@ class Research(models.Model):
             if oArgStatus != None and 'status' in oArgStatus and oArgStatus['status'] != "ok":
                 oBack['status'] = "error"
                 oBack['msg'] = oArgStatus['msg']
+                if 'type' in oArgStatus:
+                    oBack['type'] = oArgStatus['type']
+                if 'instance' in oArgStatus:
+                    oBack['instance'] = oArgStatus['instance']
                 return oBack
 
             # Other initialisations
