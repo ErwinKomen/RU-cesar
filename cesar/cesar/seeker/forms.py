@@ -168,19 +168,6 @@ class VarDefForm(ModelForm):
         # Initial validation
         valid = super(VarDefForm, self).is_valid()
 
-        #if valid: 
-        #    # Double check the order
-        #    oErr = ErrHandle()
-        #    valid = True
-        #    # Make sure we get the cleaned_data
-        #    cd = self.cleaned_data  # The cleaned data
-        #    obj = self.instance     # This is a VarDef instance
-        #    # Check the order
-        #    valid, sMsg = obj.check_order(cd['ORDER'])
-        #    if not valid:
-        #        # Do something
-        #        raise forms.ValidationError(sMsg)
-
         # Return the final validation
         return valid
 

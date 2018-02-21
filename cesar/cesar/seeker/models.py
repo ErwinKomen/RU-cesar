@@ -647,7 +647,8 @@ class VarDef(Variable):
 
         # Has the order changed?
         bValid = True
-        if order != self.order:
+        # Note: Right now we are *ALWAYS* checking the order!!!
+        if order != self.order or True:
             # The order is being changed, so check all the actual construction variable pointing to me
             for cvar in ConstructionVariable.objects.filter(variable=self).order_by('variable__order'):
                 # Is this a function?
