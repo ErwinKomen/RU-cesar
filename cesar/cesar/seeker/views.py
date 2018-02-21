@@ -1343,6 +1343,18 @@ class Variable43(ResearchPart):
     """The definition of one particular variable"""
 
     MainModel = ConstructionVariable
+    template_name = 'seeker/variable_view.html'
+
+    def add_to_context(self, context):
+        # Provide the top function
+        context['function'] = self.obj.function
+        return context
+
+
+class Variable43_original(ResearchPart):
+    """The definition of one particular variable"""
+
+    MainModel = ConstructionVariable
     template_name = 'seeker/variable_details.html'
 
     def add_to_context(self, context):

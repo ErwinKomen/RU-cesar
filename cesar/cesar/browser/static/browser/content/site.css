@@ -698,3 +698,21 @@ table.err-view th {
   background-color: darkgreen;
   color: white;
 }
+
+table.func-view {
+  border: 1px solid brown;
+  background-color: lightgray;
+  margin-top: 0px;
+}
+table.func-view td {
+  border: 1px solid white;
+  font-size: 12px;
+}
+td.function-name {
+  background-color: darkgreen;
+  color: white;
+}
+td.arg-text {
+  background-color: lightgray;
+  color: darkblue;
+}

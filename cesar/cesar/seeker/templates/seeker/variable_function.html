@@ -1,0 +1,18 @@
+﻿{% load i18n %}
+
+<table class="func-view">
+  <tr><td colspan="2" class="function-name">{{function.functiondef.name}}</td></tr>
+  {% for arg_this in function.get_arguments %}
+    {% if arg_this.argtype == 'func' %}
+      <tr><td colspan="2" class="arg-text">{{arg_this.argumentdef.text}}</td></tr>
+      <tr>
+        <td style="width: 10px;"></td>
+        <td>
+          {% include 'seeker/variable_function.html' with function=arg_this.get_function_child %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="2">{{arg_this.argumentdef.text}} <code>{{arg_this.get_view}}</code></td></tr>
+    {% endif %}
+  {% endfor %}
+</table>

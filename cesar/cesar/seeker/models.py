@@ -1286,6 +1286,14 @@ class Argument(models.Model):
     def __str__(self):
         return "arg_{}".format(self.id)
 
+    def get_function_child(self):
+        """Get the function child pointing to me"""
+
+        func = None
+        if self.argtype == "func":
+            func = self.functionparent.all().first()
+        return func
+
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         response = super().save(force_insert, force_update, using, update_fields)
         # Any change in the status of an argument results in the status of the function it belongs to changing
@@ -1877,20 +1885,10 @@ class ConstructionVariable(models.Model):
         func_list = []
         # Only works for the correct type
         if self.type == "calc":
-            func_this = self.function
-            if func_this != None:
-                # Add function to list
-                func_list.append(func_this)
-                # Walk all arguments
-                for arg_this in func_this.functionarguments.all():
-                    # CHeck if this is a function argument
-                    if arg_this.argtype == "func":
-                        # Then add the function pointed to by the argument
-                        arg_func = arg_this.functionparent.first()
-                        if arg_func != None:
-                            arg_func_list = arg_func.get_functions()
-                            for func in arg_func_list:
-                                func_list.append(func)
+
+            # Get all the functions pointing to me
+            func_list = Function.objects.filter(root=self).order_by('line')
+
         return func_list
 
     def get_outputtype(self):
@@ -2095,20 +2093,10 @@ class Condition(models.Model):
         func_list = []
         # Only works for the correct type
         if self.condtype == "func":
-            func_this = self.function
-            if func_this != None:
-                # Add function to list
-                func_list.append(func_this)
-                # Walk all arguments
-                for arg_this in func_this.functionarguments.all():
-                    # CHeck if this is a function argument
-                    if arg_this.argtype == "func":
-                        # Then add the function pointed to by the argument
-                        arg_func = arg_this.functionparent.first()
-                        if arg_func != None:
-                            arg_func_list = arg_func.get_functions()
-                            for func in arg_func_list:
-                                func_list.append(func)
+
+            # Get all the functions pointing to me
+            func_list = Function.objects.filter(rootcond=self).order_by('line')
+
         return func_list
 
     def get_outputtype(self):
@@ -2320,20 +2308,10 @@ class Feature(models.Model):
         func_list = []
         # Only works for the correct type
         if self.feattype == "func":
-            func_this = self.function
-            if func_this != None:
-                # Add function to list
-                func_list.append(func_this)
-                # Walk all arguments
-                for arg_this in func_this.functionarguments.all():
-                    # CHeck if this is a function argument
-                    if arg_this.argtype == "func":
-                        # Then add the function pointed to by the argument
-                        arg_func = arg_this.functionparent.first()
-                        if arg_func != None:
-                            arg_func_list = arg_func.get_functions()
-                            for func in arg_func_list:
-                                func_list.append(func)
+
+            # Get all the functions pointing to me
+            func_list = Function.objects.filter(rootfeat=self).order_by('line')
+
         return func_list
 
     def get_outputtype(self):
