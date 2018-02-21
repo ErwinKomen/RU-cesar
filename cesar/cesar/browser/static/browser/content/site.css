@@ -685,3 +685,16 @@ body > div > footer a {
   font-size: small;
   color: darkblue;
 }
+
+table.err-view {
+  border: 1px solid white;
+  background-color: lightgray;
+}
+table.err-view td {
+  border: 1px solid white;
+}
+table.err-view th {
+  border: 1px solid white;
+  background-color: darkgreen;
+  color: white;
+}

@@ -3,6 +3,7 @@ Definition of forms for the SEEKER app.
 """
 
 from django import forms
+#from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import ModelForm, formset_factory, modelformset_factory
 from django.forms.widgets import Textarea
@@ -163,12 +164,38 @@ class VarDefForm(ModelForm):
 
     def is_valid(self):
         """Return true if this form is valid"""
+
+        # Initial validation
         valid = super(VarDefForm, self).is_valid()
+
+        #if valid: 
+        #    # Double check the order
+        #    oErr = ErrHandle()
+        #    valid = True
+        #    # Make sure we get the cleaned_data
+        #    cd = self.cleaned_data  # The cleaned data
+        #    obj = self.instance     # This is a VarDef instance
+        #    # Check the order
+        #    valid, sMsg = obj.check_order(cd['ORDER'])
+        #    if not valid:
+        #        # Do something
+        #        raise forms.ValidationError(sMsg)
+
+        # Return the final validation
         return valid
 
     def clean_variable_ptr(self):
         data = self.cleaned_data['variable_ptr']
 
+    def check_order(self):
+        # Initialisations
+        oErr = ErrHandle()
+        valid = True
+        # Make sure we get the cleaned_data
+        cd = self.cleaned_data  # The cleaned data
+        obj = self.instance     # This is a VarDef instance
+        # Check the order
+        return obj.check_order(cd['ORDER'])
 
 
 class CvarForm(ModelForm):

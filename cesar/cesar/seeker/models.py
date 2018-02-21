@@ -605,7 +605,7 @@ class VarDef(Variable):
         # Now delete myself
         result = super().delete(using, keep_parents)
         # re-order the dvar collection under this gateway
-        gateway.order_dvar()
+        self.gateway.order_dvar()
         # Return the result
         return result
 
@@ -639,6 +639,37 @@ class VarDef(Variable):
         # Recombine into a new list
         return VarDef.objects.filter(Q(id__in=dvar_list)).order_by('order')
 
+    def check_order(self, order):
+        """Find out whether the [order] differs from the current [order], and if so, is it okay?"""
+
+        if order == None or not isinstance(order, int):
+            return False, ""
+
+        # Has the order changed?
+        bValid = True
+        if order != self.order:
+            # The order is being changed, so check all the actual construction variable pointing to me
+            for cvar in ConstructionVariable.objects.filter(variable=self).order_by('variable__order'):
+                # Is this a function?
+                if cvar.type == 'calc':
+                    # Get a list of all functions used for this cvar
+                    func_list = Function.objects.filter(root=cvar)
+                    for func in func_list:
+                        # Visit all arguments of this function that point to a dvar
+                        for idx, arg in enumerate(Argument.objects.filter(function=func, argtype='dvar').order_by('argumentdef__order')):
+                            # Check out the order of this dvar
+                            dvar = arg.dvar
+                            if dvar.order > order:
+                                # We have an argument order problem - report this
+                                #sMsg = "The function defined for variable {} moving from {} to position {} refers to variable {} at a later position {}".format(
+                                #    self.name, self.order, order, dvar.name, dvar.order)
+                                sMsg = "The definition of variable {} at position {} has a function [{}] whose argument #{} refers to variable {} at a later position {}".format(
+                                    self.name, order, func.functiondef.name, idx+1, dvar.name, dvar.order)
+                                return False, sMsg
+
+
+        # Return our verdict
+        return bValid, ""
 
 
 class GlobalVariable(Variable):

@@ -1,0 +1,13 @@
+﻿{% load i18n %}
+
+      {% if error_list %}
+      <p>Saving is not possible. First correct the errors below. (Correcting the first error may resolve the remainder.)</p>
+      <table class="err-view">
+        <thead><tr><th>#</th><th>Error</th></tr></thead>
+        <tbody>
+          {% for item in error_list %}
+          <tr><td>{{forloop.counter}}</td><td>{{item}}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}

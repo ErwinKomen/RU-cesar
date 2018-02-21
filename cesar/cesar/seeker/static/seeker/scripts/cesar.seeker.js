@@ -146,6 +146,8 @@ var ru = (function ($, ru) {
       },
       errMsg: function (sMsg, ex) {
         var sHtml = "";
+        // Replace newlines by breaks
+        sMsg = sMsg.replace(/\n/g, "\n<br>");
         if (ex === undefined) {
           sHtml = "Error: " + sMsg;
         } else {
@@ -316,6 +318,7 @@ var ru = (function ($, ru) {
       ajaxform_click: function () {
         var data = [],      // Array to store the POST data
             extra = [],     // Additional data
+            elErr = null,   // The 'research_err' component under the <form>
             i,
             elCall = this,
             response = null,
@@ -385,15 +388,24 @@ var ru = (function ($, ru) {
             }
           }
           // Check whether we need to show the error response
-          if ('has_errors' in response) {
-            // Yes, show the resulting form with the errors
-            $(elOpen).html(response.html);
+          if ('has_errors' in response && response.has_errors) {
+            // See if there is a 'research_err' component under the <form>
+            elErr = $(this).closest("form").find("#research_err").first();
+            // Do we have an 'err_view' html contents?
+            if ('err_view' in response && elErr !== null) {
+              $(elErr).html(response.err_view);
+            } else {
+              // Yes, show the resulting form with the errors
+              $(elOpen).html(response.html);
+            }
             // Make sure events are set again
             ru.cesar.seeker.init_events();
             // Bind the click event to all class="ajaxform" elements
             $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
             // Stop waiting
             private_methods.waitStop(elWait);
+            // Show that errors need to be repaired
+            $(".save-warning").html("(not saved; there are errors)");
             // And return
             return;
           }
@@ -1061,7 +1073,7 @@ var ru = (function ($, ru) {
           // Check out the buttons
           if (divUp.length === 0) {
             // Create an UP button
-            $(divSubmit).prepend("<span class='btn btn-primary row-up glyphicon glyphicon-chevron-up'></span>");
+            $(divSubmit).prepend("<span class='btn btn-primary row-up glyphicon glyphicon-chevron-up' title='move upwards'></span>");
             divUp = $(divSubmit).find("span.row-up").first();
             // bind click event
             $(divUp).on("click", function () {
@@ -1070,7 +1082,7 @@ var ru = (function ($, ru) {
           }
           if (divDown.length === 0) {
             // create a DOWN button
-            $(divSubmit).prepend("<span class='btn btn-primary row-down glyphicon glyphicon-chevron-down'></span>");
+            $(divSubmit).prepend("<span class='btn btn-primary row-down glyphicon glyphicon-chevron-down' title='move downwards'></span>");
             divDown = $(divSubmit).find("span.row-down").first();
             // bind click event
             $(divDown).on("click", function () {

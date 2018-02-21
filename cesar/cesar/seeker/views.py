@@ -365,20 +365,6 @@ class ResearchExe(View):
                         basket.status = "prepared"
                         basket.jobid = ""
                         basket.save()
-                        #lstQ = []
-                        #lstQ.append(Q(research=research))
-                        #lstQ.append(Q(format=select_format))
-                        #lstQ.append(Q(part=part))
-                        #basket = Basket.objects.filter(*lstQ).first()
-                        #if basket == None:
-                        #    # Create a new basket
-                        #    basket = Basket(research=research, part=part, format=select_format, status="prepared", jobid="")
-                        #else:
-                        #    # Make sure the status is correct
-                        #    basket.status = "prepared"
-                        #    basket.jobid = ""
-                        ## Save it 
-                        #basket.save()
                         context['statuscode'] = "prepared"
                         self.data['status'] = "prepared"
                         self.data['basket_id'] = basket.id
@@ -681,6 +667,7 @@ class ResearchPart(View):
     # Initialisations:     
     arErr = []              # errors   
     template_name = None    # The template to be used
+    template_err_view = None
     form_validated = True   # Used for POST form validation
     savedate = None         # When saving information, the savedate is returned in the context
     add = False             # Are we adding a new record or editing an existing one?
@@ -726,7 +713,7 @@ class ResearchPart(View):
                     # Adapt if it is not readonly
                     if not formObj['readonly']:
                         # Check validity of form
-                        if formObj['forminstance'].is_valid():
+                        if formObj['forminstance'].is_valid() and self.is_custom_valid(prefix, formObj['forminstance']):
                             # Save it preliminarily
                             instance = formObj['forminstance'].save(commit=False)
                             # The instance must be made available (even though it is only 'preliminary')
@@ -781,7 +768,7 @@ class ResearchPart(View):
                                 # Walk all the forms in the formset
                                 for form in formset:
                                     # At least check for validity
-                                    if form.is_valid():
+                                    if form.is_valid() and self.is_custom_valid(prefix, form):
                                         # Should we delete?
                                         if form.cleaned_data['DELETE']:
                                             # Delete this one
@@ -805,9 +792,14 @@ class ResearchPart(View):
                                                 # Store the instance id in the data
                                                 self.data[prefix + '_instanceid'] = instance.id
                                     else:
-                                        self.arErr.append(form.errors)
+                                        if len(form.errors) > 0:
+                                            self.arErr.append(form.errors)
                         else:
-                            self.arErr.append(formset.errors)
+                            # Iterate over all errors
+                            for err_this in formset.errors:
+                                if '__all__' in err_this:
+                                    self.arErr.append(err_this['__all__'][0])
+                            # self.arErr.append(formset.errors)
                     # Add the formset to the context
                     context[prefix + "_formset"] = formset
             elif self.action == "download":
@@ -857,11 +849,20 @@ class ResearchPart(View):
             context['error_list'] = error_list
             context['errors'] = self.arErr
             if len(self.arErr) > 0:
+                # Indicate that we have errors
                 self.data['has_errors'] = True
+            else:
+                self.data['has_errors'] = False
             # Standard: add request user to context
             context['requestuser'] = request.user
+
             # Get the HTML response
-            self.data['html'] = render_to_string(self.template_name, context, request)
+            if len(self.arErr) > 0 and self.template_err_view != None:
+                 # Create a list of errors
+                self.data['err_view'] = render_to_string(self.template_err_view, context, request)
+                self.data['html'] = ''
+            else:
+                self.data['html'] = render_to_string(self.template_name, context, request)
         else:
             self.data['html'] = "Please log in before continuing"
 
@@ -967,6 +968,9 @@ class ResearchPart(View):
 
     def get_instance(self, prefix):
         return self.obj
+
+    def is_custom_valid(self, prefix, form):
+        return True
 
     def get_queryset(self, prefix):
         return None
@@ -1151,6 +1155,7 @@ class ResearchPart3(ResearchPart):
 
 class ResearchPart4(ResearchPart):
     template_name = 'seeker/research_part_4.html'
+    template_err_view = 'seeker/err_view.html'
     MainModel = Research
     VardefFormSet = inlineformset_factory(Gateway, VarDef, 
                                           form=VarDefForm, min_num=1, extra=0, 
@@ -1178,6 +1183,13 @@ class ResearchPart4(ResearchPart):
         context['new_order_number'] = len(self.obj.gateway.definitionvariables.all())
         return context
 
+    def get_queryset(self, prefix):
+        if prefix == "vardef":
+            qs = self.obj.gateway.definitionvariables.all().order_by('order')
+        else:
+            qs = super(ResearchPart4, self).get_queryset(prefix)
+        return qs
+
     def process_formset(self, prefix, request, formset):
         if prefix == 'vardef':
             # Sorting: see https://wiki.python.org/moin/HowTo/Sorting
@@ -1188,6 +1200,16 @@ class ResearchPart4(ResearchPart):
             return ordered_forms
         else:
             return None
+
+    def is_custom_valid(self, prefix, form):
+        if prefix == "vardef":
+            valid, sMsg = form.check_order()
+            if not valid:
+                # Add the message to the error log
+                self.arErr.append(sMsg)
+        else:
+            valid = super(ResearchPart4, self).is_custom_valid(prefix, form)
+        return valid
 
     def before_save(self, prefix, request, instance=None, form=None):
         has_changed = False

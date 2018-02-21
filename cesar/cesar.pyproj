@@ -139,6 +139,7 @@
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\templates\seeker\crp.xml" />
     <Content Include="cesar\seeker\templates\seeker\download_status.html" />
+    <Content Include="cesar\seeker\templates\seeker\err_view.html" />
     <Content Include="cesar\seeker\templates\seeker\xqmain_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\xqdef_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\def_folia.xq" />
