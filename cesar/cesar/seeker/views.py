@@ -120,7 +120,8 @@ def keep_argtype(sChoice, sOblType, arg_form):
         bBack = (sOblType == 'str' or sOblType == 'int')
     elif sChoice == 'cvar':
         # Don't know
-        bBack = (arg_form.fields['cvar'].queryset.count() > 0)
+        # bBack = (arg_form.fields['cvar'].queryset.count() > 0)
+        bBack = False
     elif sChoice == 'func':
         # Don't know
         pass

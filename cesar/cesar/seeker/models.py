@@ -648,7 +648,7 @@ class VarDef(Variable):
         """Find out whether the [order] differs from the current [order], and if so, is it okay?"""
 
         if order == None or not isinstance(order, int):
-            return False, ""
+            return True, ""
 
         # Has the order changed?
         bValid = True
