@@ -193,9 +193,11 @@ class CvarForm(ModelForm):
     targetid = "research_part_43"
     target = "43"
     sumid = 'variable43'
+    tableid = 'variable43t'
     url_edit = ""
     url_new = ""
     url_summary = ""
+    url_table = ""
 
     class Meta:
         model = ConstructionVariable
@@ -226,6 +228,7 @@ class CvarForm(ModelForm):
         if self.instance and self.instance != None and self.instance.id != None:
             self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})
             self.url_summary = reverse(self.sumid, kwargs={"object_id": self.instance.id})
+            self.url_table = reverse(self.tableid, kwargs={"object_id": self.instance.id})
         # THe url for new can always be given
         self.url_new = reverse(self.targetid)
 
@@ -326,9 +329,11 @@ class ConditionForm(ModelForm):
     targetid = "research_part_62"
     target = "62"
     sumid = 'condition63'
+    tableid = 'condition63t'
     url_edit = ""
     url_new = ""
     url_summary = ""
+    url_table = ""
 
     class Meta:
         model = Condition
@@ -355,6 +360,7 @@ class ConditionForm(ModelForm):
         if self.instance and self.instance != None and self.instance.id != None:
             self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})
             self.url_summary = reverse(self.sumid, kwargs={"object_id": self.instance.id})
+            self.url_table = reverse(self.tableid, kwargs={"object_id": self.instance.id})
         # THe url for new can always be given
         self.url_new = reverse(self.targetid)
 
@@ -366,9 +372,11 @@ class FeatureForm(ModelForm):
     targetid = "research_part_72"
     target = "72"
     sumid = 'feature73'
+    tableid = 'feature73t'
     url_edit = ""
     url_new = ""
     url_summary = ""
+    url_table = ""
 
     class Meta:
         model = Feature
@@ -395,6 +403,7 @@ class FeatureForm(ModelForm):
         if self.instance and self.instance != None and self.instance.id != None:
             self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})
             self.url_summary = reverse(self.sumid, kwargs={"object_id": self.instance.id})
+            self.url_table = reverse(self.tableid, kwargs={"object_id": self.instance.id})
         # THe url for new can always be given
         self.url_new = reverse(self.targetid)
 

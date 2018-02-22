@@ -700,19 +700,75 @@ table.err-view th {
 }
 
 table.func-view {
-  border: 1px solid brown;
+  border: 1px solid white;
+  /* border: none; */
   background-color: lightgray;
   margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+}
+table.func-view th {
+  border: 1px solid white;
+  font-size: 12px;
+  background-color: darkgreen;
+  color: white;
+  border-radius: 3px 3px;
+  margin-top: 0px;
+  margin-left:20px;
+  vertical-align: top;
+  padding: 2px;
+}
+table.func-view th:hover {
+  background-color: green;
+}
+table.func-view th .func-title {
+  color: lightgray;
+}
+table.func-view th .func-name {
+  font-family: monospace;
+}
+table.func-view th .func-title:hover {
+  background-color: darkolivegreen;
+}
+table.func-oview tbody tr:hover {
+  background-color: palegreen !important;
+}
+table tr.func-inline {
+  background-color: lavender;
 }
 table.func-view td {
   border: 1px solid white;
   font-size: 12px;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
 }
 td.function-name {
-  background-color: darkgreen;
-  color: white;
+  color: darkblue;
+  font-family: monospace;
+}
+td.function-name:hover {
+  color: black;
+  background-color: lightgray;
+}
+td.arg-plus {
+  background-color: lightgray;
+  color: darkblue;
+  width: 20px;
+  text-align: center;
+  vertical-align: center;
+}
+td.arg-plus:hover {
+  background-color: greenyellow;
+  color: darkred;
+  cursor: pointer;
 }
 td.arg-text {
   background-color: lightgray;
   color: darkblue;
+}
+td.arg-text:hover {
+  background-color: mediumseagreen;
+  color: darkred;
+  /* cursor: pointer; */
 }

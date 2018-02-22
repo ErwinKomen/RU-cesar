@@ -114,7 +114,7 @@ def keep_argtype(sChoice, sOblType, arg_form):
     bBack = True
     if sChoice == 'fixed':
         # Can be string or integer
-        bBack = (sOblType == 'str' or sOblType == 'int')
+        bBack = (sOblType == 'str' or sOblType == 'int' or sOblType == 'bool')
     elif sChoice == 'gvar':
         # Can be string or integer
         bBack = (sOblType == 'str' or sOblType == 'int')
@@ -1351,7 +1351,7 @@ class Variable43(ResearchPart):
         return context
 
 
-class Variable43_original(ResearchPart):
+class Variable43t(ResearchPart):
     """The definition of one particular variable"""
 
     MainModel = ConstructionVariable
@@ -1367,6 +1367,18 @@ class Condition63(ResearchPart):
     """The definition of one particular condition"""
 
     MainModel = Condition
+    template_name = 'seeker/variable_view.html'
+
+    def add_to_context(self, context):
+        # Provide the top function
+        context['function'] = self.obj.function
+        return context
+
+
+class Condition63t(ResearchPart):
+    """The definition of one particular condition"""
+
+    MainModel = Condition
     template_name = 'seeker/variable_details.html'
 
     def add_to_context(self, context):
@@ -1376,6 +1388,18 @@ class Condition63(ResearchPart):
 
 
 class Feature73(ResearchPart):
+    """The definition of one particular condition"""
+
+    MainModel = Feature
+    template_name = 'seeker/variable_view.html'
+
+    def add_to_context(self, context):
+        # Provide the top function
+        context['function'] = self.obj.function
+        return context
+
+
+class Feature73t(ResearchPart):
     """The definition of one particular condition"""
 
     MainModel = Feature

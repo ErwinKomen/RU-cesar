@@ -34,6 +34,43 @@ var ru = (function ($, ru) {
     // Private methods specification
     var private_methods = {
       /**
+       * fitFeatureBox
+       *    Initialize the <svg> in the @sDiv
+       * 
+       * @param {object} oBound
+       * @param {el} elTarget
+       * @returns {object}
+       */
+      fitFeatureBox: function (oBound, elTarget) {
+        var rect = null;
+
+        try {
+          // Take into account scrolling
+          oBound['x'] -= document.documentElement.scrollLeft || document.body.scrollLeft;
+          oBound['y'] -= document.documentElement.scrollTop || document.body.scrollTop;
+          // Make sure it all fits
+          if (oBound['x'] + $(elTarget).width() + oBound['width'] + 10 > $(window).width()) {
+            oBound['x'] -= $(elTarget).width() + oBound['width'];
+          } else if (oBound['x'] < 0) {
+            oBound['x'] = 10;
+          }
+          if (oBound['y'] + $(elTarget).height() + oBound['height'] + 10 > $(window).height()) {
+            oBound['y'] -= $(elTarget).height() + oBound['height'];
+          } else if (oBound['y'] < 0) {
+            oBound['y'] = 10;
+          } else {
+            oBound['y'] += oBound['height'] + 10;
+          }
+          // Take into account scrolling
+          oBound['x'] += document.documentElement.scrollLeft || document.body.scrollLeft;
+          oBound['y'] += document.documentElement.scrollTop || document.body.scrollTop;
+          return oBound;
+        } catch (ex) {
+          private_methods.showError("fitFeatureBox", ex);
+          return oBound;
+        }
+      },
+      /**
        * methodNotVisibleFromOutside - example of a private method
        * @returns {String}
        */
@@ -200,6 +237,43 @@ var ru = (function ($, ru) {
 
     // Public methods
     return {
+      /**
+       * argrow_click
+       *   Show or hide the following <tr> element
+       *   Also: adapt the +/- sign(s)
+       */
+      argrow_click: function (el, sClass) {
+        var trNext = null;
+
+        try {
+          // Validate
+          if (el === undefined) { return; }
+          // Get the following <tr>
+          trNext = $(el).closest("tr").next().first();
+          if (trNext !== null) {
+            // Check its current status
+            if ($(trNext).hasClass("hidden")) {
+              // Show it
+              $(trNext).removeClass("hidden");
+              // Change the '+' into a '-'
+              $(el).html("-");
+            } else {
+              // Hide it
+              $(trNext).addClass("hidden");
+              // Change the '-' into a '+'
+              $(el).html("+");
+              // Hide all underlying ones with class [sClass]
+              if (sClass !== undefined && sClass !== "") {
+                $(trNext).find("." + sClass).addClass("hidden");
+                $(trNext).find(".arg-plus").html("+");
+              }
+            }
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("argrow_click", ex);
+        }
+      },
       /**
        * argtype_click
        *   Set the type of argument: fixed value, select or  calculate
@@ -1852,7 +1926,7 @@ var ru = (function ($, ru) {
           $("#main_info_div").addClass("hidden");
         } catch (ex) {
           // Show the error at the indicated place
-          $(errDiv).html("main_info_hide error: " + ex.message);
+          private_methods.errMsg("main_info_hide error: ", ex);
         }
       },
       /**
@@ -1903,15 +1977,17 @@ var ru = (function ($, ru) {
             elTarget.style.top = (oSvg['y'] - 10 - 20 * lInfo.length).toString() + 'px';
             $(sInfoDiv).removeClass("hidden");
 
+            /*
             // Now adjust the position based on the shown div
             oSvg = private_methods.fitFeatureBox(oSvg, elTarget);
             elTarget.style.left = oSvg['x'] + 'px';
             elTarget.style.top = oSvg['y'] + 'px';
+            */
           }
 
         } catch (ex) {
           // Show the error at the indicated place
-          $(errDiv).html("main_info_show error: " + ex.message);
+          private_methods.errMsg("main_info_show error: ", ex);
         }
       },
       /**

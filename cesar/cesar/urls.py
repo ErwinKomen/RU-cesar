@@ -92,6 +92,9 @@ urlpatterns = [
     url(r'^ajax/variable43(?:/(?P<object_id>\d+))?/$', Variable43.as_view(), name='variable43'),
     url(r'^ajax/condition63(?:/(?P<object_id>\d+))?/$', Condition63.as_view(), name='condition63'),
     url(r'^ajax/feature73(?:/(?P<object_id>\d+))?/$', Feature73.as_view(), name='feature73'),
+    url(r'^ajax/variable43t(?:/(?P<object_id>\d+))?/$', Variable43t.as_view(), name='variable43t'),
+    url(r'^ajax/condition63t(?:/(?P<object_id>\d+))?/$', Condition63t.as_view(), name='condition63t'),
+    url(r'^ajax/feature73t(?:/(?P<object_id>\d+))?/$', Feature73t.as_view(), name='feature73t'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^signup/$', cesar.browser.views.signup, name='signup'),
 

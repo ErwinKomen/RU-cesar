@@ -64,7 +64,7 @@ def is_boolean(sInput):
         sInput = sInput.lower()
         return sInput == 'false' or sInput == 'true'
 
-def arg_matches(expected, actual):
+def arg_matches(expected, actual, value = None):
     """Does the actual argument match the expected one?"""
 
     bMatch = (expected == actual)
@@ -73,6 +73,11 @@ def arg_matches(expected, actual):
         # If str is expected, then int or bool are okay
         if expected == 'str':
             bMatch = (actual == 'int' or actual == 'bool')
+        elif expected == 'bool':
+            # If a boolean is expected, str may also be good, provided that is_boolean() holds
+            bMatch = (actual == 'str' and is_boolean(value))
+        elif expected == 'int':
+            bMatch = (actual == 'str' and is_integer(value))
         elif expected == 'clist':
             # If [clist] expected, one single [cnst] is okay too
             bMatch = (actual == 'cnst')
@@ -773,7 +778,6 @@ class FunctionDef(models.Model):
         return qs
 
 
-
 class FunctionCode(models.Model):
     """Basic Xquery code for a function in a particular format"""
 
@@ -787,7 +791,6 @@ class FunctionCode(models.Model):
     
     def __str__(self):
         return "{} ({})".format(self.functiondef.name, self.format)
-
 
 
 class Function(models.Model):
@@ -857,7 +860,7 @@ class Function(models.Model):
                     if argdef.obltype != None:
                         # We need to compare types
                         arg_outputtype = arg.get_outputtype()
-                        if not arg_matches(argdef.obltype, arg_outputtype):
+                        if not arg_matches(argdef.obltype, arg_outputtype, arg.argval):
                         # if argdef.obltype != arg_outputtype:
                             # Type mismatch
                             oStatus['status'] = "error"
@@ -1229,6 +1232,58 @@ class Function(models.Model):
         # Return what we found
         return sType
 
+    def get_target(self):
+        """Figure out what the url-name is to edit me"""
+
+        if self.root != None and self.root.id > 0 and self.root.function:
+            # We are part of a construction variable
+            if self.id == self.root.function.id:
+                # We are the top field
+                return "43"
+            else:
+                return "44"
+        elif self.rootcond != None and self.rootcond.id > 0 and self.rootcond.function:
+            # We are part of a condition
+            if self.id == self.rootcond.function.id:
+                return "62"
+            else:
+                return "63"
+        elif self.rootfeat != None and self.rootfeat.id > 0 and self.rootfeat.function:
+            # We are part of a feature
+            if self.id == self.rootfeat.function.id:
+                return "72"
+            else:
+                return "73"
+        else:
+            # This should not happen
+            return ""
+
+    def get_targetid(self, sTarget = None):
+        if sTarget == None:
+            sTarget = self.get_target()
+        if sTarget == "":
+            return ""
+        else:
+            return "research_part_{}".format(sTarget)
+
+    def get_url_edit(self):
+        """Get the URL to edit me"""
+
+        target = self.get_target()
+        targetid = self.get_targetid(target)
+        if target == "43" and self.root:
+            instanceid = self.root.id
+        elif target == "62" and self.rootcond:
+            instanceid = self.rootcond.id
+        elif target == "72" and self.rootfeat:
+            instanceid = self.rootfeat.id
+        elif self.parent:
+            instanceid = self.parent.id
+        else:
+            return ""
+        sUrl = reverse(targetid, kwargs={"object_id": instanceid})
+        return sUrl
+    
           
 class ArgumentDef(models.Model):
     """Definition of one argument for a function"""

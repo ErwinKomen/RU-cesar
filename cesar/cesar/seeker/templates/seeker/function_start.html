@@ -6,13 +6,14 @@
 
     <!-- Provide an Edit or Create button -->
     <span class="func-buttons">
-      <a class="btn btn-xs btn-default" role="button" 
-          targeturl="{% if func_form.instance.id %}{{func_form.url_edit}}{% else %}{{func_form.url_new}}{% endif %}"
-          targetid="{{func_form.targetid}}"
-          instanceid="{{func_form.instance.id}}"
-          onclick="ru.cesar.seeker.research_wizard(this, '{{func_form.target}}');" >
+      <a class="btn btn-xs btn-warning" role="button" 
+         title="edit"
+         targeturl="{% if func_form.instance.id %}{{func_form.url_edit}}{% else %}{{func_form.url_new}}{% endif %}"
+         targetid="{{func_form.targetid}}"
+         instanceid="{{func_form.instance.id}}"
+         onclick="ru.cesar.seeker.research_wizard(this, '{{func_form.target}}');" >
         {% if func_form.instance.function_id %}
-        {% trans 'edit' %}
+        <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
         {% else %}
         {% trans 'create' %}
         {% endif %}
@@ -20,9 +21,19 @@
 
       <!-- Allo user to see a summary -->
       {% if func_form.instance.function_id %}
-        <a class="func-summary"
-            targeturl="{% if func_form.instance.id %}{{func_form.url_summary}}{% endif %}">
-            {% trans 'summary' %}</a>...
+        <!-- View button #1: hierarchical summary -->
+        <a class="btn btn-xs btn-success func-summary"
+           role="button"
+           title="view"
+           targeturl="{% if func_form.instance.id %}{{func_form.url_summary}}{% endif %}">
+           <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span></a>
+
+        <!-- View button #2: tabular summary -->
+        <a class="btn btn-xs btn-default func-summary"
+           role="button"
+           title="view as table"
+           targeturl="{% if func_form.instance.id %}{{func_form.url_table}}{% endif %}">
+           <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span></a>
 
         <!-- If possible, allow propagating this function to other search elements (=constructions) -->
         {% if func_form.copyto %}
