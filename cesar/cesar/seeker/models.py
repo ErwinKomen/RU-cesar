@@ -647,36 +647,44 @@ class VarDef(Variable):
     def check_order(self, order):
         """Find out whether the [order] differs from the current [order], and if so, is it okay?"""
 
-        if order == None or not isinstance(order, int):
+        if order == None:
             return True, ""
+        # Check for integer
+        if not isinstance(order, int):
+            return False, "Check order: the order must be an integer but it now is [{}]".format(order)
 
         # Has the order changed?
         bValid = True
-        # Note: Right now we are *ALWAYS* checking the order!!!
-        if order != self.order or True:
-            # The order is being changed, so check all the actual construction variable pointing to me
-            for cvar in ConstructionVariable.objects.filter(variable=self).order_by('variable__order'):
-                # Is this a function?
-                if cvar.type == 'calc':
-                    # Get a list of all functions used for this cvar
-                    func_list = Function.objects.filter(root=cvar)
-                    for func in func_list:
-                        # Visit all arguments of this function that point to a dvar
-                        for idx, arg in enumerate(Argument.objects.filter(function=func, argtype='dvar').order_by('argumentdef__order')):
-                            # Check out the order of this dvar
-                            dvar = arg.dvar
-                            if dvar.order > order:
-                                # We have an argument order problem - report this
-                                #sMsg = "The function defined for variable {} moving from {} to position {} refers to variable {} at a later position {}".format(
-                                #    self.name, self.order, order, dvar.name, dvar.order)
-                                sMsg = "The definition of variable {} at position {} has a function [{}] whose argument #{} refers to variable {} at a later position {}".format(
-                                    self.name, order, func.functiondef.name, idx+1, dvar.name, dvar.order)
-                                return False, sMsg
+        oErr = ErrHandle()
+
+        try:
+            # Note: Right now we are *ALWAYS* checking the order!!!
+            if order != self.order or True:
+                # The order is being changed, so check all the actual construction variable pointing to me
+                for cvar in ConstructionVariable.objects.filter(variable=self).order_by('variable__order'):
+                    # Is this a function?
+                    if cvar.type == 'calc':
+                        # Get a list of all functions used for this cvar
+                        func_list = Function.objects.filter(root=cvar)
+                        for func in func_list:
+                            # Visit all arguments of this function that point to a dvar
+                            for idx, arg in enumerate(Argument.objects.filter(function=func, argtype='dvar').order_by('argumentdef__order')):
+                                # Check out the order of this dvar
+                                dvar = arg.dvar
+                                if dvar != None and dvar.order > order:
+                                    # We have an argument order problem - report this
+                                    #sMsg = "The function defined for variable {} moving from {} to position {} refers to variable {} at a later position {}".format(
+                                    #    self.name, self.order, order, dvar.name, dvar.order)
+                                    sMsg = "The definition of variable {} at position {} has a function [{}] whose argument #{} refers to variable {} at a later position {}".format(
+                                        self.name, order, func.functiondef.name, idx+1, dvar.name, dvar.order)
+                                    return False, sMsg
 
 
-        # Return our verdict
-        return bValid, ""
-
+            # Return our verdict
+            return bValid, ""
+        except:
+            sMsg = oErr.get_error_message()
+            return False, "Check order error: {}".format(sMsg)
 
 class GlobalVariable(Variable):
     """Each research project may have any number of global (static) variables"""
