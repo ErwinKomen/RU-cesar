@@ -2584,7 +2584,7 @@ class ResearchPart8(ResearchPart):
         return True
 
     def add_to_context(self, context):
-        # NOTE: the instance (self.obj) for the '44' form is an ARGUMENT
+        # NOTE: the instance (self.obj) for the '8' form is a FUNCTION
         fun_this = self.get_instance('function')
         if fun_this == None:
             currentowner = None
@@ -2626,7 +2626,7 @@ class ResearchPart8(ResearchPart):
             else:
                 context['arg_formset'] = None
 
-            # Show that buttons need to be hidden
+            # Indicate that EDIT buttons for the ARGUMENTS need to be hidden
             context['hide_buttons'] = "yes"
 
         context['currentowner'] = currentowner

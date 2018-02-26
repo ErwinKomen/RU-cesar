@@ -411,7 +411,7 @@ var ru = (function ($, ru) {
           // obligatory parameter: ajaxurl
           var ajaxurl = $(this).attr("ajaxurl");
           var instanceid = $(this).attr("instanceid");
-          var targeturl = $(this).attr("ajaxurl");
+          var elStart = $(this);
           var bNew = (instanceid.toString() === "None");
           action = $(this).attr("action");
 
@@ -493,6 +493,11 @@ var ru = (function ($, ru) {
               // Show we are showing the function summary
               $('.save-warning').html("Updating the summary...");
               // Showing the summary
+              var funcsum = $(elStart).closest(".func_summary");
+              var targeturl = "";
+              if (funcsum !== null) {
+                targeturl = $(funcsum).attr("targeturl");
+              }
               ru.cesar.seeker.get_summary_show("", targeturl, instanceid);
               // Remove the save warning
               $('.save-warning').html("");
