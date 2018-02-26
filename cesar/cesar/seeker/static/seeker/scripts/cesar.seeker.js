@@ -397,6 +397,7 @@ var ru = (function ($, ru) {
             elCall = this,
             response = null,
             elWait = null,
+            action = "",
             callType = "";  // Type of element that calls us
 
         try {
@@ -410,7 +411,9 @@ var ru = (function ($, ru) {
           // obligatory parameter: ajaxurl
           var ajaxurl = $(this).attr("ajaxurl");
           var instanceid = $(this).attr("instanceid");
+          var targeturl = $(this).attr("ajaxurl");
           var bNew = (instanceid.toString() === "None");
+          action = $(this).attr("action");
 
           // Derive the data
           if ($(this).attr("data")) {
@@ -484,51 +487,64 @@ var ru = (function ($, ru) {
             return;
           }
 
-          // Indicate we are loading
-          $(".save-warning").html("Updating item... " + instanceid.toString());
-          // Make a GET call with fresh data
-          data = [];
-          data.push({ 'name': 'instanceid', 'value': instanceid });
-          // Add parameters depending on the openid
-          switch (openid) {
-            case "result_container_3":
-              // Need to add the 'qc_select' value
-              var iQcSelect = $("#qc_select").val();
-              data.push({ 'name': 'qc_select', 'value': iQcSelect });
+          // Continuation depends on the action
+          switch (action) {
+            case "save_function":
+              // Show we are showing the function summary
+              $('.save-warning').html("Updating the summary...");
+              // Showing the summary
+              ru.cesar.seeker.get_summary_show("", targeturl, instanceid);
+              // Remove the save warning
+              $('.save-warning').html("");
+              break;
+            default:
+              // Indicate we are loading
+              $(".save-warning").html("Updating item... " + instanceid.toString());
+              // Make a GET call with fresh data
+              data = [];
+              data.push({ 'name': 'instanceid', 'value': instanceid });
+              // Add parameters depending on the openid
+              switch (openid) {
+                case "result_container_3":
+                  // Need to add the 'qc_select' value
+                  var iQcSelect = $("#qc_select").val();
+                  data.push({ 'name': 'qc_select', 'value': iQcSelect });
+                  break;
+              }
+              // Make an AJAX call to get an existing or new specification element HTML code
+              response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "GET");
+              if (response !== undefined && response.status && response.status === 'ok') {
+                // Load the new data
+                $(elOpen).html(response.html);
+                // Make sure events are set again
+                ru.cesar.seeker.init_events();
+                switch (openid) {
+                  case "research_container_42":
+                    // add any event handlers for wizard part '42'
+                    ru.cesar.seeker.init_cvar_events();
+                    break;
+                  case "research_container_43":
+                  case "research_container_44":
+                  case "research_container_62":
+                  case "research_container_63":
+                  case "research_container_72":
+                  case "research_container_73":
+                    // add any event handlers for wizard part '43' and '44' and '62'
+                    ru.cesar.seeker.init_arg_events();
+                    break;
+                  case "research_container_6":
+                    // add any event handlers for wizard part '46'
+                    ru.cesar.seeker.init_cond_events();
+                    break;
+                  case "research_container_7":
+                    // add any event handlers for wizard part '46'
+                    ru.cesar.seeker.init_feat_events();
+                    break;
+                }
+              }
               break;
           }
-          // Make an AJAX call to get an existing or new specification element HTML code
-          response = ru.cesar.seeker.ajaxcall(ajaxurl, data, "GET");
-          if (response !== undefined && response.status && response.status === 'ok') {
-            // Load the new data
-            $(elOpen).html(response.html);
-            // Make sure events are set again
-            ru.cesar.seeker.init_events();
-            switch (openid) {
-              case "research_container_42":
-                // add any event handlers for wizard part '42'
-                ru.cesar.seeker.init_cvar_events();
-                break;
-              case "research_container_43":
-              case "research_container_44":
-              case "research_container_62":
-              case "research_container_63":
-              case "research_container_72":
-              case "research_container_73":
-                // add any event handlers for wizard part '43' and '44' and '62'
-                ru.cesar.seeker.init_arg_events();
-                break;
-              case "research_container_6":
-                // add any event handlers for wizard part '46'
-                ru.cesar.seeker.init_cond_events();
-                break;
-              case "research_container_7":
-                // add any event handlers for wizard part '46'
-                ru.cesar.seeker.init_feat_events();
-                break;
-            }
-          }
-
+          
 
           // Bind the click event to all class="ajaxform" elements
           $(".ajaxform").unbind('click').click(ru.cesar.seeker.ajaxform_click);
@@ -938,8 +954,9 @@ var ru = (function ($, ru) {
        *   Show or hide the summary of the expression here
        *
        */
-      get_summary_click: function (el, target) {
+      get_summary_click: function (el, target, bShow) {
         var response,   // The ID of the current row
+            targeturl = "",
             sTargetId = "#cvar_summary";
 
         try {
@@ -951,24 +968,64 @@ var ru = (function ($, ru) {
           var elRow = $(el).closest("tr");
           // Find the expression summary
           var elSum = $(sTargetId);
+          // Store the target url
+          targeturl = $(el).attr("targeturl");
           // Is it closed or opened?
-          if ($(elSum).hasClass("hidden")) {
-            // Calculate and show the value
-            response = ru.cesar.seeker.ajaxform_load($(el).attr("targeturl"));
-            if (response.status && response.status === "ok") {
-              // Make the HTML response visible
-              $(elSum).html(response.html);
-              // Make sure events are set again
-              ru.cesar.seeker.init_events();
-            }
-            // Unhide it
-            $(elSum).removeClass("hidden");
+          if ($(elSum).hasClass("hidden") || (bShow !== undefined && bShow)) {
+            ru.cesar.seeker.get_summary_show(sTargetId, targeturl);
           } else {
             // Hide it
             $(elSum).addClass("hidden");
           }
         } catch (ex) {
           private_methods.errMsg("get_summary_click", ex);
+        }
+      },
+
+      /**
+       * get_summary_click
+       *   Show the summary of the expression fetched from [targeturl]
+       *
+       */
+      get_summary_show: function (target, targeturl, instanceid) {
+        var response,   // The ID of the current row
+            elSum = null,
+            elInstance = null,
+            sTargetId = "#cvar_summary";
+
+        try {
+          // Possibly get target
+          if (target !== undefined && target !== "") {
+            sTargetId = target;
+          }
+          // Find the expression summary
+          elSum = $(sTargetId);
+          // Calculate and show the value
+          response = ru.cesar.seeker.ajaxform_load(targeturl);
+          if (response.status && response.status === "ok") {
+            // Make the HTML response visible
+            $(elSum).html(response.html);
+            // Make sure events are set again
+            ru.cesar.seeker.init_events();
+          }
+          // Copy the 'targeturl' attribute
+          if (targeturl !== undefined && targeturl !== "") {
+            // Add the targeturl to the summary element
+            $(elSum).attr('targeturl', targeturl);
+          }
+          // Unhide it
+          $(elSum).removeClass("hidden");
+          // Has an instanceid been specified?
+          if (instanceid !== undefined && instanceid !== "") {
+            // Find the element with this instanceid
+            elInstance = $(elSum).find("[instanceid='" + instanceid + "']").first();
+            if (elInstance !== null) {
+              // Show this one and all those above it
+              $(elInstance).parents(".func-view").removeClass("hidden");
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("get_summary_show", ex);
         }
       },
 
@@ -1664,8 +1721,9 @@ var ru = (function ($, ru) {
        *    Select one item from the research project wizard
        *
        */
-      research_wizard: function (el, sPart, bOnlyOpen) {
+      research_wizard: function (el, sPart, bOnlyOpen, divtarget, sSelect) {
         var sTargetId = "research_container_",
+            sContainerId = "research_container_",
             sTargetType = "",
             sObjectId = "",
             sMsg = "",
@@ -1673,6 +1731,7 @@ var ru = (function ($, ru) {
             sUrl = "",
             data = {},
             frm = null,
+            th = null,
             response = null,
             elWait = null,      // Div that should be opened/closed to indicate waiting
             elListItem = null,
@@ -1688,8 +1747,29 @@ var ru = (function ($, ru) {
           private_methods.mainWaitStart();
           
           // Get the correct target id
-          sTargetId = "#" + sTargetId + sPart;
+          if (divtarget !== undefined && divtarget !== "") {
+            // Look for the nearest container
+            sContainerId = "#" + $(el).closest(".research-part").first().attr("id");
+            // Use [divtarget] for my own targetid
+            sTargetId = "#" + divtarget;
+          } else {
+            sTargetId = "#" + sTargetId + sPart;
+            sContainerId = sTargetId;
+          }
           sObjectId = $("#researchid").text().trim();
+
+          // Do we need to indicate selection?
+          if (sSelect !== undefined && sSelect === "select") {
+            // First deselect all <th> elements
+            $(el).closest(".research-part").find("th").removeClass("selected");
+            // Clear what we had
+            $(sTargetId).html("");
+            // Indicate that the <th> above is selected
+            th = $(el).closest("th");
+            if (th !== null) {
+              $(th).addClass("selected");
+            }
+          }
 
           if (bOnlyOpen === undefined || bOnlyOpen === false) {
             sTargetType = $("#id_research-targetType").val();
@@ -1781,6 +1861,7 @@ var ru = (function ($, ru) {
             case "4": case "42": case "43": case "44":
             case "6": case "62": case "63":
             case "7": case "72": case "73":
+            case "8":
 
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
@@ -1798,6 +1879,8 @@ var ru = (function ($, ru) {
                 $(sTargetId).html(response.html);
                 // Make sure events are set again
                 ru.cesar.seeker.init_events();
+                // Disable the save warning
+                $(".save-warning").html("");
               }
               break;
           }
@@ -1813,6 +1896,7 @@ var ru = (function ($, ru) {
             case "43": case "44":
             case "62": case "63":
             case "72": case "73":
+            case "8": 
               // add any event handlers for wizard part '43' and part '44'
               // As well as for '62' and '63'
               ru.cesar.seeker.init_arg_events();
@@ -1844,7 +1928,8 @@ var ru = (function ($, ru) {
           $(".research-part").not(sTargetId).addClass("hidden");
           $(".research-part").not(sTargetId).removeClass("active");
 
-          $(sTargetId).removeClass("hidden");
+          // $(sTargetId).removeClass("hidden");
+          $(sContainerId).removeClass("hidden");
           // If this is not [Project Type] then get the project type
           if (sPart !== '1') {
             // Set the <input> element

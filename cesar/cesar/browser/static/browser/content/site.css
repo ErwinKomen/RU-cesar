@@ -409,16 +409,17 @@ svg g.lithium-node:hover > text {
     color: darkred;
 }
 
-.arg-intro {
-    font-size: 15px;
+.arg-intro  {
+    font-size: 12px;
     width: 1%;
-    white-space:nowrap;
+    white-space: nowrap;
 }
 div.arg-value {
     margin: 2px;
     border: 1px solid #ddd;
     border-radius: 3px; 
     background-color: whitesmoke;
+    font-size: 12px !important;
 }
 /*
 .arg-item > td {
@@ -430,6 +431,9 @@ div.arg-value {
 }
 .table-fit td {
   white-space:nowrap !important;
+}
+.table-fit select {
+  font-size: 11px;
 }
 .tdnowrap {
   white-space:nowrap !important;
@@ -718,8 +722,19 @@ table.func-view th {
   vertical-align: top;
   padding: 2px;
 }
+table.func-view th.selected {
+  background-color: darkorange;
+}
+table.func-view th.whitecell {
+  border: none;
+  background-color: white;
+  color: black;
+}
 table.func-view th:hover {
   background-color: green;
+}
+table.func-view th.selected:hover {
+  background-color: orangered;
 }
 table.func-view th .func-title {
   color: lightgray;
@@ -743,6 +758,11 @@ table.func-view td {
   vertical-align: top;
   padding: 2px;
 }
+table.func-view td.whitecell {
+  border: none;
+  background-color: white;
+  color: black;
+}
 td.function-name {
   color: darkblue;
   font-family: monospace;
@@ -756,7 +776,7 @@ td.arg-plus {
   color: darkblue;
   width: 20px;
   text-align: center;
-  vertical-align: center;
+  vertical-align: middle;
 }
 td.arg-plus:hover {
   background-color: greenyellow;

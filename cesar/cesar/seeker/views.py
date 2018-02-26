@@ -60,7 +60,6 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
             arg_form.fields['cvar'].queryset = qs_cvar
 
         # Look at data-dependant variables: only accept those that have the correct output type
-        # qs_dvar = VarDef.objects.filter(Q(id__in=dvar_list)).order_by('order')
         arg_form.fields['dvar'].queryset = VarDef.get_restricted_vardef_list( qs_dvar, obltype)
 
         # If we have an obligatory type, then limit the possibilities for the user
@@ -105,7 +104,6 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
 
     # Return the adatpted formset
     return arg_formset
-
 
 
 def keep_argtype(sChoice, sOblType, arg_form):
@@ -158,6 +156,20 @@ def cleanup_functions():
             # Make sure that deletions get saved
             has_changed = True
     return has_changed
+
+
+def treat_bom(sHtml):
+    """REmove the BOM marker except at the beginning of the string"""
+
+    # Check if it is in the beginning
+    bStartsWithBom = sHtml.startswith(u'\ufeff')
+    # Remove everywhere
+    sHtml = sHtml.replace(u'\ufeff', '')
+    # DO NOT KEEP FIRST BOM!!
+    #if bStartsWithBom:
+    #    sHtml = u'\ufeff' + sHtml
+    # Return what we have
+    return sHtml
 
 
 class CustomInlineFormset(BaseInlineFormSet):
@@ -926,8 +938,9 @@ class ResearchPart(View):
             context['requestuser'] = request.user
             
             # Get the HTML response
-            self.data['html'] = render_to_string(self.template_name, context, request)
-            # x = context['arg_formset'][0].instance.functionparent.all()[0].parent_id
+            sHtml = render_to_string(self.template_name, context, request)
+            sHtml = treat_bom(sHtml)
+            self.data['html'] = sHtml
         else:
             self.data['html'] = "Please log in before continuing"
 
@@ -2526,6 +2539,146 @@ class ResearchPart73(ResearchPart):
         # Save the related RESEARCH object
         if has_changed:
             self.obj.function.rootfeat.gateway.research.save()
+        # Return the change-indicator to trigger saving
+        return has_changed
+
+
+class ResearchPart8(ResearchPart):
+    """Generic class to treat any function at any level, under Condition, Feature of Cvar"""
+
+    MainModel = Function
+    template_name = 'seeker/research_part_8.html'
+    ArgFormSet = inlineformset_factory(Function, Argument, 
+                                          form=ArgumentForm, min_num=1, extra=0)
+    # One forms:
+    # - the 'function' form is editable and contains the function for the argument 
+    form_objects = [{'form': FunctionForm, 'prefix': 'function', 'readonly': False}]
+
+    # One formsets:
+    # - the 'arg'  formset belongs to the 'function' (see above)
+    formset_objects = [{'formsetClass': ArgFormSet, 'prefix': 'arg', 'readonly': False}]
+
+    def get_instance(self, prefix):
+        # NOTE: For '8' the self.obj is a Function
+
+        if prefix == 'function' or prefix == 'arg':
+            return self.obj
+
+    def custom_init(self):
+        """Make sure the ARG formset gets the correct number of arguments"""
+
+        # Check if we have a FUNCTION object
+        fun_this = self.get_instance('function')
+        if fun_this:
+            # Get the function definition
+            functiondef = fun_this.functiondef
+            if functiondef != None:
+                # Get the number of arguments
+                argnum = functiondef.argnum
+                # Adapt the minimum number of items in the argument formset
+                self.ArgFormSet = inlineformset_factory(Function, Argument, 
+                                        form=ArgumentForm, min_num=argnum, extra=0)
+                # The 'arg' object is the one with index '0'
+                self.formset_objects[0]['formsetClass'] = self.ArgFormSet
+
+        return True
+
+    def add_to_context(self, context):
+        # NOTE: the instance (self.obj) for the '44' form is an ARGUMENT
+        fun_this = self.get_instance('function')
+        if fun_this == None:
+            currentowner = None
+            context['research_id'] = None
+            targettype = ""
+        else:
+            # Get to the GATEWAY instance
+            if fun_this.root:
+                gateway = fun_this.root.construction.gateway
+            elif fun_this.rootfeat:
+                gateway = fun_this.rootfeat.gateway
+            elif fun_this.rootcond:
+                gateway = fun_this.rootcond.gateway
+            else:
+                gateway = None
+            currentowner = gateway.research.owner
+            context['research_id'] = gateway.research.id
+            targettype = gateway.research.targetType
+
+            # Calculate the initial queryset for 'gvar'
+            #   (These are the variables available for this GATEWAY)
+            qs_gvar = GlobalVariable.objects.filter(gateway=gateway)
+
+            # Calculate the initial queryset for 'dvar'
+            lstQ = []
+            lstQ.append(Q(gateway=gateway))
+            if fun_this.root:
+                # Need to restrict to what lies before me
+                lstQ.append(Q(order__lt=fun_this.root.variable.order))
+            else:
+                # For Conditions and Features we may make use of *ALL* dvars
+                pass
+            qs_dvar = VarDef.objects.filter(*lstQ).order_by('order')
+
+            # - adapting the 'arg_formset' for the 'function' form (editable)
+            fun_this = self.get_instance('function')
+            if fun_this != None:
+                context['arg_formset'] = check_arguments(context['arg_formset'], fun_this.functiondef, qs_gvar, None, qs_dvar, '8')
+            else:
+                context['arg_formset'] = None
+
+            # Show that buttons need to be hidden
+            context['hide_buttons'] = "yes"
+
+        context['currentowner'] = currentowner
+        # We also need to make the object_id available -- but is this the correct one?
+        context['object_id'] = self.object_id
+        context['targettype'] = targettype
+        return context
+
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+
+        # Find the rootobject (root, rootcond, rootfeat)
+        func_this = instance
+        gateway = None
+
+        if prefix == "func":
+            if func_this.root != None:
+                gateway = func_this.root.construction.gateway
+            elif func.rootfeat != None:
+                gateway = func_this.rootfeat.gateway
+            elif func.rootcond != None:
+                gateway = func_this.rootcond.gateway
+
+        elif prefix == 'arg':
+            # When we save an ARG, we need to add a link to the Function it belongs to
+            # The instance is the argument instance
+
+            # Check the argtype of this argument: is it NOT a function any more?
+            if instance.argtype != "func":
+                # Then REmove all functions pointing to me
+                func_child = instance.functionparent.first()
+                if func_child != None:
+                    func_child.delete()
+                    has_changed = True
+            else:
+                # THis is a function: check if the function definition has not changed
+                func_child = instance.functionparent.first()
+                if func_child == None or instance.functiondef != func_child.functiondef:
+                    # The function definition changed >> replace the child with a completely NEW version
+                    # [1] remove the child
+                    if func_child != None:
+                        func_child.delete()
+                    # [2] Create a new version
+                    func_child = Function.create(instance.functiondef, instance.function.root, instance.function.condroot, instance, instance.function.rootfeat)
+                    # [3] Save it here (or that is done one level up)
+                    func_child.save()
+                    # Indicate changes have been made
+                    has_changed = True
+
+        # Save the related RESEARCH object
+        if has_changed and gateway != None:
+            gateway.research.save()
         # Return the change-indicator to trigger saving
         return has_changed
 

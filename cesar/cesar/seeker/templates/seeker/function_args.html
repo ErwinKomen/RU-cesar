@@ -5,6 +5,7 @@
   <tr class="form-row arg-item">
     <td class="hidden">{{arg_this.argumentdef}}</td>
     <td class="hidden">{{arg_this.id}}</td>
+    <td class="hidden">{{hide_buttons}}</td>
     <td valign="bottom" class="arg-intro">{{arg_this.instance.argumentdef.text}}</td>
     <td valign="bottom">
       <div  class="arg-value">
@@ -23,6 +24,7 @@
           <span class="arg-expression">
             <span class="arg-fundef">{{arg_this.functiondef}}</span>
             <span class="hidden">{{arg_this.function}}</span>
+            {% if hide_buttons != 'yes' %}
             <a class="btn btn-xs btn-default" role="button" 
                 targeturl="{% if arg_this.instance.id %}{{arg_this.url_edit}}{% else %}{{arg_this.url_new}}{% endif %}"
                 targetid="{{arg_this.targetid}}"
@@ -35,6 +37,7 @@
               {% trans 'create' %}
               {% endif %}
             </a>
+            {% endif %}
           </span>
           <!-- option 5: relation axis -->
           <span class="arg-raxis">{{arg_this.raxis}}</span>

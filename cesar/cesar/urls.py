@@ -89,6 +89,7 @@ urlpatterns = [
     url(r'^ajax/researchpart7(?:/(?P<object_id>\d+))?/$', ResearchPart7.as_view(), name='research_part_7'),
     url(r'^ajax/researchpart72(?:/(?P<object_id>\d+))?/$', ResearchPart72.as_view(), name='research_part_72'),
     url(r'^ajax/researchpart73(?:/(?P<object_id>\d+))?/$', ResearchPart73.as_view(), name='research_part_73'),
+    url(r'^ajax/researchpart8(?:/(?P<object_id>\d+))?/$', ResearchPart8.as_view(), name='research_part_8'),
     url(r'^ajax/variable43(?:/(?P<object_id>\d+))?/$', Variable43.as_view(), name='variable43'),
     url(r'^ajax/condition63(?:/(?P<object_id>\d+))?/$', Condition63.as_view(), name='condition63'),
     url(r'^ajax/feature73(?:/(?P<object_id>\d+))?/$', Feature73.as_view(), name='feature73'),

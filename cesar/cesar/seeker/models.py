@@ -638,7 +638,7 @@ class VarDef(Variable):
                     pass
                 else:
                     # This dvar has a specific output type 
-                    if otype == obltype or (obltype == 'clist' and otype =='cnst') or (otype == "-") or (obltype == 'str' and (otype == 'bool' or otype == 'int')):
+                    if arg_matches(obltype, otype):
                         dvar_list.append(dvar.id)
 
         # Recombine into a new list
@@ -1266,6 +1266,12 @@ class Function(models.Model):
             # This should not happen
             return ""
 
+    def get_func_target(self):
+        """Figure out what the url-name is to edit me"""
+
+        # This should not happen
+        return "8"
+
     def get_targetid(self, sTarget = None):
         if sTarget == None:
             sTarget = self.get_target()
@@ -1291,7 +1297,18 @@ class Function(models.Model):
             return ""
         sUrl = reverse(targetid, kwargs={"object_id": instanceid})
         return sUrl
-    
+
+    def get_func_url_edit(self):
+        """Get the URL to edit me"""
+
+        targetid = self.get_targetid(self.get_func_target())
+        instanceid = self.id
+        if instanceid == None:
+            sUrl = ""
+        else:
+            sUrl = reverse(targetid, kwargs={"object_id": instanceid})
+        return sUrl
+  
           
 class ArgumentDef(models.Model):
     """Definition of one argument for a function"""

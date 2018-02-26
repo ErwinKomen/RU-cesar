@@ -1,0 +1,52 @@
+﻿{% load i18n %}
+
+<div class="research_part">
+  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+
+  <!-- Part 8: Starting from one function's ARG, allow building the function pointing to that ARG -->
+  <div id="research_part_8" 
+      class="js-inline-formset inline-group panel panel-default"
+      data-inline-type="tabular"
+      data-inline-formset="{{arg_formset.inline_formset_data}}">
+    <form action="" method="post">
+      {% csrf_token %}
+
+      <div class="geen_row">
+        <div id="research_cvar" class="tabular inline-related">
+          {{arg_formset.management_form}}
+          <fieldset class="module {{arg_formset.classes}}">
+
+            <!-- Main form: the one that can be edited -->
+            <div class="geen_row">
+              <!-- This second form is offset 2 columns to the right -->
+              <div class="panel panel-default panel-function">
+                <h3>{{functionForm.instance.functiondef.title}}</h3>
+                <div class="hidden">{{functionForm}}</div>
+                <table class="table-fit">
+                {% include 'seeker/function_args.html'  %}
+                </table>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+
+      <!-- Show ERRORS if needed -->
+      <div id="research_err">
+        {% for item in error_list %}{{item}}{% endfor %}
+      </div>
+
+      <!-- Provide SAVE button (verification is done on the server) -->
+      <div class="submit-row">
+        <button type="button" class="btn btn-primary btn-xs ajaxform"
+                instanceid="{{object_id}}"
+                action="save_function" 
+                ajaxurl="{% if object_id %}{% url 'research_part_8' object_id %}{% else %}{% url 'research_part_8' %}{% endif %}"
+                data="">{% trans 'Save' %}</button>
+        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
+      </div>
+    </form>
+  </div>
+</div>
+
