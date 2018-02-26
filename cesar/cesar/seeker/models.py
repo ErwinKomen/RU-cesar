@@ -684,7 +684,7 @@ class VarDef(Variable):
             return bValid, ""
         except:
             sMsg = oErr.get_error_message()
-            return False, "Check order error: {}".format(sMsg)
+            return False, "Vardef check_order: {}".format(sMsg)
 
 class GlobalVariable(Variable):
     """Each research project may have any number of global (static) variables"""
