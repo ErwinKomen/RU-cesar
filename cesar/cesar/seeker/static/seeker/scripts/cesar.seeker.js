@@ -242,7 +242,7 @@ var ru = (function ($, ru) {
        *   Show or hide the following <tr> element
        *   Also: adapt the +/- sign(s)
        */
-      argrow_click: function (el, sClass) {
+      argrow_click: function (el, sClass, bShow) {
         var trNext = null;
 
         try {
@@ -252,7 +252,7 @@ var ru = (function ($, ru) {
           trNext = $(el).closest("tr").next().first();
           if (trNext !== null) {
             // Check its current status
-            if ($(trNext).hasClass("hidden")) {
+            if ($(trNext).hasClass("hidden") || (bShow !== undefined && bShow)) {
               // Show it
               $(trNext).removeClass("hidden");
               // Change the '+' into a '-'
@@ -272,6 +272,50 @@ var ru = (function ($, ru) {
 
         } catch (ex) {
           private_methods.errMsg("argrow_click", ex);
+        }
+      },
+      /**
+       * funchead_click
+       *   Assuming we are on an element of class [func-plus]
+       *     - close or open everything with style [sClass] below us
+       *     - this depends on the 'sign' we have: + or -
+       *   Also: adapt the +/- sign(s)
+       */
+      funchead_click: function (el, sClass) {
+        var trNext = null,
+            elTbody = null, // My own <tbody>
+            sStatus = "";   // My own status
+
+        try {
+          // Validate
+          if (el === undefined) { return; }
+          // Get my status
+          sStatus = $(el).text();   // This can be + or -
+          // Get my own <tbody>
+          elTbody = $(el).closest("table").children("tbody").first();
+          // Check status
+          if (sStatus == "-") {
+            // We are open and need to close all below
+            $(el).html("+");
+            $(el).attr("title", "open");
+            // Close all [arg-plus] below us
+            $(elTbody).find(".arg-plus").html("+");
+            $(elTbody).find(".func-plus").html("+");
+            $(elTbody).find(".func-plus").attr("title", "open");
+            $(elTbody).find(".func-inline").addClass("hidden");
+          } else {
+            // We are + (=closed) and need to open (become -)
+            $(el).html("-");
+            $(el).attr("title", "close");
+            // Open all [arg-plus] below us
+            $(elTbody).find(".arg-plus").html("-");
+            $(elTbody).find(".func-plus").html("-");
+            $(elTbody).find(".func-plus").attr("title", "close");
+            $(elTbody).find(".func-inline").removeClass("hidden");
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("funchead_click", ex);
         }
       },
       /**

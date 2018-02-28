@@ -7,6 +7,8 @@
         <span class="func-name">{{function.functiondef.name}}</span> - 
         <span class="func-title">{{function.functiondef.title}}</span>&nbsp;
         <span class="func-link pull-right">
+          <a class="btn btn-xs btn-default func-plus" role="button" title="open"
+             onclick="ru.cesar.seeker.funchead_click(this, 'func-inline');">+</a>
           <a class="btn btn-xs btn-default" role="button" 
              title="edit"
              targeturl="{{function.get_func_url_edit}}"
@@ -33,7 +35,7 @@
       </tr>
     {% else %}
       <tr>
-        <td colspan="2">{{arg_this.argumentdef.text}} <code>{{arg_this.get_view}}</code></td>
+        <td colspan="2"><span>{{arg_this.argumentdef.text}} <code>{{arg_this.get_view}}</code></span></td>
       </tr>
     {% endif %}
   {% endfor %}
