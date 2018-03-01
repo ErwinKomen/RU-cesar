@@ -2670,7 +2670,7 @@ class ResearchPart8(ResearchPart):
                     if func_child != None:
                         func_child.delete()
                     # [2] Create a new version
-                    func_child = Function.create(instance.functiondef, instance.function.root, instance.function.condroot, instance, instance.function.rootfeat)
+                    func_child = Function.create(instance.functiondef, instance.function.root, instance.function.rootcond, instance, instance.function.rootfeat)
                     # [3] Save it here (or that is done one level up)
                     func_child.save()
                     # Indicate changes have been made

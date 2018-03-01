@@ -1770,7 +1770,7 @@ var ru = (function ($, ru) {
        *    Select one item from the research project wizard
        *
        */
-      research_wizard: function (el, sPart, bOnlyOpen, divtarget, sSelect) {
+      research_wizard: function (el, sPart, bOnlyOpen, clstarget, sSelect) {
         var sTargetId = "research_container_",
             sContainerId = "research_container_",
             sTargetType = "",
@@ -1796,11 +1796,11 @@ var ru = (function ($, ru) {
           private_methods.mainWaitStart();
           
           // Get the correct target id
-          if (divtarget !== undefined && divtarget !== "") {
+          if (clstarget !== undefined && clstarget !== "") {
             // Look for the nearest container
             sContainerId = "#" + $(el).closest(".research-part").first().attr("id");
-            // Use [divtarget] for my own targetid
-            sTargetId = "#" + divtarget;
+            // Use [clstarget] for my own targetid: but only within the container
+            sTargetId = sContainerId + " ." + clstarget;
           } else {
             sTargetId = "#" + sTargetId + sPart;
             sContainerId = sTargetId;
