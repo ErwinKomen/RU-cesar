@@ -1,42 +1,70 @@
 {% load i18n %}
 
 <table class="func-view">
-  <thead>
-    <tr>
-      <th colspan="2">
-        <span class="func-name">{{function.functiondef.name}}</span> - 
-        <span class="func-title">{{function.functiondef.title}}</span>&nbsp;
-        <span class="func-link pull-right">
-          <a class="btn btn-xs btn-default func-plus" role="button" title="open"
-             onclick="ru.cesar.seeker.funchead_click(this, 'func-inline');">+</a>
-          <a class="btn btn-xs btn-default" role="button" 
-             title="edit"
-             targeturl="{{function.get_func_url_edit}}"
-             targetid="{{function.get_targetid}}"
-             instanceid="{{function.id}}"
-             onclick="ru.cesar.seeker.research_wizard(this, '{{function.get_func_target}}', true, 'research_function_edit', 'select');" >
-             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-          </a>
-        </span>
-      </th>
-    </tr>
-  </thead>
+  {% if level == 'top' %}
+    <thead>
+      <tr>
+        <th colspan="2">
+          <span class="func-name">{{function.functiondef.name}}</span> - 
+          <span class="func-title">{{function.functiondef.title}}</span>&nbsp;
+          <span class="func-link pull-right">
+            <a class="btn btn-xs btn-default func-plus" role="button" title="open"
+               onclick="ru.cesar.seeker.funchead_click(this, 'func-inline');">+</a>
+            <a class="btn btn-xs btn-default" role="button" 
+               title="edit"
+               targeturl="{{function.get_func_url_edit}}"
+               targetid="{{function.get_targetid}}"
+               instanceid="{{function.id}}"
+               onclick="ru.cesar.seeker.research_wizard(this, '{{function.get_func_target}}', true, 'research_function_edit', 'select');" >
+               <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+            </a>
+          </span>
+        </th>
+      </tr>
+    </thead>
+  {% endif %}
   <tbody>
-  {% for arg_this in function.get_arguments %}
-    {% if arg_this.argtype == 'func' %}
-      <tr>
-        <td class="arg-plus"
-            onclick="ru.cesar.seeker.argrow_click(this, 'func-inline');">+</td>
-        <td class="arg-text">{{arg_this.argumentdef.text}}</td>
-      </tr>
-      <tr class="func-inline hidden">
-        <td style="width: 10px;"></td>
-        <td>{% include 'seeker/variable_function.html' with function=arg_this.get_function_child %}</td>
-      </tr>
+  {% for arg_group in function.get_arg_groups %}
+    {% if arg_group.type == 'func' %}
+      {% for arg_this in arg_group.list %}
+        <tr>
+          <td class="arg-plus"
+              onclick="ru.cesar.seeker.argrow_click(this, 'func-inline');">+</td>
+          <td class="arg-text">
+            <span class="arg-line">{{arg_this.functionparent.first.line}}</span>
+            <span>{{arg_this.argumentdef.text}}</span>
+            <span class="func-name">f:{{arg_this.functiondef.name}}</span>
+            <span class="pull-right">
+              {% if level == 'descendant' %}
+              <span>
+                <a class="btn btn-xs btn-default func-plus" role="button" title="open"
+                   onclick="ru.cesar.seeker.funchead_click(this, 'func-inline', 'skip-top');">+</a>
+              </span>
+              {% endif %}
+              <span>
+                <a class="btn btn-xs btn-default" role="button" 
+                   title="edit"
+                   targeturl="{{arg_this.functionparent.first.get_func_url_edit}}"
+                   targetid="{{arg_this.functionparent.first.get_targetid}}"
+                   instanceid="{{arg_this.functionparent.first.id}}"
+                   onclick="ru.cesar.seeker.research_wizard(this, '{{arg_this.functionparent.first.get_func_target}}', true, 'research_function_edit', 'select');" >
+                   <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                </a>
+              </span>
+            </span>
+          </td>
+        </tr>
+        <tr class="func-inline hidden">
+          <td style="width: 10px;"></td>
+          <td>{% include 'seeker/variable_function.html' with function=arg_this.get_function_child level='descendant' %}</td>
+        </tr>
+      {% endfor %}
     {% else %}
-      <tr>
-        <td colspan="2"><span>{{arg_this.argumentdef.text}} <code>{{arg_this.get_view}}</code></span></td>
-      </tr>
+      <tr><td colspan="2">
+      {% for arg_this in arg_group.list %}
+        <span>{{arg_this.argumentdef.text}} <code>{{arg_this.get_view}}</code></span>
+      {% endfor %}
+      </td></tr>
     {% endif %}
   {% endfor %}
   </tbody>

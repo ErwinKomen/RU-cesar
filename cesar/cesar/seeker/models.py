@@ -1170,6 +1170,35 @@ class Function(models.Model):
         qs = self.functionarguments.all().select_related().order_by('argumentdef__order')
         return qs
 
+    def get_arg_groups(self):
+        """Divide the arguments into groups on the basis of being a function argument or not"""
+
+        glist = []          # List of groups
+        alist = None
+        bInGroup = False    # Whether I am in a group of non-func arguments
+        for arg in self.functionarguments.all().select_related().order_by('argumentdef__order'):
+            if arg.argtype == 'func':
+                # Do we need to finish an alist?
+                if bInGroup:
+                    bInGroup = False
+                    if alist != None and len(alist)>0:
+                        glist.append({"type": "plain", "list": alist})
+                        alist = []
+                # This is a function, so treat it separately
+                alist = [arg]
+                glist.append({"type": "func", "list": alist})
+            else:
+                # Start a new arglist or not?
+                if not bInGroup:
+                    alist = []
+                    bInGroup = True
+                # Add to the existing alist
+                alist.append(arg)
+        # Do we need to append the last alist?
+        if bInGroup and len(alist)>0:
+            glist.append({"type": "plain", "list": alist})                
+        return glist
+
     def get_outputtype(self):
         """Calculate the output type of a function"""
 

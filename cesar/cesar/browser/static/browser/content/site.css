@@ -739,8 +739,24 @@ table.func-view th.selected:hover {
 table.func-view th .func-title {
   color: lightgray;
 }
-table.func-view th .func-name {
+table.func-view th > span > .func-name {
   font-family: monospace;
+}
+table.func-view td .func-name {
+  color: black;
+  font-family: monospace;
+  border-radius: 3px 3px;
+}
+table.func-view td .func-name:hover {
+  background-color: darkgreen;
+  color: white;
+  font-family: monospace;
+  border-radius: 3px 3px;
+}
+table.func-view td .arg-line {
+  color: black;
+  font-family: monospace;
+  border-radius: 3px 3px;
 }
 table.func-view th .func-title:hover {
   background-color: darkolivegreen;
