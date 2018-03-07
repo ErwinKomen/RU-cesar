@@ -64,7 +64,7 @@ declare function tb:foliaw($ndThis as node()?) as node()? {
    Name: {{cvar.fname}}
    Goal: calculate value for variable {{item.name}}, searchgroup {{cvar.grp}}
    ---------------------------------------- :)
-declare function {{cvar.fname}}($search, {{cvar.dvars}}) {
+declare function {{cvar.fname}}($search {% if cvar.dvars|length > 0 %}, {% endif %} {{cvar.dvars}}) {
   {{cvar.code|safe}}
 };
 {% endif %} {% endfor %}  {% endfor %}
@@ -75,7 +75,7 @@ declare function {{cvar.fname}}($search, {{cvar.dvars}}) {
    Name: {{item.fname}}
    Goal: calculate feature {{item.name}}
    ---------------------------------------- :)
-declare function {{item.fname}}($search, {{dvar_all}}) {
+declare function {{item.fname}}($search {% if dvar_all|length > 0 %}, {% endif %}{{dvar_all}}) {
   {{item.code|safe}}
 };
 {% endif %}
@@ -95,7 +95,7 @@ declare function tb:getFtList($search, $searchgroup
   let $ft_search_pos := $search/@class
   (: Include the user-specified features here :)
   {% for feat in feature_list %}
-  let $ft_{{feat.name}} := {% if feat.type == 'dvar' %}${{feat.dvar.name}}{% else %}{{feat.fname}}($search, {{dvar_all}}) {% endif %}
+  let $ft_{{feat.name}} := {% if feat.type == 'dvar' %}${{feat.dvar.name}}{% else %}{{feat.fname}}($search {% if dvar_all|length > 0 %}, {% endif %} {{dvar_all}}) {% endif %}
   {% endfor %}
 
   return concat($ft_search, ';', $ft_search_pos
