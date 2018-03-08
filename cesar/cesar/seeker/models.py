@@ -865,7 +865,7 @@ class Function(models.Model):
                     # Also get the argdef
                     argdef = argdef_list[idx]
                     # Check if the argdef type is equal to my own arg's type
-                    if argdef.obltype != None:
+                    if argdef.obltype != None and arg != None:
                         # We need to compare types
                         arg_outputtype = arg.get_outputtype()
                         if not arg_matches(argdef.obltype, arg_outputtype, arg.argval):
@@ -1238,7 +1238,7 @@ class Function(models.Model):
                         sType = "str"
                 elif sArgType == "gvar":
                     # Global variables are always strings
-                    if arg.gvar:
+                    if arg.gvar != None:
                         sType =arg.gvar.get_outputtype()
                 elif sArgType == "cvar":
                     # The argtype 'cvar' should not be used
@@ -1730,7 +1730,10 @@ class Argument(models.Model):
             # Don't think this should work
             return ""
         elif self.argtype == "dvar":
-            return self.dvar.get_outputtype()
+            if self.dvar == None:
+                return "arg.dvar.none"
+            else:
+                return self.dvar.get_outputtype()
         elif self.argtype == "fixed":
             # Look at the string value of [argval]
             if is_integer(self.argval):
@@ -1744,7 +1747,10 @@ class Argument(models.Model):
             p = self.functionparent.first()
             return "" if p == None else p.get_outputtype()
         elif self.argtype == "gvar":
-            return self.gvar.get_outputtype()
+            if self.gvar == None:
+                return "arg.gvar.none"
+            else:
+                return self.gvar.get_outputtype()
         elif self.argtype == "hit":
             return "cnst"
         elif self.argtype == "raxis":

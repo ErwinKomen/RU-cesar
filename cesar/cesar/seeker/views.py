@@ -3237,13 +3237,19 @@ class ResultPart2(ResearchPart):
     form_div = "result_part2_button"
     paginate_by = paginateEntries
     kwic_object = None
+    result_list = []
+    feature_list = []
     form_objects = [{'form': KwicForm, 'prefix': 'kwic', 'readonly': True}]  
 
     def custom_init(self):
         """Calculate stuff"""
 
         # Determine the QC line that has been passed on
-        qc = self.qd['qc_select']
+        if 'qc_select'in self.qd:
+            qc = self.qd['qc_select']
+        else:
+            # Take a default value just in case
+            qc = "1"
         if qc != None and qc != '':
             self.qcline = int(qc)
         # Set the basket
