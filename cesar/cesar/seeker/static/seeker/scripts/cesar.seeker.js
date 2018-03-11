@@ -1694,6 +1694,10 @@ var ru = (function ($, ru) {
               data = $(frm).serializeArray();
               // Some items need data added
               switch (sPart) {
+                  case "2":
+                      // Patch for now
+                      data.push({ 'name': 'qc', 'value': '1'});
+                      break;
                   case "4":
                   case "5":
                       data.push({ 'name': 'resid', 'value': $(el).attr('resid') });
