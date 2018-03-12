@@ -2391,7 +2391,7 @@ var ru = (function ($, ru) {
        *   Stop an already going search
        *
        */
-      search_stop() {
+      search_stop(el) {
         var sDivProgress = "#research_progress",
             response = null;
         try {

@@ -2684,6 +2684,36 @@ class Research(models.Model):
         # Return what we have created
         return oBack
 
+    def stop_execute(self, basket):
+        """Stop execution"""
+
+        oErr = ErrHandle()
+        oBack = {'status': 'ok', 'msg': 'init stop'}
+        try:
+            basket.set_status("stopping...")
+            # Get the userid
+            sUser = self.owner.username
+            # Get jobid
+            jobid = basket.jobid
+            # Adapt message
+            basket.set_status('stopping job number {}'.format(jobid))
+            # Try to stop it
+            oCrpp = crpp_stop(sUser, jobid)      
+            if oCrpp['commandstatus'] == 'ok':   
+                oBack['status'] = "ok"
+                oBack['msg'] = "Stopped search job gracefully"
+                basket.set_status('stopped')
+            else:
+                oBack['status'] = 'error'
+                oBack['msg'] = 'Could not perform execute at /crpp'
+                basket.set_status('error')
+        except:
+            # Could not send this to the CRPX
+            oBack['status'] = 'error'
+            oBack['msg'] = oErr.DoError('Failed to stop the project properly')
+        # Return what we have
+        return oBack
+
     def execute(self, basket):
         """Send command to /crpp to start the project"""
 

@@ -438,7 +438,11 @@ class ResearchExe(View):
 
                 elif self.action == "stop":
                     # Need to stop the execution of the project
-                    x=2
+                    # Find out which basket is treating this
+                    basket = self.obj
+                    sStatusCode = "stopping"
+                    # Stop the basket
+                    basket.research.stop_execute()
                 elif self.action == "progress":
                     ## First check: if we are in error, then do not continue
                     #if self.obj.get_status() == "error":
@@ -470,10 +474,16 @@ class ResearchExe(View):
                             for item in self.progress:
                                 context[item] = oBack[item]
                             # Add percentages
-                            context['ptc_count'] = 100 * oBack['count'] / oBack['total']
-                            context['ptc_ready'] = 100 * oBack['ready'] / oBack['total']
-                            context['pipecount'] = oBack['count'] - oBack['ready']
-                            context['ptc_done'] = int(context['ptc_ready'])
+                            if oBack['total'] == 0:
+                                context['ptc_count'] = 0
+                                context['ptc_ready'] = 0
+                                context['pipecount'] = 0
+                                context['ptc_done'] = 0
+                            else:
+                                context['ptc_count'] = 100 * oBack['count'] / oBack['total']
+                                context['ptc_ready'] = 100 * oBack['ready'] / oBack['total']
+                                context['pipecount'] = oBack['count'] - oBack['ready']
+                                context['ptc_done'] = int(context['ptc_ready'])
                             context['found'] = oBack['found']
                         elif sStatusCode == "preparing":
                             # Show where we are in preparing
@@ -669,6 +679,7 @@ class ResearchStart(ResearchExe):
     
 
 class ResearchStop(ResearchExe):
+    # MainModel = Research
     action = "stop"
     template_name = "seeker/exe_status.html"
 

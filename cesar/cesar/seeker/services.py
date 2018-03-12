@@ -61,6 +61,13 @@ def crpp_exe(sUser, sCrpName, sLng, sPart, oOptions):
     # Send and return the reply
     return crpp_command("exe", oToCrpp)
 
+def crpp_stop(sUser, sJobId):
+    # Construct the object we pass along
+    oToCrpp = { 'userid': sUser,
+                'jobid':  sJobId}
+    # Send and return the reply
+    return crpp_command("reset", oToCrpp)
+
 def crpp_dbget(sUser, sCrpName, iQC, sType='csv', sPart=''):
     """Get the /crpp to fetch the database results"""
 
