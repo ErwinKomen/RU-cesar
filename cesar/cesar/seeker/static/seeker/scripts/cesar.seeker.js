@@ -823,6 +823,40 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * corpus_refine
+       *   Refine search selection
+       *
+       */
+      corpus_refine: function (el, sTarget) {
+        var divTarget = "",
+            divOption = null, // Chosen <option>
+            sChosen = "";     // Option that has been chosen
+
+        try {
+          // Get the target <div>
+          divTarget = "#" + sTarget;
+          // Find out what has been chosen
+          sChosen = $(el).val();
+          if (sChosen !== undefined && sChosen !== "") {
+            switch (sChosen) {
+              case "-":
+              case "all":
+                // Hide the target
+                $(divTarget).addClass("hidden");
+                break;
+              default:
+                // Show the target
+                $(divTarget).removeClass("hidden");
+                break;
+            }
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("corpus_refine", ex);
+        }
+      },
+
+      /**
        * cvartype_click
        *   Set the type of construction variable: fixed value or calculate
        *
@@ -2590,6 +2624,33 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("toggle_del", ex);
+        }
+      },
+
+      /**
+       * toggle_click
+       *   Action when user clicks an element that requires toggling a target
+       *
+       */
+      toggle_click: function (elThis) {
+        var elGroup = null,
+            elTarget = null,
+            sStatus = "";
+
+        try {
+          // Get the target to be opened
+          elTarget = $(elThis).attr("targetid");
+          // Sanity check
+          if (elTarget !== null) {
+            // Show it if needed
+            if ($("#"+elTarget).hasClass("hidden")) {
+              $("#" + elTarget).removeClass("hidden");
+            } else {
+              $("#" + elTarget).addClass("hidden");
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("toggle_click", ex);
         }
       },
 

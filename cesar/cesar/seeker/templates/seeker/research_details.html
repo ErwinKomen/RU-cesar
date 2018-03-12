@@ -165,7 +165,15 @@
             <form action="" method="post">
               {% csrf_token %}
               <div class="col-md-5 panel panel-default">
-                <b>Corpus</b>
+                <div >
+                  <span><b>Corpus</b></span>
+                  <span class="pull-right">
+                    <a class="btn btn-default btn-xs" id="search_refine"
+                       title="refine this search"
+                       targetid="search_refine_group"
+                       onclick="ru.cesar.seeker.toggle_click(this);">refine...</a>
+                  </span>
+                </div>
 
                 <div class="input-group input-group-sm">
                   <!-- Storage for chosen corpus part -->
@@ -189,6 +197,28 @@
                       {% endif %}
                     {% endfor %}
                   </select>
+                </div>
+
+                <!-- Refining a search -->
+                <div class="hidden" id="search_refine_group">
+                  <!-- Specify number of (randomly chosen) texts -->
+                  <table>
+                    <tr>
+                      <td>Text selection:</td>
+                      <td>
+                        <select class="form-control" name="search_type" id="search_type"
+                                onchange="ru.cesar.seeker.corpus_refine(this, 'search_count_row');">
+                          <option value="">-</option>
+                          {% for opt in search_type %}
+                          <option value="{{opt.value}}">{{opt.name}}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr id="search_count_row" class="hidden"><td>Number of texts:</td><td><input id="search_count" maxlength="20" name="search_count" value="{{search_count}}" type="text" /></td></tr>
+                  </table>
+                  <div class="input-group input-group-sm">
+                  </div>
                 </div>
 
                 <div id="select_corpus_choice" class="row">

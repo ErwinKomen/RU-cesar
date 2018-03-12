@@ -369,6 +369,11 @@ class ResearchExe(View):
                         # Find out which corpus/part has been chosen
                         select_part = self.qd.get("select_part")
                         select_format = self.qd.get("searchFormat")
+                        # Possibly get searchtype and search count
+                        search_type = self.qd.get("search_type")
+                        search_count = self.qd.get("search_count")
+                        oOptions = { 'search_type': search_type, 
+                                     'search_count': search_count}
                         # Get the partId
                         if select_part != "":
                             part = Part.objects.filter(Q(id=select_part)).first()
@@ -377,6 +382,9 @@ class ResearchExe(View):
                         # Set the status and the jobid
                         basket.status = "prepared"
                         basket.jobid = ""
+                        # Set options
+                        basket.options = json.dumps(oOptions)
+                        # Save the basket
                         basket.save()
                         context['statuscode'] = "prepared"
                         self.data['status'] = "prepared"
@@ -3588,6 +3596,7 @@ def research_edit(request, object_id=None):
         intro_breadcrumb = "New Project"
         sTargetType = ""
         part_list = None
+        search_type = None
     else:
         # Get the instance of this research object
         obj = Research.objects.get(pk=object_id)
@@ -3596,6 +3605,13 @@ def research_edit(request, object_id=None):
         sTargetType = obj.targetType
         # Since this has gone well, provide the context to the user with a list of corpora to explore
         part_list = get_partlist()
+        # Also provide a set of search options
+        # search_type = ['all', 'first n', 'random n']
+        search_type = [ {'name': 'all', 'value': 'all'},
+                        {'name': 'first n', 'value': 'first'},
+                        {'name': 'random n', 'value': 'random'}]
+
+    search_count = 1000
 
     # Get a list of errors
     error_list = [str(item) for item in arErr]
@@ -3609,6 +3625,8 @@ def research_edit(request, object_id=None):
         intro_breadcrumb=intro_breadcrumb,
         part_list=part_list,
         targettype=sTargetType,
+        search_type = search_type,
+        search_count = search_count,
         error_list=error_list
         )
 

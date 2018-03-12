@@ -37,7 +37,7 @@ def crpp_send_crp(sUser, sCrp, sName):
     # Send and return the reply
     return crpp_command("crpset", oToCrpp)
 
-def crpp_exe(sUser, sCrpName, sLng, sPart):
+def crpp_exe(sUser, sCrpName, sLng, sPart, oOptions):
     """Get the /crpp to start executing the indicated project
     
     The expected reply is:    
@@ -56,6 +56,7 @@ def crpp_exe(sUser, sCrpName, sLng, sPart):
                 'lng':    sLng,
                 'dir':    sPart,
                 'crp':    sCrpName,
+                'options':oOptions,
                 'cache':  False}
     # Send and return the reply
     return crpp_command("exe", oToCrpp)
