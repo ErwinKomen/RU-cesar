@@ -1729,11 +1729,33 @@ var ru = (function ($, ru) {
               $("#kwic-fetch").removeClass("hidden");
               // Fetch the correct data through a POST call
               response = ru.cesar.seeker.ajaxcall(ajaxurl, data, sAjaxMethod);
-              if (response !== undefined && response.status && response.status === 'ok') {
-                // Make the HTML response visible in a 'result_container_{num}'
-                $(sTargetId).html(response.html);
-                // Make sure events are set again
-                ru.cesar.seeker.init_events();
+              if (response === undefined) {
+                // serious business -- can't get answer from ajax call
+                private_methods.errMsg("result_wizard: no response from ajax call");
+              } else if ('status' in response) {
+                switch (response.status) {
+                  case "ok":
+                    // Make the HTML response visible in a 'result_container_{num}'
+                    $(sTargetId).html(response.html);
+                    // Make sure events are set again
+                    ru.cesar.seeker.init_events();
+                    break;
+                  case "error":
+                    // Indicate there is an error
+                    private_methods.errMsg("Response contains an error");
+                    // Make the HTML response visible in a 'result_container_{num}'
+                    $(sTargetId).html(response.html);
+                    // Make sure events are set again
+                    ru.cesar.seeker.init_events();
+                    break;
+                  default:
+                    // Indicate there is an error
+                    private_methods.errMsg("result_wizard: Unknown status: "+response.status);
+                    break;
+                }
+              } else {
+                // There is no status in the response
+                private_methods.errMsg("result_wizard: no status in response from ajax call");
               }
               // POST call: hide waiting
               $("#kwic-fetch").addClass("hidden");
