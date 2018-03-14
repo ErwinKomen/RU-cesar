@@ -3042,8 +3042,12 @@ class ResultDetailView(DetailView):
         context['original'] = research
         context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
         context['quantor'] = self.quantor
-        context['qclines'] = self.quantor.qclines.all()
         context['filters'] = self.basket.get_filters()
+        # BEWARE: perhaps quantor is empty?
+        if self.quantor == None:
+            context['qclines'] = []
+        else:
+            context['qclines'] = self.quantor.qclines.all()
 
         # Return the calculated context
         return context
