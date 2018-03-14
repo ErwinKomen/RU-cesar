@@ -2470,6 +2470,8 @@ var ru = (function ($, ru) {
                     default:
                       // Show the current status
                       private_methods.errMsg("Unknown statuscode: [" + response.statuscode + "]");
+                      // We continue anyway, because this is not an error
+                      setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
                       break;
                   }
                   break;
