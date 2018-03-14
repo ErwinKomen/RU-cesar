@@ -278,6 +278,25 @@ class ResultListView(ListView):
         context['object_list'] = lCombi
 
         context['order_heads'] = self.order_heads
+
+        # Check if there are any projects still running for this user
+        oCrpp = crpp_status(currentuser.username, "list")
+        running = None
+        if oCrpp != None and 'commandstatus' in oCrpp and oCrpp['commandstatus'] == "ok":
+            job_list = oCrpp['list']
+            for job in job_list:
+                if job['user'] == currentuser.username:
+                    # Present this user-job
+                    basket = Basket.objects.filter(jobid=job['id']).order_by('-saved').first()
+                    if basket != None:
+                        running = {}
+                        running['basket'] = basket
+                        running['research_id'] = basket.research.id
+                        running['research_name'] = basket.research.name
+                        running['corpus_name'] = basket.part.name
+                        break
+        context['running'] = running
+
         # Return the calculated context
         return context
 
@@ -487,7 +506,16 @@ class ResearchExe(View):
                         sStatusCode = "preparing" 
                     else:
                         self.arErr.append("No corpus part to be searched has been selected")
-
+                elif self.action == "watch":
+                    # Get the basket
+                    basket = self.obj
+                    self.data['basket_id'] = basket.id
+                    # Also provide all relevent command urls for the caller
+                    self.data['basket_start'] = reverse("search_start", kwargs={'object_id': basket.id})
+                    self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket.id})
+                    self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
+                    self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
+                    sStatusCode = "watching"
                 elif self.action == "start":
                     # the basket is the object
                     basket = self.obj
@@ -759,7 +787,13 @@ class ResearchPrepare(ResearchExe):
     MainModel = Research
     action = "prepare"
     template_name = "seeker/exe_status.html"
-        
+
+
+class ResearchWatch(ResearchExe):
+    MainModel = Basket
+    action = "watch"
+    template_name = "seeker/exe_status.html"
+
 
 class ResearchStart(ResearchExe):
     MainModel = Basket
@@ -3715,6 +3749,7 @@ def research_edit(request, object_id=None):
         sTargetType = ""
         part_list = None
         search_type = None
+        basket = None
     else:
         # Get the instance of this research object
         obj = Research.objects.get(pk=object_id)
@@ -3728,6 +3763,10 @@ def research_edit(request, object_id=None):
         search_type = [ {'name': 'all', 'value': 'all'},
                         {'name': 'first n', 'value': 'first'},
                         {'name': 'random n', 'value': 'random'}]
+        # Do we have a basket-id?
+        if 'basket_id' in request.GET:
+            basket_id = request.GET.get('basket_id')
+            basket = Basket.objects.filter(id=basket_id).first()
 
     search_count = 1000
 
@@ -3745,6 +3784,7 @@ def research_edit(request, object_id=None):
         targettype=sTargetType,
         search_type = search_type,
         search_count = search_count,
+        basket=basket,
         error_list=error_list
         )
 

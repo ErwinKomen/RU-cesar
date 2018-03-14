@@ -1616,6 +1616,62 @@ var ru = (function ($, ru) {
         }
       },
 
+      research_watch: function (elThis, sDivName, sDivClose) {
+        var sDivProgress = "#research_progress",
+            frm = null,
+            data = [],
+            ajaxurl = "",
+            elStart = "#select_part",
+            basket_id = "",
+            part_id = "";
+
+        try {
+          // First open the correct places
+          ru.cesar.seeker.research_open(sDivName, sDivClose);
+          // Get all the needed values
+          basket_id = $(elThis).attr("basket_id");
+          part_id = $(elThis).attr("part_id");
+          ajaxurl = $(elThis).attr("ajaxurl");
+          // Then select the correct corpus in the list
+          $(elStart).val(part_id);
+          // Make the stop button available
+          $("#research_stop").removeClass("hidden");
+          // Disable the START button
+          $("#research_start").prop("disabled", true);
+          // Show what we are attempting
+          $(sDivProgress).html("Attempting to catch the search...");
+
+          // Gather the information
+          frm = $(elStart).closest("form");
+          if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+          // All went well -- get the basket information
+          $.post(ajaxurl, data, function (response) {
+            if (response !== undefined) {
+              switch (response.status) {
+                case "ok":
+                  basket_id = response.basket_id;
+                  basket_start = response.basket_start;
+                  basket_progress = response.basket_progress;
+                  basket_stop = response.basket_stop;
+                  basket_result = response.basket_result;
+                  basket_data = data;
+                  // Now start calling for status updates
+                  setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
+                  break;
+                default:
+                  private_methods.errMsg("research_watch: incorrect response " + response.status);
+                  break;
+              }
+            }
+          });
+
+
+        } catch (ex) {
+          private_methods.errMsg("research_watch", ex);
+        }
+      },
+
       /**
        * research_overview
        *   Show the tiles-overview

@@ -845,3 +845,18 @@ span.research-item-copy, span.research-item-name, span.research-item-del {
   min-width: 28px;
   display: inline-block;
 }
+
+table.result-list {
+  border: 1px solid white;
+  background-color: white;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+}
+table.result-list tr, table.result-list td, table.result-list tbody > tr > td  {
+  padding: 5px;
+}
+table.result-list tr:hover {
+  background-color: lightgray;
+  border: 1px solid white;
+}

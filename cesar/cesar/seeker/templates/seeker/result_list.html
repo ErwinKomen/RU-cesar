@@ -23,6 +23,30 @@
     </div>
 
     {% if authenticated %}
+      <!-- Room for a search project if it is still running... -->
+      {% if running %}
+        <h3>Current search</h3>        
+        <table class="result-list">
+          <tbody>
+            <tr><td>Search project</td><td>{{running.research_name}}</td></tr>
+            <tr><td>Started at</td><td>{{running.basket.saved}}</td></tr>
+            <tr><td>Corpus</td><td>{{running.corpus_name}}</td></tr>
+            <tr>
+              <td>Action</td>
+              <td>
+                <form>
+                  {% csrf_token %}
+                    <a type="button" title="watch" class="btn btn-success btn-xs" 
+                       href="{% url 'seeker_edit' object_id=running.research_id %}?basket_id={{running.basket.id}}">
+                      <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                    </a>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      {% endif %}
+
       {% if object_list %}
         <h3>Overview of search results</h3>
 
@@ -30,7 +54,7 @@
         <div id="research_err"></div>
 
         <!-- The contents as a table -->
-        <table class="table table-hover">
+        <table class="table table-hover result-list">
           <thead>
             <tr>
               <th class="hidden">id</th>
@@ -53,7 +77,7 @@
               <td class="hidden">{{item.basket.id}}</td>
               <td><span class="research-item-user">{{item.basket.research.name}}</span></td>
               <td><span class="research-item-type">{{item.basket.part.corpus.get_lng_display}}</span></td>
-              <td><span class="research-item-type">{{item.basket.part.name}}</span></td>
+              <td><span class="research-item-corpus">{{item.basket.part.name}}</span></td>
               <td><span class="research-item-name">
                   {% if item.quantor %}{{item.quantor.total}}{% endif %}</span>
               </td>
