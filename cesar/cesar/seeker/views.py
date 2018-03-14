@@ -214,23 +214,75 @@ class ResultListView(ListView):
     paginate_by = paginateEntries
     entrycount = 0
     qs = None
+    order_cols = ['research__name', '', 'part__name', '', 'saved']
+    order_heads = [{'name': 'Project', 'order': 'o=1', 'type': 'str'}, 
+                   {'name': 'Language', 'order': '', 'type': 'str'}, 
+                   {'name': 'Corpus', 'order': 'o=3', 'type': 'str'},
+                   {'name': 'Texts', 'order': '', 'type': 'int'},
+                   {'name': 'Date', 'order': 'o=5', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
         # Make sure we get the user and check the authentication
         currentuser = self.request.user
         context['authenticated'] = currentuser.is_authenticated()
-        # Create a list that not only contains the baskets, but also the corresponding quantor
+
+        # Make sure the correct URL is being displayed
+        return super(ResultListView, self).render_to_response(context, **response_kwargs)
+
+    def get_context_data(self, **kwargs):
+
+        # Get the base implementation first of the context
+        context = super(ResultListView, self).get_context_data(**kwargs)
+
+        # Make sure we get the user and check the authentication
+        currentuser = self.request.user
+        context['authenticated'] = currentuser.is_authenticated()
+
+        # Initialise the list conditions: restrict results to current user
         lCombi = []
         lstQ = []
         lstQ.append(Q(research__owner = currentuser))
-        for itm in  Basket.objects.filter(*lstQ).order_by('research__name', 'part__name'):
+
+        # First do some tweaking: remove any baskets that have no quantor
+        qs = Basket.objects.filter(*lstQ).filter(Q(myquantor=None))
+        if qs.count() > 0:
+            qs.delete()
+
+        # Add our own element(s)
+        order = [Lower('research__name'), Lower('part__name')]
+        initial = self.request.GET
+        bAscending = True
+        sType = 'str'
+        if 'o' in initial:
+            order = []
+            iOrderCol = int(initial['o'])
+            bAscending = (iOrderCol>0)
+            iOrderCol = abs(iOrderCol)
+            order.append(Lower( self.order_cols[iOrderCol-1]))
+            sType = self.order_heads[iOrderCol-1]['type']
+            if bAscending:
+                self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
+            else:
+                # order = "-" + order
+                self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
+        if sType == 'str':
+            qs = Basket.objects.filter(*lstQ).order_by(*order)
+        else:
+            qs = Basket.objects.filter(*lstQ).order_by(*order)
+        if not bAscending:
+            qs = qs.reverse()
+
+        # Combine list with Basket/Quantor information
+        for itm in  qs:
             # Get any quantor 
             quantor = Quantor.objects.filter(basket=itm).first()
             # Add the elements to the list
             lCombi.append({'basket': itm, 'quantor': quantor})            
         context['object_list'] = lCombi
-        # Make sure the correct URL is being displayed
-        return super(ResultListView, self).render_to_response(context, **response_kwargs)
+
+        context['order_heads'] = self.order_heads
+        # Return the calculated context
+        return context
 
 
 class SeekerListView(ListView):
@@ -3347,7 +3399,10 @@ class ResultPart2(ResearchPart):
         context['original'] = research
         context['entrycount'] = self.entrycount
         context['basket'] = self.basket
-        context['kwic_id'] = self.kwic_object.id
+        if self.kwic_object == None:
+            context['kwic_id'] = None
+        else:
+            context['kwic_id'] = self.kwic_object.id
         # Provide all the information needed to create the Html presentation of the data
         context['result_list'] = self.result_list
         context['feature_list'] = self.feature_list
@@ -3363,7 +3418,10 @@ class ResultPart2(ResearchPart):
         # A list of filters that the user has specified in the past and saved
         context['list_filter'] = []
 
-        context['filter_list'] = self.kwic_object.kwicfilters.all()
+        if self.kwic_object == None:
+            context['filter_list'] = []
+        else:
+            context['filter_list'] = self.kwic_object.kwicfilters.all()
 
         # Add pagination information
         context['page_obj'] = self.page_obj

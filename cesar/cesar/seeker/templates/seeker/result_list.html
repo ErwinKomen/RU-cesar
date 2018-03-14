@@ -31,7 +31,22 @@
 
         <!-- The contents as a table -->
         <table class="table table-hover">
-          <thead><tr><th class="hidden">id</th><th>Project</th><th>Language</th><th>Corpus</th><th>Texts</th><th>Date</th><th></th></tr></thead>
+          <thead>
+            <tr>
+              <th class="hidden">id</th>
+              {% for hd in order_heads %}
+              <th class="sortable" scope="col">
+                <div class="text">
+                  {% if hd.order == "" %}{{hd.name}}
+                  {% else %}
+                  <a href=?{{hd.order}}>{{hd.name}}</a>
+                  {% endif %}
+                </div>
+              </th>
+              {% endfor %}
+              <th></th>
+            </tr>
+          </thead>
           <tbody>
           {% for item in object_list %}
             <tr class="function-item">

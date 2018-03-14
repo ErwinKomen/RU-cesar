@@ -3222,7 +3222,7 @@ class Quantor(models.Model):
     """QUantificational results of executing one basket"""
 
     # [1] A Quantor is linked to a basket
-    basket = models.ForeignKey(Basket, blank=False, null=False)
+    basket = models.ForeignKey(Basket, blank=False, null=False, related_name="myquantor")
     # [1] THe number of files (texts) that have been searched
     total = models.IntegerField("Number of files", default=0)
     # [1] Keep the number of milliseconds the search took
