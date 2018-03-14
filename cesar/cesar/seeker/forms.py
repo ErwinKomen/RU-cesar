@@ -386,11 +386,13 @@ class FeatureForm(ModelForm):
           }
 
     def __init__(self, gateway, *args, **kwargs):
+        vardef_str_list = kwargs.pop('vardef_str_list', [])
+        fundef_str_list = kwargs.pop('fundef_str_list', [])
         super(FeatureForm, self).__init__(*args, **kwargs)
         init_choices(self, 'feattype', SEARCH_FEATTYPE, bUseAbbr=True)
         # Set the initial querysets
-        self.fields['variable'].queryset = VarDef.get_restricted_vardef_list( gateway.get_vardef_list(), 'str')
-        self.fields['functiondef'].queryset = FunctionDef.get_functions_with_type('str') # FunctionDef.get_list()
+        self.fields['variable'].queryset = vardef_str_list # VarDef.get_restricted_vardef_list( gateway.get_vardef_list(), 'str')
+        self.fields['functiondef'].queryset = fundef_str_list # FunctionDef.get_functions_with_type('str') # FunctionDef.get_list()
         # Set required and optional fields
         self.fields['name'].required = True
         self.fields['description'].required = False

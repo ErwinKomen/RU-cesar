@@ -365,17 +365,17 @@ class Gateway(models.Model):
     def get_vardef_list(self):
 
         # Get a list of all variables for this gateway
-        vardef_list = self.definitionvariables.all().order_by('order')
+        vardef_list = self.definitionvariables.all().select_related().order_by('order')
         # Return this list
         return vardef_list
 
     def get_condition_list(self):
         # Get a list of conditions in order
-        return self.conditions.all().order_by('order')
+        return self.conditions.all().select_related().order_by('order')
 
     def get_feature_list(self):
         # Get a list of features in order
-        return self.features.all().order_by('order')
+        return self.features.all().select_related().order_by('order')
 
     def order_dvar(self):
         """Order the VarDef instances under me"""
@@ -403,7 +403,7 @@ class Gateway(models.Model):
 
     def get_construction_list(self):
         # This method is nog used... :)
-        return [cns for cns in self.constructions.all()]
+        return [cns for cns in self.constructions.select_related().all()]
 
     def check_cvar(self):
         """Check all the CVAR connected to me, adding/deleting where needed"""
@@ -642,7 +642,7 @@ class VarDef(Variable):
                         dvar_list.append(dvar.id)
 
         # Recombine into a new list
-        return VarDef.objects.filter(Q(id__in=dvar_list)).order_by('order')
+        return VarDef.objects.filter(Q(id__in=dvar_list)).select_related().order_by('order')
 
     def check_order(self, order):
         """Find out whether the [order] differs from the current [order], and if so, is it okay?"""
@@ -782,7 +782,7 @@ class FunctionDef(models.Model):
             # If we expect a constituent (cnst), then also allow [clist], but we need to take the *first* one...
             query |= Q(type=choice_value(SEARCH_TYPE,'clist'))
         # COmbine the possiblities with 'or' signs
-        qs = FunctionDef.objects.filter(query).order_by('name')
+        qs = FunctionDef.objects.filter(query).select_related().order_by('name')
         return qs
 
 

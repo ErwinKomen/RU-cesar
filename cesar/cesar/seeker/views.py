@@ -2294,7 +2294,12 @@ class ResearchPart7(ResearchPart):
                             feature.function.delete()
                             feature.function = function.get_copy()
                             response = feature.save()
-
+            else:
+                # Perform some pre-fetching
+                self.gateway = self.obj.gateway
+                vardef_list = self.gateway.get_vardef_list()
+                self.vardef_str_list = VarDef.get_restricted_vardef_list( vardef_list, 'str')
+                self.fundef_str_list = FunctionDef.get_functions_with_type('str')
             # REturn positively
             return True
         except:
@@ -2308,7 +2313,10 @@ class ResearchPart7(ResearchPart):
 
     def get_form_kwargs(self, prefix):
         if prefix == 'feat' and self.obj != None and self.obj.gateway != None:
-            return {"gateway":  self.obj.gateway}
+            form_kwargs = {"gateway":  self.obj.gateway,
+                           "vardef_str_list": self.vardef_str_list,
+                           "fundef_str_list": self.fundef_str_list  }
+            return form_kwargs
         else:
             return None
 
