@@ -243,11 +243,6 @@ class ResultListView(ListView):
         lstQ = []
         lstQ.append(Q(research__owner = currentuser))
 
-        # First do some tweaking: remove any baskets that have no quantor
-        qs = Basket.objects.filter(*lstQ).filter(Q(myquantor=None))
-        if qs.count() > 0:
-            qs.delete()
-
         # Add our own element(s)
         order = [Lower('research__name'), Lower('part__name')]
         initial = self.request.GET
@@ -269,6 +264,7 @@ class ResultListView(ListView):
             qs = Basket.objects.filter(*lstQ).order_by(*order)
         else:
             qs = Basket.objects.filter(*lstQ).order_by(*order)
+        # Possibly reverse the order
         if not bAscending:
             qs = qs.reverse()
 
@@ -276,8 +272,9 @@ class ResultListView(ListView):
         for itm in  qs:
             # Get any quantor 
             quantor = Quantor.objects.filter(basket=itm).first()
-            # Add the elements to the list
-            lCombi.append({'basket': itm, 'quantor': quantor})            
+            # Add the elements to the list -- only if the quantor is not none
+            if quantor != None:
+                lCombi.append({'basket': itm, 'quantor': quantor})            
         context['object_list'] = lCombi
 
         context['order_heads'] = self.order_heads
@@ -293,6 +290,12 @@ class SeekerListView(ListView):
     paginate_by = paginateEntries
     entrycount = 0
     qs = None
+    order_cols = ['owner', '', 'name', 'saved', 'purpose']
+    order_heads = [{'name': 'Owner', 'order': 'o=1', 'type': 'str'}, 
+                   {'name': 'Type', 'order': '', 'type': 'str'}, 
+                   {'name': 'Name', 'order': 'o=3', 'type': 'str'},
+                   {'name': 'Saved', 'order': 'o=4', 'type': 'str'},
+                   {'name': 'Purpose', 'order': 'o=5', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
         sType = self.request.GET.get('listtype', '')
@@ -327,6 +330,8 @@ class SeekerListView(ListView):
         currentuser = self.request.user
         # Is this user logged in?
         if currentuser.is_authenticated():
+            # make sure we pass this on
+            authenticated = True
             # Get the correct list of research projects:
             # - All my own projects
             # - All projects shared with the groups I belong to
@@ -334,8 +339,38 @@ class SeekerListView(ListView):
             lstQ = []
             lstQ.append(~Q(owner=currentuser))
             lstQ.append(~Q(sharegroups__group__in=currentuser.groups.all()))
+
             # research_list = Research.objects.filter(Q(owner=self.request.user) | Q(sharegroups_group))
-            research_list = Research.objects.exclude(*lstQ)
+            qs = Research.objects.exclude(*lstQ)
+
+            # Perform the sorting
+            order = [Lower('owner'), '-saved']
+            initial = self.request.GET
+            bAscending = True
+            sType = 'str'
+            if 'o' in initial:
+                order = []
+                iOrderCol = int(initial['o'])
+                bAscending = (iOrderCol>0)
+                iOrderCol = abs(iOrderCol)
+                order.append(Lower( self.order_cols[iOrderCol-1]))
+                sType = self.order_heads[iOrderCol-1]['type']
+                if bAscending:
+                    self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
+                else:
+                    # order = "-" + order
+                    self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
+            if sType == 'str':
+                qs = qs.order_by(*order)
+            else:
+                qs = qs.order_by(*order)
+            # Possibly reverse the order
+            if not bAscending:
+                qs = qs.reverse()
+            # We now have it
+            research_list = qs
+
+            # Combine into a combi-list
             combi_list = []
             for item in research_list:
                 may_read = item.has_permission(currentuser, 'r')
@@ -345,12 +380,14 @@ class SeekerListView(ListView):
                                    "may_read":may_read,
                                    "may_write": may_write,
                                    "may_delete": may_delete})
-            authenticated = True
         else:
             combi_list = []
             research_list = []
             authenticated = False
+
+        # Wrap up the context
         context['combi_list'] = combi_list
+        context['order_heads'] = self.order_heads
         context['object_list'] = research_list
         context['authenticated'] = authenticated
         # Make sure the correct URL is being displayed
