@@ -1007,13 +1007,22 @@ class Text(models.Model):
         else:
             return qs[0]
 
-    def find_text(part, format, sName):
-        """Find the text [sName] within the part/format combination"""
+    def strip_ext(sName):
         sName = sName.replace(".folia.xml.gz", "")
         sName = sName.replace(".folia.xml", "")
         sName = sName.replace(".psdx.gz", "")
         sName = sName.replace(".psdx", "")
+        return sName
+
+    def find_text(part, format, sName):
+        """Find the text [sName] within the part/format combination"""
+        sName = Text.strip_ext(sName)
         return Text.objects.filter(fileName=sName, part=part, format=format).first()
+
+    def sorted_texts(part, format):
+        # Provide a list of sorted texts starting from [sName]
+        qs = Text.objects.filter(part=part, format=format).order_by('fileName')
+        return qs
 
     def get_sentences(self):
         """Get the sentences belonging to this text"""

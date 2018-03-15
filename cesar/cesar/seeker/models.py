@@ -18,6 +18,7 @@ from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_dbi
 import sys
 import copy
 import json
+import math
 import re
 
 MAX_NAME_LEN = 50
@@ -2921,53 +2922,79 @@ class Basket(models.Model):
             instFormat = choice_value(CORPUS_FORMAT, self.format)
 
             # Do all in one go
-            with transaction.atomic():
-                iNumQc = len(oResults['table'])
-                # Create a completely new quantor
-                quantor = Quantor(basket=self, searchTime=oResults['searchTime'],
-                                  total=oResults['total'], qcNum=iNumQc)
-                quantor.save()
-                # Get or create the required QC lines
-                for idx in range(0, iNumQc):
-                    # Access the result information for this QC
-                    oQcResults = oResults['table'][idx]
-                    # Set the QC number
-                    qc = idx + 1
-                    qcline = QCline(quantor=quantor, qc=qc, count=oQcResults['total'])
-                    qcline.save()
-                    # Create all the necessary subcategories
-                    numsubcats = len(oQcResults['subcats'])
-                    subcats = []
+            # with transaction.atomic():
+            iNumQc = len(oResults['table'])
+            # Create a completely new quantor
+            quantor = Quantor(basket=self, searchTime=oResults['searchTime'],
+                                total=oResults['total'], qcNum=iNumQc)
+            quantor.save()
+            # Get or create the required QC lines
+            for idx in range(0, iNumQc):
+                # Access the result information for this QC
+                oQcResults = oResults['table'][idx]
+                # Set the QC number
+                qc = idx + 1
+                qcline = QCline(quantor=quantor, qc=qc, count=oQcResults['total'])
+                qcline.save()
+                # Create all the necessary subcategories
+                numsubcats = len(oQcResults['subcats'])
+                subcats = []
+                with transaction.atomic():
                     for subnum in range(0, numsubcats):
                         # Get or create this subject
                         qsubcat = Qsubcat(qcline=qcline, 
-                                          name=oQcResults['subcats'][subnum],
-                                          count=oQcResults['counts'][subnum])
+                                            name=oQcResults['subcats'][subnum],
+                                            count=oQcResults['counts'][subnum])
                         qsubcat.save()
                         subcats.append(qsubcat)
-                    last_file = ""
-                    text = None
-                    hits = len(oQcResults['hits'])
-                    for idx, hit in enumerate(oQcResults['hits']):
-                        # Find the text within the appropriate part/format
-                        if hit['file'] != last_file or text == None:
-                            text = Text.find_text(instPart, instFormat, hit['file'])
-                        # Process the sub categories
-                        for subnum in range(0, numsubcats):
-                            # Get this Qsubcat and the count for it
-                            qsubcat = subcats[subnum]
-                            subcount = hit['subs'][subnum]
-                            # Add the appropriate Qsubinfo
-                            qsubinfo = Qsubinfo(subcat = qsubcat, 
-                                                text= text,
-                                                count = subcount)
-                            qsubinfo.save()
-                        # Show what we are doing every 1000 hits
-                        if idx % 10000 == 0:
-                            sMsg = "set_quantor hits: {} / {}".format(idx, hits)
-                            errHandle.Status(sMsg)
+                last_file = ""
+                text = None
+                hits = len(oQcResults['hits'])
 
- 
+                # Divide this into packages of 1000 hits, after which a real 'save' happens
+                idx = 0
+                iChunkSize = 10000
+                iShowSize = 1000
+                # Sort the hitlist
+                # hit_list = oQcResults['hits'].sort(key=lambda x: x['file'])
+                hit_list = sorted(oQcResults['hits'], key=lambda hit: hit['file'])
+                # Sort texts
+                text_list = Text.sorted_texts(instPart, instFormat)
+                # Get the first text
+                text_list_iter = text_list.iterator()
+                text = next(text_list_iter)
+                chunks = math.ceil( hits / iChunkSize)
+                for chunk in range(chunks):
+                    # Set the max idx
+                    max_idx = (chunk + 1) * iChunkSize
+                    with transaction.atomic():
+                        while idx < max_idx and idx < hits:
+                            if idx % iShowSize == 0:
+                                sMsg = "set_quantor hits: {} / {}".format(idx, hits)
+                                oErr.Status(sMsg)
+                            hit = hit_list[idx]
+
+                            # Get the file name
+                            file = Text.strip_ext( hit['file'])
+
+                            # Check if we have the right file
+                            while file != text.fileName:
+                                # text = next(text_list.iterator())
+                                text = next(text_list_iter)
+
+                            # Process the sub categories
+                            for subnum in range(0, numsubcats):
+                                # Get this Qsubcat and the count for it
+                                qsubcat = subcats[subnum]
+                                subcount = hit['subs'][subnum]
+                                # Add the appropriate Qsubinfo
+                                qsubinfo = Qsubinfo(subcat = qsubcat, 
+                                                    text= text,
+                                                    count = subcount)
+                                qsubinfo.save()
+                            # Go to the next hit
+                            idx += 1
+                                
             # Create KWIC material for each QC line
             for idx in range(0, iNumQc):
                 self.set_kwic(idx+1)
