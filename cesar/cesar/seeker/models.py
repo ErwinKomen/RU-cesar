@@ -2910,6 +2910,7 @@ class Basket(models.Model):
 
         oErr = ErrHandle()
         try:
+            self.set_status("creating quantor")
             # Get all quantors (if any) still attached to me
             qs = Quantor.objects.filter(basket=self)
             # Remove them
@@ -2944,9 +2945,13 @@ class Basket(models.Model):
                                           count=oQcResults['counts'][subnum])
                         qsubcat.save()
                         subcats.append(qsubcat)
-                    for hit in oQcResults['hits']:
+                    last_file = ""
+                    text = None
+                    hits = len(oQcResults['hits'])
+                    for idx, hit in enumerate(oQcResults['hits']):
                         # Find the text within the appropriate part/format
-                        text = Text.find_text(instPart, instFormat, hit['file'])
+                        if hit['file'] != last_file or text == None:
+                            text = Text.find_text(instPart, instFormat, hit['file'])
                         # Process the sub categories
                         for subnum in range(0, numsubcats):
                             # Get this Qsubcat and the count for it
@@ -2957,6 +2962,11 @@ class Basket(models.Model):
                                                 text= text,
                                                 count = subcount)
                             qsubinfo.save()
+                        # Show what we are doing every 1000 hits
+                        if idx % 10000 == 0:
+                            sMsg = "set_quantor hits: {} / {}".format(idx, hits)
+                            errHandle.Status(sMsg)
+
  
             # Create KWIC material for each QC line
             for idx in range(0, iNumQc):

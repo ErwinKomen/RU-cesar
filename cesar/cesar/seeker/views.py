@@ -516,6 +516,7 @@ class ResearchExe(View):
                     self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
                     self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
                     sStatusCode = "watching"
+                    basket.set_status("caught the search")
                 elif self.action == "start":
                     # the basket is the object
                     basket = self.obj
@@ -569,6 +570,7 @@ class ResearchExe(View):
 
                     # Need to get the status of the project
                     # NOTE: the self.obj now is the BASKET!!
+                    self.obj.set_status("loading current status")
                     oBack = self.obj.get_progress()
                     if oBack['commandstatus'] == "error":
                         self.arErr.append(oBack['msg'])
