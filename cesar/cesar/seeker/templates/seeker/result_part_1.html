@@ -25,11 +25,19 @@
         <thead><tr><th class="hidden">id</th><th>Text</th><th>Category</th><th>Hits</th></tr></thead>
         <tbody>
         {% for item in object_list %}
-          <tr class="part-item">
+          <tr class="part-item" 
+              ajaxurl="{% url 'result_part_14' object_id=item.id %}"
+              onclick="ru.cesar.seeker.result_qsubinfo(this, {{item.id}});">
             <td class="hidden">{{item.id}}</td>
             <td><span class="part-item-name">{{item.text.fileName}}</span></td>
             <td><span class="part-item-corp">{{item.subcat.name}}</span></td>
             <td><span class="part-item-corp">{{item.count}}</span></td>
+          </tr>
+          <!-- a hidden row that can show results from this document -->
+          <tr class="qsubinfo-show hidden">
+            <td colspan="3">
+
+            </td>
           </tr>
         {% endfor %}
         </tbody>

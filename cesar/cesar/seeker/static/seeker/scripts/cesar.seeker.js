@@ -2250,6 +2250,75 @@ var ru = (function ($, ru) {
           private_methods.errMsg("main_info_show error: ", ex);
         }
       },
+
+      /**
+      * result_qsubinfo
+      *    Open the following <tr> and KWIC-show [qsubinfo_id]
+      * 
+      * @param {element} elThis
+      * @param {string} qsubinfo_id
+      * @returns {void}
+      */
+      result_qsubinfo: function (elThis, qsubinfo_id) {
+        var elTr = null,
+            elWait = null,
+            frm = null,
+            data = null,
+            ajaxurl = null,
+            elTd = null;
+
+        try {
+          // Clear previous errors
+          private_methods.errClear();
+          // Set waiting div
+          elWait = private_methods.waitInit(elThis);
+          // Start waiting
+          private_methods.waitStart(elWait);
+          // Get the element we are looking for
+          elTr = $(elThis).next("tr");
+          // Are we opening or closing?
+          if ($(elTr).hasClass("hidden")) {
+            // We are trying to open and show
+            // Hide all [.qsubinfo-show] items
+            $(elThis).closest("tbody").find(".qsubinfo-show").addClass("hidden");
+            // Show contents
+            $(elTr).removeClass("hidden");
+            elTd = $(elTr).children("td").first();
+            $(elTd).html("<span><i>looking for the data...</i></span><span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>");
+            
+            // Gather the information
+            frm = $("#qc_form");
+            if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+            // Ask for the required information
+            ajaxurl = $(elThis).attr("ajaxurl");
+            $.post(ajaxurl, data, function (response) {
+              if (response.status === undefined) {
+                // Show an error somewhere
+                private_methods.errMsg("Bad qsubinfo response");
+              } else if (response.status === "error") {
+                // Show the error that has occurred
+                if ("html" in response) { sMsg = response['html']; }
+                if ("error_list" in response) { sMsg += response['error_list']; }
+                private_methods.errMsg("Qsubinfo error: " + sMsg);
+              } else {
+                // Everything is in order...
+              }
+            });
+
+          } else {
+            // Need to close
+            $(elTr).addClass("hidden");
+          }
+
+          // Stop waiting
+          private_methods.waitStop(elWait);
+        } catch (ex) {
+          private_methods.errMsg("result_qsubinfo", ex);
+          // Stop waiting
+          private_methods.waitStop(elWait);
+        }
+      },
       /**
        * search_download
        *   Trigger creating and downloading the CRPX

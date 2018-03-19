@@ -3308,7 +3308,6 @@ class ResultPart1(ResearchPart):
         qc = self.qd['qc_select']
         if qc != None and qc != '':
             self.qcTarget = int(qc)
-        # self.bHideEmpty = (self.qd['hide_empty'] == 'true')
         # Set the basket
         self.basket = self.obj
         # Need to calculate the queryset already
@@ -3392,6 +3391,84 @@ class ResultPart1(ResearchPart):
 
         # Return the resulting filtered and sorted queryset
         return self.qs
+
+
+class ResultPart14(ResearchPart):
+    """Fetch all hits within a particular document"""
+    MainModel = Qsubinfo
+    template_name = 'seeker/result_part_14.html'
+    kwic_object = None
+    result_list = []
+    feature_list = []
+    form_objects = [{'form': KwicForm, 'prefix': 'kwic', 'readonly': True}]  
+
+    def custom_init(self):
+        """Calculate stuff"""
+
+        # Determine the QC line that has been passed on
+        if 'qc_select'in self.qd:
+            qc = self.qd['qc_select']
+        else:
+            # Take a default value just in case
+            qc = "1"
+        if qc != None and qc != '':
+            self.qcline = int(qc)
+
+        # Get the Qsubinfo
+        qsubinfo = self.obj
+        # This leads to subcat and text
+        self.text = qsubinfo.text
+        self.subcat = qsubinfo.subcat.name
+        # Get to the basket
+        self.basket = qsubinfo.subcat.qcline.quantor.basket
+
+        self.kwic_object = self.basket.kwiclines.filter(qc=self.qcline).first()
+        if self.kwic_object == None:
+            # there is no KWIC object for this one yet: create the KWIC objects
+            self.basket.set_kwic(self.qcline)
+            self.kwic_object = self.basket.kwiclines.filter(qc=self.qcline).first()
+
+        # Validate
+        if self.kwic_object == None:
+            # Some error has occurred
+            self.data['status'] = "error"
+        else:
+            # Create a filter for the selection
+            # oFilter = dict(TextId=self.text.fileName+".gz")
+            oFilter = { 'or_list': [{'TextId': self.text.fileName}, {'TextId': self.text.fileName+".gz"}]}
+            iStart = 0
+            iCount = 100
+            page = 1
+            # Fetch the data for this page
+            oData = crpp_dbinfo(self.basket.research.owner.username, 
+                                self.basket.research.name,
+                                qc, 
+                                iStart,
+                                iCount,
+                                filter=oFilter,
+                                sPart=self.basket.part.dir)
+            if oData['commandstatus'] == "ok" and oData['code'] == "completed":
+                self.result_list = oData['Results']
+                self.feature_list = oData['Features']
+                # Also add the results as objects
+                self.kwic_object.add_result_list(oData['Results'], page)
+            else:
+                # Some error has occurred
+                self.data['status'] = "error"
+
+    def add_to_context(self, context):
+        # Add some elements to the context
+        if self.kwic_object == None:
+            context['kwic_id'] = None
+        else:
+            context['kwic_id'] = self.kwic_object.id
+        # Provide all the information needed to create the Html presentation of the data
+        context['result_list'] = self.result_list
+        context['feature_list'] = self.feature_list
+
+
+        # Return the adapted context
+        return context
 
 
 class ResultPart2(ResearchPart):
