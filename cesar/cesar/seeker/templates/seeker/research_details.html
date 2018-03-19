@@ -69,15 +69,13 @@
               <div class="col-md-2 ">
                 <button type="button" class="btn jumbo-3" onclick="ru.cesar.seeker.research_open('exe_dashboard', 'edit_buttons');">Search...</button>
               </div>
-              {% if basket %}
-                <div class="col-md-2 ">
-                  <button type="button" class="btn jumbo-4" 
-                          basket_id="{{basket.id}}"
-                          part_id="{{basket.part.id}}"
-                          ajaxurl="{% url 'search_watch' object_id=basket.id %}"
-                          onclick="ru.cesar.seeker.research_watch(this, 'exe_dashboard', 'edit_buttons');">In progress...</button>
-                </div>
-              {% endif %}
+              <div id="action_inprogress" class="col-md-2 {% if not basket %}hidden{% endif %}">
+                <button type="button" class="btn jumbo-4" 
+                        basket_id="{% if basket %}{{basket.id}}{% endif %}"
+                        part_id="{% if basket %}{{basket.part.id}}{% endif %}"
+                        ajaxurl="{% if basket %}{% url 'search_watch' object_id=basket.id %}{% endif %}"
+                        onclick="ru.cesar.seeker.research_watch(this, 'exe_dashboard', 'edit_buttons');">In progress...</button>
+              </div>
               <div class="col-md-2">
                 <span class="main-wait glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
               </div>

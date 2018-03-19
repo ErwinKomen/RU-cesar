@@ -16,6 +16,7 @@ var ru = (function ($, ru) {
         basket_progress = "",         // URL to get progress
         basket_start = "",            // URL to start Translation + Execution
         basket_stop = "",             // URL to stop the basket
+        basket_watch = "",            // URL to watch basket that is in progress
         basket_result = "",           // URL to the results for this basket
         basket_data = null,           // DATA to be sent along
         lAddTableRow = [
@@ -1654,6 +1655,7 @@ var ru = (function ($, ru) {
                   basket_start = response.basket_start;
                   basket_progress = response.basket_progress;
                   basket_stop = response.basket_stop;
+                  basket_watch = response.basket_watch;
                   basket_result = response.basket_result;
                   basket_data = data;
                   // Now start calling for status updates
@@ -2354,6 +2356,7 @@ var ru = (function ($, ru) {
       search_start(elStart) {
         var sDivProgress = "#research_progress",
             ajaxurl = "",
+            butWatch = null,  // The button that contains the in progress
             response = null,
             basket_id = -1,
             frm = null,
@@ -2396,8 +2399,16 @@ var ru = (function ($, ru) {
               basket_start = response.basket_start;
               basket_progress = response.basket_progress;
               basket_stop = response.basket_stop;
+              basket_watch = response.basket_watch;
               basket_result = response.basket_result;
               basket_data = data;
+
+              // Make the watch (=InProgress) button available
+              butWatch = $("#action_inprogress").find("button").first();
+              $(butWatch).attr("ajaxurl", basket_watch);
+              $(butWatch).attr("basket_id", basket_id);
+              $(butWatch).attr("part_id", $("#select_part").val());
+              $("#action_inprogress").removeClass("hidden");
 
               // Make the stop button available
               $("#research_stop").removeClass("hidden");
@@ -2415,6 +2426,7 @@ var ru = (function ($, ru) {
                   // Show an error somewhere
                   private_methods.errMsg("Basket-start response status undefined");
                   $(sDivProgress).html("Bad execute response:<br>" + response);
+                  $("#action_inprogress").addClass("hidden");
                 } else if (response.status === "error") {
                   // Show the error that has occurred
                   if ("html" in response) { sMsg = response['html']; }
@@ -2426,6 +2438,7 @@ var ru = (function ($, ru) {
                     private_methods.errMsg("Execute error: " + sMsg);
                     $(sDivProgress).html("execution error (see above)");
                   }
+                  $("#action_inprogress").addClass("hidden");
                 } else {
                   // All went well, and the search has finished
                   // No further action is needed
@@ -2453,6 +2466,8 @@ var ru = (function ($, ru) {
         try {
           // Enable the START button
           $("#research_start").prop("disabled", false);
+          // Hide the in progress button
+          $("#action_inprogress").addClass("hidden");
           // Make an AJAX call by using the already stored basket_stop URL
           $.post(basket_stop, basket_data, function (response) {
             if (response.status !== undefined) {
@@ -2505,10 +2520,14 @@ var ru = (function ($, ru) {
                       $(sDivProgress).html(response.html);
                       // Hide the STOP button
                       $("#research_stop").addClass("hidden");
+                      // Allow starting again
+                      $("#research_start").prop("disabled", false);
                       // Show the RESULTS button
                       $("#research_results").removeClass("hidden");
                       // Set the correct href for the button
                       $("#research_results").attr("href", basket_result);
+                      // Hide the IN-PROGRESS button
+                      $("#action_inprogress").addClass("hidden");
                       break;
                     case "error":
                       // THis is an Xquery error
@@ -2517,15 +2536,21 @@ var ru = (function ($, ru) {
                       // Hide the STOP button
                       $("#research_stop").addClass("hidden");
                       // Do NOT shoe the RESULTS button
+                      // Hide the IN-PROGRESS button
+                      $("#action_inprogress").addClass("hidden");
                       break;
                     case "stop":
                       // Stop asking for progress
                       // Hide the STOP button
                       $("#research_stop").addClass("hidden");
+                      // Hide the IN-PROGRESS button
+                      $("#action_inprogress").addClass("hidden");
                       break;
                     default:
-                      // Show the current status
-                      private_methods.errMsg("Unknown statuscode: [" + response.statuscode + "]");
+                      if (response.statuscode !== "") {
+                        // Show the current status
+                        private_methods.errMsg("Unknown statuscode: [" + response.statuscode + "]");
+                      }
                       // We continue anyway, because this is not an error
                       setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
                       break;
@@ -2534,8 +2559,12 @@ var ru = (function ($, ru) {
                 case "error":
                   if ('error_list' in response) { sMsg += response.error_list; }
                   private_methods.errMsg("Progress error: " + sMsg);
+                  // Hide the IN-PROGRESS button
+                  $("#action_inprogress").addClass("hidden");
                   break;
                 case "stop":
+                  // Hide the IN-PROGRESS button
+                  $("#action_inprogress").addClass("hidden");
                   // No further action is needed unless there is a message??
                   break;
               }

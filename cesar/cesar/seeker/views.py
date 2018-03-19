@@ -285,9 +285,9 @@ class ResultListView(ListView):
         if oCrpp != None and 'commandstatus' in oCrpp and oCrpp['commandstatus'] == "ok":
             job_list = oCrpp['list']
             for job in job_list:
-                if job['user'] == currentuser.username:
+                if job['user'] == currentuser.username and job['status'] != 'interrupt'  and job['status'] != 'completed':
                     # Present this user-job
-                    basket = Basket.objects.filter(jobid=job['id']).order_by('-saved').first()
+                    basket = Basket.objects.filter(jobid=job['id'],research__owner__username=job['user']).order_by('-saved').first()
                     if basket != None:
                         running = {}
                         running['basket'] = basket
@@ -501,6 +501,7 @@ class ResearchExe(View):
                         self.data['basket_start'] = reverse("search_start", kwargs={'object_id': basket.id})
                         self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket.id})
                         self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
+                        self.data['basket_watch'] = reverse("search_watch", kwargs={'object_id': basket.id})
                         self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
                         # Also indicate the statuscode
                         sStatusCode = "preparing" 
@@ -514,6 +515,7 @@ class ResearchExe(View):
                     self.data['basket_start'] = reverse("search_start", kwargs={'object_id': basket.id})
                     self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket.id})
                     self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
+                    self.data['basket_watch'] = reverse("search_watch", kwargs={'object_id': basket.id})
                     self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
                     sStatusCode = "watching"
                     basket.set_status("caught the search")
@@ -3769,6 +3771,8 @@ def research_edit(request, object_id=None):
         if 'basket_id' in request.GET:
             basket_id = request.GET.get('basket_id')
             basket = Basket.objects.filter(id=basket_id).first()
+        else:
+            basket = None
 
     search_count = 1000
 
