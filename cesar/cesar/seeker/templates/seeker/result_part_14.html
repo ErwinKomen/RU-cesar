@@ -1,0 +1,59 @@
+﻿{% load i18n %}
+<!-- Result part 2: sentence view (kwic) -->
+
+    <table class="kwic-list">
+      <tbody>
+        {% for result in result_list %}
+        <tr>
+          <td class="kwic-loc">
+            <a onclick="ru.cesar.seeker.funcdefshow(this, 'meta-details');"
+               title="{{result.TextId}}&#13;{{result.Locw}}">{{result.ResId}}</a>
+          </td>
+          <td class="kwic-pre">{% if result.kwic_pre|length > 70 %}...{% endif %}{{result.kwic_pre|slice:"-70:"}}</td>
+          <td class="kwic-hit" ><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">{{result.kwic_hit}}</a></td>
+          <td class="kwic-fol">{{result.kwic_fol|truncatewords:9}}</td>
+          <td class="kwic-actions tdnowrap">
+            <a class="btn btn-default btn-xs" id="result_part4_button" 
+                targeturl="{% url 'result_part_4' object_id=kwic_id %}"
+                targetid="result_part_4"
+                backid="result_container_1"
+                resid="{{result.ResId}}"
+                onclick="ru.cesar.seeker.result_wizard(this, '4');"
+                title="hit details">
+              <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+            </a>
+            <a class="btn btn-default btn-xs" id="result_part5_button" 
+                targeturl="{% url 'result_part_5' object_id=kwic_id %}"
+                targetid="result_part_5"
+                backid="result_container_1"
+                resid="{{result.ResId}}"
+                onclick="ru.cesar.seeker.result_wizard(this, '5');"
+                title="tree">
+              <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
+            </a>
+          </td>
+        </tr>
+        <tr class="hidden kwic-details">
+          <td></td>
+          <td colspan="3">
+            [<span class="kwic-loc">{{result.Locw}}</span>]
+            {{result.kwic_pre}} <b>{{result.kwic_hit}}</b> {{result.kwic_fol}}
+          </td>
+          <td></td>
+        </tr>
+        <tr class="hidden meta-details">
+          <td></td>
+          <td colspan="3">
+            <table>
+              <tr><td>Hit:</td><td class="kwic-loc">{{result.Locw}}</td></tr>
+              <tr><td>Text:</td><td class="kwic-loc">{{result.TextId}}</td></tr>
+              <tr><td>TextSize:</td><td class="kwic-loc">{{result.Size}}</td></tr>
+              <tr><td>Genre:</td><td class="kwic-loc">{{result.Genre}}</td></tr>
+              <tr><td>Subtype:</td><td class="kwic-loc">{{result.SubType}}</td></tr>
+            </table>
+          </td>
+          <td></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>

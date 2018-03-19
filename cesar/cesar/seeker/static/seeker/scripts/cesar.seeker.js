@@ -1743,6 +1743,7 @@ var ru = (function ($, ru) {
             html = "",
             sAjaxMethod = "",
             sUrl = "",
+            sBackId = "",
             data = {},
             frm = null,
             oTree = null,
@@ -1801,6 +1802,11 @@ var ru = (function ($, ru) {
                 case "4":
                 case "5":
                   data.push({ 'name': 'resid', 'value': $(el).attr('resid') });
+                  // Do we have a backid?
+                  sBackId = $(el).attr("backid");
+                  if (sBackId !== undefined && sBackId !== "") {
+                    data.push({ 'name': 'backid', 'value': sBackId });
+                  }
                   break;
               }
           }
@@ -2302,7 +2308,11 @@ var ru = (function ($, ru) {
                 if ("error_list" in response) { sMsg += response['error_list']; }
                 private_methods.errMsg("Qsubinfo error: " + sMsg);
               } else {
-                // Everything is in order...
+                // Everything is in order: recover and show the data
+                if ("html" in response) {
+                  var sHtml = response["html"];
+                  $(elTd).html(sHtml);
+                }
               }
             });
 
