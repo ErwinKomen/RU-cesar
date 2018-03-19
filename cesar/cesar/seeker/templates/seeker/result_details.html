@@ -41,8 +41,8 @@
           </div>
 
           <!-- Allow for downloading -->
-          <div class="col-md-3" align="left" id="downloadcenter">
-            <div class="hidden">
+          <div class="col-md-2" align="left" >
+            <div id="downloadcenter" class="hidden">
               <input name='downloadtype' id='downloadtype' class='form-control' value='' >
             </div>
             <div class="dropdown">
@@ -74,8 +74,16 @@
             </div>
           </div>
 
+          <!-- Allow user to choose whether empty documents should be shown or not -->
+          <div id="result_hide_empty" class="col-md-2 input-group input-group-sm hidden">
+            <label><input id="hide_empty" name="hide_empty" type="checkbox" value=""
+                          targeturl="{% url 'result_part_1' object_id=object_id %}"
+                          targetid="result_container_1"
+                          onclick="ru.cesar.seeker.result_wizard(this, '1');" />Hide empty documents</label>
+          </div>
+
           <!-- Show we are waiting -->
-          <div class="col-md-3" align="left">
+          <div class="col-md-2" align="left">
             <div id="kwic-fetch" class="row hidden">
               <span>Loading...</span>
               <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
@@ -83,7 +91,7 @@
           </div>
 
           <!-- allow returning back to Results Details -->
-          <div class="col-md-3" align="left">
+          <div class="col-md-3" align="right">
             <div id="goto_result_details" class="hidden">
               <button type="button" class="btn btn-primary" 
                       targeturl="{% url 'result_details' pk=object_id %}"

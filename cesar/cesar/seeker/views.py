@@ -3294,6 +3294,7 @@ class ResultPart1(ResearchPart):
     paginate_by = paginateEntries
     entrycount = 0
     qcTarget = 1
+    bHideEmpty = False  # Hide empty documents
     basket = None       # Object: Basket
     quantor = None      # Object: Quantor
     qcline = None       # Object: QCline
@@ -3307,6 +3308,7 @@ class ResultPart1(ResearchPart):
         qc = self.qd['qc_select']
         if qc != None and qc != '':
             self.qcTarget = int(qc)
+        # self.bHideEmpty = (self.qd['hide_empty'] == 'true')
         # Set the basket
         self.basket = self.obj
         # Need to calculate the queryset already
@@ -3376,6 +3378,10 @@ class ResultPart1(ResearchPart):
                 lstQ.append(Q(count__gt=iVal))
             except:
                 iDoNothing = 1
+        # Filter on zero hits
+        elif 'hide_empty' in self.qd and self.qd['hide_empty'] == 'true':
+            # make sure the count is larger than zero
+            lstQ.append(Q(count__gt=0))
 
         # Set and order the selection
         self.qs = Qsubinfo.objects.filter(*lstQ).distinct().select_related().order_by(

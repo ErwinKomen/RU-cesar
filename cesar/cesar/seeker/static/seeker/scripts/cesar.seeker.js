@@ -1786,14 +1786,22 @@ var ru = (function ($, ru) {
               data = $(frm).serializeArray();
               // Some items need data added
               switch (sPart) {
-                  case "2":
-                      // Patch for now
-                      data.push({ 'name': 'qc', 'value': '1'});
-                      break;
-                  case "4":
-                  case "5":
-                      data.push({ 'name': 'resid', 'value': $(el).attr('resid') });
-                      break;
+                case "1":
+                  //  Make sure [result_hide_empty] is shown
+                  $("#result_hide_empty").removeClass("hidden");
+                  // Set the value properly
+                  $("#hide_empty").val($("#hide_empty").prop("checked"));
+                  // Make sure 'hide_empty' gets pushed
+                  data.push({ 'name': 'hide_empty', 'value': $("#hide_empty").prop("checked") });
+                  break;
+                case "2":
+                  // Patch for now
+                  data.push({ 'name': 'qc', 'value': '1'});
+                  break;
+                case "4":
+                case "5":
+                  data.push({ 'name': 'resid', 'value': $(el).attr('resid') });
+                  break;
               }
           }
 
