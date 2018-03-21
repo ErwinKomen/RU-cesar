@@ -3682,6 +3682,13 @@ class ResultPart4(ResearchPart):
             # What do we do if the result is empty??
             context['no_result'] = True
             return context
+        # Check whether a 'back' identifis passed on
+        if 'backid' in self.qd:
+          sBackId = self.qd['backid']
+        else:
+          sBackId = 'result_container_2'
+        context['backid'] = sBackId
+        # Return the adapted context
         return context
 
 
