@@ -288,12 +288,13 @@ def sync_crpp_start(request):
 
                         # Update the models with the /crpp/txtlist information
                         bNoDeleting = True
-                        oResult = process_textlist(crpp_texts, part, sFormat, oStatus, bNoDeleting)
+                        options = {'nodeleting': True, 'updating': True, 'update_field': 'words'}
+                        oResult = process_textlist(crpp_texts, part, sFormat, oStatus, options)
 
                         # Process the reply from [process_textlist()]
                         if oResult == None or ('result' in oResult and oResult['result'] == False):
                             data['status'] = 'error'
-                        elif not 'count' in oResult:
+                        elif not 'total' in oResult:
                             data['status'] = 'error'
                         elif oResult != None:
                             data['count'] = oResult

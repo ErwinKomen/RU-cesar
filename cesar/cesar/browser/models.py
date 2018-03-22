@@ -302,17 +302,24 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting = False):
+def process_textlist(oTxtlist, part, sFormat, oStatus, options):
     """Update our own models with the information in [oCorpusInfo]"""
 
     oBack = {}      # What we return
-    lOblig = ['name', 'size', 'title', 'date', 'author', 'genre', 'subtype']
+    lOblig = ['name', 'size', 'words', 'title', 'date', 'author', 'genre', 'subtype']
+    bNoDeleting = False
+    bUpdating = False
+    sUpdateField = ""
 
     # Get the value for format
     format_choice = choice_value(CORPUS_FORMAT, sFormat)
 
-    if bNoDeleting == None:
-        bNoDeleting = False
+    if 'nodeleting' in options:
+        bNoDeleting = options['nodeleting']
+    if 'updating' in options:
+        bUpdating = options['updating']
+    if 'update_field' in options:
+        sUpdateField = options['update_field']
 
     def has_oblig_fields(oItem):
         for sField in lOblig:
@@ -362,6 +369,7 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting = False):
             lenArList = len(arList)
             # chunk_arList = chunks(arList, 100)
 
+            # ================ DELETE OLD STUFF =========================
             if not bNoDeleting:
                 for chunk_this in chunks(arList, 100):
 
@@ -372,9 +380,8 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting = False):
                                 # check if it is in [Text] already
                                 lMatches = Text.objects.filter(fileName=oText['name'], format=format_choice,
                                                 part=part, title=oText['title'], lines=oText['size'],
-                                                date=oText['date'], author=oText['author'],
-                                                genre=lGenre[oText['genre']], 
-                                                subtype=lSubtype[oText['subtype']])
+                                                words=oText['words'], date=oText['date'], author=oText['author'],
+                                                genre=lGenre[oText['genre']], subtype=lSubtype[oText['subtype']])
                                 oBack['file'] = oText['name']
                                 # Walk through all results
                                 for oMatch in lMatches:
@@ -383,48 +390,88 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, bNoDeleting = False):
                     # Show what is happening
                     oStatus.set("deleting", oBack)
 
-            # Keep the transactions together in a bulk edit
-            lstText = []
-            oBack['language'] =  part.corpus.get_lng_display()
-            oBack['part'] =  "{}: {}".format(part.dir, sPath)
-            oBack['format'] = sFormat
-            oStatus.set("bulk add", oBack)
-            iChunk = 0
-            iChunkLen = len(arList) // 100
-            for chunk_this in chunks(arList, 100):
-                iChunk += 1
-                oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
-                with transaction.atomic():
-                    for oText in chunk_this:
-                        # Validate
-                        if has_oblig_fields(oText):
-                            # if 'name' in oText and 'size' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
-                            try:
-                                oNew = Text(fileName=oText['name'], format=format_choice,
-                                            part=part, title=oText['title'], lines=oText['size'],
-                                            date=oText['date'], author=oText['author'],
-                                            genre=lGenre[oText['genre']], 
-                                            subtype=lSubtype[oText['subtype']])
-                            except:
-                                oStatus.set("error")
-                                errHandle.DoError("process_textlist [new]", True)
-                                return oBack
-                            oBack['file'] = oText['name']
-                            # Now add the object to the list of objects
-                            lstText.append(oNew)
-                        else:
-                            # Not all fields were there in the [oText] we encountered
-                            oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
-                            oStatus.set("error", oBack)
+            if bUpdating:
+                # ================= ONLY UPDATE EXISTING ================
+                oBack['language'] =  part.corpus.get_lng_display()
+                oBack['part'] =  "{}: {}".format(part.dir, sPath)
+                oBack['format'] = sFormat
+                oStatus.set("bulk update", oBack)
+                iChunk = 0
+                iChunkLen = len(arList) // 100 + 1
+                for chunk_this in chunks(arList, 100):
+                    iChunk += 1
+                    oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
+                    with transaction.atomic():
+                        for oText in chunk_this:
+                            # Validate
+                            if has_oblig_fields(oText):
+                                # Find the instance to be updated
+                                instance = Text.objects.filter(fileName=oText['name'], format=format_choice,part=part).first()
+                                if instance == None:
+                                    oStatus.set("error")
+                                    errHandle.DoError("Cannot find text ["+oText['name']+"]")
+                                    return oBack
+                                else:
+                                    if sUpdateField == "":
+                                        # No idea what to do now
+                                        pass
+                                    elif sUpdateField == "words":
+                                        instance.words = oText['words']
+                                        instance.save()
+                                        oBack['file'] = oText['name']
+                            else:
+                                # Not all fields were there in the [oText] we encountered
+                                oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
+                                oStatus.set("error", oBack)
+                    # Show what is going on
+                    oStatus.set("updating", oBack)
+                # We are ready with this part
+                oBack['parts'] += 1
+                oBack['paths'] += 1
 
-                # Show what is going on
-                oStatus.set("adding", oBack)
+            else:
+                # ================= BULK CREATE NEW =====================
+                # Keep the transactions together in a bulk edit
+                lstText = []
+                oBack['language'] =  part.corpus.get_lng_display()
+                oBack['part'] =  "{}: {}".format(part.dir, sPath)
+                oBack['format'] = sFormat
+                oStatus.set("bulk add", oBack)
+                iChunk = 0
+                iChunkLen = len(arList) // 100
+                for chunk_this in chunks(arList, 100):
+                    iChunk += 1
+                    oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
+                    with transaction.atomic():
+                        for oText in chunk_this:
+                            # Validate
+                            if has_oblig_fields(oText):
+                                # if 'name' in oText and 'size' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
+                                try:
+                                    oNew = Text(fileName=oText['name'], format=format_choice,
+                                                part=part, title=oText['title'], lines=oText['size'],
+                                                words=oText['words'], date=oText['date'], author=oText['author'],
+                                                genre=lGenre[oText['genre']], subtype=lSubtype[oText['subtype']])
+                                except:
+                                    oStatus.set("error")
+                                    errHandle.DoError("process_textlist [new]", True)
+                                    return oBack
+                                oBack['file'] = oText['name']
+                                # Now add the object to the list of objects
+                                lstText.append(oNew)
+                            else:
+                                # Not all fields were there in the [oText] we encountered
+                                oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
+                                oStatus.set("error", oBack)
 
-            # We are ready with this part
-            oBack['parts'] += 1
-            # Save what we have so far
-            Text.objects.bulk_create(lstText)
-            oBack['paths'] += 1
+                    # Show what is going on
+                    oStatus.set("adding", oBack)
+
+                # We are ready with this part
+                oBack['parts'] += 1
+                # Save what we have so far
+                Text.objects.bulk_create(lstText)
+                oBack['paths'] += 1
 
         # We are done!
         oStatus.set("part", oBack)
@@ -961,6 +1008,8 @@ class Text(models.Model):
     part = models.ForeignKey(Part, blank=False, null=False)
     # [1] - EVery text must have a length in number of lines
     lines = models.IntegerField("Number of lines", default=0)
+    # [1] - EVery text must have a length in number of words
+    words = models.IntegerField("Number of words", default=0)
     # [0-1] - Every text may have a metadata file associated with it
     metaFile = models.CharField("Name of the metadata file", max_length=MAX_TEXT_LEN, blank=True, null=True)
     # [0-1] - Every text *MAY* have a title
