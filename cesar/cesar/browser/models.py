@@ -6,6 +6,7 @@ The information here mirrors (and extends) the information in the crp-info.json 
 """
 from django.db import models, transaction
 from django.contrib.auth.models import User
+from django.db.models.functions import Lower
 from datetime import datetime
 from cesar.utils import *
 from cesar.browser.services import *
@@ -302,6 +303,24 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
+def get_text_from_txtlist(oTxtlist, sFileName):
+    """Retrieve text [sFileName] from oTxtList"""
+    oBack = None
+    try:
+        for oPath in oTxtlist['txtlist']:
+            # Process this patth
+            sPath = oPath['path']
+            iPathCount = oPath['count']
+            for item in oPath['list']:
+                if item['name'] == sFileName:
+                    item['path'] = sPath
+                    item['count'] = iPathCount
+                    return item
+        return oBack
+    except:
+        oBack = None
+    return oBack
+
 def process_textlist(oTxtlist, part, sFormat, oStatus, options):
     """Update our own models with the information in [oCorpusInfo]"""
 
@@ -349,129 +368,178 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                  'paths': oTxtlist['paths'],
                  'total': oTxtlist['count']}
 
-        # Initialisations
-        # part = Part.objects.filter(id=oReq['part']).first()
-        # format = oReq['format']
+        if bUpdating:
+            # ================= ONLY UPDATE EXISTING ================
+            oBack['language'] =  part.corpus.get_lng_display()
+            oBack['format']   = sFormat
+            oStatus.set("bulk update", oBack)
 
-        # Walk all the different paths
-        for oPath in oTxtlist['txtlist']:
-            # Process this patth
-            sPath = oPath['path']
-            iPathCount = oPath['count']
-            arList = oPath['list']
+            # Look for the texts that need to be visited
+            qs_texts = Text.objects.filter(format=format_choice,part=part).order_by(Lower('fileName'))
+            qs_iter = qs_texts.iterator()
 
-            # Remove all texts adhering to the specifications
-            lstText = []
-            oBack['part'] = part.name
-            oBack['format'] = sFormat
-            oStatus.set("deleting", oBack)
-            # Do the deleting in chunks of 100
-            lenArList = len(arList)
-            # chunk_arList = chunks(arList, 100)
+            # Establish the chunk parameters
+            iChunk = 0
+            iChunkSize = 100
+            iChunkLen = qs_texts.count() // iChunkSize + 1
+            iNum = 0
 
-            # ================ DELETE OLD STUFF =========================
-            if not bNoDeleting:
-                for chunk_this in chunks(arList, 100):
-
-                    with transaction.atomic():
-                        for oText in chunk_this:
-                            # Validate
-                            if has_oblig_fields(oText):
-                                # check if it is in [Text] already
-                                lMatches = Text.objects.filter(fileName=oText['name'], format=format_choice,
-                                                part=part, title=oText['title'], lines=oText['size'],
-                                                words=oText['words'], date=oText['date'], author=oText['author'],
-                                                genre=lGenre[oText['genre']], subtype=lSubtype[oText['subtype']])
-                                oBack['file'] = oText['name']
-                                # Walk through all results
-                                for oMatch in lMatches:
-                                    # Delete this result (this also includes deleting the related [Sentence] entry)
-                                    oMatch.delete()
-                    # Show what is happening
-                    oStatus.set("deleting", oBack)
-
-            if bUpdating:
-                # ================= ONLY UPDATE EXISTING ================
-                oBack['language'] =  part.corpus.get_lng_display()
-                oBack['part'] =  "{}: {}".format(part.dir, sPath)
-                oBack['format'] = sFormat
-                oStatus.set("bulk update", oBack)
-                iChunk = 0
-                iChunkLen = len(arList) // 100 + 1
-                for chunk_this in chunks(arList, 100):
-                    iChunk += 1
-                    oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
-                    with transaction.atomic():
-                        for oText in chunk_this:
-                            # Validate
-                            if has_oblig_fields(oText):
-                                # Find the instance to be updated
-                                instance = Text.objects.filter(fileName=oText['name'], format=format_choice,part=part).first()
-                                if instance == None:
-                                    oStatus.set("error")
-                                    errHandle.DoError("Cannot find text ["+oText['name']+"]")
-                                    return oBack
-                                else:
-                                    if sUpdateField == "":
-                                        # No idea what to do now
-                                        pass
-                                    elif sUpdateField == "words":
-                                        instance.words = oText['words']
-                                        instance.save()
-                                        oBack['file'] = oText['name']
+            # Iterate through the Text instances
+            text = next(qs_iter)
+            for chunk_this in range(iChunkLen):
+                iChunk += 1
+                # Walk this chunk
+                oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
+                # Show what is going on
+                oStatus.set("updating", oBack)
+                with transaction.atomic():
+                    for idx in range(iChunkSize):
+                        if text != None:
+                            # Find this text in [oTxtlist]
+                            oText = get_text_from_txtlist(oTxtlist, text.fileName)
+                            if oText == None:
+                                oStatus.set("error")
+                                errHandle.DoError("Cannot find text ["+text.fileName+"]")
+                                return oBack
                             else:
-                                # Not all fields were there in the [oText] we encountered
-                                oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
-                                oStatus.set("error", oBack)
-                    # Show what is going on
-                    oStatus.set("updating", oBack)
-                # We are ready with this part
-                oBack['parts'] += 1
-                oBack['paths'] += 1
+                                if sUpdateField == "":
+                                    # No idea what to do now
+                                    pass
+                                elif sUpdateField == "words":
+                                    text.words = oText['words']
+                                    text.save()
+                                    oBack['file'] = text.fileName
+                                    iNum += 1
+                                    oBack['updated'] = iNum
 
-            else:
-                # ================= BULK CREATE NEW =====================
-                # Keep the transactions together in a bulk edit
+                            # Get to the next text
+                            try:
+                                text = next(qs_iter)
+                            except StopIteration as e:
+                                break
+                # Show what is going on
+                oStatus.set("updating", oBack)
+        else:
+            
+            # Walk all the different paths
+            for oPath in oTxtlist['txtlist']:
+                # Process this patth
+                sPath = oPath['path']
+                iPathCount = oPath['count']
+                arList = oPath['list']
+
+                # Remove all texts adhering to the specifications
                 lstText = []
-                oBack['language'] =  part.corpus.get_lng_display()
-                oBack['part'] =  "{}: {}".format(part.dir, sPath)
+                oBack['part'] = part.name
                 oBack['format'] = sFormat
-                oStatus.set("bulk add", oBack)
-                iChunk = 0
-                iChunkLen = len(arList) // 100
-                for chunk_this in chunks(arList, 100):
-                    iChunk += 1
-                    oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
-                    with transaction.atomic():
-                        for oText in chunk_this:
-                            # Validate
-                            if has_oblig_fields(oText):
-                                # if 'name' in oText and 'size' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
-                                try:
-                                    oNew = Text(fileName=oText['name'], format=format_choice,
-                                                part=part, title=oText['title'], lines=oText['size'],
-                                                words=oText['words'], date=oText['date'], author=oText['author'],
-                                                genre=lGenre[oText['genre']], subtype=lSubtype[oText['subtype']])
-                                except:
-                                    oStatus.set("error")
-                                    errHandle.DoError("process_textlist [new]", True)
-                                    return oBack
-                                oBack['file'] = oText['name']
-                                # Now add the object to the list of objects
-                                lstText.append(oNew)
-                            else:
-                                # Not all fields were there in the [oText] we encountered
-                                oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
-                                oStatus.set("error", oBack)
+                oStatus.set("deleting", oBack)
+                # Do the deleting in chunks of 100
+                lenArList = len(arList)
+                # chunk_arList = chunks(arList, 100)
 
-                    # Show what is going on
-                    oStatus.set("adding", oBack)
+                # ================ DELETE OLD STUFF =========================
+                if not bNoDeleting:
+                    for chunk_this in chunks(arList, 100):
 
-                # We are ready with this part
-                oBack['parts'] += 1
-                # Save what we have so far
-                Text.objects.bulk_create(lstText)
-                oBack['paths'] += 1
+                        with transaction.atomic():
+                            for oText in chunk_this:
+                                # Validate
+                                if has_oblig_fields(oText):
+                                    # check if it is in [Text] already
+                                    lMatches = Text.objects.filter(fileName=oText['name'], format=format_choice,
+                                                    part=part, title=oText['title'], lines=oText['size'],
+                                                    words=oText['words'], date=oText['date'], author=oText['author'],
+                                                    genre=lGenre[oText['genre']], subtype=lSubtype[oText['subtype']])
+                                    oBack['file'] = oText['name']
+                                    # Walk through all results
+                                    for oMatch in lMatches:
+                                        # Delete this result (this also includes deleting the related [Sentence] entry)
+                                        oMatch.delete()
+                        # Show what is happening
+                        oStatus.set("deleting", oBack)
+
+                if bUpdating:
+                    # ================= ONLY UPDATE EXISTING ================
+                    oBack['language'] =  part.corpus.get_lng_display()
+                    oBack['part'] =  "{}: {}".format(part.dir, sPath)
+                    oBack['format'] = sFormat
+                    oStatus.set("bulk update", oBack)
+                    iChunk = 0
+                    iChunkLen = len(arList) // 100 + 1
+                    for chunk_this in chunks(arList, 100):
+                        iChunk += 1
+                        oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
+                        with transaction.atomic():
+                            for oText in chunk_this:
+                                # Validate
+                                if has_oblig_fields(oText):
+                                    # Find the instance to be updated
+                                    instance = Text.objects.filter(fileName=oText['name'], format=format_choice,part=part).first()
+                                    if instance == None:
+                                        oStatus.set("error")
+                                        errHandle.DoError("Cannot find text ["+oText['name']+"]")
+                                        return oBack
+                                    else:
+                                        if sUpdateField == "":
+                                            # No idea what to do now
+                                            pass
+                                        elif sUpdateField == "words":
+                                            instance.words = oText['words']
+                                            instance.save()
+                                            oBack['file'] = oText['name']
+                                else:
+                                    # Not all fields were there in the [oText] we encountered
+                                    oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
+                                    oStatus.set("error", oBack)
+                        # Show what is going on
+                        oStatus.set("updating", oBack)
+                    # We are ready with this part
+                    oBack['parts'] += 1
+                    oBack['paths'] += 1
+
+                else:
+                    # ================= BULK CREATE NEW =====================
+                    # Keep the transactions together in a bulk edit
+                    lstText = []
+                    oBack['language'] =  part.corpus.get_lng_display()
+                    oBack['part'] =  "{}: {}".format(part.dir, sPath)
+                    oBack['format'] = sFormat
+                    oStatus.set("bulk add", oBack)
+                    iChunk = 0
+                    iChunkLen = len(arList) // 100
+                    for chunk_this in chunks(arList, 100):
+                        iChunk += 1
+                        oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
+                        with transaction.atomic():
+                            for oText in chunk_this:
+                                # Validate
+                                if has_oblig_fields(oText):
+                                    # if 'name' in oText and 'size' in oText and 'title' in oText and 'date' in oText and 'author' in oText and 'genre' in oText and 'subtype' in oText:
+                                    try:
+                                        oNew = Text(fileName=oText['name'], format=format_choice,
+                                                    part=part, title=oText['title'], lines=oText['size'],
+                                                    words=oText['words'], date=oText['date'], author=oText['author'],
+                                                    genre=lGenre[oText['genre']], subtype=lSubtype[oText['subtype']])
+                                    except:
+                                        oStatus.set("error")
+                                        errHandle.DoError("process_textlist [new]", True)
+                                        return oBack
+                                    oBack['file'] = oText['name']
+                                    # Now add the object to the list of objects
+                                    lstText.append(oNew)
+                                else:
+                                    # Not all fields were there in the [oText] we encountered
+                                    oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
+                                    oStatus.set("error", oBack)
+
+                        # Show what is going on
+                        oStatus.set("adding", oBack)
+
+                    # We are ready with this part
+                    oBack['parts'] += 1
+                    # Save what we have so far
+                    Text.objects.bulk_create(lstText)
+                    oBack['paths'] += 1
 
         # We are done!
         oStatus.set("part", oBack)
