@@ -303,23 +303,47 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-def get_text_from_txtlist(oTxtlist, sFileName):
-    """Retrieve text [sFileName] from oTxtList"""
+def get_text_from_txtlist(arList, sFileName, idx):
+    """Retrieve text [sFileName] from arList"""
     oBack = None
+    oErr = ErrHandle()
     try:
-        for oPath in oTxtlist['txtlist']:
+        if idx < len(arList):
+            # Start searching frim [idx] onwards
+            oText = arList[idx]
+            while oText['name'] != sFileName:
+                idx += 1
+                oText = arList[idx]
+            if oText['name'] == sFileName:
+                return oText, idx
+    except:
+        sMsg = oErr.get_error_message()
+        oErr.DoError("get_text_from_txtlist: " + sMsg)
+        oBack = None
+    return oBack, idx
+
+def sort_texts_from_txtlist(oTxtList):
+    """Retrieve texts from oTxtList and sort them"""
+    arList = []
+    oErr = ErrHandle()
+    try:
+        for oPath in oTxtList['txtlist']:
             # Process this patth
             sPath = oPath['path']
             iPathCount = oPath['count']
             for item in oPath['list']:
-                if item['name'] == sFileName:
-                    item['path'] = sPath
-                    item['count'] = iPathCount
-                    return item
-        return oBack
+                item['path'] = sPath
+                item['count'] = iPathCount
+                # Add to arlist
+                arList.append(item)
+        # Now sort
+        arList.sort(key=lambda item: item['name'])
     except:
-        oBack = None
-    return oBack
+        sMsg = oErr.get_error_message()
+        oErr.DoError("sort_texts_from_txtlist: " + sMsg)
+        arList = []
+    return arList
+
 
 def process_textlist(oTxtlist, part, sFormat, oStatus, options):
     """Update our own models with the information in [oCorpusInfo]"""
@@ -368,15 +392,23 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                  'paths': oTxtlist['paths'],
                  'total': oTxtlist['count']}
 
-        if bUpdating:
+        # Prepare 
+        qs_texts = Text.objects.filter(format=format_choice,part=part).order_by(Lower('fileName'))
+        if qs_texts.count() == 0:
+            bUpdating = False
+
+        if bUpdating :
             # ================= ONLY UPDATE EXISTING ================
             oBack['language'] =  part.corpus.get_lng_display()
             oBack['format']   = sFormat
             oStatus.set("bulk update", oBack)
 
             # Look for the texts that need to be visited
-            qs_texts = Text.objects.filter(format=format_choice,part=part).order_by(Lower('fileName'))
             qs_iter = qs_texts.iterator()
+
+            # Sort the texts in oTxtList in an array
+            arList = sort_texts_from_txtlist(oTxtlist)
+            idx_list = 0
 
             # Establish the chunk parameters
             iChunk = 0
@@ -389,14 +421,21 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
             for chunk_this in range(iChunkLen):
                 iChunk += 1
                 # Walk this chunk
-                oBack['chunk'] = "{} (of {})".format(iChunk, iChunkLen)
+                sChunkMsg = "{} (of {})".format(iChunk, iChunkLen)
+                oBack['chunk'] = sChunkMsg
+
+                # ====== DEBUG ========
+                # Log what we are doing in the output
+                errHandle.Status(sChunkMsg)
+                # =====================
+
                 # Show what is going on
                 oStatus.set("updating", oBack)
                 with transaction.atomic():
                     for idx in range(iChunkSize):
                         if text != None:
                             # Find this text in [oTxtlist]
-                            oText = get_text_from_txtlist(oTxtlist, text.fileName)
+                            oText, idx_list = get_text_from_txtlist(arList, text.fileName, idx_list)
                             if oText == None:
                                 oStatus.set("error")
                                 errHandle.DoError("Cannot find text ["+text.fileName+"]")
@@ -405,7 +444,7 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                                 if sUpdateField == "":
                                     # No idea what to do now
                                     pass
-                                elif sUpdateField == "words":
+                                elif sUpdateField == "words" and text.words == 0:
                                     text.words = oText['words']
                                     text.save()
                                     oBack['file'] = text.fileName
