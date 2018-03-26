@@ -990,8 +990,10 @@ class ResearchPart(View):
                         # Decode the data and compress it using gzip
                         bUtf8 = (self.dtype != "db")
                         compressed_content = decompressSafe(sData, True, bUtf8)
-                        # Get the name adn the contents
-                        sDbName = oData['name']
+                        # Get the name and the contents
+                        # sDbName = oData['name']
+                        sLng = self.basket.part.corpus.get_lng_display()
+                        sDbName = "{}_{}_{}_QC{}_Dbase.{}.gz".format(sCrpName, sLng, sPartDir, self.qcTarget, self.dtype)
                         response = HttpResponse(compressed_content, content_type='application/gzip')
                         response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
                         # return gzip_middleware.process_response(request, response)

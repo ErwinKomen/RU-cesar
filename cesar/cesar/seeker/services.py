@@ -81,12 +81,7 @@ def crpp_dbget(sUser, sCrpName, iQC, sType='csv', sPart=''):
     # Send and return the reply
     oBack = crpp_command("dbget", oToCrpp)
     # Make sure we have the correct name of what is being returned
-    if sType == "csv":
-        sDbName = sDbName.replace(".xml", ".csv.gz")
-    elif sType == "db":
-        sDbName = sDbName.replace(".xml", ".db.gz")
-    elif sType == "xml":
-        sDbName = sDbName.replace(".xml", ".xml.gz")
+    sDbName = "{}_{}_QC{}_Dbase.{}.gz".format(sCrpName, sPart, iQC, sType)
     oBack['name'] = sDbName
     return oBack
 
