@@ -42,8 +42,10 @@
               <tr><td>Search date:</td><td>{{basket.saved|date:"j/b/o G:i"}}</td></tr>
               <tr><td>Search duration:</td><td align="right">{{quantor.searchTime}} ms.</td></tr>
               <tr><td>Operation (qc):</td><td align="right">{{kwic.qc}} of {{quantor.qcNum}}</td></tr>
-              <tr><td>Texts:</td><td align="right">{{kwic.textcount}}</td></tr>
               <tr><td>Hits:</td><td align="right">{{kwic.hitcount}}</td></tr>
+              <tr><td>Texts:</td><td align="right">{{kwic.textcount}}</td></tr>
+              <tr><td>Lines:</td><td align="right">{{kwic.get_lines}}</td></tr>
+              <tr><td>Words:</td><td align="right">{{kwic.get_words}}</td></tr>
             </table>
           </div>
 

@@ -1115,7 +1115,7 @@ class Text(models.Model):
     # [1] - every text must be [psdx] or [folia] or something
     format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
     # [1] - Every text must be part of a Part
-    part = models.ForeignKey(Part, blank=False, null=False)
+    part = models.ForeignKey(Part, blank=False, null=False, related_name="part_texts")
     # [1] - EVery text must have a length in number of lines
     lines = models.IntegerField("Number of lines", default=0)
     # [1] - EVery text must have a length in number of words

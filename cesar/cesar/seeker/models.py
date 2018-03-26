@@ -4,7 +4,7 @@ The seeker helps users define and execute searches through the texts that
 are available at the back end
 """
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Q, Aggregate, Sum
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
 from django.utils import timezone
@@ -2925,8 +2925,11 @@ class Basket(models.Model):
             # with transaction.atomic():
             iNumQc = len(oResults['table'])
             # Create a completely new quantor
+            iFiles = 0
+            if 'table' in oResults and len(oResults['table'] )>0 and 'hits' in oResults['table'][0]:
+                iFiles = len(oResults['table'][0]['hits'])
             quantor = Quantor(basket=self, searchTime=oResults['searchTime'],
-                                total=oResults['total'], qcNum=iNumQc)
+                                total=iFiles, qcNum=iNumQc)
             quantor.save()
             # Get or create the required QC lines
             for idx in range(0, iNumQc):
@@ -2955,6 +2958,8 @@ class Basket(models.Model):
                 idx = 0
                 iChunkSize = 10000
                 iShowSize = 1000
+                iNumLines = 0
+                iNumWords = 0
                 # Sort the hitlist
                 # hit_list = oQcResults['hits'].sort(key=lambda x: x['file'])
                 hit_list = sorted(oQcResults['hits'], key=lambda hit: hit['file'])
@@ -2982,6 +2987,10 @@ class Basket(models.Model):
                                 # text = next(text_list.iterator())
                                 text = next(text_list_iter)
 
+                            # Keep track of the number of words and lines
+                            iNumLines += text.lines
+                            iNumWords += text.words
+
                             # Process the sub categories
                             for subnum in range(0, numsubcats):
                                 # Get this Qsubcat and the count for it
@@ -2994,6 +3003,11 @@ class Basket(models.Model):
                                 qsubinfo.save()
                             # Go to the next hit
                             idx += 1
+
+                # Put the number of lines and words in the quantor
+                quantor.lines = iNumLines
+                quantor.words = iNumWords
+                quantor.save()
                                 
             # Create KWIC material for each QC line
             for idx in range(0, iNumQc):
@@ -3223,6 +3237,16 @@ class Kwic(models.Model):
             self.kwicresults.all().delete()
         return True
 
+    def get_lines(self):
+        # Find out what quantor we have
+        quantor = self.basket.myquantor.first()
+        return quantor.get_lines()
+
+    def get_words(self):
+        # Find out what quantor we have
+        quantor = self.basket.myquantor.first()
+        return quantor.get_words()
+
 
 class KwicFilter(models.Model):
     """A filter that needs to be applied to the KWIC it is attached to"""
@@ -3262,6 +3286,10 @@ class Quantor(models.Model):
     basket = models.ForeignKey(Basket, blank=False, null=False, related_name="myquantor")
     # [1] THe number of files (texts) that have been searched
     total = models.IntegerField("Number of files", default=0)
+    # [0-1] The number of lines in the texts
+    lines = models.IntegerField("Number of lines", blank=True, null=True)
+    # [0-1] The number of words in the searched texts
+    words = models.IntegerField("Number of words", blank=True, null=True)
     # [1] Keep the number of milliseconds the search took
     searchTime = models.IntegerField("Search time (ms)", default=0)
     # [1] Need to know the number of QCs for this search
@@ -3295,6 +3323,55 @@ class Quantor(models.Model):
             # Remove myself
             response = super().delete(using, keep_parents)
         return response
+
+    def get_lines(self):
+        """Return or retrieve the number of lines in the texts that have been searched"""
+
+        iCount = -1
+        if self.lines == None:
+            oCount = Qsubinfo.objects.filter(Q(subcat__qcline__quantor=self)).values("text").annotate(num_lines=Sum('text__lines')).aggregate(Sum('num_lines'))
+            if 'num_lines__sum' in oCount:
+                iCount = oCount['num_lines__sum']
+                self.lines = iCount
+                self.save()
+
+
+            ## Calculate the number of lines
+            #qs_qsub = Qsubinfo.objects.filter(Q(subcat__qcline__quantor=self)).order_by('text__id')
+            #qs = Text.objects.filter(id__in=qs_qsub).distinct()
+            #oCount = qs.aggregate(Sum('lines'))
+            #if 'lines__sum' in oCount:
+            #    iCount = oCount['lines__sum']
+            #    self.lines = iCount
+            #    self.save()
+        else:
+            iCount = self.lines
+        # Return what we have
+        return iCount
+
+    def get_words(self):
+        """Return or retrieve the number of words in the texts that have been searched"""
+
+        iCount = -1
+        if self.words == None:
+            oCount = Qsubinfo.objects.filter(Q(subcat__qcline__quantor=self)).values("text").annotate(num_words=Sum('text__words')).aggregate(Sum('num_words'))
+            if 'num_words__sum' in oCount:
+                iCount = oCount['num_words__sum']
+                self.words = iCount
+                self.save()
+
+            ## Calculate the number of words
+            #qs_qsub = Qsubinfo.objects.filter(Q(subcat__qcline__quantor=self)).order_by('text__id')
+            #qs = Text.objects.filter(id__in=qs_qsub).distinct()
+            #oCount = qs.aggregate(Sum('words'))
+            #if 'words__sum' in oCount:
+            #    iCount = oCount['words__sum']
+            #    self.words = iCount
+            #    self.save()
+        else:
+            iCount = self.words
+        # Return what we have
+        return iCount
 
 
 class QCline(models.Model):

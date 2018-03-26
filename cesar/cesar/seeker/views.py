@@ -165,9 +165,6 @@ def treat_bom(sHtml):
     bStartsWithBom = sHtml.startswith(u'\ufeff')
     # Remove everywhere
     sHtml = sHtml.replace(u'\ufeff', '')
-    # DO NOT KEEP FIRST BOM!!
-    #if bStartsWithBom:
-    #    sHtml = u'\ufeff' + sHtml
     # Return what we have
     return sHtml
 
@@ -218,7 +215,7 @@ class ResultListView(ListView):
     order_heads = [{'name': 'Project', 'order': 'o=1', 'type': 'str'}, 
                    {'name': 'Language', 'order': '', 'type': 'str'}, 
                    {'name': 'Corpus', 'order': 'o=3', 'type': 'str'},
-                   {'name': 'Texts', 'order': '', 'type': 'int'},
+                   {'name': 'Hits', 'order': '', 'type': 'int'},
                    {'name': 'Date', 'order': 'o=5', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
