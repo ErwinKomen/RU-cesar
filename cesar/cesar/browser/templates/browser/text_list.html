@@ -13,6 +13,7 @@
     <div class="col-sm-3 col-md-2 sidebar">
       <form name="textsearch" id="textsearch" action="" method="get"  
                 onsubmit="return do_search('#id_submit_button', 'text', 'simple');" >
+        {% csrf_token %}
         <!-- EK: A sort-order specification is in a hidden form field, which is filled by JS:do_sort_column() -->
         <div class="hidden">
           <input name='sortOrder' class='form-control' value='part' >

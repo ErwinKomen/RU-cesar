@@ -421,7 +421,7 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
             for chunk_this in range(iChunkLen):
                 iChunk += 1
                 # Walk this chunk
-                sChunkMsg = "{} (of {})".format(iChunk, iChunkLen)
+                sChunkMsg = "process_textlist u {} (of {})".format(iChunk, iChunkLen)
                 oBack['chunk'] = sChunkMsg
 
                 # ====== DEBUG ========
@@ -458,6 +458,9 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                                 break
                 # Show what is going on
                 oStatus.set("updating", oBack)
+
+            sChunkMsg = "process_textlist updated the wordcounts of {} texts".format(iNum)
+            errHandle.Status(sChunkMsg)
         else:
             
             # Walk all the different paths

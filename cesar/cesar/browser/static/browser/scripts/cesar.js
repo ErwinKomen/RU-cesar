@@ -176,6 +176,52 @@ var ru = (function ($, ru) {
           });
       },
 
+      text_info_show: function (el) {
+        var ajaxurl = "",
+            divShow = null,
+            data = null;
+
+        try {
+          // Validate
+          if (el === undefined || divShow === undefined || divShow === "") {
+            return;
+          }
+          // Find the next <tr> containing the element to be shown
+          divShow = $(el).closest("tr").next("tr").find("td").first();
+          // Check the status of this item
+          if (!$(divShow).hasClass("hidden")) {
+            // This is not a hidden item, so just close it
+            $(divShow).addClass("hidden");
+            return;
+          }
+          // Hide all the info that has been shown so far
+          $(el).closest("table").find(".text-details").addClass("hidden");
+          // Retrieve the URL we need to have
+          ajaxurl = $(el).attr("ajaxurl");
+          // Get the data: this is to get a valid csrf token!
+          data = $("#textsearch").serializeArray();
+          // Request the information
+          $.post(ajaxurl, data, function (response) {
+            if (response !== undefined) {
+              switch (response.status) {
+                case "ok":
+                  $(divShow).html(response.html);
+                  $(divShow).removeClass("hidden");
+                  break;
+                default:
+                  private_methods.errMsg("text_info_show: incorrect response " + response.status);
+                  break;
+              } 
+            } else {
+              private_methods.errMsg("text_info_show: undefined response ");
+            }
+          });
+
+        } catch (ex) {
+          private_methods.errMsg("text_info_show", ex);
+        }
+      },
+
       /**
        *  sync_start
        *      Start synchronisation

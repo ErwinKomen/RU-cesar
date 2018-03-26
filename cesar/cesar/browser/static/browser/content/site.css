@@ -860,3 +860,22 @@ table.result-list tr:hover {
   background-color: lightgray;
   border: 1px solid white;
 }
+
+table.compact-table, 
+table.compact-table tr, 
+table.compact-table td,
+table.compact-table tbody > tr > td {
+  font-size: small;
+  border: 1px solid white;
+  color: black;
+  font-family: monospace;
+  background-color: lightgray;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px !important;
+}
+table.compact-table td:hover {
+  background-color: lightblue;
+  color: black;
+  border: 1px solid white;
+}

@@ -12,9 +12,10 @@ from django.db.models.functions import Lower
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
+from django.template.loader import render_to_string
 from django.views.generic.detail import DetailView
 from django.views.generic.base import RedirectView
-from django.views.generic import ListView
+from django.views.generic import ListView, View
 from datetime import datetime
 from time import sleep
 
@@ -98,6 +99,17 @@ def get_int_choice(lGetDict, sKey):
 
 def get_current_userid():
     return 'erkomen'
+
+def treat_bom(sHtml):
+    """REmove the BOM marker except at the beginning of the string"""
+
+    # Check if it is in the beginning
+    bStartsWithBom = sHtml.startswith(u'\ufeff')
+    # Remove everywhere
+    sHtml = sHtml.replace(u'\ufeff', '')
+    # Return what we have
+    return sHtml
+
 
 def home(request):
     """Renders the home page."""
@@ -692,6 +704,98 @@ class SentenceDetailView(DetailView):
         return context
 
 
+class TextDetailInfo(View):
+    """Make sure"""
+
+    MainModel = Text
+    template_name = 'browser/text_info.html'
+    data = {'status': 'ok', 'html': '', 'statuscode': ''}       # Create data to be returned   
+    oErr = ErrHandle()
+
+    def post(self, request, pk=None):
+        self.initializations(request, pk)
+        if self.checkAuthentication(request):
+            # Define the context
+            sStatusCode = "none"
+            context = dict(object_id = pk, savedate=None, statuscode=sStatusCode)
+            # Do we have an object?
+            if self.obj != None:
+                # Put all required information in the data 
+                context['fileName'] = self.obj.fileName
+                context['format'] = self.obj.get_format_display()
+                context['part'] = self.obj.part.name
+                context['lines'] = self.obj.lines
+                context['words'] = self.obj.words
+                context['title'] = self.obj.title
+                context['date'] = self.obj.date
+                context['author'] = self.obj.author
+                context['genre'] = self.obj.genre
+                context['subtype'] = self.obj.subtype
+            # Make sure we have a list of any errors
+            error_list = [str(item) for item in self.arErr]
+            self.data['error_list'] = error_list
+            self.data['errors'] = self.arErr
+            if len(self.arErr) >0:
+                # Pass on the statuscode to the context for the template rendering
+                context['status'] = "error"
+                # Pass on the status to the calling function through [self.data]
+                self.data['status'] = "error"
+                self.data['statuscode'] = "error"
+                context['statuscode'] = "error"
+            else:
+                # Pass on the statuscode
+                self.data['statuscode'] = sStatusCode
+                context['status'] = self.data['status']
+
+            # Add items to context
+            context['error_list'] = error_list
+            
+            # Get the HTML response
+            sHtml = render_to_string(self.template_name, context, request)
+            sHtml = treat_bom(sHtml)
+            self.data['html'] = sHtml
+           
+        else:
+            self.data['html'] = "Please log in before continuing"
+
+        # Return the information
+        return JsonResponse(self.data)
+
+    def initializations(self, request, object_id):
+        # Clear errors
+        self.arErr = []
+        self.data['status'] = "ok"
+        self.data['html'] = ""
+        self.data['statuscode'] = ""
+        # COpy the request
+        self.request = request
+        # Copy any object id
+        self.object_id = object_id
+        # Get the instance of the Main Model object
+        self.obj =  self.MainModel.objects.get(pk=object_id)
+        # Get the parameters
+        if request.POST:
+            self.qd = request.POST
+        else:
+            self.qd = request.GET
+        # Perform some custom initialisations
+        self.custom_init()
+
+    def custom_init(self):
+        pass
+
+    def checkAuthentication(self,request):
+        # first check for authentication
+        if not request.user.is_authenticated:
+            # Simply redirect to the home page
+            self.data['html'] = "Please log in to work on a research project"
+            return False
+        else:
+            return True
+
+
+
+
 
 class TextDetailView(DetailView):
     """Allow viewing and editing details of one text"""
@@ -715,14 +819,6 @@ class TextDetailView(DetailView):
                   else:
                       return redirect('text_list')
               elif '_continue' in request.POST:
-                  # return redirect(new_text, status = 'save_continue')
-
-                  # return render(request, new_text.get_absolute_url(), {'status': 'save_continue'})
-
-                  #context = {'form': bound_form,
-                  #           'text': new_text,
-                  #           'status': 'save_continue'}
-                  #return render( request, self.template_name, context)
                   return redirect(new_text.get_absolute_url() + "?status=save_continue")
           else:
               context = {'form': bound_form,

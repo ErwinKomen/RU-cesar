@@ -42,6 +42,7 @@ urlpatterns = [
     url(r'^nlogin', cesar.browser.views.nlogin, name='nlogin'),
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
+    url(r'^text/info/(?P<pk>\d+)', TextDetailInfo.as_view(), name='text_info'),
     url(r'^text/list/$', cesar.browser.views.TextListView.as_view(), name='text_list'),
     url(r'^text/view/(?P<pk>\d+)', TextDetailView.as_view(), name='text_view'),
     url(r'^text/lines/(?P<pk>\d+)/$', SentenceListView.as_view(), name='text_lines'),

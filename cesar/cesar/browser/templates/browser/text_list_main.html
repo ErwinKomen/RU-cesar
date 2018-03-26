@@ -28,9 +28,28 @@
               <td><span class="part-item-corp">{{item.lines}}</span></td>
               <td><span class="part-item-corp">{{item.genre}}</span></td>
               <td>
-                  <span class="part-item-desc">{{item.title}}</span>
-                  <span><a class="btn btn-warning btn-xs" href="{% url 'text_view' pk=item.pk %}/?last_url={{url|urlencode}}">Info</a></span>
-                </td>
+                <span class="part-item-desc">{{item.title}}</span>
+                <span>
+                  <a class="btn btn-warning btn-xs" 
+                     title="Text details"
+                     ajaxurl="{% url 'text_info' pk=item.pk %}"
+                     onclick="ru.cesar.text_info_show(this);">
+                    <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                  </a>
+                </span>
+                <span>
+                  <a class="btn btn-default btn-xs" 
+                     title="Edit text details"
+                     href="{% url 'text_view' pk=item.pk %}/?last_url={{url|urlencode}}">
+                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                  </a>
+                </span>
+              </td>
+            </tr>
+            <tr class="text-info">
+              <td colspan="5" class="text-details hidden">
+                <!-- This is where the details of a text are shown-->
+              </td>
             </tr>
           {% endfor %}
           </tbody>
