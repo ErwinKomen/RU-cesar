@@ -340,28 +340,35 @@ class Gateway(models.Model):
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
 
-        # Delete the global variables
-        gvar_set = self.globalvariables.all()
-        for gvar in gvar_set:
-            gvar.delete()
-        # Delete the definition variables
-        dvar_set = self.definitionvariables.all()
-        for dvar in dvar_set:
-            dvar.delete()
-        # Delete the constructions (and what is under them)
-        cns_set = self.constructions.all()
-        for cns_this in cns_set:
-            cns_this.delete()
-        # Delete the conditions (and what is under them)
-        cond_set = self.conditions.all()
-        for cond_this in cond_set:
-            cond_this.delete()
-        # Delete the features (and what is under them)
-        feat_set = self.features.all()
-        for feat_this in feat_set:
-            feat_this.delete()
-        # Now perform the normal deletion
-        return super().delete(using, keep_parents)
+        oErr = ErrHandle()
+        try:
+            # Delete the global variables
+            gvar_set = self.globalvariables.all()
+            for gvar in gvar_set:
+                gvar.delete()
+            # Delete the definition variables
+            dvar_set = self.definitionvariables.all().order_by('-order', '-id')
+            for dvar in dvar_set:
+                dvar.delete()
+            # Delete the constructions (and what is under them)
+            cns_set = self.constructions.all()
+            for cns_this in cns_set:
+                cns_this.delete()
+            # Delete the conditions (and what is under them)
+            cond_set = self.conditions.all()
+            for cond_this in cond_set:
+                cond_this.delete()
+            # Delete the features (and what is under them)
+            feat_set = self.features.all()
+            for feat_this in feat_set:
+                feat_this.delete()
+            # Now perform the normal deletion
+            # response = super(Gateway, self).delete(using, keep_parents)
+            response = super(Gateway, self).delete(using, True)
+        except:
+            sMsg = oErr.get_error_message()
+            response = None
+        return response
 
     def get_vardef_list(self):
 
@@ -435,7 +442,7 @@ class Gateway(models.Model):
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Save the gateway
-      response = super().save(force_insert, force_update, using, update_fields)
+      response = super(Gateway, self).save(force_insert, force_update, using, update_fields)
       # Adapt the saved date of the research project
       if Research.objects.filter(gateway=self).first() != None:
           self.research.save()
@@ -537,10 +544,10 @@ class Construction(models.Model):
         # Also delete the searchMain
         self.search.delete()
         # And then delete myself
-        return super().delete(using, keep_parents)
+        return super(Construction, self).delete(using, keep_parents)
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None, check_cvar = True):
-      save_result = super().save(force_insert, force_update, using, update_fields)
+      save_result = super(Construction, self).save(force_insert, force_update, using, update_fields)
       # Check and add/delete CVAR instances for this gateway
       if check_cvar:
           Gateway.check_cvar(self.gateway)
@@ -578,7 +585,7 @@ class VarDef(Variable):
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Perform the normal saving
-      save_result = super().save(force_insert, force_update, using, update_fields)
+      save_result = super(VarDef, self).save(force_insert, force_update, using, update_fields)
       # Check and add/delete CVAR instances for this gateway
       Gateway.check_cvar(self.gateway)
       # Return the result of normal saving
@@ -609,7 +616,7 @@ class VarDef(Variable):
         for var_inst in self.variablenames.all():
             var_inst.delete()
         # Now delete myself
-        result = super().delete(using, keep_parents)
+        result = super(VarDef, self).delete(using, keep_parents)
         # re-order the dvar collection under this gateway
         self.gateway.order_dvar()
         # Return the result
@@ -716,8 +723,10 @@ class GlobalVariable(Variable):
         return qs.count() == 0
 
     def delete(self, using = None, keep_parents = False):
+        # Note the gateway
+        gateway = self.gateway
         # Delete myself
-        result = super().delete(using, keep_parents)
+        result = super(GlobalVariable, self).delete(using, keep_parents)
         # TODO: re-order the gvar collection
         gateway.order_gvar()
         # Return the deletion result
@@ -834,7 +843,7 @@ class Function(models.Model):
         myStatus = json.loads(self.status)
         myStatus['status'] = "stale"
         self.status = json.dumps(myStatus)
-        return super().save(force_insert, force_update, using, update_fields)
+        return super(Function, self).save(force_insert, force_update, using, update_fields)
 
     def set_status(self, sStatus):
         """Set the status to the one indicated in [sStatus]"""
@@ -1007,7 +1016,7 @@ class Function(models.Model):
         for arg in qs:
             arg.delete()
         # Now delete myself
-        result = super().delete(using, keep_parents)
+        result = super(Function, self).delete(using, keep_parents)
         # # Save the changes
         # self.save()
         return result
@@ -1405,7 +1414,7 @@ class Argument(models.Model):
         return func
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        response = super().save(force_insert, force_update, using, update_fields)
+        response = super(Argument, self).save(force_insert, force_update, using, update_fields)
         # Any change in the status of an argument results in the status of the function it belongs to changing
         if self.function:
             self.function.set_status('stale')
@@ -1617,7 +1626,7 @@ class Argument(models.Model):
       if func_child != None:
           func_child.delete()
       # Now delete myself
-      result = super().delete(using, keep_parents)
+      result = super(Argument, self).delete(using, keep_parents)
       # Return the result
       return result
 
@@ -1993,7 +2002,7 @@ class ConstructionVariable(models.Model):
         if self.function != None:
             self.function.delete()
         # Now delete myself
-        return super().delete(using, keep_parents)
+        return super(ConstructionVariable, self).delete(using, keep_parents)
 
     def get_functions(self):
         """Get all the functions belonging to this construction variable"""
@@ -2201,7 +2210,7 @@ class Condition(models.Model):
             self.function.delete()
         # NOTE: do not delete the functiondef, gateway or cvar -- those are independant of me
         # And then delete myself
-        return super().delete(using, keep_parents)
+        return super(Condition, self).delete(using, keep_parents)
 
     def get_functions(self):
         """Get all the functions belonging to this condition"""
@@ -2416,7 +2425,7 @@ class Feature(models.Model):
             self.function.delete()
         # NOTE: do not delete the functiondef, gateway or cvar -- those are independant of me
         # And then delete myself
-        return super().delete(using, keep_parents)
+        return super(Feature, self).delete(using, keep_parents)
 
     def get_functions(self):
         """Get all the functions belonging to this condition"""
@@ -2488,13 +2497,24 @@ class Research(models.Model):
       # Adapt the save date
       # self.saved = datetime.now()
       self.saved = timezone.now()
-      response = super().save(force_insert, force_update, using, update_fields)
+      response = super(Research, self).save(force_insert, force_update, using, update_fields)
       return response
 
     def gateway_name(self):
         return self.gateway.name
 
     def delete(self, using = None, keep_parents = False):
+        try:
+            # Delete all the sharegroup instances pointing to this research instance
+            for grp in self.sharegroups.all():
+                grp.delete()
+
+            # Delete all Basket objects pointing to me
+            for bsk in self.baskets.all():
+                bsk.delete()
+        except:
+            sMsg = oErr.get_error_message()
+
         # Look for the gateway
         try:
             gateway = self.gateway
@@ -2504,11 +2524,14 @@ class Research(models.Model):
                 gateway = Gateway.objects.filter(id=self.gateway_id)
                 if gateway:
                     gateway.delete()
-        # Delete all the sharegroup instances pointing to this research instance
-        for grp in self.sharegroups.all():
-            grp.delete()
+        
         # Delete myself
-        return super().delete(using, keep_parents)
+        try:
+            response = super(Research, self).delete(using, keep_parents)
+        except:
+            sMsg = oErr.get_error_message()
+            response = None
+        return response
 
     def username(self):
         return self.owner.username
@@ -2844,10 +2867,19 @@ class Basket(models.Model):
         # COmbine: research project name, research id, processing status
         return "{}_{}: {}".format(self.research.name, self.id, self.status)
 
+    def delete(self, using = None, keep_parents = False):
+        # Delete all Quantor objects associated with me
+        for q in self.myquantor.all():
+            q.delete()
+        # Delete all  kwiclines
+        for k in self.kwiclines.all():
+            k.delete()
+        return super(Basket, self).delete(using, keep_parents)
+
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         # Adapt the save date
         self.saved = timezone.now()
-        response = super().save(force_insert, force_update, using, update_fields)
+        response = super(Basket, self).save(force_insert, force_update, using, update_fields)
         return response
 
     def set_status(self, sStatus):
@@ -3131,6 +3163,17 @@ class Kwic(models.Model):
     def __str__(self):
         return "{}".format(self.qc)
 
+    def delete(self, using = None, keep_parents = False):
+        # Delete the quantor and all under it
+        with transaction.atomic():
+            # (1) Walk all the kwicfilters
+            self.kwicfilters.all().delete()
+            # (2) Walk all the kwicresults
+            self.kwicresults.all().delete()
+        # Remove myself
+        response = super(Kwic, self).delete(using, keep_parents)
+        return response
+
     def add_filter(self, sField, sValue):
         # Add this to the set of filters belonging to this Kwic object
         obj = KwicFilter(kwic=self, field=sField, value=sValue)
@@ -3320,8 +3363,8 @@ class Quantor(models.Model):
                 qcline.qsubcats.all().delete()
             # Now remove the qclines
             self.qclines.all().delete()
-            # Remove myself
-            response = super().delete(using, keep_parents)
+        # Remove myself
+        response = super(Quantor, self).delete(using, keep_parents)
         return response
 
     def get_lines(self):
@@ -3334,16 +3377,6 @@ class Quantor(models.Model):
                 iCount = oCount['num_lines__sum']
                 self.lines = iCount
                 self.save()
-
-
-            ## Calculate the number of lines
-            #qs_qsub = Qsubinfo.objects.filter(Q(subcat__qcline__quantor=self)).order_by('text__id')
-            #qs = Text.objects.filter(id__in=qs_qsub).distinct()
-            #oCount = qs.aggregate(Sum('lines'))
-            #if 'lines__sum' in oCount:
-            #    iCount = oCount['lines__sum']
-            #    self.lines = iCount
-            #    self.save()
         else:
             iCount = self.lines
         # Return what we have
@@ -3359,15 +3392,6 @@ class Quantor(models.Model):
                 iCount = oCount['num_words__sum']
                 self.words = iCount
                 self.save()
-
-            ## Calculate the number of words
-            #qs_qsub = Qsubinfo.objects.filter(Q(subcat__qcline__quantor=self)).order_by('text__id')
-            #qs = Text.objects.filter(id__in=qs_qsub).distinct()
-            #oCount = qs.aggregate(Sum('words'))
-            #if 'words__sum' in oCount:
-            #    iCount = oCount['words__sum']
-            #    self.words = iCount
-            #    self.save()
         else:
             iCount = self.words
         # Return what we have

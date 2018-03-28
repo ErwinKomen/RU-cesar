@@ -646,7 +646,7 @@ class SentenceDetailView(DetailView):
     template_name = 'browser/sentence_view.html'
 
     def get(self, request, *args, **kwargs):
-      back = super().get(request, *args, **kwargs)
+      back = super(SentenceDetailView, self).get(request, *args, **kwargs)
       return back
 
     def get_context_data(self, **kwargs):

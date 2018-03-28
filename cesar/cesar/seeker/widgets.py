@@ -19,7 +19,7 @@ class SeekerTextarea(Textarea):
           output.append("<span class=\"td-textarea {}\">".format(
             "" if sTextValue == "" else "hidden"
             ))
-      output.append(super().render(name, value, attrs))
+      output.append(super(SeekerTextarea, self).render(name, value, attrs))
       if value != None:
           output.append("</span>")
       # Combine and return

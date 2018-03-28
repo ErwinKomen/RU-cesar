@@ -90,8 +90,8 @@
             </tr>
             <!-- Provide a form row for deletion -->
             <tr class="part-del hidden">
-              <td colspan="3"></td>
-              <td>Are you sure you want to delete the research project named <code>{{item.project.name}}</code>?</td>
+              <td></td>
+              <td colspan="3">Are you sure you want to delete the research project named <code>{{item.project.name}}</code>? Note: all associated results will also be deleted</td>
               <td class="tdnowrap">
                 <div class="part-del">
                   <form action="{{item.project.get_delete_url}}" method="post">
