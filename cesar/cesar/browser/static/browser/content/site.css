@@ -837,6 +837,12 @@ td span.research-item-type {
   font-family: monospace;
 }
 
+td span.research-item-code {
+  font-size: small;
+  font-family: monospace;
+  color: darkgreen;
+}
+
 td span.research-item-purpose {
   width: 100%;
 }
