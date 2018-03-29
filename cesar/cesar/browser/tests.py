@@ -13,10 +13,13 @@ from django.test import TestCase
 class SimpleTest(TestCase):
     """Tests for the application views."""
 
-    # Django requires an explicit setup() when running tests in PTVS
+    # NOTE: django 1.8 and higher require calling setUpTestData()
+    #       earlier: setUpClass()
+
     @classmethod
-    def setUpClass(cls):
+    def setUpTestData(cls):
         django.setup()
+        return super().setUpTestData(cls)
 
     def test_basic_addition(self):
         """

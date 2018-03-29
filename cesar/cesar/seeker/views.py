@@ -839,6 +839,9 @@ class ResearchPart(View):
         # A POST request means we are trying to SAVE something
         self.initializations(request, object_id)
 
+        # Explicitly set the status to OK
+        self.data['status'] = "ok"
+
         if self.checkAuthentication(request):
             # Build the context
             context = dict(object_id = object_id, savedate=None)
@@ -1009,6 +1012,7 @@ class ResearchPart(View):
             if len(self.arErr) > 0:
                 # Indicate that we have errors
                 self.data['has_errors'] = True
+                self.data['status'] = "error"
             else:
                 self.data['has_errors'] = False
             # Standard: add request user to context
