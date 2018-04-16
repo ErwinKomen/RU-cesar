@@ -1,0 +1,71 @@
+﻿{% load i18n %}
+<!-- Result part 6: Hierarchical table of a hit -->
+
+<div id="result_part_6">
+  <div class="row">
+    <div class="col-md-2" align="left">
+      <button type="button" class="btn btn-primary" 
+              onclick="ru.cesar.seeker.research_open('result_container_2', 'result_container_6');">
+        << Back</button>
+    </div>
+    <div class="col-md-10">
+      <!-- Show the main features of the results -->
+      <div id="result_info" class="panel panel-default">
+        <div class="panel-heading collapsed" data-toggle="collapse" data-target="#info-area-6">Informatie...</div>
+        <div id="info-area-6" class="collapse row">
+          <!-- Project information -->
+          <div class="col-md-4">
+            <div><label>Search</label></div>
+            <table>
+              <tr><td>Project:</td><td><b>{{basket.research.name}}</b></td></tr>
+              <tr><td>Language:</td><td><code>{{basket.part.corpus.get_lng_display}}</code></td></tr>
+              <tr><td>Corpus:</td><td>{{basket.part.name}}</td></tr>
+              <tr><td>Format:</td><td>{{basket.get_format_display}}</td></tr>
+            </table>
+          </div>
+
+          <!-- Search statistics -->
+          <div class="col-md-4" align="center">
+            <div><label>Statistics</label></div>
+            <table>
+              <tr><td>Search date:</td><td>{{basket.saved|date:"j/b/o G:i"}}</td></tr>
+              <tr><td>Search duration:</td><td align="right">{{quantor.searchTime}} ms.</td></tr>
+              <tr><td>Operation (qc):</td><td align="right">{{kwic.qc}} of {{quantor.qcNum}}</td></tr>
+              <tr><td>Hits:</td><td align="right">{{kwic.hitcount}}</td></tr>
+              <tr><td>Texts:</td><td align="right">{{kwic.textcount}}</td></tr>
+              <tr><td>Lines:</td><td align="right">{{kwic.get_lines}}</td></tr>
+              <tr><td>Words:</td><td align="right">{{kwic.get_words}}</td></tr>
+            </table>
+          </div>
+
+          <!-- Information on the text this hit is from -->
+          <div class="col-md-4" align="right">
+            <div><label>Text information</label></div>
+            <table>
+              <tr><td>Text:</td><td class="kwic-loc">{{result.TextId}}</td></tr>
+              <tr><td>TextSize:</td><td class="kwic-loc">{{result.Size}}</td></tr>
+              <tr><td>Genre:</td><td class="kwic-loc">{{result.Genre}}</td></tr>
+              <tr><td>Subtype:</td><td class="kwic-loc">{{result.SubType}}</td></tr>
+              <tr><td>Title:</td><td class="kwic-loc">{{result.Author}}</td></tr>
+              <tr><td>Author:</td><td class="kwic-loc">{{result.Author}}</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- Show detailed information for this hit: feature names and values -->
+  <div class="row">
+    <!-- Tree of this sentence -->
+    <div id="sentdetails_err" class="row sent-error"></div>
+    <div id="sentdetails_feats" class="hidden"></div>
+    <div id="sentdetails_htable" class="row">
+      {% include 'seeker/sent_htable.html' with htable=sent_info.allT level='top' %}
+    </div>
+  </div>
+
+</div>
+

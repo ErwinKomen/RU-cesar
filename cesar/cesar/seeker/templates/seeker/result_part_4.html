@@ -89,6 +89,14 @@
             title="tree">
           <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
         </a>
+        <a class="btn btn-default btn-xs" id="result_part6_button" 
+            targeturl="{% url 'result_part_6' object_id=kwic_id %}"
+            targetid="result_part_6"
+            resid="{{result.ResId}}"
+            onclick="ru.cesar.seeker.result_wizard(this, '6');"
+            title="table">
+          <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
+        </a>
       </div>
 
     </div>

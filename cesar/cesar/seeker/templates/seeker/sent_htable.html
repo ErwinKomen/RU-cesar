@@ -1,0 +1,57 @@
+﻿{% load i18n %}
+
+{% load i18n %}
+
+<table class="func-view">
+  {% if level == 'top' %}
+    <thead>
+      <tr>
+        <th colspan="2">
+          <span class="func-name">
+            <a class="btn btn-xs btn-default func-plus" role="button" title="open"
+               onclick="ru.cesar.seeker.funchead_click(this, 'func-inline');">+</a>
+            {{htable.pos}}
+          </span>&nbsp;
+          <span class="func-link pull-right">
+            <a class="btn btn-xs btn-default" role="button" 
+               title="edit"
+               targeturl="{{function.get_func_url_edit}}"
+               targetid="{{function.get_targetid}}"
+               instanceid="{{function.id}}"
+               onclick="ru.cesar.seeker.research_wizard(this, '{{function.get_func_target}}', true, 'research-function-edit', 'select');" >
+               <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+            </a>
+          </span>
+        </th>
+      </tr>
+    </thead>
+  {% endif %}
+  <tbody>
+  {% for constituent in htable.child %}
+    {% if constituent.child %}
+      {% for child_this in constituent.child %}
+        <tr>
+          <td class="arg-plus"
+              onclick="ru.cesar.seeker.argrow_click(this, 'func-inline');">+</td>
+          <td class="arg-text">
+            <span class="arg-line"><code>{{child_this.pos}}</code></span>
+            <span class="pull-right">{{child_this.txt}}</span>
+          </td>
+        </tr>
+        <tr class="func-inline hidden">
+          <td style="width: 10px;"></td>
+          <td>{% include 'seeker/sent_htable.html' with htable=child_this level='descendant' %}</td>
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td colspan="2">
+          <span><code>{{constituent.pos}}</code></span>
+          &nbsp;
+          <span class="pull-right">{{constituent.txt}}</span>
+        </td>
+      </tr>
+    {% endif %}
+  {% endfor %}
+  </tbody>
+</table>

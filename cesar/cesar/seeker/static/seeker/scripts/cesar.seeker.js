@@ -1801,6 +1801,7 @@ var ru = (function ($, ru) {
                   break;
                 case "4":
                 case "5":
+                case "6":
                   data.push({ 'name': 'resid', 'value': $(el).attr('resid') });
                   // Do we have a backid?
                   sBackId = $(el).attr("backid");
@@ -1828,6 +1829,7 @@ var ru = (function ($, ru) {
             case "3":
             case "4":
             case "5":
+            case "6":
               // CHeck if we need to take another instance id instead of #researchid
               if ($(el).attr("instanceid") !== undefined) { sObjectId = $(el).attr("instanceid"); }
 
@@ -1888,12 +1890,30 @@ var ru = (function ($, ru) {
               oTree = JSON.parse( response.sent_info.allT);
               crpstudio.svg.treeToSvg("#sentdetails_tree", oTree, "#sentdetails_err");
               break;
+            case "6":
+              // Show the hierarchical table in the appropriate location
+              // oTree = JSON.parse(response.sent_info.allT);
+              // ru.cesar.seeker.treeToHtable("#sentdetails_htable", oTree, "#sentdetails_err");
+              break;
           }
           $("#result_wait_message").addClass("hidden");
 
 
         } catch (ex) {
           private_methods.errMsg("result_wizard", ex);
+        }
+      },
+
+      /**
+       * treeToHtable
+       *    Convert the object tree into a Htable
+       *
+       */
+      treeToHtable: function (divHtable, oTree, divErr) {
+        try {
+
+        } catch (ex) {
+          private_methods.errMsg("treeToHtable", ex);
         }
       },
 

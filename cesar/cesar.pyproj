@@ -143,6 +143,8 @@
     <Content Include="cesar\seeker\templates\seeker\err_view.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_8.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_14.html" />
+    <Content Include="cesar\seeker\templates\seeker\result_part_6.html" />
+    <Content Include="cesar\seeker\templates\seeker\sent_htable.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_function_OLD.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_function.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_view.html" />

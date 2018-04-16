@@ -547,7 +547,12 @@ table.kwic-list a:hover {
     cursor: pointer;
 }
 table.kwic-list {
-    width: 100%;
+  width: 100%;
+}
+
+table.kwic-list tbody > tr > td {
+  padding: 0px;
+  border-top-style: none;
 }
 
 table td.kwic-loc, table td span.kwic-loc, div span.kwic-loc {
@@ -557,6 +562,8 @@ table td.kwic-loc, table td span.kwic-loc, div span.kwic-loc {
   font-size: small;
   text-align: left;
   white-space:nowrap !important;
+  padding: 0px;
+  border-top-style: none;
 }
 
 table td.kwic-pre {

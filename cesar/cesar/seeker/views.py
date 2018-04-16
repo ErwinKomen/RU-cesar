@@ -3704,6 +3704,7 @@ class ResultPart4(ResearchPart):
 class ResultPart5(ResearchPart):
     MainModel = Kwic
     template_name = 'seeker/result_part_5.html'
+    do_dump = True
 
     def add_to_context(self, context):
         # find out which sentence has been identified by the user
@@ -3747,13 +3748,23 @@ class ResultPart5(ResearchPart):
                     context['eng'] = f['eng']
             # Put the information into the DATA object
             self.data['sent_info'] = oSentInfo
-            # Replace the 'allT' and 'hitT' with STRING json
-            if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
-            if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])
+
+            if self.do_dump:
+                # Replace the 'allT' and 'hitT' with STRING json
+                if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
+                if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])
             context['sent_info'] = oSentInfo
         else:
             context['sent_info'] = None
         return context
+
+
+class ResultPart6(ResultPart5):
+    """The hierarchical table model uses the same information as the tree"""
+
+    MainModel = Kwic
+    template_name = 'seeker/result_part_6.html'
+    do_dump = False
 
 
 class ResultDownload(ResearchPart):
