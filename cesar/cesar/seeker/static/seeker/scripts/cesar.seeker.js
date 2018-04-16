@@ -2789,7 +2789,7 @@ var ru = (function ($, ru) {
             $(elTr).addClass("hidden");
           } else {
             // Get to the next .part-del
-            elTr = $(elTr).next(".part-del");
+            elTr = $(elTr).nextAll(".part-del").first();
             // Show it
             $(elTr).removeClass("hidden");
             // Also make sure the correct contents is shown

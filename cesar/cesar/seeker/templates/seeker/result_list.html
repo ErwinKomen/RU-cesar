@@ -86,26 +86,33 @@
                 <!-- Specify the different actions here-->
                 <div class="part-buttons">
                     <!-- Action #1: open the result detail view -->
-                    <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'result_details' pk=item.basket.id %}">
+                    <a type="button" title="open" class="btn btn-success btn-xs" 
+                       href="{% url 'result_details' pk=item.basket.id %}">
                       <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
                     </a>
 
-                    <!-- Action #1: show statistics of the results -->
+                    <!-- Action #2: show statistics of the results -->
                     <a title="details" 
                        class="btn btn-success btn-xs hidden" 
                        onclick="ru.cesar.seeker.funcdefshow(this);">
                       <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
                     </a>
 
-                    <!-- Action #2: show the results in KWIC -->
+                    <!-- Action #3: show the results in KWIC -->
                     <a title="keywords in context" class="hidden"
                        href="{% url 'kwic_result' pk=item.basket.pk %}">
                       <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
                     </a>
+
+                    <!-- Action #4: Delete these results -->
+                    <a title="delete" class="btn btn-warning btn-xs" 
+                       onclick="ru.cesar.seeker.toggle_del(this);">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    </a>
                 </div>
               </td>
             </tr>
-            <!-- Provide a form row for further information -->
+            <!-- Provide a row for further information -->
             <tr class="function-details hidden">
               <td>Structure:</td>
               <td colspan="3">
@@ -124,6 +131,24 @@
                 </div>
               </td>
               <td></td>
+            </tr>
+            <!-- Provide a form row for deletion -->
+            <tr class="part-del hidden">
+              <td></td>
+              <td colspan="3">Are you sure you want to delete these research results? Note: the associated project will <b>not</b> be deleted.</td>
+              <td class="tdnowrap">
+                <div class="part-del">
+                  <form action="{{item.basket.get_delete_url}}" method="post">
+                    {% csrf_token %}
+                      <a class="btn btn-info btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
+                      <a class="btn btn-danger btn-xs" 
+                         url="{{item.basket.get_delete_url}}" 
+                         success="{% url 'result_list' %}"
+                         onclick="ru.cesar.seeker.process_item(this);">delete</a>
+                  </form>
+                </div>
+                <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+              </td>
             </tr>
           {% endfor %}
           </tbody>

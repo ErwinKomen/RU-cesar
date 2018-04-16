@@ -2895,6 +2895,12 @@ class ResearchDelete(ObjectDeleteMixin, View):
     model = Research
 
 
+class ResultDelete(ObjectDeleteMixin, View):
+    """Delete one 'Basket' object and its associates"""
+
+    model = Basket
+
+
 class ResearchResultDetail(View):
     """Show details (all) of one result"""
     model = Basket

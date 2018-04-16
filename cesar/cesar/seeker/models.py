@@ -2509,7 +2509,7 @@ class Research(models.Model):
             for grp in self.sharegroups.all():
                 grp.delete()
 
-            # Delete all Basket objects pointing to me
+            # Delete all Basket objects (=RESULTS) pointing to me
             for bsk in self.baskets.all():
                 bsk.delete()
         except:
@@ -2875,6 +2875,11 @@ class Basket(models.Model):
         for k in self.kwiclines.all():
             k.delete()
         return super(Basket, self).delete(using, keep_parents)
+
+    def get_delete_url(self):
+        """Produce an URL to be called when requesting to delete [self]"""
+
+        return reverse('result_delete', kwargs={'object_id': self.id})
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         # Adapt the save date
