@@ -3764,7 +3764,7 @@ class ResultPart6(ResultPart5):
 
     MainModel = Kwic
     template_name = 'seeker/result_part_6.html'
-    do_dump = False
+    do_dump = True
 
 
 class ResultDownload(ResearchPart):

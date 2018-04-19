@@ -1892,8 +1892,8 @@ var ru = (function ($, ru) {
               break;
             case "6":
               // Show the hierarchical table in the appropriate location
-              // oTree = JSON.parse(response.sent_info.allT);
-              // ru.cesar.seeker.treeToHtable("#sentdetails_htable", oTree, "#sentdetails_err");
+              oTree = JSON.parse(response.sent_info.allT);
+              crpstudio.htable.treeToHtable("#sentdetails_htable", oTree, "#sentdetails_err");
               break;
           }
           $("#result_wait_message").addClass("hidden");
