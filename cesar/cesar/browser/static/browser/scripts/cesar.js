@@ -109,6 +109,7 @@ var ru = (function ($, ru) {
         var sTree = "", oTree = {},
             divNodes = "sentdetails_node",
             divTree = "sentdetails_tree",
+            divHtable = "sentdetails_htable",
             divSvg = "sentdetails_svg";
 
         try {
@@ -117,6 +118,8 @@ var ru = (function ($, ru) {
           oTree = JSON.parse(sTree);
           // Draw the tree using the NEW method
           crpstudio.svg.treeToSvg("#" + divTree, oTree, "#" + loc_divErr);
+          // Draw the Htable
+          crpstudio.htable.treeToHtable("#" + divHtable, oTree, "#" + loc_divErr);
         } catch (ex) {
           private_methods.errMsg("start_tree_draw", ex);
         }
@@ -410,6 +413,16 @@ var ru = (function ($, ru) {
           // Add it
           $(sId).addClass("hidden");
         }
+      },
+
+      /**
+       *  view_switch
+       *      Switch from one view to the other
+       *
+       */
+      view_switch: function (sOpen, sClose) {
+        $("#" + sOpen).removeClass("hidden");
+        $("#" + sClose).addClass("hidden");
       }
 
     };

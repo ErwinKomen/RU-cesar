@@ -1,7 +1,5 @@
 ﻿{% extends "layout.html" %}
 
-
-
 {% block breadcrumbs %}
   <div class="breadcrumbs">
       <a href="{% url 'home' %}">Home</a>
@@ -17,7 +15,22 @@
 
     <h3>{% if sentence.text.title %}{{sentence.text.title}}{% else %}(no title){% endif %}</h3>
     <!-- Information on this sentence -->
-    <div class="row"><span>Sentence number = {{sentence.order}}</span><span> ({{sentence.identifier}})</span></div>
+    <div class="row">
+      <span>Sentence number = {{sentence.order}}</span>
+      <span> ({{sentence.identifier}})</span>
+      <span>
+        <a class="btn btn-default btn-xs" id="sent_view_tree" 
+            onclick="ru.cesar.view_switch('sentdetails_tree', 'sentdetails_htable');"
+            title="tree">
+          <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
+        </a>
+        <a class="btn btn-default btn-xs" id="sent_view_htable" 
+            onclick="ru.cesar.view_switch('sentdetails_htable', 'sentdetails_tree');"
+            title="table">
+          <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
+        </a>
+      </span>
+    </div>
 
     <!-- The sentence as such -->
     <div class="text-line">
@@ -33,10 +46,11 @@
     <!-- Tree of this sentence -->
     <div id="sentdetails_err" class="row sent-error"></div>
     <div id="sentdetails_node" class="row hidden">
-        {{sent_info.allT|safe}}
+        {{sent_info.allTs|safe}}
     </div>
     <div id="sentdetails_feats" class="hidden"></div>
     <div id="sentdetails_tree" class="row"></div>
+    <div id="sentdetails_htable" class="row hidden"></div>
   </div>
   <!-- Provide interaction to the tree -->
   <script>ru.cesar.start_tree_draw();</script>

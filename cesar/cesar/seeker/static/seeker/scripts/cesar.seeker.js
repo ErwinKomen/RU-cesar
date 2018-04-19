@@ -2560,8 +2560,7 @@ var ru = (function ($, ru) {
           private_methods.errMsg("search_start", ex);
         }
       },
-
-
+      
       /**
        * search_stop
        *   Stop an already going search

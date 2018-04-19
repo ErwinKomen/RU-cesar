@@ -110,6 +110,32 @@ def treat_bom(sHtml):
     # Return what we have
     return sHtml
 
+def adapt_htable(oHtable):
+    """Adapt a hierarchical table object"""
+
+    # Starting the summary
+    summary = ""
+    # Get any text at this level
+    if 'txt' in oHtable:
+        if 'type' in oHtable and oHtable['type'] != 'Star' and oHtable['type'] != 'Zero':
+            if summary != "": summary += " "
+            summary += oHtable['txt']
+    # Walk all the [child] tables
+    if 'child' in oHtable:
+        # Do this depth-first
+        for chTable in oHtable['child']:
+            # First go down
+            oBack = adapt_htable(chTable)
+            # Add the summary
+            if 'summary' in oBack:
+                if summary != "": summary += " "
+                summary += oBack['summary']
+    # Then set the summary link
+    oHtable['summary'] = summary
+
+    # Return the result
+    return oHtable
+
 
 def home(request):
     """Renders the home page."""
@@ -646,8 +672,11 @@ class SentenceDetailView(DetailView):
     template_name = 'browser/sentence_view.html'
 
     def get(self, request, *args, **kwargs):
-      back = super(SentenceDetailView, self).get(request, *args, **kwargs)
-      return back
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        response = self.render_to_response(context)
+        #response.content = treat_bom(response.rendered_content)
+        return response
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
@@ -693,12 +722,16 @@ class SentenceDetailView(DetailView):
                     if 'eng' in f and f['eng'] != "":
                         # We have an 'eng' translation: make it available
                         context['eng'] = f['eng']
+                # oSentInfo['allT'] = adapt_htable(treeSent)
                 # Replace the 'allT' and 'hitT' with STRING json
-                if 'allT' in oSentInfo: oSentInfo['allT'] = json.dumps(oSentInfo['allT'])
+                if 'allT' in oSentInfo: 
+                    oSentInfo['allTs'] = json.dumps(oSentInfo['allT'])
                 if 'hitT' in oSentInfo: oSentInfo['hitT'] = json.dumps(oSentInfo['hitT'])
                 context['sent_info'] = oSentInfo
         else:
             context['sent_info'] = None
+
+        self.context = context
 
         # Return what we have
         return context
