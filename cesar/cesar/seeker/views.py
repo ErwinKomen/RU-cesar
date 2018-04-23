@@ -3721,6 +3721,12 @@ class ResultPart5(ResearchPart):
             oResult = self.obj.get_result(iResId)
             # The RESULT object also contains all features and their values
             context['result'] = oResult
+        # Check whether a 'back' identifis passed on
+        if 'backid' in self.qd:
+          sBackId = self.qd['backid']
+        else:
+          sBackId = 'result_container_2'
+        context['backid'] = sBackId
         if oResult == None:
             # What do we do if the result is empty??
             context['no_result'] = True
