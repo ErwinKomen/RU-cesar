@@ -25,6 +25,7 @@ var crpstudio = (function ($, crpstudio) {
         loc_ht7 = "arg-line",
         loc_ht8 = "arg-summary",
         loc_ht9 = "arg-endnode",
+        loc_iTreeId = 0,
         loc_iMaxLevel = -1,
         root = null;            // Root of the tree (DOM position)
 
@@ -38,10 +39,11 @@ var crpstudio = (function ($, crpstudio) {
        * @param {object} oHtable
        * @returns {object}
        */
-      adapt_htable: function (oHtable, iLevel) {
+      adapt_htable: function (oHtable, iLevel, iParentId) {
         var summary = "", // Summary
             oBack = {},
             iParent = 0,
+            iTreeId = 0,
             i,
             arChild = [];
 
@@ -51,14 +53,17 @@ var crpstudio = (function ($, crpstudio) {
             return null;
           }
           // Get the level
-          if (iLevel === undefined) { iLevel = 0; loc_iMaxLevel = -1;  }
+          if (iLevel === undefined) { iLevel = 0; loc_iMaxLevel = -1; }
+          // Possibly set tree id
+          if ('id' in oHtable) {
+            iTreeId = oHtable['id'];
+          } else {
+            iTreeId = private_methods.getTreeId();
+            oHtable['id'] = iTreeId;
+          }
           // Set my parentid
-          if ('parent' in oHtable) {
-            if (oHtable['parent'] === null) {
-              oHtable['parentid'] = 0;
-            } else {
-              oHtable['parentid'] = oHtable['parent']['id'];
-            }
+          if (iParentId !== undefined) {
+            oHtable['parentid'] = iParentId;
           } else {
             oHtable['parentid'] = 0;
           }
@@ -75,7 +80,7 @@ var crpstudio = (function ($, crpstudio) {
             arChild = oHtable['child'];
             for (i = 0; i < arChild.length; i++) {
               // First go down
-              oBack = private_methods.adapt_htable(arChild[i], iLevel + 1);
+              oBack = private_methods.adapt_htable(arChild[i], iLevel + 1, iTreeId);
               // Add the summary
               if ('summary' in oBack) {
                 if (summary !== "") summary += " ";
@@ -92,11 +97,12 @@ var crpstudio = (function ($, crpstudio) {
           return oHtable
         } catch (ex) {
           // Show the error at the indicated place
-          $(loc_errDiv).html("adapt_htable error: " + ex.message);
+          private_methods.errMsg("adapt_htable", ex);
           return null;
         }
       },
 
+      getTreeId: function () { loc_iTreeId += 1; return loc_iTreeId; },
 
       /**
        * render_htable
@@ -221,7 +227,7 @@ var crpstudio = (function ($, crpstudio) {
           return lHtml.join("\n");
         } catch (ex) {
           // Show the error at the indicated place
-          $(loc_errDiv).html("render_htable error: " + ex.message);
+          private_methods.errMsg("render_htable", ex);
           return "";
         }
       },
@@ -230,7 +236,7 @@ var crpstudio = (function ($, crpstudio) {
        * showError
        *     Show the error at the indicated place
        */
-      showError: function (sFunction, ex) {
+      errMsg: function (sFunction, ex) {
         var sOld = "",
             sMsg = "Error in " + sFunction + ": " + ex.message;
 
@@ -419,7 +425,7 @@ var crpstudio = (function ($, crpstudio) {
           return true;
         } catch (ex) {
           // Show the error at the indicated place
-          $(errDiv).html("treeToHtable error: " + ex.message);
+          private_methods.errMsg("treeToHtable", ex);
           return null;
         }
       }
