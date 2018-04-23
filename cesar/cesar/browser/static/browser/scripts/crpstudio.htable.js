@@ -24,19 +24,23 @@ var crpstudio = (function ($, crpstudio) {
         loc_ht6 = "arg-text",
         loc_ht7 = "arg-line",
         loc_ht8 = "arg-summary",
+        loc_iMaxLevel = -1,
         root = null;            // Root of the tree (DOM position)
 
     // Methods that are local to [crpstudio.dbase]
     var private_methods = {
       /**
        * adapt_htable
-       *     Recursively convert a htable to one that contains summaries
+       *      Recursively convert a htable to one that contains summaries
+       *        and that contains level indicators
+       *      The variable [loc_iMaxLevel] will in the end contain the maximum level
        * @param {object} oHtable
        * @returns {object}
        */
-      adapt_htable: function (oHtable) {
+      adapt_htable: function (oHtable, iLevel) {
         var summary = "", // Summary
             oBack = {},
+            iParent = 0,
             i,
             arChild = [];
 
@@ -45,6 +49,19 @@ var crpstudio = (function ($, crpstudio) {
           if (oHtable === undefined || oHtable === null) {
             return null;
           }
+          // Get the level
+          if (iLevel === undefined) { iLevel = 0; loc_iMaxLevel = -1;  }
+          // Set my parentid
+          if ('parent' in oHtable) {
+            if (oHtable['parent'] === null) {
+              oHtable['parentid'] = 0;
+            } else {
+              oHtable['parentid'] = oHtable['parent']['id'];
+            }
+          } else {
+            oHtable['parentid'] = 0;
+          }
+
           // Get text at this level
           if ('txt' in oHtable) {
             if ('type' in oHtable && oHtable['type'] !== "Star" && oHtable['type'] !== "Zero") {
@@ -57,7 +74,7 @@ var crpstudio = (function ($, crpstudio) {
             arChild = oHtable['child'];
             for (i = 0; i < arChild.length; i++) {
               // First go down
-              oBack = private_methods.adapt_htable(arChild[i]);
+              oBack = private_methods.adapt_htable(arChild[i], iLevel + 1);
               // Add the summary
               if ('summary' in oBack) {
                 if (summary !== "") summary += " ";
@@ -65,8 +82,11 @@ var crpstudio = (function ($, crpstudio) {
               }
             }
           }
-          // Now set the summary link
+          // Now set the summary link and the level
           oHtable['summary'] = summary;
+          oHtable['level'] = iLevel;
+          // Adapt the maxlevel
+          if (iLevel > loc_iMaxLevel) { loc_iMaxLevel = iLevel;}
           // Return the adapted table
           return oHtable
         } catch (ex) {
@@ -91,23 +111,33 @@ var crpstudio = (function ($, crpstudio) {
             sStretch = "",
             sText = "",
             sSign = "",
+            sHidden = "",
+            sColspanR = "",
+            sColspanL = "",
+            sRowClass = "",
             arChild = [],
             arGchild = [],
+            iLevel,
             j,
             i;
 
         try {
+          // Retreive my level
+          iLevel = oHtable['level'];
+
           // This is an end-node
           if (sLevel === "descendant") {
-            sStretch = "style=\"width: 100%;\"";
+            // sStretch = "style=\"width: 100%;\"";
           }
 
-          // Start table
-          lHtml.push("<table class=\"" + loc_ht1 + "\">");
+          if (iLevel === 0) {
+            // Start table
+            lHtml.push("<table class=\"" + loc_ht1 + "\">");
+          }
 
           // If this is top-level, then add a heading
           if (sLevel === "top") {
-            lHtml.push("<thead><tr><th colspan=\"3\">");
+            lHtml.push("<thead><tr><th colspan=\""+(2 + loc_iMaxLevel)+"\">");
             // First span
             lHtml.push("<span class=\"" + loc_ht2 + "\">");
             lHtml.push("<a class=\"btn btn-xs btn-default "+loc_ht5+"\" " +
@@ -130,72 +160,58 @@ var crpstudio = (function ($, crpstudio) {
             lHtml.push("</th></tr></thead>");
           }
 
-          // Start the table body
-          lHtml.push("<tbody>");
+          if (iLevel === 0) {
+            // Start the table body
+            lHtml.push("<tbody>");
+          }
+
+          if (iLevel > 0) {
+            // Add the <tr> for myself first
+            if (iLevel > 1) { sHidden = "class=\"hidden\""; }
+            // sRowClass = " class=\"node-" + oHtable['id'] + " childof-" + oHtable['parentid'] + "\"";
+            sRowClass = " nodeid=\"" + oHtable['id'] + "\" childof=\"" + oHtable['parentid'] + "\"";
+            lHtml.push("<tr " + sHidden + sRowClass + ">");
+            // [a] get the preceding <td> elements
+            sColspanL = "colspan=\"" + (iLevel-1) + "\" ";
+            if (iLevel > 1) { lHtml.push("<td class=\"arg-text\" " + sColspanL + " style=\"min-width: " + (20 * (iLevel-1)) + "px;\" ></td>"); }
+            // [b] Check if a '+' sign is needed
+            if ('child' in oHtable) { sSign = "+"; } else { sSign = ""; }
+            lHtml.push("<td class=\"arg-plus\" style=\"min-width: 20px;\" " +
+              "onclick=\"crpstudio.htable.plus_click(this, '" + loc_ht4 + "');\">" + sSign + "</td>");
+            // [c] Add the <td> for my own POS and summary
+            sColspanR = "colspan=\"" + (loc_iMaxLevel - iLevel+1) + "\" ";
+            lHtml.push("<td class=\"" + loc_ht6 + "\" " + sColspanR + sStretch + ">");
+            lHtml.push("<span class=\"" + loc_ht7 + "\"><code>" + oHtable['pos'] + "</code></span>");
+            if ('txt' in oHtable) { sText = ""; } else { sText = oHtable['summary']; }
+            lHtml.push("<span class=\"" + loc_ht8 + "\">" + sText + "</span>");
+            lHtml.push("</td>");
+            // [d] Add a <td> for the right part
+            lHtml.push(" <td align=\"right\">");
+            if ('txt' in oHtable) { sText = oHtable['txt']; } else { sText = ""; }
+            lHtml.push("  <span>" + sText + "</span>");
+            lHtml.push(" </td>");
+            // Finish my own row
+            lHtml.push("</tr>");
+          }
 
           // Walk all 'child' elements -- if there are any
           if ('child' in oHtable) {
             arChild = oHtable['child'];
             for (i = 0; i < arChild.length; i++) {
+              // Get access to this child - a non-end-node constituent
               oConstituent = arChild[i];
-              // First check if it has more children
-              if ('child' in oConstituent) {
-                // Treat all grand-children
-                arGchild = oConstituent['child'];
-                for (j = 0; j < arGchild.length; j++) {
-                  oChild = arGchild[j];
-                  // Determine the sign
-                  if ('child' in oChild) {sSign = "+";} else {sSign = "";}
-                  // Create the visible row
-                  lHtml.push("<tr>");
-                  //   [a] the plus sign
-                  lHtml.push("<td class=\"arg-plus\" style=\"min-width: 20px;\" " +
-                    "onclick=\"crpstudio.htable.plus_click(this, '" + loc_ht4 + "');\">"+sSign+"</td>");
-                  //   [b] the middle part: POS + summary
-                  lHtml.push("<td class=\"" + loc_ht6 + "\" " + sStretch + ">");
-                  lHtml.push("<span class=\"" + loc_ht7 + "\"><code>" + oChild['pos'] + "</code></span>");
-                  lHtml.push("<span class=\"" + loc_ht8 + "\">" + oChild['summary'] + "</span>");
-                  lHtml.push("</td>");
-                  //   [c] the right part: any text
-                  lHtml.push(" <td align=\"right\">");
-                  if ('txt' in oChild) {sText = oChild['txt'];} else {sText = "";}
-                  lHtml.push("  <span>" + sText + "</span>");
-                  lHtml.push(" </td>");
-                  // Finish the visible row
-                  lHtml.push("</tr>");
-
-                  // Create the row that is hidden by default
-                  // -- But only if there are grandchildren
-                  if ('child' in oChild) {
-                    lHtml.push("<tr class=\"" + loc_ht4 + " hidden\">");
-                    lHtml.push(" <td style=\"width: 10px;\"></td>");
-                    lHtml.push(" <td>");
-                    lHtml.push(private_methods.render_htable(oChild, "descendant"));
-                    lHtml.push(" </td>");
-                    lHtml.push("</tr>");
-                  }
-                }
-
-              } else {
-                // This is an end-node
-                lHtml.push("<tr>");
-                lHtml.push(" <td colspan=\"2\" " + sStretch + ">");
-                lHtml.push("  <span><code>" + oConstituent['pos'] + "</code></span>");
-                lHtml.push("  &nbsp;</td>");
-                lHtml.push(" <td align=\"right\">");
-                if ('txt' in oConstituent) {sText = oConstituent['txt'];} else {sText = "";}
-                lHtml.push("  <span>" + oConstituent['txt'] + "</span>");
-                lHtml.push(" </td>");
-                lHtml.push("</tr>");
-              }
+              // Add the output of this child
+              lHtml.push(private_methods.render_htable(oConstituent, "descendant"));
             }
           }
 
-          // Finish the table body
-          lHtml.push("</tbody>");
+          if (iLevel === 0) {
+            // Finish the table body
+            lHtml.push("</tbody>");
 
-          // Finish the table
-          lHtml.push("</table>");
+            // Finish the table
+            lHtml.push("</table>");
+          }
 
           // Combine into a string and return
           return lHtml.join("\n");
@@ -234,6 +250,23 @@ var crpstudio = (function ($, crpstudio) {
 
     // Methods that are exported by [crpstudio.htable] for outside functions
     return {
+      /**
+       * copy_click
+       *     Copy HTML of table to clipboard
+       * @param {div} elThis  - Division
+       * @returns {void}
+       */
+      copy_click(elThis) {
+        var elSel = null,
+            $temp = $("<input>");
+
+        // point to the current table
+        elSel = $(elThis).closest("table");
+        $("body").append($temp);
+        $temp.val($(elSel).html()).select();
+        document.execCommand("copy");
+        $temp.remove();
+      },
       ht_sign_plus : function(idx) {
         var sSign = $(this).html().trim();
         if (sSign === "-") {
@@ -275,6 +308,9 @@ var crpstudio = (function ($, crpstudio) {
             $(elTbody).find(".func-plus").each(crpstudio.htable.ht_sign_plus);
             $(elTbody).find(".func-plus").attr("title", "open");
             $(elTbody).find(".func-inline").addClass("hidden");
+            $(elTbody).find("tr").each(function (idx) {
+              if ($(this).attr("childof") !== "1") {$(this).addClass("hidden");}
+            });
           } else if (sStatus === "+") {
             // We are + (=closed) and need to open (become -)
             $(el).html("-");
@@ -284,6 +320,7 @@ var crpstudio = (function ($, crpstudio) {
             $(elTbody).find(".func-plus").each(crpstudio.htable.ht_sign_minus);
             $(elTbody).find(".func-plus").attr("title", "close");
             $(elTbody).find(".func-inline").removeClass("hidden");
+            $(elTbody).find("tr").removeClass("hidden");
           }
 
         } catch (ex) {
@@ -292,51 +329,47 @@ var crpstudio = (function ($, crpstudio) {
       },
 
       /**
-       * copy_click
-       *     Copy HTML of table to clipboard
-       * @param {div} elThis  - Division
-       * @returns {void}
-       */
-      copy_click: function (elThis) {
-        try {
-
-        } catch (ex) {
-          private_methods.errMsg("copy_click", ex);
-        }
-      },
-
-      /**
        * plus_click
-       *   Show or hide the following <tr> element
+       *   Show or hide the <tr> elements under me, using 'nodeid' and 'childof'
        *   Also: adapt the +/- sign(s)
        */
       plus_click: function (el, sClass, bShow) {
-        var trNext = null;
+        var trNext = null,
+            sStatus = "",
+            trMe = null,
+            nodeid = 0;
 
         try {
           // Validate
           if (el === undefined) { return; }
-          if ($(el).html().trim() === "") { return;}
-          // Get the following <tr>
-          trNext = $(el).closest("tr").next().first();
-          if (trNext !== null) {
-            // Check its current status
-            if ($(trNext).hasClass("hidden") || (bShow !== undefined && bShow)) {
-              // Show it
-              $(trNext).removeClass("hidden");
-              // Change the '+' into a '-'
-              if ($(el).html().trim() === "+") { $(el).html("-"); }
-            } else {
-              // Hide it
-              $(trNext).addClass("hidden");
-              // Change the '-' into a '+'
-              if ($(el).html().trim() === "-") { $(el).html("+"); }
-              // Hide all underlying ones with class [sClass]
-              if (sClass !== undefined && sClass !== "") {
-                $(trNext).find("." + sClass).addClass("hidden");
-                $(trNext).find(".arg-plus").each(crpstudio.htable.ht_sign_plus);
+          if ($(el).html().trim() === "") { return; }
+          // Get my nodeid as INTEGER
+          trMe = $(el).closest("tr");
+          nodeid = $(trMe).attr("nodeid");
+          // Get my status
+          sStatus = $(el).html().trim();
+          if (bShow !== undefined && bShow === false) {
+            sStatus = "-";
+          }
+          // Get *ALL* the <tr> elements that are my direct children
+          trNext = $(el).closest("tbody").find("tr");
+          $(trNext).each(function (index) {
+            if ($(this).attr("childof") === nodeid) {
+              if (sStatus === "+") {
+                // show it
+                $(this).removeClass("hidden");
+              } else {
+                // hide it
+                $(this).addClass("hidden");
+                // Hide children too
+                crpstudio.htable.plus_click($(this).find(".arg-plus").first(), loc_ht4, false);
               }
             }
+          });
+          // Change my own status
+          switch (sStatus) {
+            case "+": $(el).html("-");break;
+            case "-": $(el).html("+");break;
           }
 
         } catch (ex) {
