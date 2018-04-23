@@ -806,6 +806,14 @@ td.arg-plus:hover {
   color: darkred;
   cursor: pointer;
 }
+td.arg-pre {
+  background-color: lavender;
+  color: darkblue;
+}
+td.arg-pre:hover {
+  background-color: lightgoldenrodyellow;
+  color: darkblue;
+}
 td.arg-text {
   background-color: lightgray;
   color: darkblue;
@@ -814,6 +822,10 @@ td.arg-text:hover {
   background-color: mediumseagreen;
   color: darkred;
   /* cursor: pointer; */
+}
+td.arg-text .arg-endnode {
+  color: black;
+  background-color: lightgray;
 }
 
 table.research-list {

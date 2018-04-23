@@ -24,6 +24,7 @@ var crpstudio = (function ($, crpstudio) {
         loc_ht6 = "arg-text",
         loc_ht7 = "arg-line",
         loc_ht8 = "arg-summary",
+        loc_ht9 = "arg-endnode",
         loc_iMaxLevel = -1,
         root = null;            // Root of the tree (DOM position)
 
@@ -115,6 +116,7 @@ var crpstudio = (function ($, crpstudio) {
             sColspanR = "",
             sColspanL = "",
             sRowClass = "",
+            sTxtClass = "",
             arChild = [],
             arGchild = [],
             iLevel,
@@ -173,7 +175,7 @@ var crpstudio = (function ($, crpstudio) {
             lHtml.push("<tr " + sHidden + sRowClass + ">");
             // [a] get the preceding <td> elements
             sColspanL = "colspan=\"" + (iLevel-1) + "\" ";
-            if (iLevel > 1) { lHtml.push("<td class=\"arg-text\" " + sColspanL + " style=\"min-width: " + (20 * (iLevel-1)) + "px;\" ></td>"); }
+            if (iLevel > 1) { lHtml.push("<td class=\"arg-pre\" " + sColspanL + " style=\"min-width: " + (20 * (iLevel-1)) + "px;\" ></td>"); }
             // [b] Check if a '+' sign is needed
             if ('child' in oHtable) { sSign = "+"; } else { sSign = ""; }
             lHtml.push("<td class=\"arg-plus\" style=\"min-width: 20px;\" " +
@@ -182,8 +184,10 @@ var crpstudio = (function ($, crpstudio) {
             sColspanR = "colspan=\"" + (loc_iMaxLevel - iLevel+1) + "\" ";
             lHtml.push("<td class=\"" + loc_ht6 + "\" " + sColspanR + sStretch + ">");
             lHtml.push("<span class=\"" + loc_ht7 + "\"><code>" + oHtable['pos'] + "</code></span>");
-            if ('txt' in oHtable) { sText = ""; } else { sText = oHtable['summary']; }
-            lHtml.push("<span class=\"" + loc_ht8 + "\">" + sText + "</span>");
+            // if ('txt' in oHtable) { sText = ""; } else { sText = oHtable['summary']; }
+            // lHtml.push("<span class=\"" + loc_ht8 + "\">" + sText + "</span>");
+            sTxtClass = ('txt' in oHtable) ? loc_ht9 : loc_ht8;
+            lHtml.push("<span class=\"" + sTxtClass + "\">" + oHtable['summary'] + "</span>");
             lHtml.push("</td>");
             // [d] Add a <td> for the right part
             lHtml.push(" <td align=\"right\">");
