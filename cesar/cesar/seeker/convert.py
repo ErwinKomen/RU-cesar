@@ -266,7 +266,7 @@ def get_crpp_date(dtThis):
     sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
     return sDate
 
-def decompressSafe(sInput, bKeepGzip = False, bUtf8 = False):
+def decompressSafe(sInput, bKeepGzip = False, bUtf8 = False, bUsePlain = False):
     """Convert string that has been treated with 'compressSafe()' by /crpp"""
     data = None
 
@@ -278,12 +278,13 @@ def decompressSafe(sInput, bKeepGzip = False, bUtf8 = False):
             data = zlib.decompress(data)
             if bUtf8:
                 data = data.decode("utf-8")
-            if bKeepGzip:
-                # Perform gzip compression
-                if bUtf8:
-                    data = gzip.compress(bytes(data.encode("utf8")))
-                else:
-                    data = gzip.compress(data)
+            if not bUsePlain:
+                if bKeepGzip:
+                    # Perform gzip compression
+                    if bUtf8:
+                        data = gzip.compress(bytes(data.encode("utf8")))
+                    else:
+                        data = gzip.compress(data)
         elif not bUtf8:
             pass
     except:

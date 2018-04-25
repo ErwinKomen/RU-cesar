@@ -21,6 +21,12 @@ from django import template
 from functools import reduce
 from operator import __or__ as OR
 import zipfile
+import csv
+
+import openpyxl
+from openpyxl.utils.cell import get_column_letter
+from openpyxl import Workbook
+from io import StringIO
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
@@ -167,6 +173,43 @@ def treat_bom(sHtml):
     sHtml = sHtml.replace(u'\ufeff', '')
     # Return what we have
     return sHtml
+
+
+def csv_to_excel(sCsvData, response):
+    """Convert CSV data to an Excel worksheet"""
+
+    # Start workbook
+    wb = openpyxl.Workbook()
+    ws = wb.get_active_sheet()
+    ws.title="Data"
+
+    # Start accessing the string data 
+    f = StringIO(sCsvData)
+    reader = csv.reader(f, delimiter=",")
+
+    # Read the header cells and make a header row in the worksheet
+    headers = next(reader)
+    for col_num in range(len(headers)):
+        c = ws.cell(row=1, column=col_num+1)
+        c.value = headers[col_num]
+        c.font = openpyxl.styles.Font(bold=True)
+        # Set width to a fixed size
+        ws.column_dimensions[get_column_letter(col_num+1)].width = 5.0        
+
+    row_num = 1
+    lCsv = []
+    for row in reader:
+        # Keep track of the EXCEL row we are in
+        row_num += 1
+        # Walk the elements in the data row
+        # oRow = {}
+        for idx, cell in enumerate(row):
+            c = ws.cell(row=row_num, column=idx+1)
+            c.value = row[idx]
+            c.alignment = openpyxl.styles.Alignment(wrap_text=False)
+    # Save the result in the response
+    wb.save(response)
+    return response
 
 
 class CustomInlineFormset(BaseInlineFormSet):
@@ -970,7 +1013,8 @@ class ResearchPart(View):
                     sPartDir = self.basket.part.dir
                     oBack = {'status': 'ok'}
                     # Download the requested information
-                    oData = crpp_dbget(sUserName, sCrpName, self.qcTarget, sType=self.dtype, sPart=sPartDir)
+                    sType = "csv" if (self.dtype == "xlsx") else self.dtype
+                    oData = crpp_dbget(sUserName, sCrpName, self.qcTarget, sType=sType, sPart=sPartDir)
                     if oData == None or oData['commandstatus'] != 'ok' or not 'db' in oData:
                         # Allow user to add to the context
                         context = self.add_to_context(context)
@@ -992,13 +1036,30 @@ class ResearchPart(View):
                         sData = oData['db']
                         # Decode the data and compress it using gzip
                         bUtf8 = (self.dtype != "db")
-                        compressed_content = decompressSafe(sData, True, bUtf8)
+                        bUsePlain = (self.dtype == "xlsx" or self.dtype == "csv")
+                        compressed_content = decompressSafe(sData, True, bUtf8, bUsePlain)
                         # Get the name and the contents
-                        # sDbName = oData['name']
                         sLng = self.basket.part.corpus.get_lng_display()
-                        sDbName = "{}_{}_{}_QC{}_Dbase.{}.gz".format(sCrpName, sLng, sPartDir, self.qcTarget, self.dtype)
-                        response = HttpResponse(compressed_content, content_type='application/gzip')
-                        response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
+                        sGz = "" if (bUsePlain) else ".gz"
+                        sDbName = "{}_{}_{}_QC{}_Dbase.{}{}".format(sCrpName, sLng, sPartDir, self.qcTarget, self.dtype, sGz)
+                        sContentType = "application/gzip"
+                        if self.dtype == "csv":
+                            sContentType = "text/tab-separated-values"
+                        elif self.dtype == "xlsx":
+                            sContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+                        # Excel needs additional conversion
+                        if self.dtype == "xlsx":
+                            # Convert 'compressed_content' to an Excel worksheet
+                            response = HttpResponse(content_type=sContentType)
+                            response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
+                            response = csv_to_excel(compressed_content, response)
+                        else:
+                            response = HttpResponse(compressed_content, content_type=sContentType)
+                            response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
+
+                        # Continue for all formats
+                        
                         # return gzip_middleware.process_response(request, response)
                         return response
 
