@@ -678,6 +678,40 @@ class SentenceDetailView(DetailView):
         #response.content = treat_bom(response.rendered_content)
         return response
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        # Initialize
+        response = None
+        context = self.get_context_data(object=self.object)
+        # Get the download type
+        self.qd = request.POST
+        if 'downloadtype' in self.qd and 'downloaddata' in self.qd:
+            # Get the download type and the data itself
+            dtype = self.qd['downloadtype']
+            ddata = self.qd['downloaddata']
+            
+            if dtype == "tree":
+                dext = ".svg"
+                sContentType = "application/svg"
+            elif dtype == "htable":
+                dext = ".html"
+                sContentType = "application/html"
+
+            # Determine a file name
+            sBase = self.object.text.fileName
+            sIdt = self.object.identifier
+            if not sBase in sIdt:
+                sIdt = "{}_{}".format( sBase, sIdt)
+            sFileName = "{}_{}{}".format(sIdt, dtype, dext)
+
+            response = HttpResponse(ddata, content_type=sContentType)
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format(sFileName)    
+
+        else:
+            response = self.render_to_response(context)
+        # Return the response we have
+        return response
+
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super(SentenceDetailView, self).get_context_data(**kwargs)

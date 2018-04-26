@@ -56,26 +56,26 @@
                   <a href="#" id="result_download_excel"
                       downloadtype="xlsx"
                       ajaxurl="{% url 'result_download' object_id %}"
-                      onclick="ru.cesar.seeker.result_download(this);" >Spreadsheet (Excel)</a>
+                      onclick="ru.cesar.seeker.post_download(this);" >Spreadsheet (Excel)</a>
                 </li>
                 <li role="separator" class="divider"></li>
                 <li>
                   <a href="#" id="result_download_csv"
                       downloadtype="csv"
                       ajaxurl="{% url 'result_download' object_id %}"
-                      onclick="ru.cesar.seeker.result_download(this);" >csv (tab-separated)</a>
+                      onclick="ru.cesar.seeker.post_download(this);" >csv (tab-separated)</a>
                 </li>
                 <li>
                   <a href="#"  id="result_download_xml"
                       downloadtype="xml"
                       ajaxurl="{% url 'result_download' object_id %}"
-                      onclick="ru.cesar.seeker.result_download(this);" >xml (compressed)</a>
+                      onclick="ru.cesar.seeker.post_download(this);" >xml (compressed)</a>
                 </li>
                 <li>
                   <a href="#"  id="result_download_sql"
                       downloadtype="db"
                       ajaxurl="{% url 'result_download' object_id %}"
-                      onclick="ru.cesar.seeker.result_download(this);" >SQlite (compressed)</a>
+                      onclick="ru.cesar.seeker.post_download(this);" >SQlite (compressed)</a>
                 </li>
               </ul>
             </div>

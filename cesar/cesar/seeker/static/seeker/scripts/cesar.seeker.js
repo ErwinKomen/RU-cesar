@@ -78,6 +78,96 @@ var ru = (function ($, ru) {
       methodNotVisibleFromOutside: function () {
         return "something";
       },
+
+      /**
+       * prepend_styles
+       *    Get the html in sDiv, but prepend styles that are used in it
+       * 
+       * @param {el} HTML dom element
+       * @returns {string}
+       */
+      prepend_styles: function (sDiv, sType) {
+        var lData = [],
+            el = null,
+            i, j,
+            sheets = document.styleSheets,
+            used = "",
+            elems = null,
+            tData = [],
+            rules = null,
+            rule = null,
+            s = null,
+            sSvg = "",
+            defs = null;
+
+        try {
+          // Get the correct element
+          if (sType === "svg") { sSvg = " svg";}
+          el = $(sDiv + sSvg).first().get(0);
+          // Get all the styles used 
+          for (i = 0; i < sheets.length; i++) {
+            rules = sheets[i].cssRules;
+            for (j = 0; j < rules.length; j++) {
+              rule = rules[j];
+              if (typeof (rule.style) !== "undefined") {
+                elems = el.querySelectorAll(rule.selectorText);
+                if (elems.length > 0) {
+                  used += rule.selectorText + " { " + rule.style.cssText + " }\n";
+                }
+              }
+            }
+          }
+
+          // Get the styles
+          s = document.createElement('style');
+          s.setAttribute('type', 'text/css');
+          switch (sType) {
+            case "html":
+              s.innerHTML = used;
+
+              // Get the table
+              tData.push("<table class=\"func-view\">");
+              tData.push($(el).find("thead").first().get(0).outerHTML);
+              tData.push("<tbody>");
+              $(el).find("tr").each(function (idx) {
+                if (idx > 0 && !$(this).hasClass("hidden")) {
+                  tData.push(this.outerHTML);
+                }
+              });
+              tData.push("</tbody></table>");
+
+              // Turn into a good HTML
+              lData.push("<html><head>");
+              lData.push(s.outerHTML);
+              lData.push("</head><body>");
+              // lData.push(el.outerHTML);
+              lData.push(tData.join("\n"));
+              
+              lData.push("</body></html>");
+              break;
+            case "svg":
+              s.innerHTML = "<![CDATA[\n" + used + "\n]]>";
+
+              defs = document.createElement('defs');
+              defs.appendChild(s);
+              el.insertBefore(defs, el.firstChild);
+
+              el.setAttribute("version", "1.1");
+              el.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+              el.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+              lData.push("<?xml version=\"1.0\" standalone=\"no\"?>");
+              lData.push("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\" >");
+              lData.push(el.outerHTML);
+              break;
+          }
+
+          return lData.join("\n");
+        } catch (ex) {
+          private_methods.showError("prepend_styles", ex);
+          return "";
+        }
+      },
+
       /**
        * screenCoordsForRect
        *    Get the correct screen coordinates for the indicated <svg> <rect> element
@@ -2417,12 +2507,15 @@ var ru = (function ($, ru) {
        *   Trigger creating and downloading a result CSV
        *
        */
-      result_download: function (elStart) {
+      post_download: function (elStart) {
         var ajaxurl = "",
+            contentid = null,
             response = null,
             basket_id = -1,
             frm = null,
+            sHtml = "",
             oBack = null,
+            dtype = "",
             sMsg = "",
             data = [];
 
@@ -2432,16 +2525,42 @@ var ru = (function ($, ru) {
 
           // obligatory parameter: ajaxurl
           ajaxurl = $(elStart).attr("ajaxurl");
+          contentid = $(elStart).attr("contentid");
 
           // Get the download type and put it in the <input>
-          $("#downloadtype").val($(elStart).attr("downloadtype"));
+          dtype = $(elStart).attr("downloadtype")
+          $("#downloadtype").val(dtype);
 
           // Gather the information
           frm = $(elStart).closest(".container.body-content").find("form");
+          if (frm.length == 0) {
+            frm = $(elStart).closest(".container-large.body-content").find("form");
+          }
           // Set the 'action; attribute in the form
           frm.attr("action", ajaxurl);
           // Make sure we do a POST
           frm.attr("method", "POST");
+
+          // Do we have a contentid?
+          if (contentid !== undefined && contentid !== null && contentid !== "") {
+            // Process download data
+            switch (dtype) {
+              case "tree":
+                //sHtml = $(contentid).html();
+                sHtml = private_methods.prepend_styles(contentid, "svg");
+                break;
+              case "htable":
+                // Prepend any styles
+                sHtml = private_methods.prepend_styles(contentid, "html");
+                break;
+              default:
+                // TODO: add error message here
+                return;
+            }
+            // Set it
+            $("#downloaddata").val(sHtml);
+          }
+
           // Now submit the form
           oBack = frm.submit();
           // Check on what has been returned
@@ -2449,7 +2568,7 @@ var ru = (function ($, ru) {
 
           }
         } catch (ex) {
-          private_methods.errMsg("result_download", ex);
+          private_methods.errMsg("post_download", ex);
         }
       },
 

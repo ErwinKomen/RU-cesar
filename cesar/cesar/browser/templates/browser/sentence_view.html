@@ -16,6 +16,7 @@
     <h3>{% if sentence.text.title %}{{sentence.text.title}}{% else %}(no title){% endif %}</h3>
     <!-- Information on this sentence -->
     <div class="row">
+      <div class="col-md-10">
       <span>Sentence number = {{sentence.order}}</span>
       <span> ({{sentence.identifier}})</span>
       <span>
@@ -30,6 +31,42 @@
           <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
         </a>
       </span>
+      </div>
+
+      <!-- Download possibilities -->
+      <div class="col-md-2" align="right">
+        <form id="syntaxform" action="">
+          {% csrf_token %}
+          <div id="downloadcenter" class="hidden">
+            <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+            <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-default btn-sm dropdown-toggle"
+                    type="button" id="downloadmenu"
+                    data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="true">download&nbsp;<span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+              <li>
+                <a href="#" id="syntax_download_tree"
+                    downloadtype="tree"
+                    contentid="#sentdetails_tree"
+                    ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
+                    onclick="ru.cesar.seeker.post_download(this);" >Tree (svg)</a>
+              </li>
+              <li role="separator" class="divider"></li>
+              <li>
+                <a href="#" id="syntax_download_htable"
+                    downloadtype="htable"
+                    contentid="#sentdetails_htable"
+                    ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
+                    onclick="ru.cesar.seeker.post_download(this);" >Hierarchical table (html)</a>
+              </li>
+            </ul>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- The sentence as such -->
