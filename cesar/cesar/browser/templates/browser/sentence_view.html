@@ -48,14 +48,14 @@
                     aria-expanded="true">download&nbsp;<span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="downloadmenu">
-              <li class="sentdetails_tree">
+              <li class="sentdetails_tree_host">
                 <a href="#" id="syntax_download_tree"
                     downloadtype="tree"
                     contentid="#sentdetails_tree"
                     ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
                     onclick="ru.cesar.seeker.post_download(this);" >Tree (svg)</a>
               </li>
-              <li class="sentdetails_tree">
+              <li class="sentdetails_tree_host">
                 <a href="#" id="syntax_download_tree"
                     downloadtype="tree-png"
                     contentid="#sentdetails_tree"
