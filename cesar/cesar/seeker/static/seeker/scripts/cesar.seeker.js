@@ -2519,6 +2519,7 @@ var ru = (function ($, ru) {
             sHtml = "",
             oBack = null,
             dtype = "",
+            resid="",
             sMsg = "",
             getCanvas,
             data = [];
@@ -2531,19 +2532,27 @@ var ru = (function ($, ru) {
           ajaxurl = $(elStart).attr("ajaxurl");
           contentid = $(elStart).attr("contentid");
 
-          // Get the download type and put it in the <input>
-          dtype = $(elStart).attr("downloadtype")
-          $("#downloadtype").val(dtype);
-
           // Gather the information
-          frm = $(elStart).closest(".container.body-content").find("form");
-          if (frm.length == 0) {
-            frm = $(elStart).closest(".container-large.body-content").find("form");
+          frm = $(elStart).closest(".container-small").find("form");
+          if (frm.length === 0) {
+            frm = $(elStart).closest(".container.body-content").find("form");
+            if (frm.length === 0) {
+              frm = $(elStart).closest(".container-large.body-content").find("form");
+            }
           }
           // Set the 'action; attribute in the form
           frm.attr("action", ajaxurl);
           // Make sure we do a POST
           frm.attr("method", "POST");
+
+          // Get the download type and put it in the <input>
+          dtype = $(elStart).attr("downloadtype");
+          $(frm).find("#downloadtype").val(dtype);
+
+          resid = $(elStart).attr("resid");
+          if (resid !== undefined && resid != "") {
+            $(frm).find("#resid").val(resid);
+          }
 
           // Do we have a contentid?
           if (contentid !== undefined && contentid !== null && contentid !== "") {
@@ -2552,7 +2561,7 @@ var ru = (function ($, ru) {
               case "tree":
                 sHtml = private_methods.prepend_styles(contentid, "svg");
                 // Set it
-                $("#downloaddata").val(sHtml);
+                $(frm).find("#downloaddata").val(sHtml);
                 // Now submit the form
                 oBack = frm.submit();
                 break;
@@ -2560,7 +2569,7 @@ var ru = (function ($, ru) {
                 // Prepend any styles
                 sHtml = private_methods.prepend_styles(contentid, "html");
                 // Set it
-                $("#downloaddata").val(sHtml);
+                $(frm).find("#downloaddata").val(sHtml);
                 // Now submit the form
                 oBack = frm.submit();
                 break;
@@ -2579,7 +2588,7 @@ var ru = (function ($, ru) {
                   .then(function (canvas) {
                     // Convert to data
                     var imageData = canvas.toDataURL("image/png");
-                    $("#downloaddata").val(imageData);
+                    $(frm).find("#downloaddata").val(imageData);
                     // Now submit the form
                     oBack = frm.submit();
                 });

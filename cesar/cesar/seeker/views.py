@@ -22,6 +22,7 @@ from functools import reduce
 from operator import __or__ as OR
 import zipfile
 import csv
+import base64
 
 import openpyxl
 from openpyxl.utils.cell import get_column_letter
@@ -31,7 +32,7 @@ from io import StringIO
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
 from cesar.seeker.convert import decompressSafe, get_crpp_date
-from cesar.browser.models import Part, Corpus
+from cesar.browser.models import Part, Corpus, Sentence
 from cesar.browser.views import get_item_list, adapt_search
 from cesar.browser.services import get_crpp_sent_info
 from cesar.seeker.services import crpp_dbget
@@ -1062,6 +1063,49 @@ class ResearchPart(View):
                         
                         # return gzip_middleware.process_response(request, response)
                         return response
+            elif self.action == "downloadhit":
+                if 'downloadtype' in self.qd and 'downloaddata' in self.qd:
+                    # Get the download type and the data itself
+                    dtype = self.qd['downloadtype']
+                    ddata = self.qd['downloaddata']
+            
+                    if dtype == "tree":
+                        dext = ".svg"
+                        sContentType = "application/svg"
+                    elif dtype == "htable":
+                        dext = ".html"
+                        sContentType = "application/html"
+                    elif (dtype == "htable-png" or dtype == "tree-png"):
+                        dext = ".png"
+                        # sContentType = "application/octet-stream"
+                        sContentType = "image/png"
+                        # Read base64 encoded part
+                        arPart = ddata.split(";")
+                        dSecond = arPart[1]
+                        # Strip off the preceding "base64," part
+                        ddata = dSecond.replace("base64,", "")
+                        # Convert string to bytestring
+                        ddata = ddata.encode()
+                        # Decode base64 into binary
+                        ddata = base64.decodestring(ddata)
+                        # Strip -png off
+                        dtype = dtype.replace("-png", "")
+
+
+                    # Determine a file name from the information we have...
+                    iResId = int(self.qd['resid'])
+                    oResult = self.obj.get_result(iResId)
+                    sBase = Text.strip_ext( oResult['File'])
+                    sIdt = oResult['Locs']
+                    if not sBase in sIdt:
+                        sIdt = "{}_{}".format( sBase, sIdt)
+                    sFileName = "{}_{}{}".format(sIdt, dtype, dext)
+
+                    response = HttpResponse(ddata, content_type=sContentType)
+                    response['Content-Disposition'] = 'attachment; filename="{}"'.format(sFileName)    
+
+                    # For downloading: resturn this response
+                    return response
 
             # Allow user to add to the context
             context = self.add_to_context(context)
@@ -3801,6 +3845,8 @@ class ResultPart5(ResearchPart):
                    'locs': oResult['Locs'],
                    'locw': oResult['Locw'],
                    'type': 'syntax_tree'}
+
+        # Retrieve the info for this sentence
         oInfo = get_crpp_sent_info(options)
         if oInfo != None and oInfo['status'] == "ok":
             # Make sure that 'object' sections are translated to proper JSON
@@ -3832,6 +3878,10 @@ class ResultPart6(ResultPart5):
     MainModel = Kwic
     template_name = 'seeker/result_part_6.html'
     do_dump = True
+
+
+class ResultHitView(ResultPart5):
+    action = "downloadhit"
 
 
 class ResultDownload(ResearchPart):

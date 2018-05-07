@@ -6,6 +6,7 @@ The information here mirrors (and extends) the information in the crp-info.json 
 """
 from django.db import models, transaction
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.db.models.functions import Lower
 from datetime import datetime
 from cesar.utils import *
@@ -1167,10 +1168,16 @@ class Text(models.Model):
             return qs[0]
 
     def strip_ext(sName):
-        sName = sName.replace(".folia.xml.gz", "")
-        sName = sName.replace(".folia.xml", "")
-        sName = sName.replace(".psdx.gz", "")
-        sName = sName.replace(".psdx", "")
+        lExt = ['folia.xml.gz','.folia.xml', '.psdx.gz', '.psdx' ]
+        # Possibly adapt filename: strip the extension
+        for ext in lExt:
+            if ext in sName:
+                sName = sName.replace(ext, "")
+                break
+        #sName = sName.replace(".folia.xml.gz", "")
+        #sName = sName.replace(".folia.xml", "")
+        #sName = sName.replace(".psdx.gz", "")
+        #sName = sName.replace(".psdx", "")
         return sName
 
     def find_text(part, format, sName):
@@ -1240,5 +1247,3 @@ class Sentence(models.Model):
 
     def get_fileName(self):
         return self.text.fileName
-
-

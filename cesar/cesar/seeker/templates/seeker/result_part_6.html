@@ -9,12 +9,13 @@
                 onclick="ru.cesar.seeker.research_open('{{backid}}', 'result_container_6');">
           << Back</button>
       </div>
-      <div>
+      <div class="container-small">
         <form id="syntaxform" action="">
           {% csrf_token %}
           <div id="downloadcenter" class="hidden">
             <input name='downloadtype' id='downloadtype' class='form-control' value='' >
             <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+            <input name="resid" id="resid" class="hidden form-control" value="" />
           </div>
           <div class="dropdown">
             <button class="btn btn-default btn-sm dropdown-toggle"
@@ -24,11 +25,20 @@
             </button>
             <ul class="dropdown-menu" aria-labelledby="downloadmenu">
                 <li class="syntax-download syntax-download-tree">
-                  <a href="#" id="syntax_download_tree"
+                  <a href="#" id="syntax_download_htable"
                       downloadtype="htable"
                       contentid="#sentdetails_htable"
-                      ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
+                      resid="{{result.ResId}}"
+                      ajaxurl="{% url 'hit_download' object_id=kwic_id %}"
                       onclick="ru.cesar.seeker.post_download(this);" >Hierarchical table (html)</a>
+                </li>
+                <li class="syntax-download syntax-download-tree">
+                  <a href="#" id="syntax_download_htablepng"
+                      downloadtype="htable-png"
+                      contentid="#sentdetails_htable"
+                      resid="{{result.ResId}}"
+                      ajaxurl="{% url 'hit_download' object_id=kwic_id %}"
+                      onclick="ru.cesar.seeker.post_download(this);" >Hierarchical table (PNG)</a>
                 </li>
             </ul>
           </div>

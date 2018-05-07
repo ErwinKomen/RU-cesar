@@ -70,6 +70,7 @@ urlpatterns = [
     url(r'^seek/result/tree/(?P<object_id>\d+)/$', ResultPart5.as_view(), name='result_part_5'),
     url(r'^seek/result/htable/(?P<object_id>\d+)/$', ResultPart6.as_view(), name='result_part_6'),
     url(r'^seek/result/download/(?P<object_id>\d+)/$', ResultDownload.as_view(), name='result_download'),
+    url(r'^seek/result/hit/download/(?P<object_id>\d+)/$', ResultHitView.as_view(), name='hit_download'),
     url(r'^seek/result/delete/(?P<object_id>\d+)/$', ResultDelete.as_view(), name='result_delete'),
 
     url(r'^seek/list/$', SeekerListView.as_view(), name='seeker_list'),

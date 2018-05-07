@@ -10,12 +10,13 @@
           << Back</button>
 
       </div>
-      <div>
+      <div class="container-small">
         <form id="syntaxform" action="">
           {% csrf_token %}
           <div id="downloadcenter" class="hidden">
             <input name='downloadtype' id='downloadtype' class='form-control' value='' >
             <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+            <input name="resid" id="resid" class="hidden form-control" value="" />
           </div>
           <div class="dropdown">
             <button class="btn btn-default btn-sm dropdown-toggle"
@@ -28,8 +29,17 @@
                   <a href="#" id="syntax_download_tree"
                       downloadtype="tree"
                       contentid="#sentdetails_tree"
-                      ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
+                      resid="{{result.ResId}}"
+                      ajaxurl="{% url 'hit_download' object_id=kwic_id %}"
                       onclick="ru.cesar.seeker.post_download(this);" >Tree (svg)</a>
+                </li>
+                <li class="syntax-download syntax-download-treepng">
+                  <a href="#" id="syntax_download_tree"
+                      downloadtype="tree-png"
+                      contentid="#sentdetails_tree"
+                      resid="{{result.ResId}}"
+                      ajaxurl="{% url 'hit_download' object_id=kwic_id %}"
+                      onclick="ru.cesar.seeker.post_download(this);" >Tree (PNG)</a>
                 </li>
             </ul>
           </div>
@@ -90,7 +100,7 @@
     <!-- Tree of this sentence -->
     <div id="sentdetails_err" class="row sent-error"></div>
     <div id="sentdetails_feats" class="hidden"></div>
-    <div id="sentdetails_tree" class="row"></div>
+    <div id="sentdetails_tree_host" class="row"><div id="sentdetails_tree" style="display: inline-block;"></div></div>
   </div>
 
 </div>
