@@ -198,7 +198,8 @@ var ru = (function ($, ru) {
           return oBound;
         }
 
-      },      /**
+      },
+      /**
        *  var_move
        *      Move variable row one step down or up
        *      This means the 'order' attribute changes
@@ -2512,11 +2513,14 @@ var ru = (function ($, ru) {
             contentid = null,
             response = null,
             basket_id = -1,
+            scaleFactor = 4,  // Scaling of images to make sure the result is not blurry
             frm = null,
+            el = null,
             sHtml = "",
             oBack = null,
             dtype = "",
             sMsg = "",
+            getCanvas,
             data = [];
 
         try {
@@ -2546,23 +2550,46 @@ var ru = (function ($, ru) {
             // Process download data
             switch (dtype) {
               case "tree":
-                //sHtml = $(contentid).html();
                 sHtml = private_methods.prepend_styles(contentid, "svg");
+                // Set it
+                $("#downloaddata").val(sHtml);
+                // Now submit the form
+                oBack = frm.submit();
                 break;
               case "htable":
                 // Prepend any styles
                 sHtml = private_methods.prepend_styles(contentid, "html");
+                // Set it
+                $("#downloaddata").val(sHtml);
+                // Now submit the form
+                oBack = frm.submit();
+                break;
+              case "htable-png":
+                // Make sure we get the table
+                contentid = contentid + " table";
+              case "tree-png":
+                // Make sure we only get SVG
+                if (dtype === "tree-png") {
+                  // contentid = contentid + " svg";
+                }
+                // Convert html to canvas
+                el = $(contentid).first().get(0);
+
+                html2canvas(el, { scale: scaleFactor })
+                  .then(function (canvas) {
+                    // Convert to data
+                    var imageData = canvas.toDataURL("image/png");
+                    $("#downloaddata").val(imageData);
+                    // Now submit the form
+                    oBack = frm.submit();
+                });
                 break;
               default:
                 // TODO: add error message here
                 return;
             }
-            // Set it
-            $("#downloaddata").val(sHtml);
           }
 
-          // Now submit the form
-          oBack = frm.submit();
           // Check on what has been returned
           if (oBack !== null) {
 

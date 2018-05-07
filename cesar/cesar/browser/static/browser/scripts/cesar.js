@@ -423,6 +423,9 @@ var ru = (function ($, ru) {
       view_switch: function (sOpen, sClose) {
         $("#" + sOpen).removeClass("hidden");
         $("#" + sClose).addClass("hidden");
+        // Show/hide <li> elements
+        $("li." + sOpen).removeClass("hidden");
+        $("li." + sClose).addClass("hidden");
       }
 
     };

@@ -126,6 +126,7 @@
     <Content Include="cesar\browser\static\browser\scripts\cesar.js" />
     <Content Include="cesar\browser\static\browser\scripts\crpstudio.htable.js" />
     <Content Include="cesar\browser\static\browser\scripts\crpstudio.svg.js" />
+    <Content Include="cesar\browser\static\browser\scripts\html2canvas.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.min.js" />
     <Content Include="cesar\browser\static\browser\scripts\jquery-1.10.2.min.map" />

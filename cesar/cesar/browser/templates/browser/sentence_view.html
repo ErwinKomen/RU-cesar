@@ -21,12 +21,12 @@
       <span> ({{sentence.identifier}})</span>
       <span>
         <a class="btn btn-default btn-xs" id="sent_view_tree" 
-            onclick="ru.cesar.view_switch('sentdetails_tree', 'sentdetails_htable');"
+            onclick="ru.cesar.view_switch('sentdetails_tree_host', 'sentdetails_htable');"
             title="tree">
           <span class="glyphicon glyphicon-tree-conifer" aria-hidden="true"></span>
         </a>
         <a class="btn btn-default btn-xs" id="sent_view_htable" 
-            onclick="ru.cesar.view_switch('sentdetails_htable', 'sentdetails_tree');"
+            onclick="ru.cesar.view_switch('sentdetails_htable', 'sentdetails_tree_host');"
             title="table">
           <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
         </a>
@@ -48,20 +48,34 @@
                     aria-expanded="true">download&nbsp;<span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="downloadmenu">
-              <li>
+              <li class="sentdetails_tree">
                 <a href="#" id="syntax_download_tree"
                     downloadtype="tree"
                     contentid="#sentdetails_tree"
                     ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
                     onclick="ru.cesar.seeker.post_download(this);" >Tree (svg)</a>
               </li>
-              <li role="separator" class="divider"></li>
-              <li>
+              <li class="sentdetails_tree">
+                <a href="#" id="syntax_download_tree"
+                    downloadtype="tree-png"
+                    contentid="#sentdetails_tree"
+                    ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
+                    onclick="ru.cesar.seeker.post_download(this);" >Tree (PNG)</a>
+              </li>
+              <!-- <li role="separator" class="divider"></li>-->
+              <li class="sentdetails_htable hidden">
                 <a href="#" id="syntax_download_htable"
                     downloadtype="htable"
                     contentid="#sentdetails_htable"
                     ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
                     onclick="ru.cesar.seeker.post_download(this);" >Hierarchical table (html)</a>
+              </li>
+              <li class="sentdetails_htable hidden">
+                <a href="#" id="syntax_download_htable"
+                    downloadtype="htable-png"
+                    contentid="#sentdetails_htable"
+                    ajaxurl="{% url 'syntax_download' pk=sentence.id %}"
+                    onclick="ru.cesar.seeker.post_download(this);" >Hierarchical table (PNG)</a>
               </li>
             </ul>
           </div>
@@ -86,7 +100,7 @@
         {{sent_info.allTs|safe}}
     </div>
     <div id="sentdetails_feats" class="hidden"></div>
-    <div id="sentdetails_tree" class="row"></div>
+    <div id="sentdetails_tree_host" class="row"><div id="sentdetails_tree" style="display: inline-block;"></div></div>
     <div id="sentdetails_htable" class="row hidden"></div>
   </div>
   <!-- Provide interaction to the tree -->

@@ -26,6 +26,7 @@ from cesar.browser.forms import *
 from cesar.utils import ErrHandle
 import fnmatch
 import sys
+import base64
 
 # Global variables
 paginateSize = 10
@@ -696,6 +697,22 @@ class SentenceDetailView(DetailView):
             elif dtype == "htable":
                 dext = ".html"
                 sContentType = "application/html"
+            elif (dtype == "htable-png" or dtype == "tree-png"):
+                dext = ".png"
+                # sContentType = "application/octet-stream"
+                sContentType = "image/png"
+                # Read base64 encoded part
+                arPart = ddata.split(";")
+                dSecond = arPart[1]
+                # Strip off the preceding "base64," part
+                ddata = dSecond.replace("base64,", "")
+                # Convert string to bytestring
+                ddata = ddata.encode()
+                # Decode base64 into binary
+                ddata = base64.decodestring(ddata)
+                # Strip -png off
+                dtype = dtype.replace("-png", "")
+
 
             # Determine a file name
             sBase = self.object.text.fileName
