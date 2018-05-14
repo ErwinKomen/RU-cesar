@@ -2989,6 +2989,7 @@ class Basket(models.Model):
                         subcats.append(qsubcat)
                 last_file = ""
                 text = None
+                # Get the number of documents that contain 0 or more hits
                 hits = len(oQcResults['hits'])
 
                 # Divide this into packages of 1000 hits, after which a real 'save' happens
@@ -3138,7 +3139,13 @@ class Basket(models.Model):
 
     def get_filter_list(self, iQcLine):
         kwic = self.get_kwic(iQcLine)
-        return kwic.kwicfilters.all()
+        if kwic == None:
+            if self.set_kwic(iQcLine):
+                kwic = self.get_kwic(iQcLine)
+        if kwic == None:
+            return []
+        else:
+            return kwic.kwicfilters.all()
 
     def get_feature_list(self, iQcLine):
         kwic = self.get_kwic(iQcLine)

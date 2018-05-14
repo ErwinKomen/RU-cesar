@@ -1168,7 +1168,7 @@ class Text(models.Model):
             return qs[0]
 
     def strip_ext(sName):
-        lExt = ['folia.xml.gz','.folia.xml', '.psdx.gz', '.psdx' ]
+        lExt = ['.folia.xml.gz','.folia.xml', '.psdx.gz', '.psdx' ]
         # Possibly adapt filename: strip the extension
         for ext in lExt:
             if ext in sName:
