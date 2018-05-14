@@ -321,6 +321,8 @@ var crpstudio = (function ($, crpstudio) {
             $(elTbody).find("tr").each(function (idx) {
               if ($(this).attr("childof") !== "1") {$(this).addClass("hidden");}
             });
+            // All summaries may be shown
+            $(elTbody).find(".arg-summary").removeClass("hidden");
           } else if (sStatus === "+") {
             // We are + (=closed) and need to open (become -)
             $(el).html("-");
@@ -331,6 +333,8 @@ var crpstudio = (function ($, crpstudio) {
             $(elTbody).find(".func-plus").attr("title", "close");
             $(elTbody).find(".func-inline").removeClass("hidden");
             $(elTbody).find("tr").removeClass("hidden");
+            // No summaries must be shown
+            $(elTbody).find(".arg-summary").addClass("hidden");
           }
 
         } catch (ex) {
@@ -341,11 +345,14 @@ var crpstudio = (function ($, crpstudio) {
       /**
        * plus_click
        *   Show or hide the <tr> elements under me, using 'nodeid' and 'childof'
-       *   Also: adapt the +/- sign(s)
+       *   Also: 
+       *    - adapt the +/- sign(s)
+       *    - show the [arg-summary] part when sign is '+', otherwise hide it
        */
       plus_click: function (el, sClass, bShow) {
         var trNext = null,
             sStatus = "",
+            elSummary = null,
             trMe = null,
             nodeid = 0;
 
@@ -376,10 +383,20 @@ var crpstudio = (function ($, crpstudio) {
               }
             }
           });
+          // Find my own summary part
+          elSummary = $(el).nextAll(".arg-text").find(".arg-summary").first();
           // Change my own status
           switch (sStatus) {
-            case "+": $(el).html("-");break;
-            case "-": $(el).html("+");break;
+            case "+":
+              $(el).html("-");
+              // Hide the arg-summary
+              $(elSummary).addClass("hidden");
+              break;
+            case "-":
+              $(el).html("+");
+              // Show the arg-summary
+              $(elSummary).removeClass("hidden");
+              break;
           }
 
         } catch (ex) {
