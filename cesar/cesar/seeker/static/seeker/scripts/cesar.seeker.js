@@ -2597,6 +2597,9 @@ var ru = (function ($, ru) {
                 // TODO: add error message here
                 return;
             }
+          } else {
+            // Do a plain submit of the form
+            oBack = frm.submit();
           }
 
           // Check on what has been returned
