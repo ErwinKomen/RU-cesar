@@ -11,6 +11,7 @@ var ru = (function ($, ru) {
     // Define variables for ru.collbank here
     var loc_example = "",
         loc_divErr = "research_err",
+        loc_bExeErr = false,          // Internal way to see that an execution error has occurred
         oSyncTimer = null,
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         basket_progress = "",         // URL to get progress
@@ -283,10 +284,12 @@ var ru = (function ($, ru) {
           sHtml = "Error in [" + sMsg + "]<br>" + ex.message;
         }
         sHtml = "<code>" + sHtml + "</code>";
+        console.log(sHtml);
         $("#" + loc_divErr).html(sHtml);
       },
       errClear: function () {
         $("#" + loc_divErr).html("");
+        loc_bExeErr = false;
       },
       mainWaitStart : function() {
         var elWait = $(".main-wait").first();
@@ -2693,6 +2696,8 @@ var ru = (function ($, ru) {
                   $(sDivProgress).html("Bad execute response:<br>" + response);
                   $("#action_inprogress").addClass("hidden");
                 } else if (response.status === "error") {
+                  // Immediately set the 'internal' error
+                  loc_bExeErr = true;
                   // Show the error that has occurred
                   if ("html" in response) { sMsg = response['html']; }
                   if ("error_list" in response) { sMsg += response['error_list']; }
@@ -2763,6 +2768,8 @@ var ru = (function ($, ru) {
             sMsg = "";
 
         try {
+          // First of all check for internal error
+          if (loc_bExeErr) return;
           // Make an AJAX call by using the already stored basket_stop URL
           // response = ru.cesar.seeker.ajaxcall(basket_progress, basket_data, "POST");
           $.post(basket_progress, basket_data, function (response) {
@@ -2774,12 +2781,16 @@ var ru = (function ($, ru) {
                   switch (response.statuscode) {
                     case "working":
                     case "preparing":
+                      // Prevent error progression
+                      if (loc_bExeErr) return;
                       // Show the status of the project
                       $(sDivProgress).html(response.html);
                       // Make sure we are called again
                       setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
                       break;
                     case "completed":
+                      // Prevent error progression
+                      if (loc_bExeErr) return;
                       // Show that the project has finished
                       $(sDivProgress).html(response.html);
                       // Hide the STOP button
@@ -2811,6 +2822,9 @@ var ru = (function ($, ru) {
                       $("#action_inprogress").addClass("hidden");
                       break;
                     default:
+                      // Prevent error progression
+                      if (loc_bExeErr) return;
+                      // Now look at the status code
                       if (response.statuscode !== "") {
                         // Show the current status
                         private_methods.errMsg("Unknown statuscode: [" + response.statuscode + "]");

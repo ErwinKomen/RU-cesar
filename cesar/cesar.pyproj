@@ -150,6 +150,8 @@
     <Content Include="cesar\seeker\templates\seeker\variable_function_OLD.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_function.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_view.html" />
+    <Content Include="cesar\seeker\templates\seeker\xqdef_folia_c.xq" />
+    <Content Include="cesar\seeker\templates\seeker\xqdef_folia_w.xq" />
     <Content Include="cesar\seeker\templates\seeker\xqmain_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\xqdef_folia.xq" />
     <Content Include="cesar\seeker\templates\seeker\def_folia.xq" />

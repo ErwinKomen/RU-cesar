@@ -1,17 +1,17 @@
 <FoLiA>{
     (: This main query is meant for FOLIA encoding :)
     
-    for $search in //su[tb:hasConstructionW(self::su)]
+    for $search in //su[tb:hasConstruction(self::su)]
     
       (: Get the group this construction belongs to :)
-      let $searchgroup := tb:getConstructionWgroup($search)
+      let $searchgroup := tb:getConstructionGroup($search)
       
       (: Iterate over all the definition variables :)
       {% for item in dvar_list %}
         let ${{item.name}} := 
           {% for cvar in item.cvar_list %}
             {% if item.cvar_list|length == 1 %} 
-              {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
+              {% if cvar.type == "calc" %}{{cvar.fname}}($search {% if cvar.dvars|length > 0 %},{% endif %} {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% elif forloop.first %}
               if ($searchgroup = '{{cvar.grp}}') then {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% elif forloop.last %}

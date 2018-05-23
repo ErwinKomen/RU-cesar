@@ -9,8 +9,7 @@
       {{ wrdconstruction_formset.management_form }}
       {{ cnsconstruction_formset.management_form }}
 
-      {% if targettype == 'w' %}
-        <div class="js-inline-formset inline-group"
+        <div class="js-inline-formset inline-group {% if targettype != 'w' %}hidden{% endif %}"
             data-inline-type="tabular"
             data-inline-formset="{{wrdconstruction_formset.inline_formset_data}}">
 
@@ -61,8 +60,7 @@
           </div>
         </div>
 
-      {% elif targettype == 'c' %}
-        <div class="js-inline-formset inline-group"
+        <div class="js-inline-formset inline-group {% if targettype != 'c' %}hidden{% endif %}"
             data-inline-type="tabular"
             data-inline-formset="{{cnsconstruction_formset.inline_formset_data}}">
 
@@ -115,7 +113,7 @@
                       <td valign="top" align="center" class="col-ru-1">{{cnsconstruction_formset.empty_form.DELETE}}</td>
                   </tr>
                   <tr class="add-row">
-                    <td colspan="4">
+                    <td colspan="5">
                       <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add another search element option</a>
                     </td>
                   </tr>
@@ -125,7 +123,6 @@
             </fieldset>
           </div>
         </div>
-      {% endif %}
 
       <!-- Show ERRORS if needed -->
       <div id="research_err">

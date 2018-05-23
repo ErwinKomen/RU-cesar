@@ -130,15 +130,16 @@ class ConstructionCnsForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(ConstructionCnsForm, self).__init__(*args, **kwargs)
         # Get the instance
-        if 'instance' in kwargs and 'value' in self.fields:
+        if 'instance' in kwargs and 'cat_incl' in self.fields:
             instance = kwargs['instance']
 
             # Get the obligatory [cat_incl] value
             sCatIncl = instance.search.value
-            self.fields['cat_incl'] = sCatIncl
-            # Get the optional [cat_excl] vlue
-            sCatExcl = instance.search.exclude
-            self.fields['cat_excl'] = sCatExcl
+            self.fields['cat_incl'].initial = sCatIncl
+            # Get the optional [cat_excl] value
+            if 'cat_excl' in self.fields:
+                sCatExcl = instance.search.exclude
+                self.fields['cat_excl'].initial = sCatExcl
 
     def is_valid(self):
         # Do default is valid

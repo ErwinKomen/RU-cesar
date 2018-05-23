@@ -130,24 +130,33 @@ class SearchMain(models.Model):
 
         return obj
 
-    def get_search_spec(self):
-        """Combine all single-word lines into a string like 'aap|noot|mies'
-           Divide the remainder into a list of line-objects, containing a list of word-objects"""
+    def get_search_spec(self, targetType):
+        """Get the relevant search arguments in appropriate forms.
+        
+        w: Combine all single-word lines into a string like 'aap|noot|mies'
+           Divide the remainder into a list of line-objects, containing a list of word-objects
+           
+        c: Give the include and exclude values"""
 
-        # Initialisations
-        lSingle = []
-        lLine = []
-        # Convert the string into a list of lines, disregarding the \r symbols of Windows
-        input_line_list = self.value.replace('\r', '').split('\n')
-        for input_line in input_line_list:
-            input_word_list = input_line.split()
-            if len(input_word_list) == 1:
-                lSingle.append(input_line)
-            else:
-                lLine.append(input_line)
-        sSingle = "|".join(lSingle)
-        sMulti = tuple(lLine)
-        return {'single': sSingle, 'line_list': sMulti}
+        if targetType == 'w':
+            # Initialisations
+            lSingle = []
+            lLine = []
+            # Convert the string into a list of lines, disregarding the \r symbols of Windows
+            input_line_list = self.value.replace('\r', '').split('\n')
+            for input_line in input_line_list:
+                input_word_list = input_line.split()
+                if len(input_word_list) == 1:
+                    lSingle.append(input_line)
+                else:
+                    lLine.append(input_line)
+            sSingle = "|".join(lSingle)
+            sMulti = tuple(lLine)
+            return {'single': sSingle, 'line_list': sMulti}
+        elif targetType == 'c':
+            return {'cat_incl': self.value, 'cat_excl': self.exclude}
+        else:
+            return {}
         
 
 class GatewayManager(models.Manager):
@@ -339,10 +348,16 @@ class Gateway(models.Model):
     def get_search_list(self):
         """List the names of the constructions plus their search group and specification"""
         qs = self.constructions.all().select_related()
+        targetType = self.research.targetType
         lBack = []
         for item in qs:
-            oSearch = item.search.get_search_spec()
-            oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
+            oSearch = item.search.get_search_spec(targetType)
+            if targetType == 'w':
+                oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
+            elif targetType == 'c':
+                oItem = {'name': item.name, 'cat_incl': oSearch['cat_incl'], 'cat_excl': oSearch['cat_excl']}
+            else:
+                oItem = {}
             lBack.append(oItem)
         return lBack
 
@@ -2805,15 +2820,34 @@ class Research(models.Model):
                             sMsg = oCrpp['message']
                             try:
                                 if sMsg.startswith("{"):
-                                    oMsg = json.loads(sMsg)
+                                    # Possibly do away with [] code
+                                    idx = sMsg.find("[{\"msg\":")
+                                    if idx >=0:
+                                        sMsg = sMsg[:idx-1]
+                                    # If this has multiple lines, then only take the first line
+                                    lMulti = sMsg.split("\n")
                                     lMsg = []
-                                    for key, value in oMsg:
-                                        lMsg.append("{}: {}<br>".format(key,value))
-                                        msg_list.append("{}: {}".format(key,value))
+                                    for oneMsg in lMulti:
+                                        oMsg = json.loads(oneMsg)
+                                        # This message may, in turn, contain a 'msg' part
+                                        if 'msg' in oMsg and 'ex' in oMsg and 'cls' in oMsg and oMsg['msg'].startswith("{"):
+                                            lMsg.append("class: {}".format(oMsg['cls']))
+                                            if oMsg['ex'] != '':
+                                                lMsg.append("ex: {}".format(oMsg['ex']))
+                                            oInside = json.loads(oMsg['msg'])
+                                            for key, value in oInside.items():
+                                                lMsg.append("{}: {}<br>".format(key,value))
+                                                msg_list.append("{}: {}".format(key,value))
+                                        else:
+                                            for key, value in oMsg.items():
+                                                lMsg.append("{}: {}<br>".format(key,value))
+                                                msg_list.append("{}: {}".format(key,value))
+                                    # Combine all messages into a string
                                     sMsg = "\n".join(lMsg)
                                 else:
                                     msg_list.append(sMsg)
                             except:
+                                sEx = oErr.get_error_message()
                                 sMsg = oCrpp['message']
                                 msg_list.append(sMsg)
                         oBack['msg'] = "<br>".join(msg_list)

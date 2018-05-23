@@ -571,6 +571,8 @@ class ResearchExe(View):
                             self.oErr.Status("   {}={}".format(key, str(oBack[key])[:20]))
                     # Check for errors
                     if oBack['status'] == "error":
+                        # Make sure we set the basket status
+                        self.obj.set_status("error")
                         # Add error to the error array
                         self.arErr.append(oBack['msg'])
                         sStatusCode = "error"
