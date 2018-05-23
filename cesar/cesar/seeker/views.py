@@ -1345,20 +1345,29 @@ class ResearchPart1(ResearchPart):
 class ResearchPart2(ResearchPart):
     template_name = 'seeker/research_part_2.html'
     MainModel = Research
-    ConstructionFormSet = inlineformset_factory(Gateway, Construction, 
+    WrdConstructionFormSet = inlineformset_factory(Gateway, Construction, 
                                                 form=ConstructionWrdForm, min_num=1, 
                                                 extra=0, can_delete=True, can_order=True)
-    formset_objects = [{'formsetClass': ConstructionFormSet, 'prefix': 'construction', 'readonly': False}]
+    CnsConstructionFormSet = inlineformset_factory(Gateway, Construction, 
+                                                form=ConstructionCnsForm, min_num=1, 
+                                                extra=0, can_delete=True, can_order=True)
+    formset_objects = [{'formsetClass': WrdConstructionFormSet, 'prefix': 'wrdconstruction', 'readonly': False},
+                       {'formsetClass': CnsConstructionFormSet, 'prefix': 'cnsconstruction', 'readonly': False}]
              
     def get_instance(self, prefix):
-        if prefix == 'construction':
+        if prefix == 'wrdconstruction' or prefix == 'cnsconstruction':
             return self.obj.gateway
 
     def before_save(self, prefix, request, instance=None, form=None):
         has_changed = False
-        if prefix == 'construction':
+        if prefix == 'wrdconstruction':
             # Add the correct search item
             instance.search = SearchMain.create_item("word-group", form.cleaned_data['value'], 'groupmatches')
+            has_changed = True
+        elif prefix == 'cnsconstruction':
+            # Add the correct search item
+            instance.search = SearchMain.create_item("const-group", form.cleaned_data['cat_incl'], 
+                                                     'groupmatches', form.cleaned_data['cat_excl'])
             has_changed = True
         # Set the 'saved' one
         self.obj.save()
@@ -1376,19 +1385,27 @@ class ResearchPart2(ResearchPart):
         return context
 
     def process_formset(self, prefix, request, formset):
-        if prefix == 'construction':
-            # Get the owner of the research project
-            if self.obj == None:
-                owner = None
-            else:
-                owner = self.obj.owner
-            currentuser = request.user
+        # Get the owner of the research project
+        if self.obj == None:
+            owner = None
+        else:
+            owner = self.obj.owner
+        currentuser = request.user
+        if prefix == 'wrdconstruction':
             # Need to process all the forms here
             for form in formset:
                 # Compare the owner with the current user
                 if owner != None and owner != currentuser:
                     form.fields['name'].disabled = True
                     form.fields['value'].disabled = True
+        elif prefix == 'cnsconstruction':
+            # Need to process all the forms here
+            for form in formset:
+                # Compare the owner with the current user
+                if owner != None and owner != currentuser:
+                    # TODO: add intelligence here
+                    form.fields['name'].disabled = True
+                    pass
         return None
 
 

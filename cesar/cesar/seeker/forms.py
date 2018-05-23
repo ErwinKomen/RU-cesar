@@ -116,17 +116,34 @@ class ConstructionWrdForm(ModelForm):
             
 
 class ConstructionCnsForm(ModelForm):
-    function_sc = forms.ChoiceField(choices=SEARCHMAIN_CNS_FUNCTIONS, required = True)
-    value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}))
+    # WE USE A FIXED FUNCTION
+    # OLD: function_sc = forms.ChoiceField(choices=SEARCHMAIN_CNS_FUNCTIONS, required = True)
+    # Grammatical category to look for
+    cat_incl = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}))
+    # Optional category to exclude
+    cat_excl = forms.CharField(required=False, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}))
+
     class Meta:
         model = Construction
         fields = ['name']
 
     def __init__(self, *args, **kwargs):
         super(ConstructionCnsForm, self).__init__(*args, **kwargs)
-        instance = getattr(self, 'instance', None)
-        if instance:
-            owner = instance.gateway
+        # Get the instance
+        if 'instance' in kwargs and 'value' in self.fields:
+            instance = kwargs['instance']
+
+            # Get the obligatory [cat_incl] value
+            sCatIncl = instance.search.value
+            self.fields['cat_incl'] = sCatIncl
+            # Get the optional [cat_excl] vlue
+            sCatExcl = instance.search.exclude
+            self.fields['cat_excl'] = sCatExcl
+
+    def is_valid(self):
+        # Do default is valid
+        valid = super(ConstructionCnsForm, self).is_valid()
+        return valid
 
 
 class GvarForm(ModelForm):

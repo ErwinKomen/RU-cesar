@@ -97,6 +97,8 @@ class SearchMain(models.Model):
                               max_length=5, help_text=get_help(SEARCH_FUNCTION))
     # [1] The value for this function
     value = models.CharField("Value", max_length=MAX_TEXT_LEN)
+    # [0-1] The exclude value for this function
+    exclude = models.CharField("Exclude", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [1] Comparison operator: equals, matches, contains etc
     operator = models.CharField("Operator", choices=build_choice_list(SEARCH_OPERATOR), 
                               max_length=5, help_text=get_help(SEARCH_OPERATOR))
@@ -113,12 +115,19 @@ class SearchMain(models.Model):
         # Return the new copy
         return new_copy
 
-    def create_item(function, value, operator):
+    def create_item(function, value, operator, exclude=None):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
         function_word = choice_value(SEARCH_FUNCTION, function)
-        obj = SearchMain.objects.create(function=function_word,
-                                        operator=operator_matches,
-                                        value = value)
+        if exclude == None:
+            obj = SearchMain.objects.create(function=function_word,
+                                            operator=operator_matches,
+                                            value = value)
+        else:
+            obj = SearchMain.objects.create(function=function_word,
+                                            operator=operator_matches,
+                                            value = value,
+                                            exclude=exclude)
+
         return obj
 
     def get_search_spec(self):
