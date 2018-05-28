@@ -88,6 +88,13 @@ def arg_matches(expected, actual, value = None):
 
     return bMatch
 
+def get_crpp_date(dtThis):
+    """Convert datetime to string"""
+
+    # Model: yyyy-MM-dd'T'HH:mm:ss
+    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+    return sDate
+
 
 class SearchMain(models.Model):
     """The main search item defined for this gateway"""
@@ -108,6 +115,15 @@ class SearchMain(models.Model):
             self.get_function_display(),
             self.get_operator_display(),
             self.value)
+
+    def get_json(self):
+        """Get a JSON definition of myself"""
+        oJson = dict(function=self.get_function_display(),
+                     value=self.value,
+                     operator=self.get_operator_display())
+        if self.exclude != None:
+            oJson['exclude'] = self.exclude
+        return oJson
 
     def get_copy(self, **kwargs):
         # Make a clean copy
@@ -237,13 +253,16 @@ class Gateway(models.Model):
         # List the constructions
         cons_list = []
         for cons in self.get_construction_list():
-            cons_list.append({"name": cons.name})
+            # Get the SearchMain output
+            oCons = cons.search.get_json()
+            oCons['name'] = cons.name
+            cons_list.append(oCons)
         oJson['constructions'] = cons_list
 
         # List the data-dependant variables
         dvar_list = []
         for dvar in self.get_vardef_list():
-            dvar_list.append({"name": dvar.name})
+            dvar_list.append({"name": dvar.name, "order": dvar.order})
         oJson['dvars'] = dvar_list
 
         # Get the construction variables
@@ -252,19 +271,26 @@ class Gateway(models.Model):
             # Walk all vardefs
             for dvar in self.get_vardef_list():
                 cvar = ConstructionVariable.objects.filter(construction=cons, variable=dvar).first()
-                cvar_list.append({"cons": cons.name, "dvar": dvar.name, "value": cvar.get_json()})
+                oCvar = cvar.get_json()
+                oCvar['cons'] = cons.name
+                oCvar['dvar'] = dvar.name
+                cvar_list.append(oCvar)
         oJson['cvars'] = cvar_list
 
         # Get the Conditions
         cond_list = []
         for cond in self.get_condition_list():
-            cond_list.append({"name": cond.name, "value": cond.get_json()})
+            oCond = cond.get_json()
+            oCond['name'] = cond.name
+            cond_list.append(oCond)
         oJson['conditions'] = cond_list
 
         # Get the Features
         feat_list = []
         for feat in self.get_feature_list():
-            feat_list.append({"name": feat.name, "value": feat.get_json()})
+            oFeat = feat.get_json()
+            oFeat['name'] = feat.name
+            feat_list.append(oFeat)
         oJson['features'] = feat_list
 
         # Return what we have found
@@ -915,24 +941,31 @@ class Function(models.Model):
     def get_output(self):
         """Calculate or return the stored output of me"""
 
-        if self.output == "" or self.output == "[]":
-            # This means we need to re-calculate
-            oCode = {"name": "", "function": self.functiondef.name, "arglist": []}
-            # If I am part of an argument, I need a name
-            if self.parent != None:
-                oCode['name'] = "$__func_{}".format(self.id)
-            # Get all my arguments
-            arglist = []
-            for arg in self.functionarguments.all().select_related():
-                # Get the code of this argument
-                oArg = json.loads(arg.get_output())
-                # Return the code of this argument
-                arglist.append(oArg)
-
-            # Now adapt the output of myself
-            self.output = json.dumps(oCode)
-        # REturn the output
-        return self.output
+        oErr = ErrHandle()
+        oCode = {}
+        try:
+            if self.output == "" or self.output == "[]" or self.output == "{}":
+                # This means we need to re-calculate
+                oCode = {"line": self.line, "function": self.functiondef.name, "arglist": []}
+                # If I am part of an argument, I need a name
+                if self.parent != None:
+                    oCode['name'] = "$__line_{}".format(self.line)
+                # Get all my arguments
+                arglist = []
+                for arg in self.get_arguments():
+                    # Get the code of this argument
+                    oArg = json.loads(arg.get_output())
+                    # Return the code of this argument
+                    arglist.append(oArg)
+                oCode['arglist'] = arglist
+                # Now adapt the output of myself
+                self.output = json.dumps(oCode)
+            # REturn the output
+            return self.output
+        except:
+            oCode['value'] = "error"
+            oCode['msg'] = oErr.get_error_message()
+            return oCode
 
     def get_code(self, format, method="recursive"):
         """Create and return the required Xquery"""
@@ -1449,15 +1482,16 @@ class Argument(models.Model):
         """Get or produce the JSON representing me"""
 
         # Check if we need to recalculate
-        if self.argval == "" or self.argval == "[]":
+        if self.argval == "" or self.argval == "[]" or self.argtype == "fixed":
             # WE should recalculate
-            atype = self.get_argtype_display()
-            oCode = {"value": None, "type": self.argtype}
+            # atype = self.get_argtype_display()
+            oCode = {"value": None, "type": self.argtype, "order": self.argumentdef.order, "name": self.argumentdef.name}
             if self.argtype == "func":
                 # Take the id of the function pointing to me as basis
                 argfunction = self.functionparent.all().first()
                 func_id = "" if argfunction == None else argfunction.id
-                oCode['value'] = "$__func_{}".format(func_id)
+                line_no = "(unknown)" if argfunction == None else argfunction.line
+                oCode['value'] = "$__line_{}".format(line_no)
             elif self.argtype == "fixed":
                 # Get the basic value
                 sValue = self.argval
@@ -1470,10 +1504,12 @@ class Argument(models.Model):
                     oCode['value'] = "last"
                 elif re.match(integer_format, sValue):
                     # THis is an integer
-                    oCode['value'] = sValue
+                    # oCode['value'] = sValue
+                    oCode['value'] = int(sValue)
                 else:
                     # String value -- must be between quotes
-                    oCode['value'] = "'{}'".format(sValue.replace("'", "''"))
+                    # oCode['value'] = "'{}'".format(sValue.replace("'", "''"))
+                    oCode['value'] = sValue
             elif self.argtype == "gvar":
                 if self.gvar != None:
                     oCode['value'] = "$_{}".format(self.gvar.name)
@@ -1894,32 +1930,41 @@ class ConstructionVariable(models.Model):
         """Get the output of this feature in JSON form"""
 
         oCode = {"type": self.type, "value": None}
-        # Action depends on feattype
-        if self.type == "gvar":
-            if self.gvar != None:
-                oCode['value'] = "$_{}".format(self.gvar.name)
-        elif self.type == "fixed":
-                sValue = self.svalue
-                # Make sure booleans are translated correctly
-                if sValue.lower() == "true" or sValue.lower() == "true()":
-                    oCode['value'] =  True
-                elif sValue.lower() == "false" or sValue.lower() == "false()":
-                    oCode['value'] =  False
-                elif re.match(integer_format, sValue):
-                    # THis is an integer
-                    oCode['value'] =  sValue
-                else:
-                    # String value -- must be between quotes
-                    oCode['value'] =  "'{}'".format(sValue.replace("'", "''"))
-        elif self.type == "calc":
-            if self.function != None:
-                # Get the code for this function
-                lFunc = []
-                for func in self.functionroot.all().order_by(id).reverse():
-                    oFunc = json.loads(func.get_output())
-                    lFunc.append(oFunc)
-                oCode['value'] = get_function_list(self.function)
-        return oCode
+        oErr = ErrHandle()
+        try:
+            # Action depends on feattype
+            if self.type == "gvar":
+                if self.gvar != None:
+                    oCode['value'] = "$_{}".format(self.gvar.name)
+            elif self.type == "fixed":
+                    sValue = self.svalue
+                    # Make sure booleans are translated correctly
+                    if sValue.lower() == "true" or sValue.lower() == "true()":
+                        oCode['value'] =  True
+                    elif sValue.lower() == "false" or sValue.lower() == "false()":
+                        oCode['value'] =  False
+                    elif re.match(integer_format, sValue):
+                        # THis is an integer
+                        # oCode['value'] =  sValue
+                        oCode['value'] =  int(sValue)
+                    else:
+                        # String value -- must be between quotes
+                        # oCode['value'] =  "'{}'".format(sValue.replace("'", "''"))
+                        oCode['value'] =  sValue
+            elif self.type == "calc":
+                if self.function != None:
+                    # Get the code for this function
+                    lFunc = []
+                    for func in self.get_functions():
+                        oFunc = json.loads(func.get_output())
+                        lFunc.append(oFunc)
+                    oCode['value'] = lFunc
+            return oCode
+        except:
+            sMsg = oErr.get_error_message()
+            oCode['value'] = "error"
+            oCode['msg'] = sMsg
+            return oCode
 
     def get_copy(self, **kwargs):
         # Make a clean copy of the CVAR, but don't save it yet
@@ -2143,20 +2188,29 @@ class Condition(models.Model):
     def get_json(self):
         """Get the output of this feature in JSON form"""
 
-        oCode = {"type": self.condtype, "value": None}
-        # Action depends on feattype
-        if self.condtype == "dvar":
-            if self.variable != None:
-                oCode['value'] = "${}".format(self.variable.name)
-        elif self.condtype == "func":
-            if self.function != None:
-                # Get the code for this function
-                lFunc = []
-                for func in self.functioncondroot.all().order_by(id).reverse():
-                    oFunc = json.loads(func.get_output())
-                    lFunc.append(oFunc)
-                oCode['value'] = get_function_list(self.function)
-        return oCode
+        oErr = ErrHandle()
+        oCode = {"value": None}
+        try:
+            oCode["type"] = self.condtype
+            oCode["description"] =  self.description
+            oCode["order"] =  self.order
+            # Action depends on feattype
+            if self.condtype == "dvar":
+                if self.variable != None:
+                    oCode['value'] = "${}".format(self.variable.name)
+            elif self.condtype == "func":
+                if self.function != None:
+                    # Get the code for this function
+                    lFunc = []
+                    for func in self.get_functions():
+                        oFunc = json.loads(func.get_output())
+                        lFunc.append(oFunc)
+                    oCode['value'] = lFunc
+            return oCode
+        except:
+            oCode['value'] = "error"
+            oCode['msg'] = oErr.get_error_message()
+            return oCode
 
     def get_copy(self, **kwargs):
         """Make a copy of this condition"""
@@ -2358,20 +2412,30 @@ class Feature(models.Model):
     def get_json(self):
         """Get the output of this feature in JSON form"""
 
-        oCode = {"type": self.feattype, "value": None}
-        # Action depends on feattype
-        if self.feattype == "dvar":
-            if self.variable != None:
-                oCode['value'] = "${}".format(self.variable.name)
-        elif self.feattype == "func":
-            if self.function != None:
-                # Get the code for this function
-                lFunc = []
-                for func in self.functionfeatroot.all().order_by(id).reverse():
-                    oFunc = json.loads(func.get_output())
-                    lFunc.append(oFunc)
-                oCode['value'] = get_function_list(self.function)
-        return oCode
+        oCode = {"value": None}
+        oErr = ErrHandle()
+        try:
+            oCode['type'] = self.feattype
+            oCode['order'] = self.order
+            oCode['description'] = self.description
+            oCode['include'] = self.get_include_display()
+            # Action depends on feattype
+            if self.feattype == "dvar":
+                if self.variable != None:
+                    oCode['value'] = "${}".format(self.variable.name)
+            elif self.feattype == "func":
+                if self.function != None:
+                    # Get the code for this function
+                    lFunc = []
+                    for func in self.get_functions():
+                        oFunc = json.loads(func.get_output())
+                        lFunc.append(oFunc)
+                    oCode['value'] = lFunc
+            return oCode
+        except:
+            oCode['value'] = "error"
+            oCode['msg'] = oErr.get_error_message()
+            return oCode
 
     def get_copy(self, **kwargs):
         """Make a copy of this feature"""
@@ -2559,6 +2623,32 @@ class Research(models.Model):
 
     def username(self):
         return self.owner.username
+
+    def get_json(self):
+        # Prepare a back object
+        oBack = {}
+        oErr = ErrHandle()
+        try:
+            # Get the basics
+            oJson = dict(name=self.name, 
+                         purpose=self.purpose, 
+                         targetType=self.targetType, 
+                         owner=self.owner.username,
+                         created= get_crpp_date(self.created),
+                         saved=get_crpp_date(self.saved))
+            # Get the gateway stuff
+            oGateway = self.gateway.get_json()
+            for key in oGateway:
+                oJson[key] = oGateway[key]
+            oBack['status'] = 'ok'
+            oBack['json_data'] = json.dumps(oJson,indent=2)
+            oBack['json_name'] = self.name
+            # Add the
+            return oBack
+        except:
+            oBack['status'] = 'error'
+            oBack['msg'] = oErr.get_error_message()
+            return oBack
 
     def get_copy(self, **kwargs):
         # Make a clean copy

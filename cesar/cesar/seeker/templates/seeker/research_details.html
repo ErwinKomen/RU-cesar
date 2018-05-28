@@ -69,6 +69,14 @@
               <div class="col-md-2 ">
                 <button type="button" class="btn jumbo-3" onclick="ru.cesar.seeker.research_open('exe_dashboard', 'edit_buttons');">Search...</button>
               </div>
+              <div class="col-md-2">
+                <a href="#" id="search_download_json"
+                   title="Download the search project as a JSON file"
+                   class="btn btn-xs jumbo-1"
+                   downloadtype="json"
+                   ajaxurl="{% url 'search_json' object_id %}"
+                   onclick="ru.cesar.seeker.post_download(this);" >Download</a>
+              </div>
               <div id="action_inprogress" class="col-md-2 {% if not basket %}hidden{% endif %}">
                 <button type="button" class="btn jumbo-4" 
                         basket_id="{% if basket %}{{basket.id}}{% endif %}"

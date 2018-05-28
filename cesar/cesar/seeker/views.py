@@ -716,6 +716,20 @@ class ResearchExe(View):
                             response = HttpResponse(sCrpxText, content_type="application/xml")
                             response['Content-Disposition'] = 'attachment; filename="'+sCrpxName+'.crpx"'     
                             return response
+                elif self.action == "downloadjson":
+                    # Prepare to download the search project as json
+                    oBack = self.obj.get_json()
+                    # Check for errors
+                    if oBack['status'] == "error":
+                        # Add error to the error array
+                        self.arErr.append(oBack['msg'])
+                    else:
+                        # Get the name adn the contents
+                        sJsonName = oBack['json_name']
+                        sJsonText = oBack['json_data']
+                        response = HttpResponse(sJsonText, content_type="application/json")
+                        response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
+                        return response
 
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
@@ -812,7 +826,7 @@ class ResearchExe(View):
         # Copy any object id
         self.object_id = object_id
         # if self.action == "start" or self.action == "download":
-        if self.action == "prepare" or self.action == "download":
+        if self.action == "prepare" or self.action == "download" or self.action == "downloadjson":
             # Get the instance of the Main Model object
             self.obj =  self.MainModel.objects.get(pk=object_id)
         else:
@@ -863,6 +877,12 @@ class ResearchDownload(ResearchExe):
     MainModel = Research
     template_name = "seeker/exe_status.html"
     action = "download"
+
+
+class ResearchDownloadJson(ResearchExe):
+    MainModel = Research
+    template_name = "seeker/exe_status.html"
+    action = "downloadjson"
 
 
 class ResearchPart(View):
