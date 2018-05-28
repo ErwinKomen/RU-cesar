@@ -2538,9 +2538,12 @@ var ru = (function ($, ru) {
           // Gather the information
           frm = $(elStart).closest(".container-small").find("form");
           if (frm.length === 0) {
-            frm = $(elStart).closest(".container.body-content").find("form");
+            frm = $(elStart).closest("td").find("form");
             if (frm.length === 0) {
-              frm = $(elStart).closest(".container-large.body-content").find("form");
+              frm = $(elStart).closest(".container.body-content").find("form");
+              if (frm.length === 0) {
+                frm = $(elStart).closest(".container-large.body-content").find("form");
+              }
             }
           }
           // Set the 'action; attribute in the form

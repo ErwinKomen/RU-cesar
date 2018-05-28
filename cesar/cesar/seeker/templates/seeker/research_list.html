@@ -51,10 +51,10 @@
             <tr class="research-item">
               <td class="hidden">{{item.project.id}}</td>
               <td><span class="research-item-user">{{item.project.username}}</span></td>
-              <td><span class="research-item-type">{{item.project.get_targetType_display}}</span></td>
+              <td title="{{item.project.get_targetType_display}}"><span class="research-item-type">{{item.project.get_targetType_display|slice:":4"}}</span></td>
               <td><span class="research-item-name">{{item.project.name}}</span></td>
               <td><span class="research-item-saved tdnowrap">{% if item.project.saved %}{{item.project.saved|date:"j/b/o G:i" }}{% else %}-{% endif %}</span></td>
-              <td title="{{item.project.purpose}}" style="width:100%"><span class="research-item-purpose">{{item.project.purpose|truncatechars:90}}</span></td>
+              <td title="{{item.project.purpose}}" style="width:100%"><span class="research-item-purpose">{{item.project.purpose|truncatechars:85}}</span></td>
               <td class="tdnowrap">
                 <!--<div class="part-buttons">-->
                   <form>
@@ -66,16 +66,22 @@
                       </a>
                     {% endif %}
                     </span>
-                    <span class="research-item-copy">
                     {% if item.may_read %}
-                      <a title="copy" class="btn btn-default btn-xs" 
-                         url="{{item.project.get_copy_url}}" 
-                         success="{% url 'seeker_list' %}"
-                         onclick="ru.cesar.seeker.process_item(this);">
-                        <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
-                      </a>
+                      <span class="research-item-copy">
+                        <a title="copy" class="btn btn-default btn-xs" 
+                           url="{{item.project.get_copy_url}}" 
+                           success="{% url 'seeker_list' %}"
+                           onclick="ru.cesar.seeker.process_item(this);">
+                          <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+                        </a>
+                        <a title="download as JSON" class="btn btn-default btn-xs" 
+                           ajaxurl="{% url 'search_json' object_id=item.project.id %}"
+                           downloadtype="json"
+                           onclick="ru.cesar.seeker.post_download(this);">
+                          <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>
+                        </a>
+                      </span>
                     {% endif %}
-                    </span>
                     <span class="research-item-del ">
                     {% if item.may_delete %}
                       <a title="delete" class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">

@@ -50,7 +50,7 @@ TARGET_TYPE_CHOICES = (
 
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
-integer_format = re.compile(r'^\-?[0-9]+')
+integer_format = re.compile(r'^\-?[0-9]+$')
 
 def is_integer(sInput):
     if sInput == None:
@@ -1481,62 +1481,72 @@ class Argument(models.Model):
     def get_output(self):
         """Get or produce the JSON representing me"""
 
-        # Check if we need to recalculate
-        if self.argval == "" or self.argval == "[]" or self.argtype == "fixed":
-            # WE should recalculate
-            # atype = self.get_argtype_display()
-            oCode = {"value": None, "type": self.argtype, "order": self.argumentdef.order, "name": self.argumentdef.name}
-            if self.argtype == "func":
-                # Take the id of the function pointing to me as basis
-                argfunction = self.functionparent.all().first()
-                func_id = "" if argfunction == None else argfunction.id
-                line_no = "(unknown)" if argfunction == None else argfunction.line
-                oCode['value'] = "$__line_{}".format(line_no)
-            elif self.argtype == "fixed":
-                # Get the basic value
-                sValue = self.argval
-                # Make sure booleans are translated correctly
-                if sValue.lower() == "true" or sValue.lower() == "true()":
-                    oCode['value'] = True
-                elif sValue.lower() == "false" or sValue.lower() == "false()":
-                    oCode['value'] =  False
-                elif sValue.lower() == "last" or sValue.lower() == "last()":
-                    oCode['value'] = "last"
-                elif re.match(integer_format, sValue):
-                    # THis is an integer
-                    # oCode['value'] = sValue
-                    oCode['value'] = int(sValue)
-                else:
-                    # String value -- must be between quotes
-                    # oCode['value'] = "'{}'".format(sValue.replace("'", "''"))
-                    oCode['value'] = sValue
-            elif self.argtype == "gvar":
-                if self.gvar != None:
-                    oCode['value'] = "$_{}".format(self.gvar.name)
-            elif self.argtype == "cnst":
-                # THis is not in use (yet)
-                oCode['value'] = "$CONSTITUENT"
-            elif self.argtype == "hit":
-                oCode['value'] = "$search"
-            elif self.argtype == "cvar":
-                # This is superceded, I think...
-                oCode['value'] =  "$CVAR"
-            elif self.argtype == "dvar":
-                if self.dvar != None:
-                    # Return the name of the variable
-                    oCode['value'] =  "${}".format(self.dvar.name)
-            elif self.argtype == "raxis":
-                if self.raxis != None:
-                    oCode['value'] = self.raxis.xpath
-            elif self.argtype == "rcnst":
-                if self.rconst != None:
-                    oCode['value'] = self.rconst.xpath
-            elif self.argtype == "rcond":
-                if self.rcond != None:
-                    oCode['value'] = self.rcond.xpath
-            # Assign the code to me
-            self.argval = json.dumps(oCode)
-        return self.argval
+        oErr = ErrHandle()
+        oCode = {"value": None}
+        try:
+
+            # Check if we need to recalculate
+            if self.argval == "" or self.argval == "[]" or self.argtype == "fixed":
+                # WE should recalculate
+                # atype = self.get_argtype_display()
+                oCode['type'] = self.argtype
+                oCode['order'] = self.argumentdef.order
+                oCode['name'] = self.argumentdef.name
+                if self.argtype == "func":
+                    # Take the id of the function pointing to me as basis
+                    argfunction = self.functionparent.all().first()
+                    func_id = "" if argfunction == None else argfunction.id
+                    line_no = "(unknown)" if argfunction == None else argfunction.line
+                    oCode['value'] = "$__line_{}".format(line_no)
+                elif self.argtype == "fixed":
+                    # Get the basic value
+                    sValue = self.argval
+                    # Make sure booleans are translated correctly
+                    if sValue.lower() == "true" or sValue.lower() == "true()":
+                        oCode['value'] = True
+                    elif sValue.lower() == "false" or sValue.lower() == "false()":
+                        oCode['value'] =  False
+                    elif sValue.lower() == "last" or sValue.lower() == "last()":
+                        oCode['value'] = "last"
+                    elif re.match(integer_format, sValue):
+                        # THis is an integer
+                        # oCode['value'] = sValue
+                        oCode['value'] = sValue if not is_integer(sValue) else int(sValue)
+                    else:
+                        # String value -- must be between quotes
+                        # oCode['value'] = "'{}'".format(sValue.replace("'", "''"))
+                        oCode['value'] = sValue
+                elif self.argtype == "gvar":
+                    if self.gvar != None:
+                        oCode['value'] = "$_{}".format(self.gvar.name)
+                elif self.argtype == "cnst":
+                    # THis is not in use (yet)
+                    oCode['value'] = "$CONSTITUENT"
+                elif self.argtype == "hit":
+                    oCode['value'] = "$search"
+                elif self.argtype == "cvar":
+                    # This is superceded, I think...
+                    oCode['value'] =  "$CVAR"
+                elif self.argtype == "dvar":
+                    if self.dvar != None:
+                        # Return the name of the variable
+                        oCode['value'] =  "${}".format(self.dvar.name)
+                elif self.argtype == "raxis":
+                    if self.raxis != None:
+                        oCode['value'] = self.raxis.xpath
+                elif self.argtype == "rcnst":
+                    if self.rconst != None:
+                        oCode['value'] = self.rconst.xpath
+                elif self.argtype == "rcond":
+                    if self.rcond != None:
+                        oCode['value'] = self.rcond.xpath
+                # Assign the code to me
+                self.argval = json.dumps(oCode)
+            return self.argval
+        except:
+            oCode['value'] = "error"
+            oCode['msg'] = oErr.get_error_message()
+            return oCode
 
     def get_argument_error(self):
         """Check and report an error in this argument"""
@@ -1946,7 +1956,8 @@ class ConstructionVariable(models.Model):
                     elif re.match(integer_format, sValue):
                         # THis is an integer
                         # oCode['value'] =  sValue
-                        oCode['value'] =  int(sValue)
+                        # oCode['value'] =  int(sValue)
+                        oCode['value'] = sValue if not is_integer(sValue) else int(sValue)
                     else:
                         # String value -- must be between quotes
                         # oCode['value'] =  "'{}'".format(sValue.replace("'", "''"))
@@ -2674,6 +2685,11 @@ class Research(models.Model):
         """Produce an URL to be called when requesting to copy [self]"""
 
         return reverse('seeker_copy', kwargs={'object_id': self.id})
+
+    def get_downloadjson_url(self):
+        """Produce an URL to be called when requesting to copy [self]"""
+
+        return reverse('search_json', kwargs={'object_id': self.id})
 
     def get_delete_url(self):
         """Produce an URL to be called when requesting to delete [self]"""
