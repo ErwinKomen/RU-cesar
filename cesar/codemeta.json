@@ -1,0 +1,84 @@
+{
+    "@context": [
+        "https://doi.org/10.5063/schema/codemeta-2.0",
+        "http://schema.org",
+        {
+            "entryPoints": { "@reverse": "schema:actionApplication" },
+            "interfaceType": { "@id": "codemeta:interfaceType" }
+        }
+    ],
+    "@type": "SoftwareSourceCode",
+    "identifier": "cesar",
+    "name": "Corpus Editor for Syntactically Annotated Resources (Cesar)",
+    "version": "unknown",
+    "description": "Django web application that communicates with the CorpusStudioWeb back-end 'Crpp'. Two main purposes: (1) browse texts, (2) conduct syntactic searches with definable output per hit. Searches are translated to Xquery 'under the hood'",
+    "license": "unknown",
+	"url": "https://github.com/ErwinKomen/RU-Cesar",
+    "producer": {
+        "@id": "https://www.ru.nl/humanitieslab/technical-support-group",
+        "@type": "Organization",
+        "name": "Technical Support Group",
+        "url": "https://www.ru.nl/humanitieslab/technical-support-group",
+        "parentOrganization": {
+            "@id": "https://www.ru.nl/humanitieslab/",
+            "@type": "Organization",
+            "name": "Humanities Lab",
+            "url": "https://www.ru.nl/humanitieslab/",
+            "parentOrganization": {
+                "@id": "https://www.ru.nl/facultyofarts/",
+                "@type": "Organization",
+                "name": "Faculty of Arts",
+                "url": "https://www.ru.nl/facultyofarts/",
+                "parentOrganization": {
+                    "@id": "https://www.ru.nl",
+                    "name": "Radboud University",
+                    "@type": "Organization",
+                    "url": "https://www.ru.nl",
+                    "location": {
+                        "@type": "Place",
+                        "name": "Nijmegen"
+                    }
+                }
+            }
+        }
+    },
+    "author": [
+		{
+			"@type": "Person",
+			"givenName": "Erwin",
+			"familyName": "Komen",
+			"affiliation": { "@id": "https://www.ru.nl/humanitieslab/technical-support-group" }
+		}
+	],
+	"sourceOrganization": { "@id": "https://www.ru.nl/humanitieslab/technical-support-group" },
+	"programmingLanguage": {
+		"@type": "ComputerLanguage",
+		"identifier": "python",
+		"name": "Django with Python3"
+	},
+	"operatingSystem": "POSIX",
+	"codeRepository": "https://github.com/ErwinKomen/RU-Cesar",
+    "softwareRequirements": [],
+	"funder": [
+		{
+			"@type": "Organization",
+			"name": "ClariaH",
+			"url": "https://www.clariah.nl/projecten/research-pilots/acad"
+		}
+	],
+	"issueTracker": "https://github.com/ErwinKomen/RU-Cesar/issues",
+	"developmentStatus": "active",
+	"keywords":  [ "syntax", "xquery" ],
+    "referencePublication": [
+		{
+			"@type": "TechArticle",
+			"name": "",
+			"author": [ "Erwin R. Komen" ],
+            "datePublished": "2018",
+			"url": ""
+		}
+	],
+    "dateCreated": "2018",
+    "entryPoints": [
+    ]
+}

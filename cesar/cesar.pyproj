@@ -215,6 +215,7 @@
     <Content Include="cesar\seeker\templates\index.html" />
     <Content Include="cesar\templates\admin\base.html" />
     <Content Include="cesar\viewer\templates\index.html" />
+    <Content Include="codemeta.json" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
