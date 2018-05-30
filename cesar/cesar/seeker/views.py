@@ -12,6 +12,7 @@ from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import DetailView
 from django.views.generic.list import MultipleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView
@@ -449,6 +450,7 @@ class SeekerListView(ListView):
         context['combi_list'] = combi_list
         context['order_heads'] = self.order_heads
         context['object_list'] = research_list
+        context['import_form'] = UploadFileForm()
         context['authenticated'] = authenticated
         # Make sure the correct URL is being displayed
         return super(SeekerListView, self).render_to_response(context, **response_kwargs)
@@ -727,7 +729,7 @@ class ResearchExe(View):
                         # Get the name adn the contents
                         sJsonName = oBack['json_name']
                         sJsonText = oBack['json_data']
-                        response = HttpResponse(sJsonText, content_type="application/json")
+                        response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
                         response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
                         return response
 
@@ -4063,3 +4065,69 @@ def research_edit(request, object_id=None):
     # Open the template that allows Editing an existing or Creating a new research project
     #   or editing the existing project
     return render(request, template, context)
+
+@csrf_exempt
+def import_json(request):
+    """Import a JSON file that contains details of a (new) research project"""
+
+    # Initialisations
+    # NOTE: do ***not*** add a breakpoint until *AFTER* form.is_valid
+    arErr = []
+    error_list = []
+    transactions = []
+    data = {'status': 'ok', 'html': ''}
+    template_name = 'seeker/import_status.html'
+    obj = None
+    data_file = ""
+    bClean = False
+    username = request.user.username
+
+    # Check if the user is authenticated and if it is POST
+    if not request.user.is_authenticated  or request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            # NOTE: from here a breakpoint may be inserted!
+            print('valid form')
+            # Get the contents of the imported file
+            data_file = request.FILES['file_source']
+
+            # Get the source file
+            if data_file == None or data_file == "":
+                arErr.append("No source file specified for the selected project")
+            else:
+                # 
+                # Read the data for the selected project
+                research = Research.read_data(username, data_file, arErr)
+
+                # Determine a status code
+                statuscode = "error" if research == None else "completed"
+                if research == None:
+                    arErr.append("There was an error. No research project has been created")
+
+            # Get a list of errors
+            error_list = [str(item) for item in arErr]
+
+            # Create the context
+            context = dict(
+                statuscode=statuscode,
+                research=research,
+                error_list=error_list
+                )
+
+            if len(arErr) == 0:
+                # Get the HTML response
+                data['html'] = render_to_string(template_name, context, request)
+            else:
+                data['html'] = "Please log in before continuing"
+
+
+        else:
+            data['html'] = 'invalid form: {}'.format(form.errors)
+            data['status'] = "error"
+    else:
+        data['html'] = 'Only use POST and make sure you are logged in'
+        data['status'] = "error"
+ 
+    # Return the information
+    return JsonResponse(data)
+

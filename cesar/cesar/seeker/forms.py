@@ -478,3 +478,6 @@ class QuantorSearchForm(ModelForm):
         model = Qsubinfo
         fields = "__all__"    # Standard fields
 
+
+class UploadFileForm(forms.Form):
+    file_source = forms.FileField(label="Specify which file should be loaded")

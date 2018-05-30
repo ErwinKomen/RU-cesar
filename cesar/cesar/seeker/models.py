@@ -95,6 +95,37 @@ def get_crpp_date(dtThis):
     sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
     return sDate
 
+def strip_varname(sName):
+    varName = sName
+    if varName.startswith("$_"):
+        varName = varName[2:]
+    elif varName.startswith("$"):
+        varName = varName[1:]
+    return varName
+
+
+def import_data_file(sContents, arErr):
+    """Turn the contents of [data_file] into a json object"""
+
+    try:
+        # Validate
+        if sContents == "":
+            return {}
+        # Adapt the contents into an object array
+        lines = []
+        for line in sContents:
+            lines.append(line.decode("utf-8").strip())
+        # Combine again
+        sContents = "\n".join(lines)
+        oData = json.loads(sContents)
+        # This is the data
+        return oData
+    except:
+        sMsg = errHandle.get_error_message()
+        errHandle.DoError("import_data_file error:")
+        return {}
+
+
 
 class SearchMain(models.Model):
     """The main search item defined for this gateway"""
@@ -247,7 +278,10 @@ class Gateway(models.Model):
         # Get the global variables
         gvar_list = []
         for gvar in self.globalvariables.order_by('order', 'id'):
-            gvar_list.append({"name": gvar.name, "value": gvar.value})
+            gvar_list.append({"name": gvar.name, 
+                              "value": gvar.value, 
+                              "description": gvar.description,
+                              "type": gvar.type})
         oJson['gvars'] = gvar_list
 
         # List the constructions
@@ -262,7 +296,10 @@ class Gateway(models.Model):
         # List the data-dependant variables
         dvar_list = []
         for dvar in self.get_vardef_list():
-            dvar_list.append({"name": dvar.name, "order": dvar.order})
+            dvar_list.append({"name": dvar.name, 
+                              "order": dvar.order, 
+                              "description": dvar.description,
+                              "type": dvar.type})
         oJson['dvars'] = dvar_list
 
         # Get the construction variables
@@ -1077,6 +1114,82 @@ class Function(models.Model):
         # # Save the changes
         # self.save()
         return result
+
+    def create_from_list(lFunc, gateway, sType, root, rootcond, rootfeat):
+        """Create the list of functions specified in [lFunc]
+        
+        The sType can be construction, condition or feature.
+        Return the top function's instance
+        """
+
+        func_main = None
+        try:
+            # Prepare an object that provides a keymap to the functions
+            func_map = {}
+            # First pass: create all the functions in order
+            for oFunc in lFunc:
+                # Get the function definition
+                functiondef = FunctionDef.objects.filter(name=oFunc['function']).first()
+                # Create a bare function definition
+                func = Function.create(functiondef, root, rootcond, None, rootfeat)
+                # At least adapt what we know
+                func.line = oFunc['line']
+                # Note: function is already saved within create()
+                oFunc['obj'] = func
+                # Make sure we have the main function
+                if func_main == None:
+                    func_main = func
+                # Possibly add the function to the map
+                if 'name' in oFunc:
+                    func_map[oFunc['name']] = func
+
+            # Now evaluate the functions again, but with the accompanying arguments
+            for oFunc in lFunc:
+                # Get the function
+                func = oFunc['obj']
+                for oArg in oFunc['arglist']:
+                    # Retrieve the argument (it has already been created)
+                    arg = func.functionarguments.filter(argumentdef__order=oArg['order']).first()
+                    arg.argtype = oArg['type']
+                    argval = oArg['value']
+                    if oArg['type'] == "func":
+                        # The value points to the line through the func_map variable
+                        if argval in func_map:
+                            rel_func = func_map[argval]
+                            # Bind that function to this argument
+                            rel_func.parent = arg
+                            rel_func.save()
+                        else:
+                            # TODO: there's a relation missing, but really
+                            #       nothing we can do about it at this point, I suppose...
+                            pass
+                    elif oArg['type'] == "fixed":
+                        arg.argval = argval
+                    elif oArg['type'] == "rcnst":       # Relative constituent
+                        arg.raxis = Relation.objects.filter(name=argval, type="const").first()
+                    elif oArg['type'] == "rcnst":       # Relative constituent
+                        arg.rcond = Relation.objects.filter(name=argval, type="cond").first()
+                    elif oArg['type'] == "raxis":       # Relation/axis
+                        arg.raxis = Relation.objects.filter(name=argval, type="axis").first()
+                    elif oArg['type'] == "hit":         # Search hit
+                        arg.argval = "$search"          # No need to further specify the value
+                    elif oArg['type'] == "gvar":        # global variable
+                        gvar = gateway.globalvariables.filter(name= strip_varname(argval)).first()
+                        arg.gvar = gvar
+                    elif oArg['type'] == "dvar":        # definition variable
+                        dvar = gateway.definitionvariables.filter(name= strip_varname(argval)).first()
+                        arg.dvar = dvar
+                    elif oArg['type'] == "cnst":        # constituent
+                        arg.argval = "[]"               # No need to further specify the value
+                    # Make sure the adapted argument gets saved
+                    arg.save()
+        except:
+            msg = errHandle.get_error_message()
+            func_main = None
+
+        # Return the top function
+        return func_main
+
 
     @classmethod
     def create(cls, functiondef, functionroot, functioncondroot, parentarg, functionfeatroot=None):
@@ -1945,6 +2058,7 @@ class ConstructionVariable(models.Model):
             # Action depends on feattype
             if self.type == "gvar":
                 if self.gvar != None:
+                    # Note: we pass on the name WITH the $_ prefix that is normally used for global variables
                     oCode['value'] = "$_{}".format(self.gvar.name)
             elif self.type == "fixed":
                     sValue = self.svalue
@@ -2205,6 +2319,7 @@ class Condition(models.Model):
             oCode["type"] = self.condtype
             oCode["description"] =  self.description
             oCode["order"] =  self.order
+            oCode["include"] =  self.include
             # Action depends on feattype
             if self.condtype == "dvar":
                 if self.variable != None:
@@ -2652,7 +2767,7 @@ class Research(models.Model):
             for key in oGateway:
                 oJson[key] = oGateway[key]
             oBack['status'] = 'ok'
-            oBack['json_data'] = json.dumps(oJson,indent=2)
+            oBack['json_data'] = json.dumps(oJson,indent=2).encode("utf-8")
             oBack['json_name'] = self.name
             # Add the
             return oBack
@@ -2660,6 +2775,136 @@ class Research(models.Model):
             oBack['status'] = 'error'
             oBack['msg'] = oErr.get_error_message()
             return oBack
+
+    def read_data(username, data_file, arErr):
+        """Import a JSON specification and create a new research object from it"""
+
+        obj = None
+        try:
+            oData = import_data_file(data_file, arErr)
+            # Get the name of the new project
+            sName = "{}_{}".format(oData['name'], oData['owner'])
+            # Get a handle to the user
+            owner = User.objects.filter(username=username).first()
+            # Check if we can use this name or if it is already in use
+            lstQ = []
+            lstQ.append(Q(owner=owner))
+            lstQ.append(Q(name=sName))
+            qs = Research.objects.filter(owner=owner, name=sName)
+            if qs.count() > 0:
+                # This name is already in use -- warn the user
+                obj=None
+                arErr.append("The project [{}] already exists. First delete it if you want to import this version.".format(sName))
+            else:
+                # Create a new gateway
+                gateway = Gateway.objects.create()
+                gateway.save()
+                # Get the targettype
+                targetType = oData['targetType']
+
+                # Create a new project
+                obj = Research.objects.create(name=sName, purpose=oData['purpose'], 
+                               targetType=targetType, gateway=gateway,
+                               owner=owner)
+                # Save the Research project
+                obj.save()
+
+                # Add constructions, dvars, gvars
+                with transaction.atomic():
+                    for cns in oData['constructions']:
+                        # Create this construction and its associated SearchMain
+                        search = SearchMain.create_item(cns['function'], cns['value'], cns['operator'])
+                        if targetType == 'c':
+                            search.exclude = cns['exclude']
+                        search.save()
+                        construction = Construction(name=cns['name'], search=search, gateway=gateway)
+                        construction.save()
+
+                    for oGvar in oData['gvars']:
+                        # Get the name without the $_ prefix if needed
+                        varName = strip_varname(oGvar['name'])
+                        gvar = GlobalVariable(name=varName, description=oGvar['description'],
+                                              type=oGvar['type'], value=oGvar['value'], gateway=gateway)
+                        gvar.save()
+
+                    # NOTE: creating a VarDef also creates its accompanying CVAR (through Gateway.check_cvar() )
+                    for oDvar in oData['dvars']:
+                        dvar = VarDef(name=oDvar['name'], order=oDvar['order'],
+                                      description=oDvar['description'],
+                                      type=oDvar['type'], gateway=gateway)
+                        dvar.save()
+                # Now walk all the cvars and create them
+                with transaction.atomic():
+                    for oCvar in oData['cvars']:
+                        # Get the correct construction and definitionvariable
+                        construction = gateway.constructions.filter(name=oCvar['cons']).first()
+                        dvar = gateway.definitionvariables.filter(name=oCvar['dvar']).first()
+                        # Retrieve the CVAR
+                        cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
+                        cvar.type=oCvar['type']
+                        ## Need to save it preliminarily
+                        #cvar.save()
+                        # Create possible function, if this is 'calc'
+                        if oCvar['type'] == 'calc':
+                            # Yes, create the functions
+                            func_main = Function.create_from_list(oCvar['value'], gateway, "cvar", cvar, None, None)
+                            func_main.save()
+                            cvar.function = func_main
+                            cvar.functiondef = func_main.functiondef
+                        elif oCvar['type'] == 'fixed':
+                            cvar.svalue = oCvar['value']
+                        elif oCvar['type'] == 'gvar':
+                            varName = strip_varname(oCvar['value'])
+                            gvar = gateway.globalvariables.filter(name=varName).first()
+                            cvar.gvar = gvar
+                        cvar.save()
+                # Now walk all the conditions and create them
+                with transaction.atomic():
+                    for oCond in oData["conditions"]:
+                        # Create the condition
+                        cond = Condition(name=oCond['name'], order=oCond['order'],
+                                      description=oCond['description'], include=oCond['include'],
+                                      condtype=oCond['type'], gateway=gateway)
+                        cond.save()
+                        # Create possible function, if this is 'calc'
+                        if oCond['type'] == 'func':
+                            # Yes, create the functions
+                            func_main = Function.create_from_list(oCond['value'], gateway, "cond", None, cond, None)
+                            func_main.save()
+                            cond.function = func_main
+                            cond.functiondef = func_main.functiondef
+                        elif oCond['type'] == 'dvar':
+                            varName = strip_varname(oCond['value'])
+                            dvar = gateway.definitionvariables.filter(name=varName).first()
+                            cond.dvar = dvar
+                        cond.save()
+                # Now walk all the conditions and create them
+                with transaction.atomic():
+                    for oFeat in oData["features"]:
+                        # Create the Feature
+                        feat = Feature(name=oFeat['name'], order=oFeat['order'],
+                                      description=oFeat['description'], include=oFeat['include'],
+                                      feattype=oFeat['type'], gateway=gateway)
+                        feat.save()
+                        # Create possible function, if this is 'calc'
+                        if oFeat['type'] == 'func':
+                            # Yes, create the functions
+                            func_main = Function.create_from_list(oFeat['value'], gateway, "feat", None, None, feat)
+                            func_main.save()
+                            feat.function = func_main
+                            feat.functiondef = func_main.functiondef
+                        elif oFeat['type'] == 'dvar':
+                            varName = strip_varname(oFeat['value'])
+                            dvar = gateway.definitionvariables.filter(name=varName).first()
+                            feat.dvar = dvar
+                        feat.save()
+
+        except:
+            sError = errHandle.get_error_message()
+            obj=None
+
+        # Return the object that has been created
+        return obj
 
     def get_copy(self, **kwargs):
         # Make a clean copy
