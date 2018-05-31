@@ -140,9 +140,11 @@
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\text_info.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
+    <Content Include="cesar\seeker\static\seeker\scripts\xhr2.js" />
     <Content Include="cesar\seeker\templates\seeker\crp.xml" />
     <Content Include="cesar\seeker\templates\seeker\download_status.html" />
     <Content Include="cesar\seeker\templates\seeker\err_view.html" />
+    <Content Include="cesar\seeker\templates\seeker\import_status.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_8.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_14.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_6.html" />
@@ -215,6 +217,7 @@
     <Content Include="cesar\seeker\templates\index.html" />
     <Content Include="cesar\templates\admin\base.html" />
     <Content Include="cesar\viewer\templates\index.html" />
+    <Content Include="codemeta.json" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>

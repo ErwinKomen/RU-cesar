@@ -5,7 +5,7 @@ declare namespace tb = "http://www.let.ru.nl/e.komen/corpusstudio/treebank";
 declare variable $_{{gvar.name}} as xs:string := "{{gvar.value}}";
 {% endfor %}
 
-{% if targettype == 'w' %}
+{% if targetType == 'w' %}
 	{% include 'seeker/xqdef_folia_w.xq' %}
 {% else %}
 	{% include 'seeker/xqdef_folia_c.xq' %}

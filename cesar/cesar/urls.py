@@ -52,6 +52,7 @@ urlpatterns = [
 
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),
     url(r'^seek/wizard/new/$', cesar.seeker.views.research_edit, name='seeker_define'),
+    url(r'^seek/wizard/import/$', cesar.seeker.views.import_json, name='import_file'),
     url(r'^seek/wizard/copy/(?P<object_id>\d+)/$', ResearchCopy.as_view(), name='seeker_copy'),
     url(r'^seek/wizard/delete/(?P<object_id>\d+)/$', ResearchDelete.as_view(), name='seeker_delete'),
     url(r'^seek/oview/(?P<object_id>\d+)/$', cesar.seeker.views.research_oview, name='seeker_oview'),
@@ -82,7 +83,8 @@ urlpatterns = [
     url(r'^ajax/watch(?:/(?P<object_id>\d+))?/$', ResearchWatch.as_view(), name='search_watch'),
     url(r'^ajax/start(?:/(?P<object_id>\d+))?/$', ResearchStart.as_view(), name='search_start'),
     url(r'^ajax/stop(?:/(?P<object_id>\d+))?/$', ResearchStop.as_view(), name='search_stop'),
-    url(r'^ajax/download/(?P<object_id>\d+)/$', ResearchDownload.as_view(), name='search_download'),
+    url(r'^ajax/download/crpx/(?P<object_id>\d+)/$', ResearchDownload.as_view(), name='search_download'),
+    url(r'^ajax/download/json/(?P<object_id>\d+)/$', ResearchDownloadJson.as_view(), name='search_json'),
     url(r'^ajax/progress(?:/(?P<object_id>\d+))?/$', ResearchProgress.as_view(), name='search_progress'),
     url(r'^ajax/researchpart1/$', ResearchPart1.as_view(), name='research_new'),
     url(r'^ajax/researchpart1(?:/(?P<object_id>\d+))?/$', ResearchPart1.as_view(), name='research_part_1'),

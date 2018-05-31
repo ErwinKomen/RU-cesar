@@ -1,0 +1,60 @@
+﻿{% if statuscode == "completed" %}
+  <div class='col-md-12'>
+    <p>
+    The JSON research project has been processed, and a new project has been created.
+    The new project is called: {{research.name}}.
+    </p>
+    <p>
+      Possible actions:
+      <ul>
+        <li><b>Upload</b> another JSON project definition - Use the upload button above</li>
+        <li><b>Refresh</b> the list of projects 
+          <a href="{% url 'seeker_list' %}">
+            <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+          </a>
+        </li>
+        <li><b>Open</b> the newly loaded project
+          <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=research.id %}">
+            <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+          </a>
+        </li>
+      </ul>
+    </p>
+  </div>
+
+{% elif statuscode == "error" %}
+  <div class='col-md-12'>
+    {% if msg_list %}
+      <table class='seeker-choice'>
+        <tbody>
+          {% for msg_item in msg_list %}
+          <tr><td>{{forloop.counter}}</td><td>{{msg_item}}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <code>{{msg}}</code>
+    {% endif %}
+    {% if error_jumpto %}
+      <button type="button" 
+              class="btn btn-primary"
+              ajaxurl="{{error_jumpto}}"
+              jumptype="{{error_jumptype}}"
+              instanceid="{{error_jumpid}}"
+              onclick="ru.cesar.seeker.jumpto_item(this);">
+        Jump to the definition
+      </button>
+    {% endif %}
+  </div>
+{% endif %}
+
+<!-- Any errors are shown here too-->
+<div class="errors">
+  {% if error_list and statuscode != "error" %} 
+    <h4>Errors:</h4>
+    <div>statuscode = {{statuscode}}</div>
+    {% for item in error_list %}
+    <div class="error-item">{{item}}</div>
+    {% endfor %}
+  {% endif %}
+</div>

@@ -1208,6 +1208,98 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * import_data
+       *   Allow user to upload a file
+       *
+       * Assumptions:
+       * - the [el] contains parameter  @targeturl
+       * - there is a div 'import_progress'
+       * - there is a div 'id_file_source'
+       *
+       */
+      import_data: function (el) {
+        var frm = null,
+            targeturl = "",
+            fdata = null,
+            data = null,
+            xhr = null,
+            files = null,
+            elWait = null,
+            more = {},        // Additional (json) data to be passed on (from form-data)
+            sTargetDiv = "",  // The div where the uploaded reaction comes
+            sMsg = "";
+
+        try {
+          // Set the <div> to be used for waiting
+          elWait = private_methods.waitInit(el);
+
+          // Get the URL
+          targeturl = $(el).attr("targeturl");
+          sTargetDiv = $(el).attr("targetid");
+
+          // Show progress
+          $("#import_progress").attr("value", "0");
+          $("#import_progress").removeClass("hidden");
+
+          // Add data from the <form> nearest to me: 
+          frm = $(el).closest("form");
+          if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+          for (var i = 0; i < data.length; i++) {
+            more[data[i]['name']] = data[i]['value'];
+          }
+          // Showe the user needs to wait...
+          private_methods.waitStart(elWait);
+
+          // Upload XHR
+          $("#id_file_source").upload(targeturl,
+            more,
+            function (response) {
+              // Transactions have been uploaded...
+              console.log("done: ", response);
+
+              // First leg has been done
+              if (response === undefined || response === null || !("status" in response)) {
+                private_methods.errMsg("No status returned");
+              } else {
+                switch (response.status) {
+                  case "ok":
+                    // Remove all project-part class items
+                    $(".project-part").addClass("hidden");
+                    // Place the response here
+                    $("#" + sTargetDiv).html(response.html);
+                    $("#" + sTargetDiv).removeClass("hidden");
+                    // Make sure events are in place again
+                    // dmb.finance.init_events();
+                    break;
+                  default:
+                    // Show the error that has occurred
+                    if ("html" in response) { sMsg = response['html']; }
+                    if ("error_list" in response) { sMsg += response['error_list']; }
+                    // Show that the project has finished
+                    private_methods.errMsg("Execute error: " + sMsg);
+                    break;
+                }
+              }
+              private_methods.waitStop(elWait);
+            }, function (progress, value) {
+              // Show  progress of uploading to the user
+              console.log(progress);
+              $("#import_progress").val(value);
+            }
+          );
+          // Hide progress after some time
+          setTimeout(function () { $("#import_progress").addClass("hidden"); }, 1000);
+
+          // Indicate waiting can stop
+          private_methods.waitStop(elWait);
+        } catch (ex) {
+          private_methods.errMsg("import_data", ex);
+          private_methods.waitStop(elWait);
+        }
+      },
+
+      /**
        *  init_arg_events
        *      Bind events to work with function arguments
        *
@@ -2538,9 +2630,12 @@ var ru = (function ($, ru) {
           // Gather the information
           frm = $(elStart).closest(".container-small").find("form");
           if (frm.length === 0) {
-            frm = $(elStart).closest(".container.body-content").find("form");
+            frm = $(elStart).closest("td").find("form");
             if (frm.length === 0) {
-              frm = $(elStart).closest(".container-large.body-content").find("form");
+              frm = $(elStart).closest(".container.body-content").find("form");
+              if (frm.length === 0) {
+                frm = $(elStart).closest(".container-large.body-content").find("form");
+              }
             }
           }
           // Set the 'action; attribute in the form
