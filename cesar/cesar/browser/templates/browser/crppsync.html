@@ -6,21 +6,11 @@
 <div class="container body-content">
   <h3>Synchronisation from /crpp</h3>
   <div class="row">
-      <p>This page contains several administrative synchronisation options.
-      All of the options contact the /crpp service to retrieve information from the corpus research processing service.</p>
+      <div class="col-md-12">This page contains several administrative synchronisation options.
+      All of the options contact the /crpp service to retrieve information from the corpus research processing service.</div>
   </div>
 
-  <div class="row">
-    <div>&nbsp;</div>
-  </div>
-
-  <div class="row">
-    <div>&nbsp;</div>
-  </div>
-
-  <div class="row">
-    <div>&nbsp;</div>
-  </div>
+  <div class="row"><div>&nbsp;</div></div>
 
 {% if user.is_authenticated %}
   <!-- Synchronizing /serverinfo -->
@@ -52,7 +42,6 @@
   </fieldset>
 
   <div class="row">&nbsp;</div>
-  <div class="row">&nbsp;</div>
 
   <!-- Synchronizing /texts -->
   <fieldset class="module aligned" style="border: 1px solid darkgray; padding-top: 15px;  padding-bottom: 15px;">
@@ -66,23 +55,39 @@
       <div class="col-md-8">
         <form id="sync_form_texts" method="POST">
           <div class="row">
-            <div class="input-group col-md-6">
-              <label class="input-group-addon" for="id_part">Corpus part:</label>
-              <select id="id_part" name="part">
+            <div class="form-group col-md-5">
+              <label class="" for="id_part">Corpus part:</label>
+              <select id="id_part" name="part" class="form-control">
                 {% for item in part_list %}
                    <option value="{{item.id}}">{{item.name}}</option>
                 {% endfor %}
               </select>
             </div>
-            <div class="input-group col-md-6">
-              <label class="input-group-addon" for="id_format">File format:</label>
-              <select id="id_format" name="format">
+            <div class="input-group col-md-offset-1 col-md-3">
+              <label class="" for="id_format">File format:</label>
+              <select id="id_format" name="format" class="form-control">
                 {% for item_key, item_val in format_list %}
                    <option value="{{item_key}}">{{item_val}}</option>
                 {% endfor %}
               </select>
             </div>
           </div>
+
+          <div class="row">
+            <div class="input-group col-md-5">
+              <span class="input-group-addon">
+                <input id="id_updateonly" name="updateonly" type="checkbox" checked />
+              </span>
+              <input type="text" class="form-control" readonly value="Only update existing texts" />
+            </div>
+            <div class="input-group col-md-offset-1 col-md-5">
+              <span class="input-group-addon">
+                <input id="id_deletefirst" name="deletefirst" type="checkbox"   />                
+              </span>
+              <input type="text" class="form-control" readonly value="First delete old texts" />
+            </div>
+          </div>
+
           <div class="row">&nbsp;</div>
           <div class="row">
             <div class="col-md-3">
@@ -102,7 +107,6 @@
     </div>
   </fieldset>
 
-  <div class="row">&nbsp;</div>
   <div class="row">&nbsp;</div>
 
   <!-- Synchronizing /alltexts -->
