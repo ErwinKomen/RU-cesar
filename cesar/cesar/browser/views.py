@@ -307,6 +307,10 @@ def sync_crpp_start(request):
                     sLng = choice_english(CORPUS_LANGUAGE, part.corpus.lng)
                     sFormat = choice_english(CORPUS_FORMAT, get['format'])
 
+                    # Updating options
+                    bUpdateOnly = 'updateonly' in get
+                    bDeleteFirst = 'deletefirst' in get
+
                     # Use the appropriate synchronisation object that contains all relevant information
                     oStatus.set("contacting", msg="Obtaining data from /crpp")
 
@@ -326,8 +330,8 @@ def sync_crpp_start(request):
                         oStatus.set("loading", msg="Updating the existing models with this new information")
 
                         # Update the models with the /crpp/txtlist information
-                        bNoDeleting = True
-                        options = {'nodeleting': True, 'updating': True, 'update_field': 'words'}
+                        bNoDeleting = not bDeleteFirst
+                        options = {'nodeleting': True, 'updating': bUpdateOnly, 'update_field': 'words'}
                         oResult = process_textlist(crpp_texts, part, sFormat, oStatus, options)
 
                         # Process the reply from [process_textlist()]
