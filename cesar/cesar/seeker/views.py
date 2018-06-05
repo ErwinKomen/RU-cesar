@@ -3935,10 +3935,13 @@ class ResultDownload(ResearchPart):
 
     def custom_init(self):
         """Calculate stuff"""
-
-        qc = self.qd['qc_select']
-        if qc != None and qc != '':
-            self.qcTarget = int(qc)
+        
+        if 'qc_select' in self.qd:
+            qc = self.qd['qc_select']
+            if qc != None and qc != '':
+                self.qcTarget = int(qc)
+        else:
+            qc = 1
         dt = self.qd['downloadtype']
         if dt != None and dt != '':
             self.dtype = dt
