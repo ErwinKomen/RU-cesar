@@ -1063,7 +1063,7 @@ class Part(models.Model):
     # [1]
     name = models.CharField("Name of this part", max_length=MAX_TEXT_LEN)
     # [1]
-    dir = models.CharField("Sub directory of this part", max_length=MAX_TEXT_LEN, default="/")
+    dir = models.CharField("Sub directory of this part", max_length=MAX_TEXT_LEN, blank=True, default="")
     # [1]
     descr = models.TextField("Full name of this part", default="(Put your description here)")
     # [1]

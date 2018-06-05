@@ -86,12 +86,21 @@
                             </ul>
                           </li>
                           <li class="dropdown-submenu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">English</a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">English: historical</a>
                             <ul class="dropdown-menu">
                               <li><a href="{% url 'text_list' %}?part=1&format=0">OE</a></li>
                               <li><a href="{% url 'text_list' %}?part=2&format=0">ME</a></li>
                               <li><a href="{% url 'text_list' %}?part=3&format=0">eModE</a></li>
                               <li><a href="{% url 'text_list' %}?part=4&format=0">lModE</a></li>
+                            </ul>
+                          </li>
+                          <li class="dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">English: sla</a>
+                            <ul class="dropdown-menu">
+                              <li><a href="{% url 'text_list' %}?part=85&format=1">ICLE (nl, cz, en)</a></li>
+                              <li><a href="{% url 'text_list' %}?part=2&format=80">ICLE-CZ</a></li>
+                              <li><a href="{% url 'text_list' %}?part=3&format=81">ICLE-NL</a></li>
+                              <li><a href="{% url 'text_list' %}?part=4&format=82">ICLE-EN</a></li>
                             </ul>
                           </li>
                           <li role="separator" class="divider"></li>
