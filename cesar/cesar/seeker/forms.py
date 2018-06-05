@@ -276,9 +276,10 @@ class ArgumentDefForm(ModelForm):
 
     class Meta:
         model = ArgumentDef
-        fields = ['name', 'text', 'order', 'argtype', 'obltype', 'hasoutputtype']
+        fields = ['name', 'text', 'order', 'argtype', 'argval', 'obltype', 'hasoutputtype']
         widgets={
-          'text': Textarea(attrs={'rows': 1, 'cols': 80, 'style': 'height: 30px;'})
+          'text': Textarea(attrs={'rows': 1, 'cols': 60, 'style': 'height: 30px;'}),
+          'argval': Textarea(attrs={'rows': 1, 'cols': 10, 'style': 'height: 30px;'})
           }
 
     def __init__(self, *args, **kwargs):

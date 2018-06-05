@@ -102,6 +102,7 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
         except:
             oErr.DoError("check_arguments error")
         # Check if the argument definition is set
+
         if arg.id == None or arg.argumentdef_id == None:
             # Get the argument definition for this particular argument
             arg.argumentdef = arg_defs[index]
@@ -109,6 +110,16 @@ def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target)
             arg_form.initial['argtype'] = arg_defs[index].argtype
             # Preliminarily save
             arg_form.save(commit=False)
+
+        # Initialize the value of argval, if this can be done
+        if obltype == 'str' or obltype == 'int' or obltype == 'bool':
+            if arg.argval == '[]':
+                arg_form.initial['argval'] = argdef_this.argval
+                arg = arg_form.save(commit=False)
+            else:
+                oErr.Status("check_arguments: arg{} val={}".format(index, arg_form.fields['argval']))
+
+
 
     # Return the adatpted formset
     return arg_formset

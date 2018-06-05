@@ -1539,7 +1539,7 @@ class ArgumentDef(models.Model):
     hasoutputtype = models.BooleanField("Equals outputtype", default=False)
     # [1] The value that is the outcome of this function: 
     #     This is a JSON list, it can contain any number of bool, int, string
-    argval = models.TextField("JSON value", blank=True, default="[]")
+    argval = models.TextField("(Default value)", blank=True, default="[]")
     # Each function may take a number of input arguments
     function = models.ForeignKey(FunctionDef, null=False, related_name = "arguments")
 
