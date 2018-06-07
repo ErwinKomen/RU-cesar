@@ -1,7 +1,6 @@
 ﻿{% load i18n %}
 
 <div class="research_part">
-  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
 
   <!-- Part 8: Edit the argument specifications of one function -->
   <div id="research_part_8" 
@@ -39,12 +38,15 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <!--
+        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+          -->
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary btn-xs ajaxform"
                 instanceid="{{object_id}}"
                 action="save_function" 
                 ajaxurl="{% if object_id %}{% url 'research_part_8' object_id %}{% else %}{% url 'research_part_8' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </form>
   </div>

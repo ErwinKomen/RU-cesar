@@ -1,7 +1,6 @@
 ﻿{% load i18n %}
 <div class="research_part">
   <span class="hidden">[6]</span>
-  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
 
   <form action="" method="post">
     {% csrf_token %}
@@ -44,8 +43,8 @@
                         <div class="cond-expression-summary hidden"></div>
                       </div>
                     </td>
-                    <td valign="top" align="center">{{cond_form.include}}</td>
-                    <td valign="top" align="center">{{cond_form.DELETE}}</td>
+                    <td valign="top" align="center" class="arg-type">{{cond_form.include}}</td>
+                    <td valign="top" align="center" class="arg-type">{{cond_form.DELETE}}</td>
                   </tr>
                 {% endfor %}
 
@@ -70,8 +69,8 @@
                       <div class="cond-expression-summary hidden"></div>
                     </div>
                   </td>
-                  <td valign="top" align="center">{{cond_form.include}}</td>
-                  <td valign="top" align="center">{{cond_formset.empty_form.DELETE}}</td>
+                  <td valign="top" align="center" class="arg-type">{{cond_form.include}}</td>
+                  <td valign="top" align="center" class="arg-type">{{cond_formset.empty_form.DELETE}}</td>
                 </tr>
                 <tr class="add-row">
                   <td colspan="4">
@@ -95,12 +94,15 @@
       <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <!--
+        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+          -->
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_6" 
                 ajaxurl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </div>
 

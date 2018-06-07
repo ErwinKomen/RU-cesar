@@ -1,7 +1,7 @@
 ﻿{% load i18n %}
 <div class="research_part">
   <span class="hidden">[7]</span>
-  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+  
 
   <form action="" method="post">
     {% csrf_token %}
@@ -32,12 +32,12 @@
                     <td class="hidden">
                       <span class="var-order hidden">{{feat_form.ORDER}}</span>
                     </td>
-                    <td valign="top">{{feat_form.description}}</td>
+                    <td valign="top" style="width: 100%;">{{feat_form.description}}</td>
                     <td valign="top" class="feat-type arg-type">{{feat_form.feattype}}</td>
-                    <td valign="top" class="feat-val-exp">
+                    <td valign="top" class="feat-val-exp" style="min-width: 280px;">
                       <div>
                         <!-- option 0: data-dependant variable -->
-                        <span class="feat-dvar">{{feat_form.variable}}</span>
+                        <span class="feat-dvar arg-type">{{feat_form.variable}}</span>
                         <!-- option 1: function/expression -->
                         <span class="feat-expression">
                           {% include "seeker/function_start.html" with func_form=feat_form %}
@@ -46,8 +46,8 @@
                         <div class="feat-expression-summary hidden"></div>
                       </div>
                     </td>
-                    <td valign="top" align="center">{{feat_form.include}}</td>
-                    <td valign="top" align="center">{{feat_form.DELETE}}</td>
+                    <td valign="top" align="center" class="arg-type" style="max-width: 55px;">{{feat_form.include}}</td>
+                    <td valign="top" align="center" class="arg-type" style="max-width: 55px;">{{feat_form.DELETE}}</td>
                   </tr>
                 {% endfor %}
 
@@ -58,12 +58,12 @@
                   <td class="hidden">
                     <span class="var-order hidden">{{new_order_number}}</span>
                   </td>
-                  <td valign="top">{{feat_formset.empty_form.description}}</td>
+                  <td valign="top" style="width: 100%;">{{feat_formset.empty_form.description}}</td>
                   <td valign="top" class="feat-type arg-type">{{feat_formset.empty_form.feattype}}</td>
-                  <td valign="top" class="feat-val-exp">
+                  <td valign="top" class="feat-val-exp" style="min-width: 280px;">
                     <div>
                       <!-- option 0: data-dependant variable -->
-                      <span class="feat-dvar">{{feat_formset.empty_form.variable}}</span>
+                      <span class="feat-dvar arg-type">{{feat_formset.empty_form.variable}}</span>
                       <!-- option 1: function/expression -->
                       <span class="feat-expression">
                         {% include "seeker/function_start.html" with func_form=feat_formset.empty_form %}
@@ -72,8 +72,8 @@
                       <div class="feat-expression-summary hidden"></div>
                     </div>
                   </td>
-                  <td valign="top" align="center">{{feat_form.include}}</td>
-                  <td valign="top" align="center">{{feat_formset.empty_form.DELETE}}</td>
+                  <td valign="top" align="center" class="arg-type" style="max-width: 55px;">{{feat_form.include}}</td>
+                  <td valign="top" align="center" class="arg-type" style="max-width: 55px;">{{feat_formset.empty_form.DELETE}}</td>
                 </tr>
                 <tr class="add-row">
                   <td colspan="4">
@@ -97,12 +97,15 @@
       <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <!--
+        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+          -->
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_7" 
                 ajaxurl="{% if object_id %}{% url 'research_part_7' object_id %}{% else %}{% url 'research_part_7' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </div>
 

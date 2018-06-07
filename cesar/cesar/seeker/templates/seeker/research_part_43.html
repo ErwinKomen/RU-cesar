@@ -14,7 +14,6 @@
                     onclick="ru.cesar.seeker.research_wizard(this, '42');"><< All search elements</a>
   </span>
   <span>[43]</span>
-  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
   <!-- Part 4-3: Build a function for one combination of [Construction Variable + Search Element] -->
   <div id="research_part_43" 
       class="js-inline-formset inline-group panel panel-default"
@@ -51,12 +50,15 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <!--
+        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+          -->
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_43" 
                 ajaxurl="{% if object_id %}{% url 'research_part_43' object_id %}{% else %}{% url 'research_part_43' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
 
       <!-- Tabular overview of how this cvar is calculated-->

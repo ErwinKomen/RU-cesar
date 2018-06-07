@@ -11,12 +11,19 @@ class ConstructionInline(admin.TabularInline):
     extra = 0
 
 
+class ShareGroupInline(admin.TabularInline):
+    model = ShareGroup
+    form = SharegForm
+    extra = 0
+
+
 class ResearchAdmin(admin.ModelAdmin):
     """Displaying [Research]"""
 
     list_display = ['name', 'purpose', 'gateway_name']
     search_fields = ['name', 'purpose', 'gateway_name']
     # inlines = [ConstructionInline]
+    inlines = [ShareGroupInline]
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1})},
         }

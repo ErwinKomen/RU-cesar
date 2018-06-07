@@ -8,7 +8,6 @@
             onclick="ru.cesar.seeker.research_wizard(this, '7');"><< All Features
   </a></span>
   <span>[72]</span>
-  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
   <!-- Part 7-2: Define features for a research project -->
   <div id="research_part_72" 
       class="js-inline-formset inline-group panel panel-default"
@@ -46,12 +45,15 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <!--
+        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+          -->
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_72" 
                 ajaxurl="{% if object_id %}{% url 'research_part_72' object_id %}{% else %}{% url 'research_part_72' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
 
       <!-- Tabular overview of how this cvar is calculated-->

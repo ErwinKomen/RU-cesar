@@ -743,6 +743,25 @@ class ResearchExe(View):
                         response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
                         response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
                         return response
+                elif self.action == "downloadfunction":
+                    # Prepare to download the FUNCTION as json
+                    oBack = self.obj.get_output()
+                    # Check for errors
+                    if 'status' in oBack and oBack['status'] == "error":
+                        # Add error to the error array
+                        self.arErr.append(oBack['msg'])
+                    else:
+                        # Get the name and the contents
+                        sProjectName = "anonymous"
+                        research = self.obj.get_research()
+                        if research != None:
+                            sProjectName = "{}_{}".format(research.name, research.owner.username)
+                        oCode = oBack['value']
+                        sJsonName = "{}_{}".format(sProjectName, oCode['function'])
+                        sJsonText = json.dumps(oCode, 2)
+                        response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
+                        response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
+                        return response
 
             # Make sure we have a list of any errors
             error_list = [str(item) for item in self.arErr]
@@ -839,7 +858,8 @@ class ResearchExe(View):
         # Copy any object id
         self.object_id = object_id
         # if self.action == "start" or self.action == "download":
-        if self.action == "prepare" or self.action == "download" or self.action == "downloadjson":
+        if self.action == "prepare" or self.action == "download" or \
+            self.action == "downloadjson" or self.action == "downloadfunction":
             # Get the instance of the Main Model object
             self.obj =  self.MainModel.objects.get(pk=object_id)
         else:
@@ -896,6 +916,12 @@ class ResearchDownloadJson(ResearchExe):
     MainModel = Research
     template_name = "seeker/exe_status.html"
     action = "downloadjson"
+
+
+class ResearchDownloadFunction(ResearchExe):
+    MainModel = Function
+    template_name = "seeker/exe_status.html"
+    action = "downloadfunction"
 
 
 class ResearchPart(View):

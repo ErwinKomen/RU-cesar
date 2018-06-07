@@ -11,6 +11,13 @@
             <a class="btn btn-xs btn-default func-plus" role="button" title="open"
                onclick="ru.cesar.seeker.funchead_click(this, 'func-inline');">+</a>
             <a class="btn btn-xs btn-default" role="button" 
+               title="download as JSON"
+               downloadtype="json"
+               ajaxurl="{% url 'function_download' function.id %}"
+               onclick="ru.cesar.seeker.post_download(this,'{{function.id}}');" >
+               <span class="glyphicon glyphicon-download" aria-hidden="true"></span>
+            </a>
+            <a class="btn btn-xs btn-default" role="button" 
                title="edit"
                targeturl="{{function.get_func_url_edit}}"
                targetid="{{function.get_targetid}}"

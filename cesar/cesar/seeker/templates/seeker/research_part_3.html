@@ -58,12 +58,12 @@
       <!-- USED TO BE: [include "submit_row.html" with currentowner=form.instance.owner] -->
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_3" 
                 ajaxurl="{% if object_id %}{% url 'research_part_3' object_id %}{% else %}{% url 'research_part_3' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
 
     </div>

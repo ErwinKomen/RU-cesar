@@ -8,7 +8,6 @@
             onclick="ru.cesar.seeker.research_wizard(this, '6');"><< All Conditions
   </a></span>
   <span>[63]</span>
-  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
 
   <!-- Part 6-3: Starting from one function's ARG, allow building the function pointing to that ARG -->
   <div id="research_part_63" 
@@ -132,12 +131,15 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <!--
+        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+          -->
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_63" 
                 ajaxurl="{% if object_id %}{% url 'research_part_63' object_id %}{% else %}{% url 'research_part_63' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </form>
   </div>

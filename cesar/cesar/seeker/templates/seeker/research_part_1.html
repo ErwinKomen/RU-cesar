@@ -75,12 +75,12 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <a class="btn btn-primary ajaxform"
                 instanceid="{{researchForm.instance.id}}"
                 openid="research_container_1" 
                 ajaxurl="{% if object_id %}{% url 'research_part_1' object_id %}{% else %}{% url 'research_part_1' %}{% endif %}"
                 data="">{% trans 'Save' %}</a>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </div>
 </form>

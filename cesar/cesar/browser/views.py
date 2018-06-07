@@ -99,7 +99,9 @@ def get_int_choice(lGetDict, sKey):
         return -1
 
 def get_current_userid():
-    return 'erkomen'
+    sDefaultUser = 'erkomen'
+    sDefaultUser = 'cesarbr'
+    return sDefaultUser
 
 def treat_bom(sHtml):
     """REmove the BOM marker except at the beginning of the string"""
@@ -602,6 +604,15 @@ class SentenceListView(ListView):
     error_msg = ""
     text = None
 
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # Do not allow to get a good response
+            response = HttpResponse('')
+            response = redirect('nlogin')
+        else:
+            response = super(SentenceListView, self).get(request, *args, **kwargs)
+        return response
+
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super(SentenceListView, self).get_context_data(**kwargs)
@@ -677,59 +688,69 @@ class SentenceDetailView(DetailView):
     template_name = 'browser/sentence_view.html'
 
     def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        response = self.render_to_response(context)
-        #response.content = treat_bom(response.rendered_content)
+        if not request.user.is_authenticated:
+            # Do not allow to get a good response
+            response = HttpResponse('')
+            response = redirect('nlogin')
+        else:
+            self.object = self.get_object()
+            context = self.get_context_data(object=self.object)
+            response = self.render_to_response(context)
+            #response.content = treat_bom(response.rendered_content)
         return response
 
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        # Initialize
-        response = None
-        context = self.get_context_data(object=self.object)
-        # Get the download type
-        self.qd = request.POST
-        if 'downloadtype' in self.qd and 'downloaddata' in self.qd:
-            # Get the download type and the data itself
-            dtype = self.qd['downloadtype']
-            ddata = self.qd['downloaddata']
-            
-            if dtype == "tree":
-                dext = ".svg"
-                sContentType = "application/svg"
-            elif dtype == "htable":
-                dext = ".html"
-                sContentType = "application/html"
-            elif (dtype == "htable-png" or dtype == "tree-png"):
-                dext = ".png"
-                # sContentType = "application/octet-stream"
-                sContentType = "image/png"
-                # Read base64 encoded part
-                arPart = ddata.split(";")
-                dSecond = arPart[1]
-                # Strip off the preceding "base64," part
-                ddata = dSecond.replace("base64,", "")
-                # Convert string to bytestring
-                ddata = ddata.encode()
-                # Decode base64 into binary
-                ddata = base64.decodestring(ddata)
-                # Strip -png off
-                dtype = dtype.replace("-png", "")
-
-
-            # Determine a file name
-            sBase = self.object.text.fileName
-            sIdt = self.object.identifier
-            if not sBase in sIdt:
-                sIdt = "{}_{}".format( sBase, sIdt)
-            sFileName = "{}_{}{}".format(sIdt, dtype, dext)
-
-            response = HttpResponse(ddata, content_type=sContentType)
-            response['Content-Disposition'] = 'attachment; filename="{}"'.format(sFileName)    
-
+        if not request.user.is_authenticated:
+            # Do not allow to get a good response
+            response = HttpResponse('')
+            response = redirect('nlogin')
         else:
-            response = self.render_to_response(context)
+            self.object = self.get_object()
+            # Initialize
+            response = None
+            context = self.get_context_data(object=self.object)
+            # Get the download type
+            self.qd = request.POST
+            if 'downloadtype' in self.qd and 'downloaddata' in self.qd:
+                # Get the download type and the data itself
+                dtype = self.qd['downloadtype']
+                ddata = self.qd['downloaddata']
+            
+                if dtype == "tree":
+                    dext = ".svg"
+                    sContentType = "application/svg"
+                elif dtype == "htable":
+                    dext = ".html"
+                    sContentType = "application/html"
+                elif (dtype == "htable-png" or dtype == "tree-png"):
+                    dext = ".png"
+                    # sContentType = "application/octet-stream"
+                    sContentType = "image/png"
+                    # Read base64 encoded part
+                    arPart = ddata.split(";")
+                    dSecond = arPart[1]
+                    # Strip off the preceding "base64," part
+                    ddata = dSecond.replace("base64,", "")
+                    # Convert string to bytestring
+                    ddata = ddata.encode()
+                    # Decode base64 into binary
+                    ddata = base64.decodestring(ddata)
+                    # Strip -png off
+                    dtype = dtype.replace("-png", "")
+
+
+                # Determine a file name
+                sBase = self.object.text.fileName
+                sIdt = self.object.identifier
+                if not sBase in sIdt:
+                    sIdt = "{}_{}".format( sBase, sIdt)
+                sFileName = "{}_{}{}".format(sIdt, dtype, dext)
+
+                response = HttpResponse(ddata, content_type=sContentType)
+                response['Content-Disposition'] = 'attachment; filename="{}"'.format(sFileName)    
+
+            else:
+                response = self.render_to_response(context)
         # Return the response we have
         return response
 

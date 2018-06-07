@@ -10,7 +10,6 @@
             onclick="ru.cesar.seeker.research_wizard(this, '4');"><< All Variables</a>
   </span>
   <span>[42]</span>
-  <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
 
   <!-- A form to allow specifying and changing variable definitions -->
   <form action="" method="post">
@@ -36,9 +35,9 @@
                     <td class="hidden">{{cvar_form.construction}}</td>
                     <td class="hidden">{{cvar_form.function}}</td>
                     <td valign="top">{{forloop.counter}}</td>
-                    <td valign="top">{{cvar_form.instance.construction.name}}</td>
+                    <td valign="top" style="width: 100%;">{{cvar_form.instance.construction.name}}</td>
                     <td valign="top" class="cvar-type arg-type">{{cvar_form.type}}</td>
-                    <td valign="top" class="cvar-val-exp">
+                    <td valign="top" class="cvar-val-exp" style="min-width: 300px;">
                       <div>
                         <!-- option 0: fixed value -->
                         <span class="cvar-value">{{cvar_form.svalue}}</span>
@@ -68,12 +67,15 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
+        <!--
+        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+          -->
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
                 instanceid="{{object_id}}"
                 openid="research_container_42" 
                 ajaxurl="{% if object_id %}{% url 'research_part_42' object_id %}{% else %}{% url 'research_part_42' %}{% endif %}"
                 data="">{% trans 'Save' %}</button>
-        <div class="save-warning">{% if savedate %}{{savedate}}{% endif %}</div>
       </div>
     </div>
 

@@ -107,6 +107,7 @@ urlpatterns = [
     url(r'^ajax/variable43t(?:/(?P<object_id>\d+))?/$', Variable43t.as_view(), name='variable43t'),
     url(r'^ajax/condition63t(?:/(?P<object_id>\d+))?/$', Condition63t.as_view(), name='condition63t'),
     url(r'^ajax/feature73t(?:/(?P<object_id>\d+))?/$', Feature73t.as_view(), name='feature73t'),
+    url(r'^ajax/function/download/(?P<object_id>\d+)/$', ResearchDownloadFunction.as_view(), name='function_download'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^signup/$', cesar.browser.views.signup, name='signup'),
 

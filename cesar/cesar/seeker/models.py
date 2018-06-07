@@ -979,7 +979,7 @@ class Function(models.Model):
         """Calculate or return the stored output of me"""
 
         oErr = ErrHandle()
-        oCode = {}
+        oBack = {'value': None, 'status': "ok"}
         try:
             if self.output == "" or self.output == "[]" or self.output == "{}":
                 # This means we need to re-calculate
@@ -992,17 +992,20 @@ class Function(models.Model):
                 for arg in self.get_arguments():
                     # Get the code of this argument
                     oArg = json.loads(arg.get_output())
-                    # Return the code of this argument
                     arglist.append(oArg)
                 oCode['arglist'] = arglist
+
                 # Now adapt the output of myself
-                self.output = json.dumps(oCode)
+                # OLD: self.output = json.dumps(oCode)
+                oBack['value'] = oCode
             # REturn the output
-            return self.output
+            # OLD: return self.output
+            return oBack
         except:
-            oCode['value'] = "error"
-            oCode['msg'] = oErr.get_error_message()
-            return oCode
+            oBack['value'] = "error"
+            oBack['status'] = "error"
+            oBack['msg'] = oErr.get_error_message()
+            return oBack
 
     def get_code(self, format, method="recursive"):
         """Create and return the required Xquery"""
@@ -1190,6 +1193,25 @@ class Function(models.Model):
         # Return the top function
         return func_main
 
+    def get_research(self):
+        """Get the Research instance to which this function is connected"""
+
+        research = None
+        gateway = None
+        if self.root != None:
+            # This seems to be a CVAR
+            gateway = self.root.construction.gateway
+        elif self.rootcond != None:
+            # This seems to be a condition
+            gateway = self.rootcond.gateway
+        elif self.rootfeat != None:
+            # This seems to be a feature
+            gateway = self.rootfeat.gateway
+        # Get from gateway to research
+        if gateway != None:
+            research = gateway.research
+        # Return the research that has been located
+        return research
 
     @classmethod
     def create(cls, functiondef, functionroot, functioncondroot, parentarg, functionfeatroot=None):
@@ -2081,8 +2103,16 @@ class ConstructionVariable(models.Model):
                     # Get the code for this function
                     lFunc = []
                     for func in self.get_functions():
-                        oFunc = json.loads(func.get_output())
-                        lFunc.append(oFunc)
+                        #oFunc = json.loads(func.get_output())
+                        #lFunc.append(oFunc)
+
+                        oFunc = func.get_output()
+                        if 'value' in oFunc and oFunc['value'] != "error" and oFunc['value'] != None:
+                            # Return the code of this argument
+                            lFunc.append(oFunc['value'])
+                        else:
+                            lFunc.append(None)
+
                     oCode['value'] = lFunc
             return oCode
         except:
@@ -2329,8 +2359,15 @@ class Condition(models.Model):
                     # Get the code for this function
                     lFunc = []
                     for func in self.get_functions():
-                        oFunc = json.loads(func.get_output())
-                        lFunc.append(oFunc)
+                        #oFunc = json.loads(func.get_output())
+                        #lFunc.append(oFunc)
+
+                        oFunc = func.get_output()
+                        if 'value' in oFunc and oFunc['value'] != "error" and oFunc['value'] != None:
+                            # Return the code of this argument
+                            lFunc.append(oFunc['value'])
+                        else:
+                            lFunc.append(None)
                     oCode['value'] = lFunc
             return oCode
         except:
@@ -2554,8 +2591,16 @@ class Feature(models.Model):
                     # Get the code for this function
                     lFunc = []
                     for func in self.get_functions():
-                        oFunc = json.loads(func.get_output())
-                        lFunc.append(oFunc)
+                        #oFunc = json.loads(func.get_output())
+                        #lFunc.append(oFunc)
+
+                        oFunc = func.get_output()
+                        if 'value' in oFunc and oFunc['value'] != "error" and oFunc['value'] != None:
+                            # Return the code of this argument
+                            lFunc.append(oFunc['value'])
+                        else:
+                            lFunc.append(None)
+
                     oCode['value'] = lFunc
             return oCode
         except:
