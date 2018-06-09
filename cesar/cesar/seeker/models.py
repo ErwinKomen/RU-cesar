@@ -1169,13 +1169,15 @@ class Function(models.Model):
                     elif oArg['type'] == "fixed":
                         arg.argval = argval
                     elif oArg['type'] == "rcnst":       # Relative constituent
-                        arg.raxis = Relation.objects.filter(name=argval, type="const").first()
-                    elif oArg['type'] == "rcnst":       # Relative constituent
+                        arg.rconst = Relation.objects.filter(name=argval, type="const").first()
+                    elif oArg['type'] == "rcond":       # Relative condition
                         arg.rcond = Relation.objects.filter(name=argval, type="cond").first()
                     elif oArg['type'] == "raxis":       # Relation/axis
                         arg.raxis = Relation.objects.filter(name=argval, type="axis").first()
                     elif oArg['type'] == "hit":         # Search hit
-                        arg.argval = "$search"          # No need to further specify the value
+                        # No need to further specify the value
+                        pass
+                        # arg.argval = "$search"          # No need to further specify the value
                     elif oArg['type'] == "gvar":        # global variable
                         gvar = gateway.globalvariables.filter(name= strip_varname(argval)).first()
                         arg.gvar = gvar
@@ -1189,7 +1191,7 @@ class Function(models.Model):
         except:
             msg = errHandle.get_error_message()
             func_main = None
-
+            # x = func_main.functionarguments.all()
         # Return the top function
         return func_main
 
@@ -1668,13 +1670,16 @@ class Argument(models.Model):
                         oCode['value'] =  "${}".format(self.dvar.name)
                 elif self.argtype == "raxis":
                     if self.raxis != None:
-                        oCode['value'] = self.raxis.xpath
+                        # oCode['value'] = self.raxis.xpath
+                        oCode['value'] = self.raxis.name
                 elif self.argtype == "rcnst":
                     if self.rconst != None:
-                        oCode['value'] = self.rconst.xpath
+                        # oCode['value'] = self.rconst.xpath
+                        oCode['value'] = self.rconst.name
                 elif self.argtype == "rcond":
                     if self.rcond != None:
-                        oCode['value'] = self.rcond.xpath
+                        # oCode['value'] = self.rcond.xpath
+                        oCode['value'] = self.rcond.name
                 # Assign the code to me
                 self.argval = json.dumps(oCode)
             return self.argval
@@ -2921,7 +2926,7 @@ class Research(models.Model):
                         elif oCond['type'] == 'dvar':
                             varName = strip_varname(oCond['value'])
                             dvar = gateway.definitionvariables.filter(name=varName).first()
-                            cond.dvar = dvar
+                            cond.variable = dvar
                         cond.save()
                 # Now walk all the conditions and create them
                 with transaction.atomic():
@@ -2941,7 +2946,7 @@ class Research(models.Model):
                         elif oFeat['type'] == 'dvar':
                             varName = strip_varname(oFeat['value'])
                             dvar = gateway.definitionvariables.filter(name=varName).first()
-                            feat.dvar = dvar
+                            feat.variable = dvar
                         feat.save()
 
         except:
