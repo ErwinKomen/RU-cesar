@@ -47,6 +47,10 @@
                         </span>
                         <!-- option 2: global variable -->
                         <span class="cvar-gvar">{{cvar_form.gvar}}</span>
+
+                        <!-- option 3: upload JSON function -->
+                        {% include 'seeker/function_upload.html' with ftype='cvar' saveid='research_save_42' %}
+
                         <!-- Room to provide a summary of the function-calculation -->
                         <div class="cvar-expression-summary hidden"></div>
                       </div>
@@ -67,11 +71,9 @@
 
       <!-- Provide SAVE button (verification is done on the server) -->
       <div class="submit-row">
-        <!--
-        <span class="research-fetch glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
-          -->
         <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
+                id="research_save_42"
                 instanceid="{{object_id}}"
                 openid="research_container_42" 
                 ajaxurl="{% if object_id %}{% url 'research_part_42' object_id %}{% else %}{% url 'research_part_42' %}{% endif %}"

@@ -42,6 +42,10 @@
                         <span class="feat-expression">
                           {% include "seeker/function_start.html" with func_form=feat_form %}
                         </span>
+
+                        <!-- option 2: upload JSON function -->
+                        {% include 'seeker/function_upload.html' with ftype='feat' saveid='research_save_7' %}
+
                         <!-- Room to provide a summary of the function-calculation -->
                         <div class="feat-expression-summary hidden"></div>
                       </div>
@@ -68,6 +72,10 @@
                       <span class="feat-expression">
                         {% include "seeker/function_start.html" with func_form=feat_formset.empty_form %}
                       </span>
+
+                      <!-- option 2: JSON upload -->
+                      <!-- This is only provided after the initial feature definition (name) has been saved -->
+
                       <!-- Room to provide a summary of the function-calculation -->
                       <div class="feat-expression-summary hidden"></div>
                     </div>
@@ -102,6 +110,7 @@
           -->
         <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
+                id="research_save_7"
                 instanceid="{{object_id}}"
                 openid="research_container_7" 
                 ajaxurl="{% if object_id %}{% url 'research_part_7' object_id %}{% else %}{% url 'research_part_7' %}{% endif %}"

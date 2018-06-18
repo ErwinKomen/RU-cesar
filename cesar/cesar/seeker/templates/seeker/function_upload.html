@@ -1,0 +1,21 @@
+﻿
+    <!-- option 2: upload JSON function -->
+    <div class="{{ftype}}-json form-group" id="import_info"
+          ftype="{{ftype}}" saveid="{{saveid}}">
+      <div class="input-group">
+        <span>Specify the JSON file that contains the condition's definition</span>
+        <span class="input-group-btn">
+          <span class="btn btn-default btn-xs btn-file">
+            Browse...
+            <input id="id_{{ftype}}-{{forloop.counter0}}-file_source" 
+                    name="{{ftype}}-{{forloop.counter0}}-file_source" required="" type="file" 
+                    oninput="ru.cesar.seeker.import_data('#import_info');" />
+          </span>
+        </span>
+      </div>
+      <!-- Progress of upload indicator -->
+      <div>
+        <progress class="hidden" style="width:100%;" id="import_progress" value="0" min="0" max="100"></progress>
+      </div>
+    </div>
+

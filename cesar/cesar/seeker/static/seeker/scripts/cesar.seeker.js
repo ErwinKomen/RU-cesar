@@ -860,15 +860,19 @@ var ru = (function ($, ru) {
           var elcondtype = $(elType).find("select").first();
           // Get its value
           var elcondtypeVal = $(elcondtype).val();
+          // First hide everything
+          $(elVal).children("div").children("span").addClass("hidden");
+          $(elVal).children("div").children("div").addClass("hidden");
           // Hide/show, depending on the value
           switch (elcondtypeVal) {
             case "dvar": // Data-dependant variable
               $(elVal).find(".cond-dvar").removeClass("hidden");
-              $(elVal).find(".cond-expression").addClass("hidden");
               break;
             case "func": // Function
-              $(elVal).find(".cond-dvar").addClass("hidden");
               $(elVal).find(".cond-expression").removeClass("hidden");
+              break;
+            case "json":  // Upload JSON function definition
+              $(elVal).find(".cond-json").removeClass("hidden");
               break;
           }
         } catch (ex) {
@@ -970,22 +974,22 @@ var ru = (function ($, ru) {
           var elCvarType = $(elType).find("select").first();
           // Get its value
           var elCvarTypeVal = $(elCvarType).val();
+          // First hide everything
+          $(elVal).children("div").children("span").addClass("hidden");
+          $(elVal).children("div").children("div").addClass("hidden");
           // Hide/show, depending on the value
           switch (elCvarTypeVal) {
             case "fixed": // Fixed value
               $(elVal).find(".cvar-value").removeClass("hidden");
-              $(elVal).find(".cvar-expression").addClass("hidden");
-              $(elVal).find(".cvar-gvar").addClass("hidden");
               break;
             case "calc": // Expression
-              $(elVal).find(".cvar-value").addClass("hidden");
               $(elVal).find(".cvar-expression").removeClass("hidden");
-              $(elVal).find(".cvar-gvar").addClass("hidden");
               break;
             case "gvar": // Global variable
-              $(elVal).find(".cvar-value").addClass("hidden");
-              $(elVal).find(".cvar-expression").addClass("hidden");
               $(elVal).find(".cvar-gvar").removeClass("hidden");
+              break;
+            case "json":  // Upload JSON function definition
+              $(elVal).find(".cvar-json").removeClass("hidden");
               break;
           }
         } catch (ex) {
@@ -1224,9 +1228,13 @@ var ru = (function ($, ru) {
             data = null,
             xhr = null,
             files = null,
+            sFtype = "",      // Type of function (cvar, feat, cond)
             elWait = null,
+            bDoLoad = false,  // Need to load with a $.get() afterwards
+            elInput = null,   // The <input> element with the files
             more = {},        // Additional (json) data to be passed on (from form-data)
             sTargetDiv = "",  // The div where the uploaded reaction comes
+            sSaveDiv = "",    // Where to go if saving is needed
             sMsg = "";
 
         try {
@@ -1236,10 +1244,28 @@ var ru = (function ($, ru) {
           // Get the URL
           targeturl = $(el).attr("targeturl");
           sTargetDiv = $(el).attr("targetid");
+          sSaveDiv = $(el).attr("saveid");
+
+          if (targeturl === undefined && sSaveDiv !== undefined && sSaveDiv !== "") {
+            targeturl = $("#" + sSaveDiv).attr("ajaxurl");
+            sTargetDiv = $("#" + sSaveDiv).attr("openid");
+            sFtype = $(el).attr("ftype");
+            bDoLoad = true;
+          }
+
+          if ($(el).is("input")) {
+            elInput = el;
+          } else {
+            elInput = $(el).find("input").first();
+          }
 
           // Show progress
           $("#import_progress").attr("value", "0");
           $("#import_progress").removeClass("hidden");
+          if (bDoLoad) {
+            $(".save-warning").html("loading the definition..." + loc_sWaiting);
+            $(".submit-row button").prop("disabled", true);
+          }
 
           // Add data from the <form> nearest to me: 
           frm = $(el).closest("form");
@@ -1252,11 +1278,15 @@ var ru = (function ($, ru) {
           private_methods.waitStart(elWait);
 
           // Upload XHR
-          $("#id_file_source").upload(targeturl,
+          $(elInput).upload(targeturl,
             more,
             function (response) {
               // Transactions have been uploaded...
               console.log("done: ", response);
+
+              // Show where we are
+              $(el).addClass("hidden");
+              $(".save-warning").html("saving..." + loc_sWaiting);
 
               // First leg has been done
               if (response === undefined || response === null || !("status" in response)) {
@@ -1264,13 +1294,53 @@ var ru = (function ($, ru) {
               } else {
                 switch (response.status) {
                   case "ok":
-                    // Remove all project-part class items
-                    $(".project-part").addClass("hidden");
-                    // Place the response here
-                    $("#" + sTargetDiv).html(response.html);
-                    $("#" + sTargetDiv).removeClass("hidden");
-                    // Make sure events are in place again
-                    // dmb.finance.init_events();
+                    // Check how we should react now
+                    if (bDoLoad) {
+                      // Show where we are
+                      $(".save-warning").html("retrieving..." + loc_sWaiting);
+
+                      $.get(targeturl, function (response) {
+                        if (response === undefined || response === null || !("status" in response)) {
+                          private_methods.errMsg("No status returned");
+                        } else {
+                          switch (response.status) {
+                            case "ok":
+                              // Show the response in the appropriate location
+                              $("#" + sTargetDiv).html(response.html);
+                              $("#" + sTargetDiv).removeClass("hidden");
+                              // Make sure events are in place again
+                              ru.cesar.seeker.init_events();
+                              switch (sFtype) {
+                                case "cvar":
+                                  ru.cesar.seeker.init_cvar_events();
+                                  break;
+                                case "cond":
+                                  ru.cesar.seeker.init_cond_events();
+                                  break;
+                                case "feat":
+                                  ru.cesar.seeker.init_feat_events();
+                                  break;
+                              }
+                              // Indicate we are through with waiting
+                              private_methods.waitStop(elWait);
+                              break;
+                            default:
+                              // Show the error that has occurred
+                              if ("html" in response) { sMsg = response['html']; }
+                              if ("error_list" in response) { sMsg += response['error_list']; }
+                              // Show that the project has finished
+                              private_methods.errMsg("Execute error: " + sMsg);
+                              break;
+                          }
+                        }
+                      });
+                    } else {
+                      // Remove all project-part class items
+                      $(".project-part").addClass("hidden");
+                      // Place the response here
+                      $("#" + sTargetDiv).html(response.html);
+                      $("#" + sTargetDiv).removeClass("hidden");
+                    }
                     break;
                   default:
                     // Show the error that has occurred

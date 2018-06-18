@@ -144,6 +144,7 @@
     <Content Include="cesar\seeker\templates\seeker\crp.xml" />
     <Content Include="cesar\seeker\templates\seeker\download_status.html" />
     <Content Include="cesar\seeker\templates\seeker\err_view.html" />
+    <Content Include="cesar\seeker\templates\seeker\function_upload.html" />
     <Content Include="cesar\seeker\templates\seeker\import_status.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_8.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_14.html" />

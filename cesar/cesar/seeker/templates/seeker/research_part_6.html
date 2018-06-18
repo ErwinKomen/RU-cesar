@@ -39,6 +39,10 @@
                         <span class="cond-expression">
                           {% include "seeker/function_start.html" with func_form=cond_form %}
                         </span>
+
+                        <!-- option 2: upload JSON function -->
+                        {% include 'seeker/function_upload.html' with ftype='cond' saveid='research_save_6' %}
+
                         <!-- Room to provide a summary of the function-calculation -->
                         <div class="cond-expression-summary hidden"></div>
                       </div>
@@ -65,11 +69,15 @@
                       <span class="cond-expression">
                         {% include "seeker/function_start.html" with func_form=cond_formset.empty_form %}
                       </span>
+
+                      <!-- option 2: upload JSON function -->
+                      <!-- This only becomes available above, when the initial condition definition has been saved -->
+
                       <!-- Room to provide a summary of the function-calculation -->
                       <div class="cond-expression-summary hidden"></div>
                     </div>
                   </td>
-                  <td valign="top" align="center" class="arg-type">{{cond_form.include}}</td>
+                  <td valign="top" align="center" class="arg-type">{{cond_formset.empty_form.include}}</td>
                   <td valign="top" align="center" class="arg-type">{{cond_formset.empty_form.DELETE}}</td>
                 </tr>
                 <tr class="add-row">
@@ -99,6 +107,7 @@
           -->
         <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
         <button type="button" class="btn btn-primary ajaxform"
+                id="research_save_6"
                 instanceid="{{object_id}}"
                 openid="research_container_6" 
                 ajaxurl="{% if object_id %}{% url 'research_part_6' object_id %}{% else %}{% url 'research_part_6' %}{% endif %}"

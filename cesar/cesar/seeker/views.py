@@ -745,7 +745,25 @@ class ResearchExe(View):
                         return response
                 elif self.action == "downloadfunction":
                     # Prepare to download the FUNCTION as json
-                    oBack = self.obj.get_output()
+                    # THIS WOULD ONLY DOWNLOAD THE TOP FUNCTION: oBack = self.obj.get_output()
+                    if self.obj == None:
+                        oBack['status'] = "error"
+                        if not 'msg' in oBack:
+                            oBack['msg'] = "ResearchExe - downloadfunction - no OBJ defined"
+                    else:
+                        if self.obj.root != None:
+                            oBack = self.obj.root.get_json()
+                            oBack['name'] = "{}-{}".format(self.obj.root.construction.name, self.obj.root.variable.name)
+                        elif self.obj.rootcond != None:
+                            oBack = self.obj.rootcond.get_json()
+                            oBack['name'] = "{}-{}".format(self.obj.rootcond.name)
+                        elif self.obj.rootfeat != None:
+                            oBack = self.obj.rootfeat.get_json()
+                            oBack['name'] = "{}-{}".format(self.obj.rootfeat.name)
+                        else:
+                            oBack['status'] = "error"
+                            if not 'msg' in oBack:
+                                oBack['msg'] = "ResearchExe - downloadfunction - no root (cvar/cond/feat) defined"
                     # Check for errors
                     if 'status' in oBack and oBack['status'] == "error":
                         # Add error to the error array
@@ -756,8 +774,8 @@ class ResearchExe(View):
                         research = self.obj.get_research()
                         if research != None:
                             sProjectName = "{}_{}".format(research.name, research.owner.username)
-                        oCode = oBack['value']
-                        sJsonName = "{}_{}".format(sProjectName, oCode['function'])
+                        oCode = oBack
+                        sJsonName = "{}_{}".format(sProjectName, oCode['name'])
                         sJsonText = json.dumps(oCode, 2)
                         response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
                         response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
@@ -952,7 +970,7 @@ class ResearchPart(View):
             context = dict(object_id = object_id, savedate=None)
             # Action depends on 'action' value
             if self.action == "":
-                if self.bDebug: self.oErr.Status("ResearchPart: action=" + self.action)
+                if self.bDebug: self.oErr.Status("ResearchPart: action=(empty)")
                 # Walk all the forms for preparation of the formObj contents
                 for formObj in self.form_objects:
                     # Are we SAVING a NEW item?
@@ -1663,6 +1681,7 @@ class ResearchPart42(ResearchPart):
         # NOTE: the 'instance' here is the CVAR instance
 
         has_changed = False
+        arErr = []
         # When saving a CVAR, we need to check that the functions are okay
         if prefix == 'cvar':
             # Find the function attached to me - only if applicable!!
@@ -1679,8 +1698,28 @@ class ResearchPart42(ResearchPart):
                     instance.function = Function.create(instance.functiondef, instance, None, None)
                     # Indicate that changes have been made
                     has_changed = True
-        # Set the 'saved' one
-        self.obj.gateway.research.save()
+            elif instance.type == "json":
+                # We are uploading a function: get the JSON contents
+                if 'file_source' in form.cleaned_data:
+                    data_file = form.cleaned_data["file_source"]
+                    oData = import_data_file(data_file, arErr)
+                    # Check the top layer
+                    if oData != None and 'type' in oData and oData['type'] == 'calc':
+                        # Make sure we change the type
+                        instance.type = "calc"
+                        # Be sure to get the correct gateway
+                        gateway = self.obj.gateway
+                        # Create the functions for this CVAR
+                        func_main = Function.create_from_list(oData['value'], gateway, "cvar", instance, None, None)
+                        func_main.save()
+                        instance.function = func_main
+                        instance.functiondef = func_main.functiondef
+                        # Indicate that changes have been made
+                        has_changed = True
+                        # x = json.dumps( instance.function.root.get_json())
+        # Set the 'saved' one, but ONLY if any changes have been made
+        if has_changed: 
+            self.obj.gateway.research.save()
         # Return the changed flag
         return has_changed
 

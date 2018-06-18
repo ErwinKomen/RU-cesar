@@ -206,6 +206,7 @@ class VarDefForm(ModelForm):
 class CvarForm(ModelForm):
     """The VALUES of construction variables"""
 
+    file_source = forms.FileField(label="Specify which file should be loaded")
     # copyto = forms.ChoiceField((), required=False)
     copyto = None
     targetid = "research_part_43"
@@ -234,6 +235,10 @@ class CvarForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+
+        # nOT SURE if this is needed:
+        # self.fields['file_source'].required = False
+
         # Get the gateway...
         if self.instance and self.instance.construction and self.instance.construction.gateway:
             gateway = self.instance.construction.gateway
