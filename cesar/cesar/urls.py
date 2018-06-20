@@ -39,6 +39,7 @@ urlpatterns = [
     url(r'^contact$', cesar.browser.views.contact, name='contact'),
     url(r'^more$', cesar.browser.views.more, name='more'),
     url(r'^about', cesar.browser.views.about, name='about'),
+    url(r'^short', cesar.browser.views.short, name='short'),
     url(r'^nlogin', cesar.browser.views.nlogin, name='nlogin'),
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),

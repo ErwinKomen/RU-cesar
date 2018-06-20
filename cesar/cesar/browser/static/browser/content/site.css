@@ -904,3 +904,9 @@ table.compact-table td:hover {
   color: black;
   border: 1px solid white;
 }
+
+.newsitem {
+  background-color: lightgoldenrodyellow;
+  border: outset;
+  padding: 5px;
+}

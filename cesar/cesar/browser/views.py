@@ -192,6 +192,16 @@ def about(request):
         }
     )
 
+def short(request):
+    """Renders the page with the short instructions."""
+
+    assert isinstance(request, HttpRequest)
+    template = 'short.html'
+    context = {'title': 'Short overview',
+               'message': 'Radboud University CESAR short intro',
+               'year': datetime.now().year}
+    return render(request, template, context)
+
 def nlogin(request):
     """Renders the not-logged-in page."""
     assert isinstance(request, HttpRequest)

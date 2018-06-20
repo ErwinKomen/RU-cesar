@@ -4,28 +4,28 @@
 {% block content %}
 
 <div class="container body-content">
-  <div class="jumbotron">
-      <h1>CESAR</h1>
-      <p class="lead">The Cesar web application provides a low-level way to do syntactic research in annotated text corpora.</p>
-      <p><a href="{% url 'about' %}" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+  <div class="jumbotron" style="max-height: 180px;">
+      <h1>CESAR<span class="pull-right"><a href="{% url 'about' %}" class="btn btn-primary btn-large">Learn more &raquo;</a></span></h1>
+      <p class="lead">
+        <span>The Cesar web application provides a low-level way to do syntactic research in annotated text corpora.</span>
+        
+      </p>
   </div>
 
   <div class="row">
       <div class="col-md-6 bgimg">
-          <h2>What can I do?</h2>
-          <p>The Cesar application offers a set of tools that allow the researcher to work with syntactically annotated texts:
-            <ul>
-              <li>Define and host corpora. See the currently hosted list in <b>B</b>rowse/CorpusParts.</li>
-              <li>Look for texts satisfying metadata criteria such as genre and language. See <b>B</b>rowse/AllTexts.</li>
-              <li>Review the syntactic annotation of a sentence in a text (see the example at the bottom right).</li>
-              <li>Define a search that takes into account syntactic conditions. See <b>S</b>earch/Specify or <b>S</b>earch/List</li>
-              <li>Specify how to have output features calculated for search hits</li>
-              <li>Make searches available for other Cesar users</li>
-              <li>Execute a search on a part or the whole of any of the corpora available</li>
-              <li>Download results as CSV, Excel or SQlite database</li>
-              <li>Review the results online as KWIC, review the output for each hit. See <b>S</b>earch/Results</li>
-            </ul>
-          </p>
+          <h2>Latest news</h2>
+          <div class="newsitem">
+            <p>The Cesar back-end will be <u>down</u> in the Summer: <b>6/Jul/2018 - 30/Jul/2018.</b></p>
+            <p>Cesar itself will be running, but there are a number of things you won't be able to do:
+              <ul>
+                <li>Browsing: many texts will not be browsable. You will be able to see some, if they have been pre-loaded into the Cesar interface.</li>
+                <li>Syntax: viewing the syntax of sentences will not be possible.</li>
+                <li>Running: searches will not run, because the back-end is down.</li>
+                <li>Results: your stored results may be visible to some extent. Most of the results won't be visible, however.</li>
+              </ul>
+            </p>
+          </div>
           <p>
             {% if user.is_authenticated %}
             (See the <b>Extra</b> menu for logout and other options)

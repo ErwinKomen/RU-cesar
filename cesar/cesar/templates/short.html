@@ -1,0 +1,30 @@
+﻿{% extends "layout.html" %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+<div class="container body-content">
+  <div class="row">
+    <div class="col-md-6">
+      <h2>What can I do?</h2>
+      <p>The Cesar application offers a set of tools that allow the researcher to work with syntactically annotated texts:
+        <ul>
+          <li>Define and host corpora. See the currently hosted list in <b>B</b>rowse/CorpusParts.</li>
+          <li>Look for texts satisfying metadata criteria such as genre and language. See <b>B</b>rowse/AllTexts.</li>
+          <li>Review the syntactic annotation of a sentence in a text (see the example at the bottom right).</li>
+          <li>Define a search that takes into account syntactic conditions. See <b>S</b>earch/Specify or <b>S</b>earch/List</li>
+          <li>Specify how to have output features calculated for search hits</li>
+          <li>Make searches available for other Cesar users</li>
+          <li>Execute a search on a part or the whole of any of the corpora available</li>
+          <li>Download results as CSV, Excel or SQlite database</li>
+          <li>Review the results online as KWIC, review the output for each hit. See <b>S</b>earch/Results</li>
+        </ul>
+      </p>
+    </div>
+    <div class="col-md-6">
+      <p><i>(More information follows...)</i></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

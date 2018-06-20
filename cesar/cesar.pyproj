@@ -208,6 +208,7 @@
     <Content Include="cesar\templates\pagination.html" />
     <Content Include="cesar\browser\templates\browser\sentence_list.html" />
     <Content Include="cesar\browser\templates\browser\sentence_view.html" />
+    <Content Include="cesar\templates\short.html" />
     <Content Include="cesar\templates\signup.html" />
     <Content Include="cesar\browser\templates\browser\text_list_main.html" />
     <Content Include="cesar\browser\templates\browser\text_view.html" />
