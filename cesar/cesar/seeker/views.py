@@ -1707,6 +1707,9 @@ class ResearchPart42(ResearchPart):
                     if oData != None and 'type' in oData and oData['type'] == 'calc':
                         # Make sure we change the type
                         instance.type = "calc"
+                        if instance.function != None:
+                            # Remove the old function
+                            instance.function.delete()
                         # Be sure to get the correct gateway
                         gateway = self.obj.gateway
                         # Create the functions for this CVAR
@@ -1930,6 +1933,7 @@ class ResearchPart43(ResearchPart):
             else:
                 # THis is a function: check if the function definition has not changed
                 func_child = instance.functionparent.first()
+                # NOTE: the argument functiondef must equal the argument's function-child-functiondef
                 if func_child == None or instance.functiondef != func_child.functiondef:
                     # The function definition changed >> replace the child with a completely NEW version
                     # [1] remove the child

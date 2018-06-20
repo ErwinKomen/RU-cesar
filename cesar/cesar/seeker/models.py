@@ -1162,6 +1162,8 @@ class Function(models.Model):
                             # Bind that function to this argument
                             rel_func.parent = arg
                             rel_func.save()
+                            # Set the functiondef of the argument correctly
+                            arg.functiondef = rel_func.functiondef
                         else:
                             # TODO: there's a relation missing, but really
                             #       nothing we can do about it at this point, I suppose...
@@ -1594,6 +1596,8 @@ class Argument(models.Model):
     # [0-1] This argument may link to a Function (not its definition)
     function = models.ForeignKey("Function", null=True, related_name ="functionarguments")
     # [0-1] If a function is needed, we need to have a link to its definition
+    # NOTE: this is the definition of the function having function.parent = ME
+    #       get it by ME.functionparent.all().first().functiondef
     functiondef = models.ForeignKey(FunctionDef, null=True)
 
     def __str__(self):

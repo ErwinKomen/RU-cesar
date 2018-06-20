@@ -1218,7 +1218,7 @@ var ru = (function ($, ru) {
        * Assumptions:
        * - the [el] contains parameter  @targeturl
        * - there is a div 'import_progress'
-       * - there is a div 'id_file_source'
+       * - there is a div 'id_{{ftype}}-{{forloop.counter0}}-file_source'
        *
        */
       import_data: function (el) {
