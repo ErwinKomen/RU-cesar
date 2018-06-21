@@ -35,7 +35,50 @@
         <div class="row">
           <div class="col-md-12">
           <!-- The contents as a table -->
-          <table class="table table-hover research-list">
+          <table class="table table-hover">
+            <thead>
+              <tr><th>Name</th><th>Parent</th><th>Description</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for item in object_list %}
+                <tr class="function-item">
+                  <td class="hidden">{{item.id}}</td>
+                  <td><span class="research-item-name">{{item.name}}</span></td>
+                  <td>{% if item.parent %}{{item.parent.name}}{% else %}(top){% endif %}</td>
+                  <td style="width:100%"><span class="research-item-purpose">{{item.description}}</span></td>
+                  <td class="tdnowrap">
+                    <div class="part-buttons">
+                        <a title="details" 
+                           class="btn btn-success btn-xs" 
+                           onclick="ru.cesar.seeker.funcdefshow(this);">
+                          <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                        </a>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Provide a form row for further information -->
+                <tr class="function-details hidden">
+                  <td colspan="2">Structure:</td>
+                  <td colspan="2">
+                    <div>
+                      <table>
+                        {% for arg in item.arguments.all %}
+                        <tr>
+                          <td>{{forloop.counter}}</td>
+                          <td>
+                            <span>{{arg.text}}</span>
+                            <span><code>{{arg.name}}</code></span>
+                          </td>
+                          <td>{% if arg.obltype %}(type: <span class="function-arg-type">{{arg.get_obltype_display}}</span>){% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                      </table>
+                    </div>
+                  </td>
+                  <td></td>
+                </tr>
+              {% endfor %}
+            </tbody>
           </table>
           </div>
         </div>

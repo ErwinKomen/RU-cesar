@@ -537,6 +537,7 @@ var ru = (function ($, ru) {
             response = null,
             elWait = null,
             action = "",
+            openurl = "",
             callType = "";  // Type of element that calls us
 
         try {
@@ -550,6 +551,7 @@ var ru = (function ($, ru) {
           // obligatory parameter: ajaxurl
           var ajaxurl = $(this).attr("ajaxurl");
           var instanceid = $(this).attr("instanceid");
+          openurl = $(this).attr("openurl");
           var elStart = $(this);
           var bNew = (instanceid.toString() === "None");
           action = $(this).attr("action");
@@ -640,6 +642,10 @@ var ru = (function ($, ru) {
               ru.cesar.seeker.get_summary_show("", targeturl, instanceid);
               // Remove the save warning
               $('.save-warning').html("");
+              break;
+            case "openurl":
+              // Open the URL provided in attribute 'openurl'
+              window.location.href = openurl;
               break;
             default:
               // Indicate we are loading

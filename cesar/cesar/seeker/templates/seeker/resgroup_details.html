@@ -32,6 +32,8 @@
       <a class="btn btn-primary ajaxform"
               instanceid="{{resgroupForm.instance.id}}"
               openid="add_resgroup" 
+              action="openurl"
+              openurl="{% url 'sgroup_list' %}"
               ajaxurl="{% if object_id %}{% url 'sgroup' object_id %}{% else %}{% url 'sgroup' %}{% endif %}"
               data="">{% trans 'Save' %}</a>
     </div>

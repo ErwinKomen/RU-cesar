@@ -697,6 +697,11 @@ body > div > footer a {
   color: darkblue;
 }
 
+.function-item {
+  /* background-color: lightgoldenrodyellow; /* */
+  border-bottom: 1px solid lightgray;
+}
+
 table.err-view {
   border: 1px solid white;
   background-color: lightgray;
