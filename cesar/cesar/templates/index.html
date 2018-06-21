@@ -5,7 +5,16 @@
 
 <div class="container body-content">
   <div class="jumbotron" style="max-height: 180px;">
-      <h1>CESAR<span class="pull-right"><a href="{% url 'about' %}" class="btn btn-primary btn-large">Learn more &raquo;</a></span></h1>
+      <h1>
+        <span>CESAR</span>
+        <span class="pull-right">
+          {% if not user.is_authenticated %}
+            <a class="btn btn-default" href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a>
+            <a class="btn btn-default" href="{% url 'signup' %}">Sign up</a>
+          {% endif %}
+          <a href="{% url 'about' %}" class="btn btn-primary btn-large">Learn more &raquo;</a>
+        </span>
+      </h1>
       <p class="lead">
         <span>The Cesar web application provides a low-level way to do syntactic research in annotated text corpora.</span>
         
@@ -15,38 +24,33 @@
   <div class="row">
       <div class="col-md-6 bgimg">
           <h2>Latest news</h2>
-          <div class="newsitem">
-            <p>The Cesar back-end will be <u>down</u> in the Summer: <b>6/Jul/2018 - 30/Jul/2018.</b></p>
-            <p>Cesar itself will be running, but there are a number of things you won't be able to do:
-              <ul>
-                <li>Browsing: many texts will not be browsable. You will be able to see some, if they have been pre-loaded into the Cesar interface.</li>
-                <li>Syntax: viewing the syntax of sentences will not be possible.</li>
-                <li>Running: searches will not run, because the back-end is down.</li>
-                <li>Results: your stored results may be visible to some extent. Most of the results won't be visible, however.</li>
-              </ul>
-            </p>
-          </div>
-          <p>
-            {% if user.is_authenticated %}
-            (See the <b>Extra</b> menu for logout and other options)
-            {% else %}
-            <a class="btn btn-default" href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a>
-            <a class="btn btn-default" href="{% url 'signup' %}">Sign up</a>
-            {% endif %}
-          </p>
+          {% for item in newsitem_list %}
+            <div class="panel panel-default">
+              <div class="panel-heading collapsed" data-toggle="collapse" data-target="#news-item-{{item.id}}">
+                {{item.title}}
+              </div>
+              <div class="collapse newsitem" id="news-item-{{item.id}}">
+                {{item.msg|safe}}
+              </div>
+            </div>
+          {% endfor %}
       </div>
       <div class="col-md-6">
-          <h2>Getting started</h2>
-          <p>
-              The CESAR application has been designed by the Technical Service Group of the Humanities Lab at the Radboud University Nijmegen.
-            Any researcher is invited to <a role="button" class="btn btn-default btn-xs" href="{% url 'signup' %}">register</a> and maintain his or her own research projects.
-            Projects of one researcher are by default <i>not</i> visible to other researchers, but it is possible to specify a different accessibility level.
-          </p>
-      <img src="{% static  'browser/content/tree_example.png' %}"
-           alt="Syntactic structure of a sentence"
-           title="Syntactic structure of a sentence"
-           style="width:500px;z-index:-2" />
-
+        <h2>Getting started</h2>
+        <p>
+            The CESAR application has been designed by the Technical Service Group of the Humanities Lab at the Radboud University Nijmegen.
+          Any researcher is invited to <a role="button" class="btn btn-default btn-xs" href="{% url 'signup' %}">register</a> and maintain his or her own research projects.
+          Projects of one researcher are by default <i>not</i> visible to other researchers, but it is possible to specify a different accessibility level.
+        </p>
+        <img src="{% static  'browser/content/tree_example.png' %}"
+             alt="Syntactic structure of a sentence"
+             title="Syntactic structure of a sentence"
+             style="width:500px;z-index:-2" />
+        <p>
+          {% if user.is_authenticated %}
+          (See the <b>Extra</b> menu for logout and other options)
+          {% endif %}
+        </p>
       </div>
   </div>
 </div>

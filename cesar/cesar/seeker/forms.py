@@ -235,6 +235,7 @@ class CvarForm(ModelForm):
         self.fields['gvar'].required = False
         self.fields['function'].required = False
         self.fields['functiondef'].required = False
+        self.fields['file_source'].required = False
 
         # nOT SURE if this is needed:
         # self.fields['file_source'].required = False
@@ -349,6 +350,7 @@ class ArgumentForm(ModelForm):
 class ConditionForm(ModelForm):
     """The argument to a function"""
 
+    file_source = forms.FileField(label="Specify which file should be loaded")
     condtype = forms.ChoiceField(choices=SEARCH_CONDTYPE, required=True)
     targetid = "research_part_62"
     target = "62"
@@ -380,6 +382,7 @@ class ConditionForm(ModelForm):
         self.fields['function'].required = False
         self.fields['include'].required = False
         self.fields['functiondef'].required = False
+        self.fields['file_source'].required = False
         # Provide values for url_edit and url_new if possible
         if self.instance and self.instance != None and self.instance.id != None:
             self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})
@@ -392,6 +395,7 @@ class ConditionForm(ModelForm):
 class FeatureForm(ModelForm):
     """The argument to a function"""
 
+    file_source = forms.FileField(label="Specify which file should be loaded")
     feattype = forms.ChoiceField(choices=SEARCH_FEATTYPE, required=True)
     targetid = "research_part_72"
     target = "72"
@@ -425,6 +429,7 @@ class FeatureForm(ModelForm):
         self.fields['function'].required = False
         self.fields['include'].required = False
         self.fields['functiondef'].required = False
+        self.fields['file_source'].required = False
         # Provide values for url_edit and url_new if possible
         if self.instance and self.instance != None and self.instance.id != None:
             self.url_edit = reverse(self.targetid, kwargs={"object_id": self.instance.id})

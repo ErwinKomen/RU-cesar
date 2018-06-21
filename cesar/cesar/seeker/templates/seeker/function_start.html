@@ -2,7 +2,11 @@
 
     <!-- Allow the user to choose from pre-defined functions -->
     <span class="func-fundef arg-type">{{func_form.functiondef}}</span>
-    <span class="hidden">{{func_form.function}}</span>
+    <span class="hidden">
+      <input id="{{func_form.function.id_for_label}}" 
+             name="{{func_form.function.html_name}}" 
+             value="{% if func_form.function.value %}{{func_form.function.value}}{% endif %}" />
+    </span>
 
     <!-- Provide an Edit or Create button -->
     <span class="func-buttons">

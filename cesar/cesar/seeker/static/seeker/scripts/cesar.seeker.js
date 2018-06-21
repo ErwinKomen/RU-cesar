@@ -1081,15 +1081,19 @@ var ru = (function ($, ru) {
           var elfeattype = $(elType).find("select").first();
           // Get its value
           var elfeattypeVal = $(elfeattype).val();
+          // First hide everything
+          $(elVal).children("div").children("span").addClass("hidden");
+          $(elVal).children("div").children("div").addClass("hidden");
           // Hide/show, depending on the value
           switch (elfeattypeVal) {
             case "dvar": // Data-dependant variable
               $(elVal).find(".feat-dvar").removeClass("hidden");
-              $(elVal).find(".feat-expression").addClass("hidden");
               break;
             case "func": // Function
-              $(elVal).find(".feat-dvar").addClass("hidden");
               $(elVal).find(".feat-expression").removeClass("hidden");
+              break;
+            case "json":  // Upload JSON function definition
+              $(elVal).find(".feat-json").removeClass("hidden");
               break;
           }
         } catch (ex) {
@@ -1221,10 +1225,13 @@ var ru = (function ($, ru) {
        * - there is a div 'id_{{ftype}}-{{forloop.counter0}}-file_source'
        *
        */
-      import_data: function (el) {
+      import_data: function (sKey) {
         var frm = null,
             targeturl = "",
             fdata = null,
+            el = null,
+            elProg = null,    // Progress div
+            elErr = null,     // Error div
             data = null,
             xhr = null,
             files = null,
@@ -1238,6 +1245,11 @@ var ru = (function ($, ru) {
             sMsg = "";
 
         try {
+          // The element to use is the key + import_info
+          el = $("#" + sKey + "-import_info");
+          elProg = $("#" + sKey + "-import_progress");
+          elErr = $("#" + sKey + "-import_error");
+
           // Set the <div> to be used for waiting
           elWait = private_methods.waitInit(el);
 
@@ -1260,8 +1272,8 @@ var ru = (function ($, ru) {
           }
 
           // Show progress
-          $("#import_progress").attr("value", "0");
-          $("#import_progress").removeClass("hidden");
+          $(elProg).attr("value", "0");
+          $(elProg).removeClass("hidden");
           if (bDoLoad) {
             $(".save-warning").html("loading the definition..." + loc_sWaiting);
             $(".submit-row button").prop("disabled", true);
@@ -1308,30 +1320,35 @@ var ru = (function ($, ru) {
                               // Show the response in the appropriate location
                               $("#" + sTargetDiv).html(response.html);
                               $("#" + sTargetDiv).removeClass("hidden");
-                              // Make sure events are in place again
-                              ru.cesar.seeker.init_events();
-                              switch (sFtype) {
-                                case "cvar":
-                                  ru.cesar.seeker.init_cvar_events();
-                                  break;
-                                case "cond":
-                                  ru.cesar.seeker.init_cond_events();
-                                  break;
-                                case "feat":
-                                  ru.cesar.seeker.init_feat_events();
-                                  break;
-                              }
-                              // Indicate we are through with waiting
-                              private_methods.waitStop(elWait);
                               break;
                             default:
-                              // Show the error that has occurred
-                              if ("html" in response) { sMsg = response['html']; }
-                              if ("error_list" in response) { sMsg += response['error_list']; }
-                              // Show that the project has finished
-                              private_methods.errMsg("Execute error: " + sMsg);
+                              // Check how/what to show
+                              if ("err_view" in response) {
+                                private_methods.errMsg(response['err_view']);
+                              } else if ("error_list" in response) {
+                                private_methods.errMsg(response['error_list']);
+                              } else {
+                                // Just show the HTML
+                                $("#" + sTargetDiv).html(response.html);
+                                $("#" + sTargetDiv).removeClass("hidden");
+                              }
                               break;
                           }
+                          // Make sure events are in place again
+                          ru.cesar.seeker.init_events();
+                          switch (sFtype) {
+                            case "cvar":
+                              ru.cesar.seeker.init_cvar_events();
+                              break;
+                            case "cond":
+                              ru.cesar.seeker.init_cond_events();
+                              break;
+                            case "feat":
+                              ru.cesar.seeker.init_feat_events();
+                              break;
+                          }
+                          // Indicate we are through with waiting
+                          private_methods.waitStop(elWait);
                         }
                       });
                     } else {
@@ -1343,11 +1360,34 @@ var ru = (function ($, ru) {
                     }
                     break;
                   default:
-                    // Show the error that has occurred
-                    if ("html" in response) { sMsg = response['html']; }
-                    if ("error_list" in response) { sMsg += response['error_list']; }
-                    // Show that the project has finished
-                    private_methods.errMsg("Execute error: " + sMsg);
+                    // Check WHAT to show
+                    sMsg = "General error (unspecified)";
+                    if ("err_view" in response) {
+                      sMsg = response['err_view'];
+                    } else if ("error_list" in response) {
+                      sMsg = response['error_list'];
+                    } else {
+                      // Indicate that the status is not okay
+                      sMsg = "Status is not good. It is: " + response.status;
+                    }
+                    // Show the message at the appropriate location
+                    $(elErr).html("<div class='error'>" + sMsg + "</div>");
+                    // Make sure events are in place again
+                    ru.cesar.seeker.init_events();
+                    switch (sFtype) {
+                      case "cvar":
+                        ru.cesar.seeker.init_cvar_events();
+                        break;
+                      case "cond":
+                        ru.cesar.seeker.init_cond_events();
+                        break;
+                      case "feat":
+                        ru.cesar.seeker.init_feat_events();
+                        break;
+                    }
+                    // Indicate we are through with waiting
+                    private_methods.waitStop(elWait);
+                    $(".save-warning").html("(not saved)");
                     break;
                 }
               }
@@ -1355,11 +1395,11 @@ var ru = (function ($, ru) {
             }, function (progress, value) {
               // Show  progress of uploading to the user
               console.log(progress);
-              $("#import_progress").val(value);
+              $(elProg).val(value);
             }
           );
           // Hide progress after some time
-          setTimeout(function () { $("#import_progress").addClass("hidden"); }, 1000);
+          setTimeout(function () { $(elProg).addClass("hidden"); }, 1000);
 
           // Indicate waiting can stop
           private_methods.waitStop(elWait);

@@ -297,3 +297,6 @@ ModelManifest.xml
 /cesar/cesar/seeker/migrations
 /cesar/static
 /cesar/cesar/seeker/__pycache__
+/cesar/cesar/viewer/migrations/__pycache__
+/cesar/cesar/viewer/migrations
+/cesar/cesar/viewer/__pycache__

@@ -72,9 +72,15 @@
     <Compile Include="cesar\utils.py" />
     <Compile Include="cesar\viewer\admin.py" />
     <Compile Include="cesar\viewer\apps.py" />
+    <Compile Include="cesar\viewer\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\viewer\models.py" />
     <Compile Include="cesar\viewer\tests.py" />
     <Compile Include="cesar\viewer\views.py" />
+    <Compile Include="cesar\viewer\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="manage.py" />
     <Compile Include="cesar\__init__.py" />
     <Compile Include="cesar\settings.py" />

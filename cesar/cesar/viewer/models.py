@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 from datetime import datetime
 from cesar.settings import APP_PREFIX
 from cesar.browser.models import *
+from cesar.seeker.models import get_crpp_date
+
 import sys
 import copy
 import json
@@ -15,6 +17,7 @@ import json
 MAX_IDENTIFIER_LEN = 10
 MAX_TEXT_LEN = 200
 
+VIEW_STATUS = "view.status"
 
 class ResultSet(models.Model):
     """The general section of a corpus research project result database"""
@@ -85,3 +88,25 @@ class Result(models.Model):
             return None
         else:
             return qs[0]
+
+
+class NewsItem(models.Model):
+    """A news-item that can be displayed for a limited time"""
+
+    # [1] title of this news-item
+    title = models.CharField("Title",  max_length=MAX_TEXT_LEN)
+    # [1] the date when this item was created
+    created = models.DateTimeField(default=datetime.now)
+    # [0-1] optional time after which this should not be shown anymore
+    until = models.DateTimeField("Remove at", null=True, blank=True)
+    # [1] the message that needs to be shown (in html)
+    msg = models.TextField("Message")
+    # [1] the status of this message (can e.g. be 'archived')
+    status = models.CharField("Status", choices=build_abbr_list(VIEW_STATUS), 
+                              max_length=5, help_text=get_help(VIEW_STATUS))
+
+    def __str__(self):
+        # A news item is the tile and the created
+        sDate = get_crpp_date(self.created)
+        sItem = "{}-{}".format(self.title, sDate)
+        return sItem

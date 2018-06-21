@@ -756,10 +756,10 @@ class ResearchExe(View):
                             oBack['name'] = "{}-{}".format(self.obj.root.construction.name, self.obj.root.variable.name)
                         elif self.obj.rootcond != None:
                             oBack = self.obj.rootcond.get_json()
-                            oBack['name'] = "{}-{}".format(self.obj.rootcond.name)
+                            oBack['name'] = "{}".format(self.obj.rootcond.name)
                         elif self.obj.rootfeat != None:
                             oBack = self.obj.rootfeat.get_json()
-                            oBack['name'] = "{}-{}".format(self.obj.rootfeat.name)
+                            oBack['name'] = "{}".format(self.obj.rootfeat.name)
                         else:
                             oBack['status'] = "error"
                             if not 'msg' in oBack:
@@ -1203,12 +1203,20 @@ class ResearchPart(View):
             context['requestuser'] = request.user
 
             # Get the HTML response
-            if len(self.arErr) > 0 and self.template_err_view != None:
-                 # Create a list of errors
-                self.data['err_view'] = render_to_string(self.template_err_view, context, request)
+            if len(self.arErr) > 0:
+                if self.template_err_view != None:
+                     # Create a list of errors
+                    self.data['err_view'] = render_to_string(self.template_err_view, context, request)
+                else:
+                    self.data['error_list'] = error_list
                 self.data['html'] = ''
             else:
+                # In this case reset the errors - they should be shown within the template
                 self.data['html'] = render_to_string(self.template_name, context, request)
+            # At any rate: empty the error basket
+            self.arErr = []
+            error_list = []
+
         else:
             self.data['html'] = "Please log in before continuing"
 
@@ -1216,6 +1224,7 @@ class ResearchPart(View):
         return JsonResponse(self.data)
         
     def get(self, request, object_id=None): 
+        self.data['status'] = 'ok'
         # Perform the initializations that need to be made anyway
         self.initializations(request, object_id)
         if self.checkAuthentication(request):
@@ -2209,6 +2218,43 @@ class ResearchPart6(ResearchPart):
                     instance.function = Function.create(instance.functiondef, None, instance, None)
                     # Indicate that changes have been made and saving of 'instance' is needed
                     has_changed = True
+            elif instance.condtype == "json":
+                # We are uploading a function: get the JSON contents
+                if 'file_source' in form.cleaned_data:
+                    data_file = form.cleaned_data["file_source"]
+                    oData = import_data_file(data_file, self.arErr)
+                    # Check the top layer
+                    if oData != None and 'type' in oData and oData['type'] == 'func':
+                        # If the instance is not yet made, it needs to be saved before we continue
+                        if instance.id == None:
+                            instance.save()
+                        # Make sure we change the type
+                        instance.condtype = "func"
+                        if instance.function != None:
+                            # Remove the old function
+                            instance.function.delete()
+                        # Be sure to get the correct gateway
+                        gateway = self.obj.gateway
+                        # Create the functions for this CVAR
+                        func_main = Function.create_from_list(oData['value'], gateway, "cvar", None, instance, None)
+                        # Double check if a function has been made
+                        if func_main == None:
+                            # No function made - return error
+                            self.arErr.append("For some reason no condition-function was created")
+                            return False                              
+                        else:
+                            # At least save the function
+                            func_main.save()
+                            instance.function = func_main
+                            instance.functiondef = func_main.functiondef
+                            # Indicate that changes have been made
+                            has_changed = True
+                            # Check this function: its return type should be BOOLEAN
+                            func_out_type = func_main.get_outputtype()
+                            if not arg_matches('bool', func_out_type):
+                                # Not a boolean output type -- pass on this message
+                                self.arErr.append("The selected function has a <b>{}</b> output. What is needed for a condition is a <b>Boolean</b> output.".format(func_out_type))  
+
             # Retrieve the 'order' field
             if instance.order != form.cleaned_data['ORDER']:
                 if form.cleaned_data['ORDER'] == None:
@@ -2635,6 +2681,42 @@ class ResearchPart7(ResearchPart):
                     instance.function = Function.create(instance.functiondef, None, None, None, instance)
                     # Indicate that changes have been made and saving of 'instance' is needed
                     has_changed = True
+            elif instance.feattype == "json":
+                # We are uploading a function: get the JSON contents
+                if 'file_source' in form.cleaned_data:
+                    data_file = form.cleaned_data["file_source"]
+                    oData = import_data_file(data_file, self.arErr)
+                    # Check the top layer
+                    if oData != None and 'type' in oData and oData['type'] == 'func':
+                        # If the instance is not yet made, it needs to be saved before we continue
+                        if instance.id == None:
+                            instance.save()
+                        # Make sure we change the type
+                        instance.feattype = "func"
+                        if instance.function != None:
+                            # Remove the old function
+                            instance.function.delete()
+                        # Be sure to get the correct gateway
+                        gateway = self.obj.gateway
+                        # Create the functions for this CVAR
+                        func_main = Function.create_from_list(oData['value'], gateway, "feat", None, None, instance)
+                        # Double check if a function has been made
+                        if func_main == None:
+                            # No function made - return error
+                            self.arErr.append("For some reason no feature-function was created")
+                            return False                              
+                        else:
+                            # At least save the function
+                            func_main.save()
+                            instance.function = func_main
+                            instance.functiondef = func_main.functiondef
+                            # Indicate that changes have been made
+                            has_changed = True
+                            # Check the output type
+                            func_out_type = func_main.get_outputtype()
+                            if not arg_matches('str', func_out_type):
+                                self.arErr.append("The output type of the imported function should be string (or int or bool)")
+
             # Retrieve the 'order' field
             if instance.order != form.cleaned_data['ORDER']:
                 if form.cleaned_data['ORDER'] == None:

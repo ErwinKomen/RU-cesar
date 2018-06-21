@@ -24,6 +24,7 @@ from cesar.browser.services import *
 from cesar.browser.models import *
 from cesar.browser.forms import *
 from cesar.utils import ErrHandle
+from cesar.viewer.models import NewsItem
 import fnmatch
 import sys
 import base64
@@ -142,17 +143,20 @@ def adapt_htable(oHtable):
 
 def home(request):
     """Renders the home page."""
+
     assert isinstance(request, HttpRequest)
-    return render(
-        request,
-        'index.html',
-        {
-            'title':'RU-Cesar',
-            'year':datetime.now().year,
-            'pfx': APP_PREFIX,
-            'site_url': admin.site.site_url,
-        }
-    )
+    # Specify the template
+    template_name = 'index.html'
+    # Define the initial context
+    context =  {'title':'RU-Cesar','year':datetime.now().year,
+            'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+    # Create the list of news-items
+    lstQ = []
+    lstQ.append(Q(status='val'))
+    newsitem_list = NewsItem.objects.filter(*lstQ).order_by('-created')
+    context['newsitem_list'] = newsitem_list
+    # Render and return the page
+    return render(request, template_name, context)
 
 def contact(request):
     """Renders the contact page."""
