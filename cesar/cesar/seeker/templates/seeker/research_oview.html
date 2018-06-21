@@ -19,17 +19,27 @@
         <div class="row">
           <h3>Project information</h3>
           <table>
-            <tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top'>{{original.purpose}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Main search:</td><td valign='top'>{{original.get_targetType_display}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Created:</td><td valign='top'>{{original.created}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Saved:</td><td valign='top'>{{original.saved}}</td></tr>
-            <tr><td valign='top' class='tdnowrap'>Shared with:</td>
+            <tr><td valign='top' class='tdnowrap'>Purpose:</td><td valign='top' colspan="5">{{original.purpose}}</td></tr>
+            <tr>
+              <td valign='top' class='tdnowrap'>Main search:</td>
+              <td valign='top'>{{original.get_targetType_display}}</td>
+              <td valign='top' class='tdnowrap'>Created:</td>
+              <td valign='top'>{{original.created}}</td>
+              <td valign='top' class='tdnowrap'>Saved:</td>
+              <td valign='top'>{{original.saved}}</td>
+            </tr>
+            <tr>
+              <td valign='top' class='tdnowrap'>Shared with:</td>
               <td valign='top'>
                 {% if original.sharegroups.all %}
                   {% for share in original.sharegroups.all %}
                     {{share.group.name}} ({{share.get_permission_display}})
                   {% endfor %}
                 {% else %}(none){% endif %}
+              </td>
+              <td valign="top" class="tdnowrap">Project group:</td>
+              <td valign="top" class="tdnowrap" colspan="3">
+                -
               </td>
             </tr>
           </table>

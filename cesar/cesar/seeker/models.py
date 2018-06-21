@@ -2740,6 +2740,22 @@ class SearchItem(models.Model):
         return self.name
 
 
+class ResGroup(models.Model):
+    """A group can consist of a number of Research projects"""
+
+    # [1] Name of the group of research projects this belongs to
+    name = models.CharField("Research project group", max_length=MAX_TEXT_LEN)
+    # [1] Description of this group
+    description = models.TextField("Description", default="-")
+    # [1] Each research group has its owner: obligatory, but not to be selected by the user himself
+    owner = models.ForeignKey(User, editable=False)
+    # [0-1] Each group may be part of another group
+    parent = models.ForeignKey("ResGroup", null=True, blank=True, related_name="parentgroup")
+
+    def __str__(self):
+        return self.name
+
+
 class Research(models.Model):
     """Main entry for a research project"""
 
@@ -2757,6 +2773,8 @@ class Research(models.Model):
     # [0-1] create date and lastsave date
     created = models.DateTimeField(default=timezone.now)
     saved = models.DateTimeField(null=True, blank=True)
+    # [0-1] A research project can optionally belong to a group
+    group = models.ForeignKey(ResGroup, null=True, blank=True, related_name="childresearch")
 
     def __str__(self):
         return self.name

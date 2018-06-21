@@ -1350,6 +1350,63 @@ class ResearchPart(View):
         pass
 
 
+class ResGroupList(ListView):
+    model = ResGroup
+    template_name = 'seeker/resgroup_list.html'
+
+    def render_to_response(self, context, **response_kwargs):
+        currentuser = self.request.user
+        context['authenticated'] = currentuser.is_authenticated()
+        # Make sure the correct URL is being displayed
+        return super(ResGroupList, self).render_to_response(context, **response_kwargs)
+
+
+class ResGroupDetails(ResearchPart):
+    template_name = 'seeker/resgroup_details.html'
+    MainModel = ResGroup
+    form_objects = [{'form': SeekerResGroupForm, 'prefix': 'resgroup', 'readonly': False}]
+           
+    def before_save(self, prefix, request, instance=None, form=None):
+        has_changed = False
+        if prefix == 'resgroup':
+            resgroup = None
+            for formObj in self.form_objects:
+                if formObj['prefix'] == 'resgroup': resgroup = formObj['instance']
+            if resgroup != None:
+                # Check for the owner
+                if resgroup.owner_id == None:
+                    resgroup.owner = request.user
+                    has_changed = True
+        # Set the 'saved' one
+        if has_changed and self.obj != None:
+            self.obj.save()
+        return has_changed
+
+    def add_to_context(self, context):
+
+        # Look at the object_id
+        if context['object_id'] == None:
+            if self.obj != None:
+                context['object_id'] = "{}".format(self.obj.id)
+
+        # Figure out the owner
+        if self.obj == None:
+            currentowner = self.request.user.username
+        else:
+            currentowner = self.obj.owner
+        context['currentowner'] = currentowner
+
+        # Set the list of groups *EXCLUDING* myself
+        if self.obj == None:
+            parent_list = []
+        else:
+            parent_list = ResGroup.objects.exclude(id=self.obj.id).order_by('name')
+        context['parent_list'] = parent_list
+
+        # Return the context we have adapted
+        return context
+
+
 class ResearchPart1(ResearchPart):
     template_name = 'seeker/research_part_1.html'
     MainModel = Research
@@ -1380,13 +1437,15 @@ class ResearchPart1(ResearchPart):
                 if formObj['prefix'] == 'gateway': gateway = formObj['instance']
                 if formObj['prefix'] == 'research': research = formObj['instance']
             if research != None:
-                research.gateway = gateway
-                has_changed = True
+                if research.gateway == None:
+                    research.gateway = gateway
+                    has_changed = True
                 # Check for the owner
                 if research.owner_id == None:
                     research.owner = request.user
+                    has_changed = True
         # Set the 'saved' one
-        if self.obj != None:
+        if has_changed and self.obj != None:
             self.obj.save()
         return has_changed
 

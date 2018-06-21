@@ -8,16 +8,25 @@
       <p><b>About:</b> Provide essential information on this search project.</p>
       </div>
       <table>
-        <tr><td>Project name:</td><td>{{researchForm.name}}</td></tr>
-        <tr><td>Purpose:</td><td>{{researchForm.purpose}}</td></tr>
-        <tr><td>Main element type:</td><td>{{researchForm.targetType}}</td></tr>
-        <tr><td>Created:</td><td>{% if researchForm.instance.created %}{{researchForm.instance.created|date:"j/b/o G:i" }}{% else %}-{% endif %}</td></tr>
-        <tr><td>Last saved:</td><td>{% if researchForm.instance.saved %}{{researchForm.instance.saved|date:"j/b/o G:i" }}{% else %}-{% endif %}</td></tr>
+        <tr><td>Project name:</td><td colspan="3">{{researchForm.name}}</td></tr>
+        <tr><td valign="top">Purpose:</td><td valign="top" colspan="3">{{researchForm.purpose}}</td></tr>
+        <tr>
+          <td>Main element type:</td>
+          <td>{{researchForm.targetType}}</td>
+          <td>Research project group:</td>
+          <td>{{researchForm.group}}</td>
+        </tr>
+        <tr>
+          <td>Created:</td>
+          <td>{% if researchForm.instance.created %}{{researchForm.instance.created|date:"j/b/o G:i" }}{% else %}-{% endif %}</td>
+          <td>Last saved:</td>
+          <td>{% if researchForm.instance.saved %}{{researchForm.instance.saved|date:"j/b/o G:i" }}{% else %}-{% endif %}</td>
+        </tr>
       </table>
 
       <!-- GATEWAY specification is hidden -->
       <div id="research_gateway" class="hidden">
-          {{gatewayForm}}
+        {{gatewayForm}}
         {{gatewayForm.id}}
       </div>
 

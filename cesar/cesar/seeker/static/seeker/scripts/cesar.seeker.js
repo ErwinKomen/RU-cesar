@@ -3198,6 +3198,51 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * load_form
+       *   Clicking an ADD button leads to this function to load a new form
+       *
+       */
+      load_form: function (elThis) {
+        var elGroup = null,
+            elTarget = null,
+            targeturl = "",
+            sStatus = "";
+
+        try {
+          // Get the target to be opened
+          elTarget = $(elThis).attr("targetid");
+          targeturl = $(elThis).attr("targeturl");
+          // Sanity check
+          if (elTarget !== null && targeturl !== "") {
+            // Show it if needed
+            if ($("#" + elTarget).hasClass("hidden")) {
+              // Load a form
+              $.get(targeturl, function (response) {
+                if (response !== undefined && response !== "" && 'status' in response) {
+                  switch (response['status']) {
+                    case "ok":
+                      $("#"+elTarget).html(response['html']);
+                      break;
+                    default:
+                      break;
+                  }
+                }
+                // Show the form
+                $("#" + elTarget).removeClass("hidden");
+                // Make sure events are active again
+                ru.cesar.seeker.init_events();
+              });
+
+            } else {
+              $("#" + elTarget).addClass("hidden");
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("load_form", ex);
+        }
+      },
+
+      /**
        * toggle_click
        *   Action when user clicks an element that requires toggling a target
        *

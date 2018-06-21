@@ -62,6 +62,9 @@ urlpatterns = [
     url(r'^seek/result/kwic/list/(?P<object_id>\d+)/$', KwicListView.as_view(), name='kwic_list'),
     url(r'^seek/result/quantor/(?P<object_id>\d+)/$', QuantorListView.as_view(), name='result_docs'),
 
+    url(r'^seek/sgroup/list/$', ResGroupList.as_view(), name='sgroup_list'),
+    url(r'^seek/sgroup(?:/(?P<object_id>\d+))?/$', ResGroupDetails.as_view(), name='sgroup'),
+
     url(r'^seek/result/list/$', ResultListView.as_view(), name='result_list'),
     url(r'^seek/result/(?P<pk>\d+)/$', ResultDetailView.as_view(), name='result_details'),
     url(r'^seek/result/docs/(?P<object_id>\d+)/$', ResultPart1.as_view(), name='result_part_1'),

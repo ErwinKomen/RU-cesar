@@ -447,7 +447,7 @@ class SeekerResearchForm(ModelForm):
     #   but exclude the one-to-one 'gateway' link
     class Meta:
         model = Research
-        fields = ['name', 'purpose', 'targetType']
+        fields = ['name', 'purpose', 'targetType', 'group']
         widgets={
           'purpose': SeekerTextarea(attrs={'rows': 1, 'cols': 100, 'style': 'height: 30px;'})
           }
@@ -460,6 +460,16 @@ class SeekerResearchForm(ModelForm):
         #if not self.gateway_form.is_valid():
         #    return False
         return super(SeekerResearchForm, self).is_valid()
+
+
+class SeekerResGroupForm(ModelForm):
+    class Meta:
+        model = ResGroup
+        fields = ['name', 'description', 'parent']
+        widgets={
+          'description': SeekerTextarea(attrs={'rows': 1, 'cols': 100, 'style': 'height: 30px;'})
+          }
+
 
 class SharegForm(ModelForm):
     # A research form should also have the Word/Constituent choice
