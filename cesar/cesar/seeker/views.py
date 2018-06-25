@@ -452,9 +452,52 @@ class SeekerListView(ListView):
                                    "may_read":may_read,
                                    "may_write": may_write,
                                    "may_delete": may_delete})
+
+            # Provide a list of projects divided into ResGroup items
+            resgroup_list = []
+            # First: get all the users that have shared a group with me
+            qs = Research.objects.exclude(*lstQ).order_by(Lower('owner'), 'group', 'name')
+            sUser = ""
+            sGroup = ""
+            max_depth = 0
+            parent = 1
+            prj_list = []
+            for idx, res_item in enumerate(qs):
+                nodeid = idx+2
+                if sUser != res_item.owner.username:
+                    sUser = res_item.owner.username
+                    # Change in group
+                    oGrp = {'group': sUser, 'prj_list': []}
+                    parent = 1
+                elif res_item.group != sGroup:
+                    if res_item.group == None:
+                        sGroup = ""
+                    else:
+                        sGroup = res_item.group.name
+                    oGrp = {'group': sGroup, 'prj_list': []}
+                    # change of group: parent is first item of this user
+                    lGrp = [x for x in resgroup_list if x['group'] == sUser]
+                    parent = lGrp[0]['nodeid']
+                else:
+                    sGroup = oGrp['group']
+                    oGrp = {'group': sGroup, 'prj_list': []}
+                    # NOTE: the parent doesn't change
+                # add this research to the project list
+                oGrp['prj_list'].append(res_item)
+                oGrp['nodeid'] = nodeid
+                oGrp['childof'] = parent
+                # Get and add the depth
+                depth = res_item.group_depth()
+                oGrp['depth'] = depth
+                if depth > max_depth:
+                    max_depth = depth
+                # Add group to list
+                resgroup_list.append(oGrp)
         else:
             combi_list = []
             research_list = []
+            resgroup_list = []
+            max_depth = 0
             authenticated = False
 
         # Wrap up the context
@@ -463,6 +506,9 @@ class SeekerListView(ListView):
         context['object_list'] = research_list
         context['import_form'] = UploadFileForm()
         context['authenticated'] = authenticated
+        context['resgroups'] = resgroup_list
+        context['max_depth'] = max_depth
+
         # Make sure the correct URL is being displayed
         return super(SeekerListView, self).render_to_response(context, **response_kwargs)
 

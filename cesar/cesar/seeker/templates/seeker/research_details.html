@@ -51,7 +51,7 @@
                 </td>
                 <td valign="top" class="tdnowrap">Project group:</td>
                 <td valign="top" class="tdnowrap" colspan="3">
-                  -
+                  {% if original.group %}{{original.group}}{% else %}(none){% endif %}
                 </td>
               </tr>
             </table>

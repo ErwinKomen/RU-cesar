@@ -2779,6 +2779,25 @@ class Research(models.Model):
     def __str__(self):
         return self.name
 
+    def group_parent(self):
+        """Get the parent of the group I belong to """
+        if self.group == None or self.group.parent == None:
+            return None
+        else:
+            return self.group.parent.name
+
+    def group_depth(self):
+        """Get the amount of parents above me"""
+
+        depth = 0
+        item = self.group
+        while item != None:
+            depth += 1
+            item = item.parent
+        # Return the depth we found
+        return depth
+
+
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Adapt the save date
       # self.saved = datetime.now()

@@ -73,6 +73,28 @@
       <!-- Room for errors -->
       <div id="research_err" class="row"></div>
 
+      <!-- Hierarchical list of projects -->
+      {% if resgroups and resgroups|length > 0 %}
+        <table class="func-view">
+          <thead>
+            <tr>
+              <th>
+                <span class="func-name">Search groups</span>
+                <span class="func-link pull-right">
+                  <a class="btn btn-xs btn-default func-plus" role="button" title="view all"
+                     onclick="ru.cesar.seeker.funchead_click(this, 'func-inline');">+</a>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for grp in resgroups %}
+
+          {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
       <!-- The actual list of projects -->
       <div class="row">
         <div class="col-md-12">
