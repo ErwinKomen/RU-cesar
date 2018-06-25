@@ -21,6 +21,8 @@ SEARCHMAIN_CNS_FUNCTIONS = (
         ('c--m', 'Child category matches'),
     )
 
+rAlphaNumeric = re.compile(r"^[0-9a-zA-Z_]*$")
+
 def init_choices(obj, sFieldName, sSet, maybe_empty=False, bUseAbbr=False):
     if (obj.fields != None and sFieldName in obj.fields):
         if bUseAbbr:
@@ -437,6 +439,16 @@ class FeatureForm(ModelForm):
             self.url_table = reverse(self.tableid, kwargs={"object_id": self.instance.id})
         # THe url for new can always be given
         self.url_new = reverse(self.targetid)
+
+    def clean_name(self):
+        """Check the 'name' field"""
+
+        sName = self.cleaned_data['name']
+        # Allow only alphanumeric and underscore
+        if not rAlphaNumeric.match(sName):
+            raise forms.ValidationError("The name of a feature must be alphanumeric")
+
+        return sName
 
 
 class SeekerResearchForm(ModelForm):

@@ -612,9 +612,20 @@ var ru = (function ($, ru) {
             // Do we have an 'err_view' html contents?
             if ('err_view' in response && elErr !== null) {
               $(elErr).html(response.err_view);
-            } else {
+            } else if (response.html !== "") {
               // Yes, show the resulting form with the errors
               $(elOpen).html(response.html);
+            } else {
+              // There is an error, but it is not inside the HTML part
+              if ('error_list' in response) {
+                if (elErr !== null) {
+                  $(elErr).html(response['error_list'].join("<br>"));
+                }
+              } else if (elErr !== null) {
+                $(elErr).html("There is an error, but the nature of this error is not clear.");
+              } else {
+                private_methods.errMsg("There is an error, but the nature of this error is not clear.");
+              }
             }
             // Make sure events are set again
             ru.cesar.seeker.init_events();

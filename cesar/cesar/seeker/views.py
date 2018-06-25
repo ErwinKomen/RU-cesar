@@ -1078,9 +1078,17 @@ class ResearchPart(View):
                                             self.arErr.append(form.errors)
                         else:
                             # Iterate over all errors
-                            for err_this in formset.errors:
+                            for idx, err_this in enumerate(formset.errors):
                                 if '__all__' in err_this:
                                     self.arErr.append(err_this['__all__'][0])
+                                elif err_this != {}:
+                                    # There is an error in item # [idx+1], field 
+                                    problem = err_this 
+                                    for k,v in err_this.items():
+                                        fieldName = k
+                                        errmsg = "Item #{} has an error at field [{}]: {}".format(idx+1, k, v[0])
+                                        self.arErr.append(errmsg)
+
                             # self.arErr.append(formset.errors)
                     # Add the formset to the context
                     context[prefix + "_formset"] = formset
