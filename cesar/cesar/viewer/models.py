@@ -97,6 +97,7 @@ class NewsItem(models.Model):
     title = models.CharField("Title",  max_length=MAX_TEXT_LEN)
     # [1] the date when this item was created
     created = models.DateTimeField(default=datetime.now)
+    saved = models.DateTimeField(null=True, blank=True)
     # [0-1] optional time after which this should not be shown anymore
     until = models.DateTimeField("Remove at", null=True, blank=True)
     # [1] the message that needs to be shown (in html)
@@ -110,3 +111,10 @@ class NewsItem(models.Model):
         sDate = get_crpp_date(self.created)
         sItem = "{}-{}".format(self.title, sDate)
         return sItem
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+      # Adapt the save date
+      self.saved = datetime.now()
+      response = super(NewsItem, self).save(force_insert, force_update, using, update_fields)
+      return response
+

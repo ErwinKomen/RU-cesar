@@ -27,7 +27,14 @@
           {% for item in newsitem_list %}
             <div class="panel panel-default">
               <div class="panel-heading collapsed" data-toggle="collapse" data-target="#news-item-{{item.id}}">
-                {{item.title}}
+                <span>{{item.title}}</span>
+                <span class="pull-right" style="font-size: smaller;">
+                  {% if item.saved %}
+                    <i>{{item.saved|date:"j/b/o"}}</i>
+                  {% else %}
+                    <i>{{item.created|date:"j/b/o"}}</i>
+                  {% endif %}
+                </span>
               </div>
               <div class="collapse newsitem" id="news-item-{{item.id}}">
                 {{item.msg|safe}}

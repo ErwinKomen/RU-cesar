@@ -394,6 +394,10 @@ svg g.lithium-node:hover > text {
 .td-textarea {
     font-family: monospace;
 }
+.mytextarea {
+  font-family: monospace;
+  color: darkblue;
+}
 
 .arg-type select {
     font-size: 11px;

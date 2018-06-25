@@ -153,7 +153,7 @@ def home(request):
     # Create the list of news-items
     lstQ = []
     lstQ.append(Q(status='val'))
-    newsitem_list = NewsItem.objects.filter(*lstQ).order_by('-created')
+    newsitem_list = NewsItem.objects.filter(*lstQ).order_by('-saved', '-created')
     context['newsitem_list'] = newsitem_list
     # Render and return the page
     return render(request, template_name, context)
