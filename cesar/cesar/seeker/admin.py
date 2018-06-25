@@ -20,8 +20,9 @@ class ShareGroupInline(admin.TabularInline):
 class ResearchAdmin(admin.ModelAdmin):
     """Displaying [Research]"""
 
-    list_display = ['name', 'purpose', 'gateway_name']
-    search_fields = ['name', 'purpose', 'gateway_name']
+    list_display = ['name', 'owner', 'created', 'saved', 'purpose', 'gateway_name']
+    search_fields = ['name', 'owner', 'purpose', 'gateway_name']
+    list_filter = ['owner']
     # inlines = [ConstructionInline]
     inlines = [ShareGroupInline]
     formfield_overrides = {
