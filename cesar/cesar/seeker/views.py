@@ -455,50 +455,96 @@ class SeekerListView(ListView):
 
             # Provide a list of projects divided into ResGroup items
             resgroup_list = []
-            # First: get all the users that have shared a group with me
-            qs = Research.objects.exclude(*lstQ).order_by(Lower('owner'), 'group', 'name')
+            # Check who I am
+            sCurrentUser = currentuser.username
+            # Get an ordered list of ordered projects for the current user
+            #qs_owner = Research.objects.filter(Q(owner=currentuser)).order_by('group', 'name')
+            # Get a list of the ID-values of other users
+            qs_users = Research.objects.exclude(Q(owner=currentuser)).order_by(Lower('owner__username')).distinct().values('owner')
+            # Create a list of user-ids, starting from the currentuser
+            user_list = []
+            user_list.append(User.objects.filter(Q(username=sCurrentUser)).first().id)
+            # Now append the other user id's
+            for usr in qs_users:
+                user_list.append(usr['owner'])
+
             sUser = ""
             sGroup = ""
             max_depth = 0
-            parent = 1
+            parent = 1      # Parent '1' means the root of all
+            nodeid = 1
             prj_list = []
-            for idx, res_item in enumerate(qs):
-                nodeid = idx+2
-                if sUser != res_item.owner.username:
-                    sUser = res_item.owner.username
-                    # Change in group
-                    oGrp = {'group': sUser, 'prj_list': []}
-                    parent = 1
-                elif res_item.group != sGroup:
-                    if res_item.group == None:
-                        sGroup = ""
-                    else:
-                        sGroup = res_item.group.name
-                    oGrp = {'group': sGroup, 'prj_list': []}
-                    # change of group: parent is first item of this user
-                    lGrp = [x for x in resgroup_list if x['group'] == sUser]
-                    parent = lGrp[0]['nodeid']
-                else:
-                    sGroup = oGrp['group']
-                    oGrp = {'group': sGroup, 'prj_list': []}
-                    # NOTE: the parent doesn't change
-                # add this research to the project list
-                oGrp['prj_list'].append(res_item)
-                oGrp['nodeid'] = nodeid
-                oGrp['childof'] = parent
-                # Get and add the depth
-                depth = res_item.group_depth()
-                oGrp['depth'] = depth
-                if depth > max_depth:
-                    max_depth = depth
-                # Add group to list
+
+            # Process in the order of users
+            for user_id in user_list:
+                # Get all the projects of this user in an ordered way
+                qs = Research.objects.filter(Q(owner__id=user_id)).order_by(Lower('group'), Lower( 'name'))
+                # Get the name of the user
+                sUser = User.objects.filter(Q(id=user_id)).first().username
+                # Set parameters for this user
+                nodeid += 1
+                parent = 1
+                groupid = nodeid
+                sGroup = ""
+                # Create a group for this user
+                oGrp = {'group': sUser, 
+                        'prj': None,
+                        'nodeid': nodeid,
+                        'childof': parent,
+                        'depth': 1 }
+                oGrp['minwidth'] = (oGrp['depth']-1) * 20
+                # Add USER-level as group to list
                 resgroup_list.append(oGrp)
+
+                # Set the new parent: the user-group
+                parent = groupid
+
+                # Walk through the projects of this user
+                for res_item in qs:
+                    # Each research project is a new item
+                    nodeid += 1
+                    # Get and add the depth
+                    depth = res_item.group_depth() + 2
+                    if depth > max_depth:
+                        max_depth = depth
+                    # What group does this research project belong to?
+                    sResItemGroup = "" if res_item.group == None else res_item.group.name
+                    # Is the group staying the same?
+                    if sResItemGroup != sGroup:
+                        # Keep track of the current group
+                        sGroup = sResItemGroup
+                        # Determine what to show
+                        sGroupOrUser = sGroup if sGroup != "" else sUser
+                        oGrp = {'group': sGroupOrUser, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
+                        oGrp['minwidth'] = (oGrp['depth']-2) * 20
+                        # Add group to list
+                        resgroup_list.append(oGrp)
+                        # Adapt values
+                        parent = nodeid
+                        nodeid += 1
+                    # Determine what to show
+                    sGroupOrUser = sGroup if sGroup != "" else sUser
+                    # Create a new item 
+                    oGrp = {'group': sGroupOrUser, 'prj': res_item, 'nodeid': nodeid, 'childof': parent, 'depth': depth}
+                    oGrp['minwidth'] = (oGrp['depth']-1) * 20
+                    # Add group to list
+                    resgroup_list.append(oGrp)
+            # Add the Remainder into the elements
+            for oGrp in resgroup_list:
+                oGrp['remainder'] = max_depth - oGrp['depth'] + 1
         else:
             combi_list = []
             research_list = []
             resgroup_list = []
             max_depth = 0
             authenticated = False
+
+        # DEBUGGING
+        x = json.dumps([{'group': x['group'], 
+                         'nodeid': x['nodeid'], 
+                         'depth': x['depth'], 
+                         'childof': x['childof'], 
+                         'prj': '-' if x['prj'] == None else x['prj'].name} for x in resgroup_list])
 
         # Wrap up the context
         context['combi_list'] = combi_list
@@ -507,7 +553,7 @@ class SeekerListView(ListView):
         context['import_form'] = UploadFileForm()
         context['authenticated'] = authenticated
         context['resgroups'] = resgroup_list
-        context['max_depth'] = max_depth
+        context['max_depth'] = max_depth        # The number of columns needed
 
         # Make sure the correct URL is being displayed
         return super(SeekerListView, self).render_to_response(context, **response_kwargs)

@@ -78,7 +78,7 @@
         <table class="func-view">
           <thead>
             <tr>
-              <th>
+              <th colspan="{{max_depth|add:"2"}}">
                 <span class="func-name">Search groups</span>
                 <span class="func-link pull-right">
                   <a class="btn btn-xs btn-default func-plus" role="button" title="view all"
@@ -89,7 +89,31 @@
           </thead>
           <tbody>
           {% for grp in resgroups %}
-
+            <tr class="{% if grp.depth > 1 %}hidden{% endif %}" nodeid="{{grp.nodeid}}" childof="{{grp.childof}}">
+              {% if grp.depth > 1 %}
+                <td class="arg-pre" colspan="{{grp.depth}}" style="min-width: {{grp.minwidth}}px;"></td>
+              {% endif %}
+              {% if grp.prj %}
+                <!-- Continue an existing group -->
+                <td class="arg-plus" style="min-width: 20px;" 
+                    onclick="crpstudio.htable.plus_click(this, 'func-inline');"></td>
+                <td class="arg-text" colspan="{{grp.remainder}}">
+                  <span class="arg-line">
+                    <code>{{grp.prj.targetType}}</code>
+                  </span>
+                  <span class="arg-summary">{{grp.prj.name}}</span>
+                </td>
+              {% else %}
+                <!-- Start a new group at level [depth] -->
+                <td class="arg-plus" style="min-width: 20px;" 
+                    onclick="crpstudio.htable.plus_click(this, 'func-inline');">+</td>
+                <td class="arg-text" colspan="{{grp.remainder|add:"2"}}">
+                  <span class="arg-line">
+                    <code>{{grp.group}}</code>
+                  </span>
+                </td>
+              {% endif %}
+            </tr>
           {% endfor %}
           </tbody>
         </table>
