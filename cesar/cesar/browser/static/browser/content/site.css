@@ -837,6 +837,21 @@ td.arg-text .arg-endnode {
   background-color: lightgray;
 }
 
+td.prj-text {
+  background-color: lightgray;
+  color: darkblue;
+}
+td.prj-text:hover {
+  background-color: mediumseagreen;
+  color: darkred;
+  cursor: pointer; /* */
+}
+td.prj-text .arg-endnode {
+  color: black;
+  background-color: lightgray;
+}
+
+
 table.research-list {
   border: 1px solid white;
   background-color: white;
@@ -852,6 +867,12 @@ table.research-list tr, table.research-list td, table.research-list tbody > tr >
 table.research-list tr:hover {
   background-color: lightgray;
   border: 1px solid white;
+}
+
+td span.research-item-created {
+  font-size: x-small;
+  font-family: monospace;
+  color: darkblue;
 }
 
 td span.research-item-saved {

@@ -4,38 +4,40 @@
   <form action="" method="POST">
     {% csrf_token %}
     <!-- Room for all the parts of a research group to be entered -->
-    <div class="col-md-12 form-group">
+    <div class="col-md-9 form-group">
       <div class="input-group">
         <!-- Some fields are hidden -->
         <div class="hidden">{{resgroupForm.id}}</div>
         <div class="hidden">{{resgroupForm.owner}}</div>
         <!-- This should contain all the fields for a group  -->
         <table>
-          <tr><td>Name:</td><td>{{resgroupForm.name}}</td></tr>
-          <tr><td>Description:</td><td>{{resgroupForm.description}}</td></tr>
-          <tr><td>Part of group:</td><td>{{resgroupForm.parent}}</td></tr>
+          <tr><td valign="middle">Name:</td><td valign="middle">{{resgroupForm.name}}</td></tr>
+          <tr><td valign="middle">Description:</td><td style="width:100%" valign="middle">{{resgroupForm.description}}</td></tr>
+          <tr><td class="tdnowrap" valign="middle">Part of group:</td><td valign="middle">{{resgroupForm.parent}}</td></tr>
         </table>
       </div>
             
     </div>
 
-      <!-- Show ERRORS if needed -->
-      <div id="research_err">
-        {% for item in error_list %}
-        {{item}}
-        {% endfor %}
-      </div>
+    <!-- Show ERRORS if needed -->
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
 
     <!-- Provide SAVE button (verification is done on the server) -->
-    <div class="submit-row">
-      <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
-      <a class="btn btn-primary ajaxform"
-              instanceid="{{resgroupForm.instance.id}}"
-              openid="add_resgroup" 
-              action="openurl"
-              openurl="{% url 'sgroup_list' %}"
-              ajaxurl="{% if object_id %}{% url 'sgroup' object_id %}{% else %}{% url 'sgroup' %}{% endif %}"
-              data="">{% trans 'Save' %}</a>
+    <div class="col-md-3">
+      <span class="pull-right">
+        <span class="save-warning">{% if savedate %}{{savedate}}{% endif %}</span>
+        <a class="btn btn-primary ajaxform"
+            instanceid="{{resgroupForm.instance.id}}"
+            openid="add_resgroup" 
+            action="openurl"
+            openurl="{% url 'sgroup_list' %}"
+            ajaxurl="{% if object_id %}{% url 'sgroup' object_id %}{% else %}{% url 'sgroup' %}{% endif %}"
+            data="">{% trans 'Save' %}</a>
+      </span>
     </div>
 
   </form>

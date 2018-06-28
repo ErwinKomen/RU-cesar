@@ -457,13 +457,17 @@ class SeekerListView(ListView):
             resgroup_list = []
             # Check who I am
             sCurrentUser = currentuser.username
-            # Get an ordered list of ordered projects for the current user
-            #qs_owner = Research.objects.filter(Q(owner=currentuser)).order_by('group', 'name')
-            # Get a list of the ID-values of other users
-            qs_users = Research.objects.exclude(Q(owner=currentuser)).order_by(Lower('owner__username')).distinct().values('owner')
+            # Get a list of the ID-values of other users 
+            # -- not equal to me
+            # -- only those that share one or more projects with me
+            qs_users = Research.objects\
+                         .exclude(Q(owner=currentuser))\
+                         .filter(Q(sharegroups__group__in=currentuser.groups.all()))\
+                         .order_by(Lower('owner__username')).distinct().values('owner')
             # Create a list of user-ids, starting from the currentuser
+            currentuser_id = User.objects.filter(Q(username=sCurrentUser)).first().id
             user_list = []
-            user_list.append(User.objects.filter(Q(username=sCurrentUser)).first().id)
+            user_list.append(currentuser_id)
             # Now append the other user id's
             for usr in qs_users:
                 user_list.append(usr['owner'])
@@ -477,8 +481,13 @@ class SeekerListView(ListView):
 
             # Process in the order of users
             for user_id in user_list:
-                # Get all the projects of this user in an ordered way
-                qs = Research.objects.filter(Q(owner__id=user_id)).order_by(Lower('group'), Lower( 'name'))
+                # Get projects of this user in an ordered way:
+                # -- only those that are shared with me
+                lstQ = []
+                lstQ.append(Q(owner__id=user_id))
+                if user_id != currentuser_id:
+                    lstQ.append(Q(sharegroups__group__in=currentuser.groups.all()))
+                qs = Research.objects.filter(*lstQ).order_by(Lower('group'), Lower( 'name'))
                 # Get the name of the user
                 sUser = User.objects.filter(Q(id=user_id)).first().username
                 # Set parameters for this user
@@ -515,6 +524,12 @@ class SeekerListView(ListView):
                         sGroup = sResItemGroup
                         # Determine what to show
                         sGroupOrUser = sGroup if sGroup != "" else sUser
+                        # Show all groups that have not been shown yet
+                        if sGroup != "":
+                            # Look for not-yet-shown-ancestor groups and show them
+                            this_group = res_item.group
+                            # TODO: follow...
+                        # Now show this newly started search-containing group
                         oGrp = {'group': sGroupOrUser, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
                         oGrp['minwidth'] = (oGrp['depth']-2) * 20
                         # Add group to list
@@ -525,7 +540,11 @@ class SeekerListView(ListView):
                     # Determine what to show
                     sGroupOrUser = sGroup if sGroup != "" else sUser
                     # Create a new item 
-                    oGrp = {'group': sGroupOrUser, 'prj': res_item, 'nodeid': nodeid, 'childof': parent, 'depth': depth}
+                    oGrp = {'group': sGroupOrUser, 'prj': res_item, 'nodeid': nodeid, 
+                            'childof': parent, 'depth': depth,
+                            'may_read': res_item.has_permission(currentuser, 'r'),
+                            'may_write': res_item.has_permission(currentuser, 'w'),
+                            'may_delete': res_item.has_permission(currentuser, 'd')}
                     oGrp['minwidth'] = (oGrp['depth']-1) * 20
                     # Add group to list
                     resgroup_list.append(oGrp)
@@ -1457,6 +1476,10 @@ class ResGroupList(ListView):
     def render_to_response(self, context, **response_kwargs):
         currentuser = self.request.user
         context['authenticated'] = currentuser.is_authenticated()
+
+        # Create a well ordered list of search groups
+        sgroup_list = ResGroup.objects.filter(Q(owner=currentuser)).order_by(Lower('parent__name'), Lower('name'), )
+        context['sgroup_list'] = sgroup_list
         # Make sure the correct URL is being displayed
         return super(ResGroupList, self).render_to_response(context, **response_kwargs)
 

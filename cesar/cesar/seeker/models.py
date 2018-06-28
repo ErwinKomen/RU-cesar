@@ -2796,8 +2796,7 @@ class Research(models.Model):
             item = item.parent
         # Return the depth we found
         return depth
-
-
+    
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Adapt the save date
       # self.saved = datetime.now()

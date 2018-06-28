@@ -372,7 +372,7 @@ var crpstudio = (function ($, crpstudio) {
           trNext = $(el).closest("tbody").find("tr");
           $(trNext).each(function (index) {
             if ($(this).attr("childof") === nodeid) {
-              if (sStatus === "+") {
+              if (sStatus === "+" ) {
                 // show it
                 $(this).removeClass("hidden");
               } else {
@@ -380,6 +380,10 @@ var crpstudio = (function ($, crpstudio) {
                 $(this).addClass("hidden");
                 // Hide children too
                 crpstudio.htable.plus_click($(this).find(".arg-plus").first(), loc_ht4, false);
+              }
+              if ($(this).hasClass("arg-grandchild")) {
+                // hide it
+                $(this).addClass("hidden");
               }
             }
           });

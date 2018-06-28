@@ -30,7 +30,14 @@
         <div class="col-md-6">
           <h3>Research project overview</h3>
         </div>
-        <div class="col-md-6" align="right">
+        <div class="col-md-4 align=right">
+          <h3 class="pull-right">
+            <a class="btn btn-info btn-xs" title="show most recent projects projects" 
+               targetid="prj-overall-list"
+               onclick="ru.cesar.seeker.toggle_click(this);">recent projects...</a>
+          </h3>
+        </div>
+        <div class="col-md-2" align="right">
           <h3><a title="upload a research project" 
              class="btn btn-success btn-xs" 
              targetid="import_main"
@@ -73,13 +80,115 @@
       <!-- Room for errors -->
       <div id="research_err" class="row"></div>
 
+      <!-- The Overall list of projects -->
+      <div id="prj-overall-list" class="row hidden" >
+        <div class="col-md-12">
+
+          <!-- The contents as a table -->
+          <table class="table table-hover research-list">
+            <thead>
+              <tr>
+                <th class="hidden">id</th>
+                <!-- <th>Owner</th><th>Type</th><th>Name</th><th>Saved</th><th>Purpose</th> -->
+                {% for hd in order_heads %}
+                <th class="sortable" scope="col">
+                  <div class="text">
+                    {% if hd.order == "" %}{{hd.name}}
+                    {% else %}
+                    <a href=?{{hd.order}}>{{hd.name}}</a>
+                    {% endif %}
+                    {% if forloop.last %}
+                    <span class="pull-right">
+                      <a class="btn btn-default btn-xs" title="show all projects" 
+                         onclick="ru.cesar.seeker.toggle_prjview(this);">more...</a>
+                    </span>
+                    {% endif %}
+                  </div>
+                </th>
+                {% endfor %}
+                <th style="text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for item in combi_list %}
+              <tr class="research-item {% if forloop.counter > 3 %}hidden nonrecent{% endif %}">
+                <td class="hidden">{{item.project.id}}</td>
+                <td><span class="research-item-user">{{item.project.username}}</span></td>
+                <td title="{{item.project.get_targetType_display}}"><span class="research-item-type">{{item.project.get_targetType_display|slice:":4"}}</span></td>
+                <td><span class="research-item-name">{{item.project.name}}</span></td>
+                <td><span class="research-item-saved tdnowrap">{% if item.project.saved %}{{item.project.saved|date:"j/b/o G:i" }}{% else %}-{% endif %}</span></td>
+                <td title="{{item.project.purpose}}" style="width:100%"><span class="research-item-purpose">{{item.project.purpose|truncatechars:85}}</span></td>
+                <td class="tdnowrap">
+                  <!--<div class="part-buttons">-->
+                    <form>
+                      {% csrf_token %}
+                      <span class="research-item-name ">
+                      {% if item.may_write %}
+                        <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=item.project.id %}">
+                          <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                        </a>
+                      {% endif %}
+                      </span>
+                      {% if item.may_read %}
+                        <span class="research-item-copy">
+                          <a title="copy" class="btn btn-default btn-xs" 
+                             url="{{item.project.get_copy_url}}" 
+                             success="{% url 'seeker_list' %}"
+                             onclick="ru.cesar.seeker.process_item(this);">
+                            <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+                          </a>
+                          <a title="download as JSON" class="btn btn-default btn-xs" 
+                             ajaxurl="{% url 'search_json' object_id=item.project.id %}"
+                             downloadtype="json"
+                             onclick="ru.cesar.seeker.post_download(this);">
+                            <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>
+                          </a>
+                        </span>
+                      {% endif %}
+                      <span class="research-item-del ">
+                      {% if item.may_delete %}
+                        <a title="delete" class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">
+                          <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        </a>
+                      {% endif %}
+                      </span>
+                    </form>
+                  <!-- </div> -->
+                  <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+                </td>
+              </tr>
+              <!-- Provide a form row for deletion -->
+              <tr class="part-del hidden">
+                <td></td>
+                <td colspan="3">Are you sure you want to delete the research project named <code>{{item.project.name}}</code>? Note: all associated results will also be deleted</td>
+                <td class="tdnowrap">
+                  <div class="part-del">
+                    <form action="{{item.project.get_delete_url}}" method="post">
+                      {% csrf_token %}
+                        <a class="btn btn-info btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
+                        <a class="btn btn-danger btn-xs" 
+                           url="{{item.project.get_delete_url}}" 
+                           success="{% url 'seeker_list' %}"
+                           onclick="ru.cesar.seeker.process_item(this);">delete</a>
+                    </form>
+                  </div>
+                  <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+
       <!-- Hierarchical list of projects -->
       {% if resgroups and resgroups|length > 0 %}
         <table class="func-view">
           <thead>
             <tr>
-              <th colspan="{{max_depth|add:"2"}}">
-                <span class="func-name">Search groups</span>
+              <th colspan="{{max_depth|add:"3"}}">
+                <span class="func-name">Searches: group view</span>
                 <span class="func-link pull-right">
                   <a class="btn btn-xs btn-default func-plus" role="button" title="view all"
                      onclick="ru.cesar.seeker.funchead_click(this, 'func-inline');">+</a>
@@ -89,7 +198,9 @@
           </thead>
           <tbody>
           {% for grp in resgroups %}
-            <tr class="{% if grp.depth > 1 %}hidden{% endif %}" nodeid="{{grp.nodeid}}" childof="{{grp.childof}}">
+            <tr class="{% if grp.depth > 1 %}hidden{% endif %}" nodeid="{{grp.nodeid}}" childof="{{grp.childof}}"
+                targetid="project-info-{{grp.nodeid}}"
+                onclick="ru.cesar.seeker.toggle_click(this, 'arg-grandchild');">
               {% if grp.depth > 1 %}
                 <td class="arg-pre" colspan="{{grp.depth}}" style="min-width: {{grp.minwidth}}px;"></td>
               {% endif %}
@@ -97,121 +208,126 @@
                 <!-- Continue an existing group -->
                 <td class="arg-plus" style="min-width: 20px;" 
                     onclick="crpstudio.htable.plus_click(this, 'func-inline');"></td>
-                <td class="arg-text" colspan="{{grp.remainder}}">
+                <td class="prj-text" colspan="{{grp.remainder}}" style="width: 100%;">
                   <span class="arg-line">
-                    <code>{{grp.prj.targetType}}</code>
+                    <code title="The search project starts with {{grp.prj.get_targetType_display}}">{{grp.prj.targetType}}</code>
                   </span>
                   <span class="arg-summary">{{grp.prj.name}}</span>
+                  <span class="pull-right">
+                    {% if grp.may_read %}
+                      <code title="reading rights">r</code>
+                      {% if grp.may_write %}<code title="writing rights">w</code>{% endif %}
+                      {% if grp.may_delete %}<code title="delete rights">d</code>{% endif %}
+                    {% else %}
+                      <code title="no reading rights - consult the user">n</code>
+                    {% endif %}
+                  </span>
+                </td>
+                <td>
+                  <span class="research-item-created tdnowrap pull-right" title="Project creation date">
+                    {% if grp.prj.created %}{{grp.prj.created|date:"j/b/o G:i" }}{% else %}-{% endif %}
+                  </span>
                 </td>
               {% else %}
                 <!-- Start a new group at level [depth] -->
                 <td class="arg-plus" style="min-width: 20px;" 
                     onclick="crpstudio.htable.plus_click(this, 'func-inline');">+</td>
-                <td class="arg-text" colspan="{{grp.remainder|add:"2"}}">
+                <td class="prj-text" colspan="{{grp.remainder|add:"3"}}" style="width: 100%;">
                   <span class="arg-line">
                     <code>{{grp.group}}</code>
                   </span>
                 </td>
               {% endif %}
             </tr>
+            <!-- Each project line must have a hidden line with the additional project information and action buttons -->
+            {% if grp.prj %}
+              <tr class="hidden arg-grandchild" id="project-info-{{grp.nodeid}}" childof="{{grp.childof}}">
+                {% if grp.depth > 1 %}
+                  <td class="arg-pre" colspan="{{grp.depth|add:"1"}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>
+                {% endif %}
+                <td colspan="{{grp.remainder}}" style="width: 100%;" >
+                  <!--<div class="part-buttons">-->
+                  <div class="row">
+                    <form>
+                      {% csrf_token %}
+                      <div class="col-md-2">
+                        <span class="research-item-name ">
+                        {% if grp.may_write %}
+                          <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=grp.prj.id %}">
+                            <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                          </a>
+                        {% endif %}
+                        </span>
+                        {% if grp.may_read %}
+                          <span class="research-item-copy">
+                            <a title="copy" class="btn btn-default btn-xs" 
+                                url="{{grp.prj.get_copy_url}}" 
+                                success="{% url 'seeker_list' %}"
+                                onclick="ru.cesar.seeker.process_item(this);">
+                              <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+                            </a>
+                            <a title="download as JSON" class="btn btn-default btn-xs" 
+                                ajaxurl="{% url 'search_json' object_id=grp.prj.id %}"
+                                downloadtype="json"
+                                onclick="ru.cesar.seeker.post_download(this);">
+                              <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>
+                            </a>
+                          </span>
+                        {% endif %}
+                        <span class="research-item-del ">
+                        {% if grp.may_delete %}
+                          <a title="delete" class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                          </a>
+                        {% endif %}
+                        </span>
+                      </div>
+                      <div class="col-md-10">
+                        <!-- Always show the purpose -->
+                        <span class="prj-text">{{grp.prj.purpose}}</span>
+                      </div>
+                    </form>
+                  </div>
+                  <!-- </div> -->
+                  <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+                </td>
+                <td>
+                  <span class="research-item-saved tdnowrap pull-right" title="Date last saved">
+                    {% if grp.prj.saved %}{{grp.prj.saved|date:"j/b/o G:i" }}{% else %}-{% endif %}
+                  </span>
+                </td>
+              </tr>
+
+              <!-- Each project line also has an area where the deletion process can take place -->
+              <tr class="part-del arg-grandchild hidden" childof="{{grp.childof}}">
+                {% if grp.depth > 1 %}
+                  <td class="arg-pre" colspan="{{grp.depth|add:"1"}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>
+                {% endif %}
+                <td colspan="1">
+                  <p align="right">Are you sure you want to delete the research project named <code>{{grp.prj.name}}</code>?</p>
+                  <p align="right"><u>Note</u>: all associated results will be deleted as well.</p>
+                </td>
+                <td class="tdnowrap" colspan="2">
+                  <div class="part-del">
+                    <form action="{{item.project.get_delete_url}}" method="post">
+                      {% csrf_token %}
+                        <a class="btn btn-info btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
+                        <a class="btn btn-danger btn-xs" 
+                            url="{{item.project.get_delete_url}}" 
+                            success="{% url 'seeker_list' %}"
+                            onclick="ru.cesar.seeker.process_item(this);">delete</a>
+                    </form>
+                  </div>
+                  <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
+                </td>
+              </tr>
+            {% endif %}
+
           {% endfor %}
           </tbody>
         </table>
       {% endif %}
 
-      <!-- The actual list of projects -->
-      <div class="row">
-        <div class="col-md-12">
-        <!-- The contents as a table -->
-        <table class="table table-hover research-list">
-          <thead>
-            <tr>
-              <th class="hidden">id</th>
-              <!-- <th>Owner</th><th>Type</th><th>Name</th><th>Saved</th><th>Purpose</th> -->
-              {% for hd in order_heads %}
-              <th class="sortable" scope="col">
-                <div class="text">
-                  {% if hd.order == "" %}{{hd.name}}
-                  {% else %}
-                  <a href=?{{hd.order}}>{{hd.name}}</a>
-                  {% endif %}
-                </div>
-              </th>
-              {% endfor %}
-              <th style="text-align: center;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-          {% for item in combi_list %}
-            <tr class="research-item">
-              <td class="hidden">{{item.project.id}}</td>
-              <td><span class="research-item-user">{{item.project.username}}</span></td>
-              <td title="{{item.project.get_targetType_display}}"><span class="research-item-type">{{item.project.get_targetType_display|slice:":4"}}</span></td>
-              <td><span class="research-item-name">{{item.project.name}}</span></td>
-              <td><span class="research-item-saved tdnowrap">{% if item.project.saved %}{{item.project.saved|date:"j/b/o G:i" }}{% else %}-{% endif %}</span></td>
-              <td title="{{item.project.purpose}}" style="width:100%"><span class="research-item-purpose">{{item.project.purpose|truncatechars:85}}</span></td>
-              <td class="tdnowrap">
-                <!--<div class="part-buttons">-->
-                  <form>
-                    {% csrf_token %}
-                    <span class="research-item-name ">
-                    {% if item.may_write %}
-                      <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=item.project.id %}">
-                        <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
-                      </a>
-                    {% endif %}
-                    </span>
-                    {% if item.may_read %}
-                      <span class="research-item-copy">
-                        <a title="copy" class="btn btn-default btn-xs" 
-                           url="{{item.project.get_copy_url}}" 
-                           success="{% url 'seeker_list' %}"
-                           onclick="ru.cesar.seeker.process_item(this);">
-                          <span class="glyphicon glyphicon-export" aria-hidden="true"></span>
-                        </a>
-                        <a title="download as JSON" class="btn btn-default btn-xs" 
-                           ajaxurl="{% url 'search_json' object_id=item.project.id %}"
-                           downloadtype="json"
-                           onclick="ru.cesar.seeker.post_download(this);">
-                          <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>
-                        </a>
-                      </span>
-                    {% endif %}
-                    <span class="research-item-del ">
-                    {% if item.may_delete %}
-                      <a title="delete" class="btn btn-warning btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">
-                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                      </a>
-                    {% endif %}
-                    </span>
-                  </form>
-                <!-- </div> -->
-                <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
-              </td>
-            </tr>
-            <!-- Provide a form row for deletion -->
-            <tr class="part-del hidden">
-              <td></td>
-              <td colspan="3">Are you sure you want to delete the research project named <code>{{item.project.name}}</code>? Note: all associated results will also be deleted</td>
-              <td class="tdnowrap">
-                <div class="part-del">
-                  <form action="{{item.project.get_delete_url}}" method="post">
-                    {% csrf_token %}
-                      <a class="btn btn-info btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
-                      <a class="btn btn-danger btn-xs" 
-                         url="{{item.project.get_delete_url}}" 
-                         success="{% url 'seeker_list' %}"
-                         onclick="ru.cesar.seeker.process_item(this);">delete</a>
-                  </form>
-                </div>
-                <div class="part-process hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></div>
-              </td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-        </div>
-      </div>
       {% else %}
         <p>{% trans "No research projects are available" %}.</p>
       {% endif %}

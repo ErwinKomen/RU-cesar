@@ -3219,7 +3219,7 @@ var ru = (function ($, ru) {
        *   Clicking an ADD button leads to this function to load a new form
        *
        */
-      load_form: function (elThis) {
+      load_form: function (elThis, additional) {
         var elGroup = null,
             elTarget = null,
             targeturl = "",
@@ -3246,12 +3246,28 @@ var ru = (function ($, ru) {
                 }
                 // Show the form
                 $("#" + elTarget).removeClass("hidden");
+                // If there is an additional requirement, then fulfill it
+                if (additional !== undefined) {
+                  switch (additional) {
+                    case "nextrow": // Show the next <tr>
+                      $(elThis).closest("tr").next("tr").removeClass("hidden");
+                      break;
+                  }
+                }
                 // Make sure events are active again
                 ru.cesar.seeker.init_events();
               });
 
             } else {
               $("#" + elTarget).addClass("hidden");
+              // If there is an additional requirement, then fulfill it
+              if (additional !== undefined) {
+                switch (additional) {
+                  case "nextrow": // Show the next <tr>
+                    $(elThis).closest("tr").next("tr").addClass("hidden");
+                    break;
+                }
+              }
             }
           }
         } catch (ex) {
@@ -3264,7 +3280,7 @@ var ru = (function ($, ru) {
        *   Action when user clicks an element that requires toggling a target
        *
        */
-      toggle_click: function (elThis) {
+      toggle_click: function (elThis, class_to_close) {
         var elGroup = null,
             elTarget = null,
             sStatus = "";
@@ -3279,10 +3295,38 @@ var ru = (function ($, ru) {
               $("#" + elTarget).removeClass("hidden");
             } else {
               $("#" + elTarget).addClass("hidden");
+              // Check if there is an additional class to close
+              if (class_to_close !== undefined && class_to_close !== "") {
+                $("." + class_to_close).addClass("hidden");
+              }
             }
           }
         } catch (ex) {
           private_methods.errMsg("toggle_click", ex);
+        }
+      },
+
+      /**
+       * toggle_prjview
+       *   Showing or hiding non-recent projects
+       *
+       */
+      toggle_prjview: function (elThis) {
+        try {
+          if ($(elThis).html().indexOf("more") === 0) {
+            // Change the text
+            $(elThis).html("less...");
+            // Show all nonrecent projects
+            $(".nonrecent").removeClass("hidden");
+          } else {
+            // Change the text
+            $(elThis).html("more...");
+            // Hide all nonrecent projects
+            $(".nonrecent").addClass("hidden");
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("toggle_prjview", ex);
         }
       },
 
