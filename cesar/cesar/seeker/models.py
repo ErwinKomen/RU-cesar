@@ -2755,6 +2755,17 @@ class ResGroup(models.Model):
     def __str__(self):
         return self.name
 
+    def group_depth(self):
+        """Get the amount of parents above me"""
+
+        depth = 0
+        item = self
+        while item != None:
+            depth += 1
+            item = item.parent
+        # Return the depth we found
+        return depth
+    
 
 class Research(models.Model):
     """Main entry for a research project"""

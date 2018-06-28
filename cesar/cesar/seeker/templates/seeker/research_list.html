@@ -187,7 +187,7 @@
         <table class="func-view">
           <thead>
             <tr>
-              <th colspan="{{max_depth|add:"3"}}">
+              <th colspan="{{max_depth|add:"2"}}">
                 <span class="func-name">Searches: group view</span>
                 <span class="func-link pull-right">
                   <a class="btn btn-xs btn-default func-plus" role="button" title="view all"
@@ -202,7 +202,7 @@
                 targetid="project-info-{{grp.nodeid}}"
                 onclick="ru.cesar.seeker.toggle_click(this, 'arg-grandchild');">
               {% if grp.depth > 1 %}
-                <td class="arg-pre" colspan="{{grp.depth}}" style="min-width: {{grp.minwidth}}px;"></td>
+                <td class="arg-pre" colspan="{{grp.depth|add:"-1"}}" style="min-width: {{grp.minwidth}}px;"></td>
               {% endif %}
               {% if grp.prj %}
                 <!-- Continue an existing group -->
@@ -232,18 +232,19 @@
                 <!-- Start a new group at level [depth] -->
                 <td class="arg-plus" style="min-width: 20px;" 
                     onclick="crpstudio.htable.plus_click(this, 'func-inline');">+</td>
-                <td class="prj-text" colspan="{{grp.remainder|add:"3"}}" style="width: 100%;">
+                <td class="prj-text" colspan="{{grp.remainder}}" style="width: 100%;">
                   <span class="arg-line">
                     <code>{{grp.group}}</code>
                   </span>
                 </td>
+                <td></td>
               {% endif %}
             </tr>
             <!-- Each project line must have a hidden line with the additional project information and action buttons -->
             {% if grp.prj %}
               <tr class="hidden arg-grandchild" id="project-info-{{grp.nodeid}}" childof="{{grp.childof}}">
                 {% if grp.depth > 1 %}
-                  <td class="arg-pre" colspan="{{grp.depth|add:"1"}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>
+                  <td class="arg-pre" colspan="{{grp.depth}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>
                 {% endif %}
                 <td colspan="{{grp.remainder}}" style="width: 100%;" >
                   <!--<div class="part-buttons">-->
@@ -301,13 +302,13 @@
               <!-- Each project line also has an area where the deletion process can take place -->
               <tr class="part-del arg-grandchild hidden" childof="{{grp.childof}}">
                 {% if grp.depth > 1 %}
-                  <td class="arg-pre" colspan="{{grp.depth|add:"1"}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>
+                  <td class="arg-pre" colspan="{{grp.depth}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>
                 {% endif %}
-                <td colspan="1">
+                <td colspan="{{grp.remainder}}">
                   <p align="right">Are you sure you want to delete the research project named <code>{{grp.prj.name}}</code>?</p>
                   <p align="right"><u>Note</u>: all associated results will be deleted as well.</p>
                 </td>
-                <td class="tdnowrap" colspan="2">
+                <td class="tdnowrap" colspan="1">
                   <div class="part-del">
                     <form action="{{item.project.get_delete_url}}" method="post">
                       {% csrf_token %}

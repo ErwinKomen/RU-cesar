@@ -478,6 +478,7 @@ class SeekerListView(ListView):
             parent = 1      # Parent '1' means the root of all
             nodeid = 1
             prj_list = []
+            grp_list = []   # List of groups that have already been shown
 
             # Process in the order of users
             for user_id in user_list:
@@ -510,6 +511,8 @@ class SeekerListView(ListView):
 
                 # Walk through the projects of this user
                 for res_item in qs:
+                    # Set the new parent: the user-group
+                    parent = groupid
                     # Each research project is a new item
                     nodeid += 1
                     # Get and add the depth
@@ -525,18 +528,42 @@ class SeekerListView(ListView):
                         # Determine what to show
                         sGroupOrUser = sGroup if sGroup != "" else sUser
                         # Show all groups that have not been shown yet
-                        if sGroup != "":
+                        if sGroup == "":
+                            # Now show this newly started search-containing group
+                            oGrp = {'group': sGroupOrUser, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
+                            oGrp['minwidth'] = (oGrp['depth']-2) * 20
+                            # Add group to list
+                            resgroup_list.append(oGrp)
+                            # Add group to the list of already-shown groups
+                            grp_list.append(this_group)
+                            # Adapt values
+                            parent = nodeid
+                            nodeid += 1
+                        else:
                             # Look for not-yet-shown-ancestor groups and show them
                             this_group = res_item.group
-                            # TODO: follow...
-                        # Now show this newly started search-containing group
-                        oGrp = {'group': sGroupOrUser, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
-                        oGrp['minwidth'] = (oGrp['depth']-2) * 20
-                        # Add group to list
-                        resgroup_list.append(oGrp)
-                        # Adapt values
-                        parent = nodeid
-                        nodeid += 1
+                            show_list = []
+                            while this_group != None and this_group not in grp_list:
+                                show_list.append(this_group)
+                                this_group = this_group.parent
+                            # Now walk this list in reversed order
+                            for this_group in reversed(show_list):
+                                # Show this group
+                                sGroupOrUser = this_group.name
+                                grp_depth = this_group.group_depth() + 2
+                                if grp_depth > max_depth:
+                                    max_depth = grp_depth
+                                # Now show this newly started search-containing group
+                                oGrp = {'group': sGroupOrUser, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': grp_depth-1}
+                                oGrp['minwidth'] = (oGrp['depth']-2) * 20
+                                # Add group to list
+                                resgroup_list.append(oGrp)
+                                # Add group to the list of already-shown groups
+                                grp_list.append(this_group)
+                                # Adapt values
+                                parent = nodeid
+                                nodeid += 1
+
                     # Determine what to show
                     sGroupOrUser = sGroup if sGroup != "" else sUser
                     # Create a new item 
