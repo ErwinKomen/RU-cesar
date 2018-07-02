@@ -2807,6 +2807,19 @@ class Research(models.Model):
             item = item.parent
         # Return the depth we found
         return depth
+
+    def group_path(self):
+        """Return the path above me"""
+
+        path = ""
+        item = self.group
+        while item != None:
+            path = "/" + item.name + path
+            item = item.parent
+        ## Add the name itself to the path
+        #path = path + "/" + self.name
+        path = path.lower()
+        return path
     
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Adapt the save date

@@ -370,6 +370,27 @@ class SeekerListView(ListView):
                    {'name': 'Purpose', 'order': 'o=5', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
+        # helper function...
+        def get_parent_nodeid(glist, instance, groupid):
+            """Find the parent-group [instance] from glist"""
+            # Obvious case
+            if glist == [] or instance == None: return groupid
+            # Get the parent of the group
+            grp = instance.name
+            # Yes: look for the correct parent
+            for g in glist:
+                if g['group'] == grp:
+                    return g['nodeid']
+            # Getting here means we haven't found the group
+            return groupid
+
+        def path_exists(glist, p):
+            """Check if glist has the group_path p"""
+            for g in glist:
+                if g['group_path'] == p:
+                    return True
+            return False
+
         sType = self.request.GET.get('listtype', '')
         if 'copyerror' not in context:
             if 'copyerror' in response_kwargs:
@@ -488,19 +509,22 @@ class SeekerListView(ListView):
                 lstQ.append(Q(owner__id=user_id))
                 if user_id != currentuser_id:
                     lstQ.append(Q(sharegroups__group__in=currentuser.groups.all()))
-                qs = Research.objects.filter(*lstQ).order_by(Lower('group'), Lower( 'name'))
+                # qs = Research.objects.filter(*lstQ).order_by(Lower('group__parent'), Lower('group'), Lower( 'name'))
+                qs = Research.objects.filter(*lstQ)
+                # Sort them appropriately
+                qs_sorted = sorted(qs, key=lambda x: x.group_path() + "/" + x.name.lower())
                 # Get the name of the user
                 sUser = User.objects.filter(Q(id=user_id)).first().username
                 # Set parameters for this user
                 nodeid += 1
-                parent = 1
                 groupid = nodeid
                 sGroup = ""
                 # Create a group for this user
                 oGrp = {'group': sUser, 
+                        'group_path': "/" + sUser,
                         'prj': None,
                         'nodeid': nodeid,
-                        'childof': parent,
+                        'childof': 1,           # Each user is child of the highest level
                         'depth': 1 }
                 oGrp['minwidth'] = (oGrp['depth']-1) * 20
                 # Add USER-level as group to list
@@ -510,11 +534,12 @@ class SeekerListView(ListView):
                 parent = groupid
 
                 # Walk through the projects of this user
-                for res_item in qs:
+                for res_item in qs_sorted:
                     # Set the new parent: the user-group
                     parent = groupid
                     # Each research project is a new item
                     nodeid += 1
+                    grp_path = "/" + sUser + res_item.group_path()
                     # Get and add the depth
                     depth = res_item.group_depth() + 2
                     if depth > max_depth:
@@ -522,7 +547,7 @@ class SeekerListView(ListView):
                     # What group does this research project belong to?
                     sResItemGroup = "" if res_item.group == None else res_item.group.name
                     # Is the group staying the same?
-                    if sResItemGroup != sGroup:
+                    if sResItemGroup != sGroup and not path_exists(resgroup_list, grp_path):
                         # Keep track of the current group
                         sGroup = sResItemGroup
                         # Determine what to show
@@ -530,7 +555,8 @@ class SeekerListView(ListView):
                         # Show all groups that have not been shown yet
                         if sGroup == "":
                             # Now show this newly started search-containing group
-                            oGrp = {'group': sGroupOrUser, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
+                            parent = get_parent_nodeid(resgroup_list, None, groupid)
+                            oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
                             oGrp['minwidth'] = (oGrp['depth']-2) * 20
                             # Add group to list
                             resgroup_list.append(oGrp)
@@ -554,20 +580,22 @@ class SeekerListView(ListView):
                                 if grp_depth > max_depth:
                                     max_depth = grp_depth
                                 # Now show this newly started search-containing group
-                                oGrp = {'group': sGroupOrUser, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': grp_depth-1}
+                                parent = get_parent_nodeid(resgroup_list, this_group.parent, groupid)
+                                oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': grp_depth-1}
                                 oGrp['minwidth'] = (oGrp['depth']-2) * 20
                                 # Add group to list
                                 resgroup_list.append(oGrp)
                                 # Add group to the list of already-shown groups
                                 grp_list.append(this_group)
-                                # Adapt values
+                                # Adapt values: all items that follow will be part of this group
                                 parent = nodeid
                                 nodeid += 1
 
                     # Determine what to show
                     sGroupOrUser = sGroup if sGroup != "" else sUser
                     # Create a new item 
-                    oGrp = {'group': sGroupOrUser, 'prj': res_item, 'nodeid': nodeid, 
+                    parent = get_parent_nodeid(resgroup_list, res_item.group, groupid)
+                    oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': res_item, 'nodeid': nodeid, 
                             'childof': parent, 'depth': depth,
                             'may_read': res_item.has_permission(currentuser, 'r'),
                             'may_write': res_item.has_permission(currentuser, 'w'),
