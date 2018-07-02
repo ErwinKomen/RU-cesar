@@ -2812,13 +2812,18 @@ class Research(models.Model):
         """Return the path above me"""
 
         path = ""
-        item = self.group
-        while item != None:
-            path = "/" + item.name + path
-            item = item.parent
-        ## Add the name itself to the path
-        #path = path + "/" + self.name
-        path = path.lower()
+        oErr = ErrHandle()
+        try:
+            item = self.group
+            while item != None:
+                path = "/" + item.name + path
+                item = item.parent
+            ## Add the name itself to the path
+            #path = path + "/" + self.name
+            path = path.lower()
+        except:
+            msg = oErr.get_error_message()
+            path = ""
         return path
     
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):

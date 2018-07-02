@@ -522,6 +522,7 @@ class SeekerListView(ListView):
                 # Create a group for this user
                 oGrp = {'group': sUser, 
                         'group_path': "/" + sUser,
+                        'user': sUser,
                         'prj': None,
                         'nodeid': nodeid,
                         'childof': 1,           # Each user is child of the highest level
@@ -556,7 +557,8 @@ class SeekerListView(ListView):
                         if sGroup == "":
                             # Now show this newly started search-containing group
                             parent = get_parent_nodeid(resgroup_list, None, groupid)
-                            oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
+                            oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 
+                                    'user': sUser, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
                             oGrp['minwidth'] = (oGrp['depth']-2) * 20
                             # Add group to list
                             resgroup_list.append(oGrp)
@@ -581,7 +583,8 @@ class SeekerListView(ListView):
                                     max_depth = grp_depth
                                 # Now show this newly started search-containing group
                                 parent = get_parent_nodeid(resgroup_list, this_group.parent, groupid)
-                                oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 'nodeid': nodeid, 'childof': parent, 'depth': grp_depth-1}
+                                oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 
+                                        'user': sUser, 'nodeid': nodeid, 'childof': parent, 'depth': grp_depth-1}
                                 oGrp['minwidth'] = (oGrp['depth']-2) * 20
                                 # Add group to list
                                 resgroup_list.append(oGrp)
@@ -596,7 +599,7 @@ class SeekerListView(ListView):
                     # Create a new item 
                     parent = get_parent_nodeid(resgroup_list, res_item.group, groupid)
                     oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': res_item, 'nodeid': nodeid, 
-                            'childof': parent, 'depth': depth,
+                            'user': sUser, 'childof': parent, 'depth': depth,
                             'may_read': res_item.has_permission(currentuser, 'r'),
                             'may_write': res_item.has_permission(currentuser, 'w'),
                             'may_delete': res_item.has_permission(currentuser, 'd')}
@@ -606,10 +609,14 @@ class SeekerListView(ListView):
             # Add the Remainder into the elements
             for oGrp in resgroup_list:
                 oGrp['remainder'] = max_depth - oGrp['depth'] + 1
+
+            # Create a well ordered list of search groups
+            sgroup_list = ResGroup.objects.filter(Q(owner=currentuser)).order_by(Lower('parent__name'), Lower('name'), )
         else:
             combi_list = []
             research_list = []
             resgroup_list = []
+            sgroup_list = []
             max_depth = 0
             authenticated = False
 
@@ -627,6 +634,8 @@ class SeekerListView(ListView):
         context['import_form'] = UploadFileForm()
         context['authenticated'] = authenticated
         context['resgroups'] = resgroup_list
+        context['sgroup_list'] = sgroup_list
+        context['currentuser'] = currentuser.username
         context['max_depth'] = max_depth        # The number of columns needed
 
         # Make sure the correct URL is being displayed
@@ -1486,6 +1495,10 @@ class ResearchPart(View):
         else:
             self.qd = request.GET
 
+        # Check for action
+        if 'action' in self.qd:
+            self.action = self.qd['action']
+
         # Find out what the Main Model instance is, if any
         if self.add:
             self.obj = None
@@ -1582,6 +1595,56 @@ class ResGroupDetails(ResearchPart):
         context['parent_list'] = parent_list
 
         # Return the context we have adapted
+        return context
+
+
+class ResearchField(ResearchPart):
+    """Change, set or delete one field of a Research instance"""
+
+    template_name = 'seeker/research_field.html'
+    MainModel = Research
+
+    def add_to_context(self, context):
+
+        # Initiali values for what we return
+        context['field-msg'] = "(no changes)"
+        context['field-status'] = ""
+        # Find out which field is being processed
+        objid = self.obj.id
+        field_name = "prj-fname-{}".format(objid)
+        field_value = "prj-fvalue-{}".format(objid)
+
+        # Find out what action is needed
+        if self.action == "save":
+            # Get the field name and value
+            if field_name in self.qd and field_value in self.qd:
+                fname = self.qd[field_name]
+                fvalue = self.qd[field_value]
+                # Save the new value
+                if fvalue == "(none)":
+                    setattr(self.obj, fname, None)
+                else:
+                    setattr(self.obj, fname, fvalue)
+                self.obj.save()
+                context['field_msg'] = "research group setting has been updated"
+                context['field_status'] = "saved"
+            else:
+                context['field_msg'] = "please provide {} and {}".format(field_name, field_value)
+                context['field_status'] = "error"
+        elif self.action == "delete":
+            # Get the field name and value
+            if field_name in self.qd:
+                # Set this value to null
+                fname = self.qd[field_name]
+                # Remove the group from the research project
+                setattr(self.obj, fname, None)
+                self.obj.save()
+                context['field_msg'] = "research is no longer under this group"
+                context['field_status'] = "deleted"
+            else:
+                context['field_msg'] = "please provide {}".format(field_name)
+                context['field_status'] = "error"
+
         return context
 
 

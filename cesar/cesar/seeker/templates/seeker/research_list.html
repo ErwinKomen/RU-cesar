@@ -198,9 +198,7 @@
           </thead>
           <tbody>
           {% for grp in resgroups %}
-            <tr class="{% if grp.depth > 1 %}hidden{% endif %}" nodeid="{{grp.nodeid}}" childof="{{grp.childof}}"
-                targetid="project-info-{{grp.nodeid}}"
-                onclick="ru.cesar.seeker.toggle_click(this, 'arg-grandchild');">
+            <tr class="{% if grp.depth > 1 %}hidden{% endif %}" nodeid="{{grp.nodeid}}" childof="{{grp.childof}}">
               {% if grp.depth > 1 %}
                 <td class="arg-pre" colspan="{{grp.depth|add:"-1"}}" style="min-width: {{grp.minwidth}}px;"></td>
               {% endif %}
@@ -212,7 +210,17 @@
                   <span class="arg-line">
                     <code title="The search project starts with {{grp.prj.get_targetType_display}}">{{grp.prj.targetType}}</code>
                   </span>
-                  <span class="arg-summary">{{grp.prj.name}}</span>
+                  <span class="prj-name"
+                        targetid="project-info-{{grp.nodeid}}"
+                        onclick="ru.cesar.seeker.toggle_click(this, 'arg-grandchild');">
+                    {{grp.prj.name}}
+                  </span>
+                  <span class="prj-group"
+                        targetid="project-group-{{grp.nodeid}}"
+                        onclick="ru.cesar.seeker.toggle_click(this, 'arg-grandchild');">
+                    <code>{{grp.group}}</code>
+                  </span>
+
                   <span class="pull-right">
                     {% if grp.may_read %}
                       <code title="reading rights">r</code>
@@ -240,8 +248,55 @@
                 <td></td>
               {% endif %}
             </tr>
+            <!-- Each project line must have a hidden line with the possibility to change its search group -->
+            {% if grp.prj  and grp.user == currentuser %}
+              <tr class="hidden arg-grandchild" id="project-group-{{grp.nodeid}}" childof="{{grp.childof}}">
+                {% if grp.depth > 1 %}
+                  <td class="arg-pre" colspan="{{grp.depth}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>
+                {% endif %}
+                <td colspan="{{grp.remainder}}" style="width: 100%;" >
+                  <div class="row">
+                    <div class="col-md-3">Change the search group:</div>
+                    <div class="col-md-9">
+                    <form>
+                      {% csrf_token %}
+                      <input id="id_prj-fname-{{grp.prj.id}}" name="prj-fname-{{grp.prj.id}}" class="hidden" type="text" value="group_id" />
+                      <span>
+                        <select class="input-xs" id="id_prj-fvalue-{{grp.prj.id}}" name="prj-fvalue-{{grp.prj.id}}">
+                          {% for g in sgroup_list %}
+                          <option value="{{g.id}}" >{{g.name}}</option>
+                          {% endfor %}
+                        </select>
+                    
+                        <span>
+                          <a class="btn btn-success btn-xs" 
+                             title="save search group change" 
+                             onclick="ru.cesar.seeker.field_update(this, 'save');"
+                             msgid="id_prj-fmsg-{{grp.prj.id}}"
+                             ajaxurl="{% url 'research_field' object_id=grp.prj.id %}">
+                            <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
+                          </a>
+                        </span>
+                        <span>
+                          <a class="btn btn-success btn-xs" 
+                             title="remove group from this search" 
+                             onclick="ru.cesar.seeker.field_update(this, 'delete');"
+                             msgid="id_prj-fmsg-{{grp.prj.id}}"
+                             ajaxurl="{% url 'research_field' object_id=grp.prj.id %}">
+                            <span class="glyphicon glyphicon-floppy-remove" aria-hidden="true"></span>
+                          </a>
+                        </span>
+                        <span id="id_prj-fmsg-{{grp.prj.id}}"></span>
+                      </span>
+                    </form>
+                    </div>
+                  </div>
+                </td>
+                <td></td>
+              </tr>
+            {% endif %}
             <!-- Each project line must have a hidden line with the additional project information and action buttons -->
-            {% if grp.prj %}
+            {% if grp.prj  %}
               <tr class="hidden arg-grandchild" id="project-info-{{grp.nodeid}}" childof="{{grp.childof}}">
                 {% if grp.depth > 1 %}
                   <td class="arg-pre" colspan="{{grp.depth}}" style="min-width: {{grp.minwidth|add:"20"}}px;"></td>

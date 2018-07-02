@@ -1813,6 +1813,34 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  toggle_prj_group
+       *      Toggle the visibility of the current and following element
+       *
+       */
+      toggle_prj_group: function (elThis) {
+        var spanOne, spanTwo;
+
+        try {
+          // Get the following two <span> elements
+          spanOne = $(elThis).next("span");
+          spanTwo = $(spanOne).next("span");
+          // Set visibility
+          if ($(spanOne).hasClass("hidden")) {
+            // Unhide it
+            $(spanOne).removeClass("hidden");
+            $(spanTwo).addClass("hidden");
+          } else {
+            // Hide it
+            $(spanOne).addClass("hidden");
+            $(spanTwo).removeClass("hidden");
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("toggle_prj_group", ex);
+        }
+      },
+
+      /**
        *  part_detail_toggle
        *      Toggle part detail
        *
@@ -1882,6 +1910,50 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("process_item", ex);
+        }
+      },
+
+      /**
+       *  field_update
+       *      Make a POST request to update a field
+       *      Then post the returned message in the message ID
+       */
+      field_update: function (el, action) {
+        var response=null,
+            sUrl = "",
+            frm = null,
+            elMsg = null,
+            data = [];
+
+        try {
+          elMsg = "#" + $(el).attr("msgid");
+          if (action === undefined) { action = "save" };
+          frm = $(el).closest("form");
+          if (frm !== undefined) {
+            // Prepare the data
+            data = $(frm).serializeArray();
+            // Get the correct URL
+            sUrl = $(el).attr("ajaxurl");
+            data.push({ 'name': 'action', 'value': action });
+            // Post the data
+            $.post(sUrl, data, function (response) {
+              // Sanity check
+              if (response !== undefined) {
+                if (response.status == "ok") {
+                  if ('html' in response) {
+                    $(elMsg).html(response['html']);
+                  } else {
+                    $(elMsg).html("Response is okay, but [html] is missing");
+                  }
+                } else {
+                  $(elMsg).html("Could not interpret response " + response.status);
+                }
+              }
+            });
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("field_update", ex);
         }
       },
 

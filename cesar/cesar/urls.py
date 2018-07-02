@@ -90,6 +90,7 @@ urlpatterns = [
     url(r'^ajax/download/crpx/(?P<object_id>\d+)/$', ResearchDownload.as_view(), name='search_download'),
     url(r'^ajax/download/json/(?P<object_id>\d+)/$', ResearchDownloadJson.as_view(), name='search_json'),
     url(r'^ajax/progress(?:/(?P<object_id>\d+))?/$', ResearchProgress.as_view(), name='search_progress'),
+    url(r'^ajax/researchfield(?:/(?P<object_id>\d+))?/$', ResearchField.as_view(), name='research_field'),
     url(r'^ajax/researchpart1/$', ResearchPart1.as_view(), name='research_new'),
     url(r'^ajax/researchpart1(?:/(?P<object_id>\d+))?/$', ResearchPart1.as_view(), name='research_part_1'),
     url(r'^ajax/researchpart2(?:/(?P<object_id>\d+))?/$', ResearchPart2.as_view(), name='research_part_2'),
