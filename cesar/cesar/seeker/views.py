@@ -1198,73 +1198,76 @@ class ResearchPart(View):
                     context[prefix + "Form"] = formObj['forminstance']
                 # Walk all the formset objects
                 for formsetObj in self.formset_objects:
-                    formsetClass = formsetObj['formsetClass']
                     prefix  = formsetObj['prefix']
-                    form_kwargs = self.get_form_kwargs(prefix)
-                    if self.add:
-                        # Saving a NEW item
-                        formset = formsetClass(request.POST, request.FILES, prefix=prefix, form_kwargs = form_kwargs)
-                    else:
-                        # Saving an EXISTING item
-                        instance = self.get_instance(prefix)
-                        qs = self.get_queryset(prefix)
-                        if qs == None:
-                            formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, form_kwargs = form_kwargs)
+                    if self.can_process_formset(prefix):
+                        formsetClass = formsetObj['formsetClass']
+                        form_kwargs = self.get_form_kwargs(prefix)
+                        if self.add:
+                            # Saving a NEW item
+                            formset = formsetClass(request.POST, request.FILES, prefix=prefix, form_kwargs = form_kwargs)
                         else:
-                            formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, queryset=qs, form_kwargs = form_kwargs)
-                    # Process all the forms in the formset
-                    self.process_formset(prefix, request, formset)
-                    # Store the instance
-                    formsetObj['formsetinstance'] = formset
-                    # Adapt the formset contents only, when it is NOT READONLY
-                    if not formsetObj['readonly']:
-                        # Is the formset valid?
-                        if formset.is_valid():
-                            # Make sure all changes are saved in one database-go
-                            with transaction.atomic():
-                                # Walk all the forms in the formset
-                                for form in formset:
-                                    # At least check for validity
-                                    if form.is_valid() and self.is_custom_valid(prefix, form):
-                                        # Should we delete?
-                                        if form.cleaned_data['DELETE']:
-                                            # Delete this one
-                                            form.instance.delete()
-                                            # NOTE: the template knows this one is deleted by looking at form.DELETE
-                                            # form.delete()
+                            # Saving an EXISTING item
+                            instance = self.get_instance(prefix)
+                            qs = self.get_queryset(prefix)
+                            if qs == None:
+                                formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, form_kwargs = form_kwargs)
+                            else:
+                                formset = formsetClass(request.POST, request.FILES, prefix=prefix, instance=instance, queryset=qs, form_kwargs = form_kwargs)
+                        # Process all the forms in the formset
+                        self.process_formset(prefix, request, formset)
+                        # Store the instance
+                        formsetObj['formsetinstance'] = formset
+                        # Adapt the formset contents only, when it is NOT READONLY
+                        if not formsetObj['readonly']:
+                            # Is the formset valid?
+                            if formset.is_valid():
+                                # Make sure all changes are saved in one database-go
+                                with transaction.atomic():
+                                    # Walk all the forms in the formset
+                                    for form in formset:
+                                        # At least check for validity
+                                        if form.is_valid() and self.is_custom_valid(prefix, form):
+                                            # Should we delete?
+                                            if form.cleaned_data['DELETE']:
+                                                # Delete this one
+                                                form.instance.delete()
+                                                # NOTE: the template knows this one is deleted by looking at form.DELETE
+                                                # form.delete()
+                                            else:
+                                                # Check if anything has changed so far
+                                                has_changed = form.has_changed()
+                                                # Save it preliminarily
+                                                instance = form.save(commit=False)
+                                                # Any actions before saving
+                                                if self.before_save(prefix, request, instance, form):
+                                                    has_changed = True
+                                                # Save this construction
+                                                if has_changed: 
+                                                    # Save the instance
+                                                    instance.save()
+                                                    # Adapt the last save time
+                                                    context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
+                                                    # Store the instance id in the data
+                                                    self.data[prefix + '_instanceid'] = instance.id
                                         else:
-                                            # Check if anything has changed so far
-                                            has_changed = form.has_changed()
-                                            # Save it preliminarily
-                                            instance = form.save(commit=False)
-                                            # Any actions before saving
-                                            if self.before_save(prefix, request, instance, form):
-                                                has_changed = True
-                                            # Save this construction
-                                            if has_changed: 
-                                                # Save the instance
-                                                instance.save()
-                                                # Adapt the last save time
-                                                context['savedate']="saved at {}".format(datetime.now().strftime("%X"))
-                                                # Store the instance id in the data
-                                                self.data[prefix + '_instanceid'] = instance.id
-                                    else:
-                                        if len(form.errors) > 0:
-                                            self.arErr.append(form.errors)
-                        else:
-                            # Iterate over all errors
-                            for idx, err_this in enumerate(formset.errors):
-                                if '__all__' in err_this:
-                                    self.arErr.append(err_this['__all__'][0])
-                                elif err_this != {}:
-                                    # There is an error in item # [idx+1], field 
-                                    problem = err_this 
-                                    for k,v in err_this.items():
-                                        fieldName = k
-                                        errmsg = "Item #{} has an error at field [{}]: {}".format(idx+1, k, v[0])
-                                        self.arErr.append(errmsg)
+                                            if len(form.errors) > 0:
+                                                self.arErr.append(form.errors)
+                            else:
+                                # Iterate over all errors
+                                for idx, err_this in enumerate(formset.errors):
+                                    if '__all__' in err_this:
+                                        self.arErr.append(err_this['__all__'][0])
+                                    elif err_this != {}:
+                                        # There is an error in item # [idx+1], field 
+                                        problem = err_this 
+                                        for k,v in err_this.items():
+                                            fieldName = k
+                                            errmsg = "Item #{} has an error at field [{}]: {}".format(idx+1, k, v[0])
+                                            self.arErr.append(errmsg)
 
                             # self.arErr.append(formset.errors)
+                    else:
+                        formset = []
                     # Add the formset to the context
                     context[prefix + "_formset"] = formset
             elif self.action == "download":
@@ -1533,6 +1536,9 @@ class ResearchPart(View):
     def process_formset(self, prefix, request, formset):
         return None
 
+    def can_process_formset(self, prefix):
+        return True
+
     def custom_init(self):
         pass
 
@@ -1678,7 +1684,7 @@ class ResearchPart1(ResearchPart):
                 if formObj['prefix'] == 'gateway': gateway = formObj['instance']
                 if formObj['prefix'] == 'research': research = formObj['instance']
             if research != None:
-                if research.gateway == None:
+                if research.gateway_id == None or research.gateway == None:
                     research.gateway = gateway
                     has_changed = True
                 # Check for the owner
@@ -1795,6 +1801,14 @@ class ResearchPart2(ResearchPart):
                     form.fields['name'].disabled = True
                     pass
         return None
+
+    def can_process_formset(self, prefix):
+        if self.obj == None:
+            return True
+        else:
+            return ( (prefix == 'wrdconstruction' and self.obj.targetType == "w") or \
+                     (prefix == 'cnsconstruction' and self.obj.targetType == "c") )
+
 
 
 class ResearchPart3(ResearchPart):
