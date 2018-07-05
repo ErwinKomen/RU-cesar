@@ -209,15 +209,10 @@ def short(request):
 def nlogin(request):
     """Renders the not-logged-in page."""
     assert isinstance(request, HttpRequest)
-    return render(
-        request,
-        'nlogin.html',
-        {
-            'title':'Not logged in',
-            'message':'Radboud University CESAR utility.',
-            'year':datetime.now().year,
-        }
-    )
+    context =  {    'title':'Not logged in', 
+                    'message':'Radboud University CESAR utility.',
+                    'year':datetime.now().year,}
+    return render(request,'nlogin.html', context)
 
 def signup(request):
     """Provide basic sign up and validation of it """
@@ -506,6 +501,16 @@ class PartDetailView(DetailView):
 
     model = Part
     template_name = 'browser/part_view.html'
+    
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated: 
+            return nlogin(request)
+        return super(PartDetailView).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated: 
+            return nlogin(request)
+        return super(PartDetailView).post(request, *args, **kwargs)
 
 
 class PartListView(ListView):
@@ -528,7 +533,10 @@ class PartListView(ListView):
 
     def render_to_response(self, context, **response_kwargs):
         """Check if a CSV response is needed or not"""
-        if 'Csv' in self.request.GET.get('submit_type', ''):
+        if not self.request.user.is_authenticated:
+            # Do not allow to get a good response
+            return nlogin(self.request)
+        elif 'Csv' in self.request.GET.get('submit_type', ''):
             """ Provide CSV response"""
             return export_csv(self.get_qs(), 'begrippen')
         else:
@@ -621,10 +629,17 @@ class SentenceListView(ListView):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             # Do not allow to get a good response
-            response = HttpResponse('')
-            response = redirect('nlogin')
+            return nlogin(request)
         else:
             response = super(SentenceListView, self).get(request, *args, **kwargs)
+        return response
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # Do not allow to get a good response
+            return nlogin(request)
+        else:
+            response = super(SentenceListView, self).post(request, *args, **kwargs)
         return response
 
     def get_context_data(self, **kwargs):
@@ -704,8 +719,7 @@ class SentenceDetailView(DetailView):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             # Do not allow to get a good response
-            response = HttpResponse('')
-            response = redirect('nlogin')
+            response = nlogin(request)
         else:
             self.object = self.get_object()
             context = self.get_context_data(object=self.object)
@@ -716,8 +730,7 @@ class SentenceDetailView(DetailView):
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             # Do not allow to get a good response
-            response = HttpResponse('')
-            response = redirect('nlogin')
+            response = nlogin(request)
         else:
             self.object = self.get_object()
             # Initialize
@@ -928,6 +941,11 @@ class TextDetailView(DetailView):
     template_name = 'browser/text_view.html'
     last_url = ''
 
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return nlogin(request)
+        return super(TextDetailView).get(request, *args, **kwargs)
+
     def post(self, request, pk):
         text = get_object_or_404(Text, pk=pk)
         bound_form = self.form_class(request.POST, instance=text)
@@ -948,6 +966,9 @@ class TextDetailView(DetailView):
                          'text': text,
                          'status': 'error'}
               return render( request, self.template_name, context)
+        elif not request.user.is_authenticated:
+            # Do not allow to get a good response
+            return nlogin(request)
         else:
           # Not the superuser
           context = {'form': bound_form,
@@ -1011,7 +1032,10 @@ class TextListView(ListView):
 
     def render_to_response(self, context, **response_kwargs):
         """Check if a CSV response is needed or not"""
-        if 'Csv' in self.request.GET.get('submit_type', ''):
+        if not self.request.user.is_authenticated:
+            # Do not allow to get a good response
+            return nlogin(self.request)
+        elif 'Csv' in self.request.GET.get('submit_type', ''):
             """ Provide CSV response"""
             return export_csv(self.get_qs(), 'begrippen')
         else:
