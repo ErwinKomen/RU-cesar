@@ -13,7 +13,7 @@ from cesar.utils import *
 from cesar.settings import APP_PREFIX
 from cesar.browser.models import build_choice_list, build_abbr_list, \
                                  get_help, choice_value, choice_abbreviation, get_instance_copy, \
-                                 copy_m2m, copy_fk, Part, CORPUS_FORMAT, Text
+                                 copy_m2m, copy_fk, Part, CORPUS_FORMAT, Text, get_format_name
 from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_dbinfo
 import sys
 import copy
@@ -2590,7 +2590,7 @@ class Feature(models.Model):
             oCode['type'] = self.feattype
             oCode['order'] = self.order
             oCode['description'] = self.description
-            oCode['include'] = self.get_include_display()
+            oCode['include'] = self.include     # Use the INCLUDE value straight, *NOT* this: self.get_include_display()
             # Action depends on feattype
             if self.feattype == "dvar":
                 if self.variable != None:
@@ -3516,49 +3516,54 @@ class Basket(models.Model):
                 hit_list = sorted(oQcResults['hits'], key=lambda hit: hit['file'])
                 # Sort texts
                 text_list = Text.sorted_texts(instPart, instFormat)
+                # Check if there are any results
+                if len(text_list) == 0:
+                    msg = "set_quantor error: there are no texts of type {} in part {}".format(
+                        get_format_name(instFormat), instPart )
                 # Get the first text
                 text_list_iter = text_list.iterator()
                 text = next(text_list_iter)
-                chunks = math.ceil( hits / iChunkSize)
-                for chunk in range(chunks):
-                    # Set the max idx
-                    max_idx = (chunk + 1) * iChunkSize
-                    with transaction.atomic():
-                        while idx < max_idx and idx < hits:
-                            if idx % iShowSize == 0:
-                                sMsg = "set_quantor hits: {} / {}".format(idx, hits)
-                                oErr.Status(sMsg)
-                            hit = hit_list[idx]
+                if text != None:
+                    chunks = math.ceil( hits / iChunkSize)
+                    for chunk in range(chunks):
+                        # Set the max idx
+                        max_idx = (chunk + 1) * iChunkSize
+                        with transaction.atomic():
+                            while idx < max_idx and idx < hits:
+                                if idx % iShowSize == 0:
+                                    sMsg = "set_quantor hits: {} / {}".format(idx, hits)
+                                    oErr.Status(sMsg)
+                                hit = hit_list[idx]
 
-                            # Get the file name
-                            file = Text.strip_ext( hit['file'])
+                                # Get the file name
+                                file = Text.strip_ext( hit['file'])
 
-                            # Check if we have the right file
-                            while file != text.fileName:
-                                # text = next(text_list.iterator())
-                                text = next(text_list_iter)
+                                # Check if we have the right file
+                                while file != text.fileName:
+                                    # text = next(text_list.iterator())
+                                    text = next(text_list_iter)
 
-                            # Keep track of the number of words and lines
-                            iNumLines += text.lines
-                            iNumWords += text.words
+                                # Keep track of the number of words and lines
+                                iNumLines += text.lines
+                                iNumWords += text.words
 
-                            # Process the sub categories
-                            for subnum in range(0, numsubcats):
-                                # Get this Qsubcat and the count for it
-                                qsubcat = subcats[subnum]
-                                subcount = hit['subs'][subnum]
-                                # Add the appropriate Qsubinfo
-                                qsubinfo = Qsubinfo(subcat = qsubcat, 
-                                                    text= text,
-                                                    count = subcount)
-                                qsubinfo.save()
-                            # Go to the next hit
-                            idx += 1
+                                # Process the sub categories
+                                for subnum in range(0, numsubcats):
+                                    # Get this Qsubcat and the count for it
+                                    qsubcat = subcats[subnum]
+                                    subcount = hit['subs'][subnum]
+                                    # Add the appropriate Qsubinfo
+                                    qsubinfo = Qsubinfo(subcat = qsubcat, 
+                                                        text= text,
+                                                        count = subcount)
+                                    qsubinfo.save()
+                                # Go to the next hit
+                                idx += 1
 
-                # Put the number of lines and words in the quantor
-                quantor.lines = iNumLines
-                quantor.words = iNumWords
-                quantor.save()
+                    # Put the number of lines and words in the quantor
+                    quantor.lines = iNumLines
+                    quantor.words = iNumWords
+                    quantor.save()
                                 
             # Create KWIC material for each QC line
             for idx in range(0, iNumQc):
@@ -3568,6 +3573,7 @@ class Basket(models.Model):
             return True
         except:
             # Failure
+            msg = oErr.get_error_message()
             oErr.DoError('set_quantor could not read the hit information')
             return False
 

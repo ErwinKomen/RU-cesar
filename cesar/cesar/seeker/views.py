@@ -225,6 +225,24 @@ def csv_to_excel(sCsvData, response):
     return response
 
 
+def get_best_format(part, sFormat):
+    """Check if the combination part/sFormat is okay, otherwise try another format"""
+
+    format = choice_value(CORPUS_FORMAT, sFormat)
+    alt_format = 0 if format == 1 else 1
+
+    # Check if 'part'is a string or not
+    if isinstance(part, str):
+        part = Part.objects.filter(id=part).first()
+
+    num = Text.objects.filter(part=part, format=format).count()
+    alt_num = Text.objects.filter(part=part, format=alt_format).count()
+    if num == 0 or (num + 10) < alt_num:
+        sFormat = get_format_name(alt_format)
+    return sFormat
+
+
+
 class CustomInlineFormset(BaseInlineFormSet):
     def clean(self):
         super(CustomInlineFormset, self).clean()
@@ -714,6 +732,10 @@ class ResearchExe(View):
                         # Get the partId
                         if select_part != "":
                             part = Part.objects.filter(Q(id=select_part)).first()
+
+                        # Check if format adaptation is needed, should there be a better match
+                        select_format = get_best_format(part, select_format)
+
                         # Check if the necessary ingredient(s) are there
                         basket = self.get_basket(select_format, part)
                         # Set the status and the jobid
@@ -889,6 +911,10 @@ class ResearchExe(View):
                         # Find out which corpus/part has been chosen
                         select_part = self.qd.get("select_part")
                         select_format = self.qd.get("searchFormat")
+
+                        # Check if format adaptation is needed, should there be a better match
+                        select_format = get_best_format(select_part, select_format)
+
                         # Determine which basket this is in
                         basket = self.get_basket(select_format, select_part)
                         # Translate project to Xquery

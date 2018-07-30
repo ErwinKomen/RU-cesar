@@ -34,8 +34,12 @@ def ConvertProjectToXquery(oData, basket):
 
         # Determine which template to use
         if format == 'psdx':
-            template_main = 'seeker/main_psdx.xq'
-            template_def = 'seeker/def_psdx.xq'
+            if bUseDefinitionFunctions:
+                template_main = 'seeker/xqmain_psdx.xq'
+                template_def = 'seeker/xqdef_psdx.xq'
+            else:
+                template_main = 'seeker/main_psdx.xq'
+                template_def = 'seeker/def_psdx.xq'
         elif format == 'folia':
             if bUseDefinitionFunctions:
                 template_main = 'seeker/xqmain_folia.xq'
@@ -118,7 +122,7 @@ def ConvertProjectToXquery(oData, basket):
             for ft in gateway.get_feature_list():
                 ft.refresh_from_db()
                 # Double check the include value of this option
-                if ft.include == "" or ft.include == "true":
+                if ft.include == "" or ft.include == "true" or ft.include == "yes":
                     oCode = ft.get_code(format, method)
                     sCode = oCode['main']
                     if sCode != "":

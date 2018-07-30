@@ -271,6 +271,9 @@ def get_tuple_index(lstTuples, sValue):
             iBack = lstFound[0][0]
     return iBack
 
+def get_format_name(iFormat):
+    return choice_english(CORPUS_FORMAT, iFormat)
+
 class Status(models.Model):
     """Intermediate loading of /crpp information and status of processing it"""
 
