@@ -52,7 +52,7 @@
         <form action="{% url 'import_file' %}" method="POST" enctype="multipart/form-data">
           {% csrf_token %}
           <!-- Room for the filename to appear -->
-          <div class="col-md-6 form-group" id="import_info"
+          <div class="col-md-6 form-group" id="main-import_info"
                targetid="project_data_import"
                targeturl="{% url 'import_file' %}">
             <div class="input-group">
@@ -60,7 +60,7 @@
               <span class="input-group-btn">
                 <span class="btn btn-default btn-xs btn-file">
                   Browse...
-                  <input id="id_file_source" name="file_source" required="" type="file" oninput="ru.cesar.seeker.import_data('#import_info');" />
+                  <input id="id_file_source" name="file_source" required="" type="file" oninput="ru.cesar.seeker.import_data('main');" />
                 </span>
                 <!-- <input type="text" class="form-control" readonly />-->
               </span>
@@ -69,8 +69,10 @@
           </div>
           <!-- Progress of upload indicator -->
           <div class="col-md-6">
-            <progress class="hidden" style="width:100%;" id="import_progress" value="0" min="0" max="100"></progress>
+            <progress class="hidden" style="width:100%;" id="main-import_progress" value="0" min="0" max="100"></progress>
           </div>
+          <!-- Any error reporting -->
+          <div id="main-import_error"></div>
         </form>
 
         <!-- Import information -->

@@ -274,8 +274,14 @@ var ru = (function ($, ru) {
           private_methods.errMsg("var_move", ex);
         }
       },
-      errMsg: function (sMsg, ex) {
-        var sHtml = "";
+      errMsg: function (sMsg, ex, bNoCode) {
+        var sHtml = "",
+            bCode = true;
+
+        // Check for nocode
+        if (bNoCode !== undefined) {
+          bCode = not(bNoCode);
+        }
         // Replace newlines by breaks
         sMsg = sMsg.replace(/\n/g, "\n<br>");
         if (ex === undefined) {

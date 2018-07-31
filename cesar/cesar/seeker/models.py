@@ -2869,6 +2869,31 @@ class Research(models.Model):
     def username(self):
         return self.owner.username
 
+    def integrity(self):
+        """Check the integrity of this project"""
+
+        oBack = {'status': 'ok'}
+        oErr = ErrHandle()
+        try:
+            # Integrity of the Features
+            feat_list = []
+            for feat in self.gateway.get_feature_list():
+                if feat.include:
+                    oFeat = feat.get_json()
+                    fValue = oFeat['value'] 
+                    if fValue == None or fValue == "error":
+                        # This feature will cause trouble
+                        oBack['status'] = "error"
+                        oBack['msg'] = "Please review the specification of this feature: {}".format(feat.name)
+                        return oBack
+        except:
+            # Prepare an error return object
+            oBack['status'] = 'error'
+            oBack['msg'] = oErr.get_error_message()
+
+        # Return the integrity object (which should normally have status 'ok')
+        return oBack
+
     def get_json(self):
         # Prepare a back object
         oBack = {}
@@ -3150,9 +3175,17 @@ class Research(models.Model):
                     oBack['id'] = oArgStatus['id']
                 return oBack
 
-            # Other initialisations
+            # Check the integrity of the search project
+            oCheck = self.integrity()
+            if oCheck['status'] != 'ok':
+                oBack['msg'] = oCheck['msg']
+                oBack['status'] = "error"
+                return oBack
+
+            # Create the Xquery
             bRefresh = True # Make sure that Xquery is calculated afresh
             basket = self.to_xquery(partId, sFormat, bRefresh, basket)
+
             # Check on what was returned
             if basket == None:
                 if partId == None or partId == "":
@@ -3460,6 +3493,7 @@ class Basket(models.Model):
         """Get or create a quantor and put all the results from [oResults] into it"""
 
         oErr = ErrHandle()
+        oBack = {'status': 'ok'}
         try:
             self.set_status("creating quantor")
             # Get all quantors (if any) still attached to me
@@ -3520,6 +3554,9 @@ class Basket(models.Model):
                 if len(text_list) == 0:
                     msg = "set_quantor error: there are no texts of type {} in part {}".format(
                         get_format_name(instFormat), instPart )
+                    oBack['status'] = 'error'
+                    oBack['msg'] = msg
+                    return oBack
                 # Get the first text
                 text_list_iter = text_list.iterator()
                 text = next(text_list_iter)
@@ -3567,15 +3604,20 @@ class Basket(models.Model):
                                 
             # Create KWIC material for each QC line
             for idx in range(0, iNumQc):
-                self.set_kwic(idx+1)
+                if not self.set_kwic(idx+1, oErr):
+                    oBack['status'] = 'error'
+                    oBack['msg'] = oErr.get_error_stack()
+                    return oBack
 
             # REturn positively
-            return True
+            return oBack
         except:
             # Failure
             msg = oErr.get_error_message()
             oErr.DoError('set_quantor could not read the hit information')
-            return False
+            oBack['status'] = 'error'
+            oBack['msg'] = msg
+            return oBack
 
     def create_kwic_objects(self):
         """Create all needed KWIC objects"""
@@ -3594,10 +3636,10 @@ class Basket(models.Model):
 
         return Kwic.objects.filter(basket=self, qc=iQcLine).first()
 
-    def set_kwic(self, iQcLine):
+    def set_kwic(self, iQcLine, oErr = None):
         """Check if a KWIC table is available; otherwise make one"""
 
-        oErr = ErrHandle()
+        if oErr == None: oErr = ErrHandle()
         try:
             # Get the number of results from the associated QCline object
             lstQ = []

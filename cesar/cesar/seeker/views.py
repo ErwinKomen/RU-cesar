@@ -905,7 +905,11 @@ class ResearchExe(View):
                             context['searchTime'] = context['searchTime'] / 1000
 
                             # Final action: make all the information available into a Quantor for this basket
-                            self.obj.set_quantor(oBack)
+                            oQset = self.obj.set_quantor(oBack)
+                            if oQset['status'] != 'ok':
+                                msg = "Could not set quantor"
+                                if 'msg' in oQset: msg = oQset['msg']
+                                self.arErr.append(msg)
                 elif self.action == "download":
                     if "select_part" in self.qd:
                         # Find out which corpus/part has been chosen

@@ -49,3 +49,6 @@ class ErrHandle:
             return sMsg
         else:
             return ""
+
+    def get_error_stack(self):
+        return " ".join(self.loc_errStack)

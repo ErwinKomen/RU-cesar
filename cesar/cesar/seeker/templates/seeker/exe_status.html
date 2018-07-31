@@ -45,7 +45,7 @@
         </tbody>
       </table>
     {% else %}
-      <code>{{msg}}</code>
+      <div class="error">{{msg|safe}}</div>
     {% endif %}
     {% if error_jumpto %}
       <button type="button" 
