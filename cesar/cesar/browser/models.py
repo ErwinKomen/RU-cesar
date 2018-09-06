@@ -341,7 +341,7 @@ def sort_texts_from_txtlist(oTxtList):
                 # Add to arlist
                 arList.append(item)
         # Now sort
-        arList.sort(key=lambda item: item['name'])
+        arList.sort(key=lambda item: item['name'].lower())
     except:
         sMsg = oErr.get_error_message()
         oErr.DoError("sort_texts_from_txtlist: " + sMsg)
