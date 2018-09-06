@@ -300,3 +300,6 @@ ModelManifest.xml
 /cesar/cesar/viewer/migrations/__pycache__
 /cesar/cesar/viewer/migrations
 /cesar/cesar/viewer/__pycache__
+/anon/processor/__pycache__
+/anon/processor/entity_mapping/__init__.py
+/anon/processor/__init__.py
