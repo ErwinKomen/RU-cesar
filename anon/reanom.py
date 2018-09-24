@@ -16,7 +16,7 @@ bAllowCrashing = True   # Allow program to stop upon the first error
 if bLocal:
     base_dir = "/etc/corpora/tmp/"
 else:
-    base_dir = "/vol/tensusers/ekomen/corpora/acad/remainder/"
+    base_dir = "/vol/tensusers/ekomen/corpora/acad/remainder/lieke/"
 # =========================================================
 
 if bPatrick:
