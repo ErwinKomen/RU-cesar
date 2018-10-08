@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d565a16b-3481-4b3c-8554-8308d2d5d15f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>reanom.py</StartupFile>
+    <StartupFile>metadate.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -29,6 +29,9 @@
     <Compile Include="erwin.py" />
     <Compile Include="filter.py" />
     <Compile Include="main.py" />
+    <Compile Include="metadate.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="processor\anonymizer.py" />
     <Compile Include="processor\entity_mapping\extract_entities.py" />
     <Compile Include="processor\entity_mapping\extract_pos_tags.py" />
