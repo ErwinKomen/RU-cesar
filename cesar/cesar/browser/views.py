@@ -342,7 +342,7 @@ def sync_crpp_start(request):
 
                         # Update the models with the /crpp/txtlist information
                         bNoDeleting = not bDeleteFirst
-                        options = {'nodeleting': True, 'updating': bUpdateOnly, 'update_field': 'words'}
+                        options = {'nodeleting': bNoDeleting, 'updating': bUpdateOnly, 'update_field': 'words'}
                         oResult = process_textlist(crpp_texts, part, sFormat, oStatus, options)
 
                         # Process the reply from [process_textlist()]

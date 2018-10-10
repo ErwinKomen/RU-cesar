@@ -375,6 +375,9 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
         return True
 
     try:
+        # Debugging
+        errHandle.Status("Process_textlist nodeleting={} updating={} update_field={}".format(bNoDeleting, bUpdating, sUpdateField))
+
         # Update the synchronisation object that contains all relevant information
         oBack['lng'] = part.corpus.get_lng_display()
         oBack['part'] = part.name
@@ -474,6 +477,9 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                 iPathCount = oPath['count']
                 arList = oPath['list']
 
+                # Debugging
+                errHandle.Status("Process_textlist path={} ".format(sPath))
+
                 # Remove all texts adhering to the specifications
                 lstText = []
                 oBack['part'] = part.name
@@ -489,6 +495,10 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
 
                         with transaction.atomic():
                             for oText in chunk_this:
+
+                                # Debugging
+                                errHandle.Status("Process_textlist deleting step #1 {}".format(oText['name']))
+
                                 # Validate
                                 if has_oblig_fields(oText):
                                     # check if it is in [Text] already
@@ -499,6 +509,9 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                                     oBack['file'] = oText['name']
                                     # Walk through all results
                                     for oMatch in lMatches:
+                                        # Debugging
+                                        errHandle.Status("Process_textlist deleting step #2 {} Text.id={}".format(oText['name'], oMatch.id))
+
                                         # Delete this result (this also includes deleting the related [Sentence] entry)
                                         oMatch.delete()
                         # Show what is happening
@@ -1227,6 +1240,14 @@ class Text(models.Model):
         qs = Sentence.objects.filter(text__id=self.id).distinct().select_related().order_by('order')
         oBack['qs'] = qs
         return oBack
+
+    def delete(self, using = None, keep_parents = False):
+        # Remove all related QsubInfo
+        # Qsubinfo.objects.filter(text=self).delete()
+        # Remove all the sentences pointing to me
+        Sentence.objects.filter(text=self).delete()
+        # Now remove myself
+        return super(Text, self).delete(using, keep_parents)
 
 
 class Sentence(models.Model):
