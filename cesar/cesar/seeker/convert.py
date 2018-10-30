@@ -77,6 +77,7 @@ def ConvertProjectToXquery(oData, basket):
                                      'code': oCode['main'],
                                      'type': cvar.type,
                                      'dvars': oCode['dvars'],
+                                     'dvarnum': oCode['dvarnum'],
                                      'fname': "tb:dvar_{}_cons_{}".format(var.name, cons.name)}
                         # Check for coding errors
                         if 'error' in oCode:

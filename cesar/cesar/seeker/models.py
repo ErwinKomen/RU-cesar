@@ -2160,7 +2160,7 @@ class ConstructionVariable(models.Model):
         """Provide Xquery 'main' and 'def' code for this cns var"""
 
         oErr = ErrHandle()
-        oBack = {'main': "", 'def': "", 'dvars': []}
+        oBack = {'main': "", 'def': "", 'dvars': [], 'dvarnum': 0}
         sDef = ""
         sMain = ""
         try:
@@ -2192,6 +2192,7 @@ class ConstructionVariable(models.Model):
                 lstQ.append(Q(order__lt=self.variable.order))
                 qs = VarDef.objects.filter(*lstQ).order_by('order')
                 oBack['dvars'] = ", ".join( ["$" + item.name for item in qs])
+                oBack['dvarnum'] = qs.count()
                 # Check if a function has been defined
                 if self.function == None:
                     # This is not good: no function specified

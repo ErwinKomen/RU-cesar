@@ -10,14 +10,15 @@
       {% for item in dvar_list %}
         let ${{item.name}} := 
           {% for cvar in item.cvar_list %}
+            (: dvarnum = {{cvar.dvarnum}} :)
             {% if item.cvar_list|length == 1 %} 
-              {% if cvar.type == "calc" %}{{cvar.fname}}($search {% if cvar.dvars|length > 0 %},{% endif %} {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
+              {% if cvar.type == "calc" %}{{cvar.fname}}($search {% if cvar.dvarnum > 0 %},{% endif %} {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% elif forloop.first %}
-              if ($searchgroup = '{{cvar.grp}}') then {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
+              if ($searchgroup = '{{cvar.grp}}') then {% if cvar.type == "calc" %}{{cvar.fname}}($search {% if cvar.dvarnum > 0 %},{% endif %} {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% elif forloop.last %}
-              else {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
+              else {% if cvar.type == "calc" %}{{cvar.fname}}($search {% if cvar.dvarnum > 0 %},{% endif %} {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% else %}
-              else if ($searchgroup = '{{cvar.grp}}') then {% if cvar.type == "calc" %}{{cvar.fname}}($search, {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
+              else if ($searchgroup = '{{cvar.grp}}') then {% if cvar.type == "calc" %}{{cvar.fname}}($search {% if cvar.dvarnum > 0 %},{% endif %} {{cvar.dvars}}){% else %}{{cvar.code|safe}}{% endif %}
             {% endif %}
           {% endfor %}
       {% endfor %}
