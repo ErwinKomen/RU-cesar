@@ -199,6 +199,8 @@ class SearchMain(models.Model):
                     lLine.append(input_line)
             sSingle = "|".join(lSingle)
             sMulti = tuple(lLine)
+            if len(sMulti) == 1:
+                sMulti = str(sMulti).replace(",)", ")")
             return {'single': sSingle, 'line_list': sMulti}
         elif targetType == 'c':
             return {'cat_incl': self.value, 'cat_excl': self.exclude}

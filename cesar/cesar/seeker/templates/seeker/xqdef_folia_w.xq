@@ -4,8 +4,8 @@ declare function tb:hasConstruction($ndThis as node()?) as xs:boolean? {
   (: Determine whether $ndThis contains the word(s) we are interested in :)
   let $bFound := 
     {% for search in search_list %}
-      {% if forloop.first %}if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list}} )) then true()
-      {% else %}else if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list}})) then true()
+      {% if forloop.first %}if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list|safe}} )) then true()
+      {% else %}else if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list|safe}})) then true()
       {% endif %}
       {% if forloop.last %}else false(){% endif %}
     {% endfor %}
@@ -33,8 +33,8 @@ declare function tb:getConstructionGroup($ndThis as node()?) as xs:string? {
   (: Determine whether $ndThis contains the word(s) we are interested in :)
   let $sGroup := 
     {% for search in search_list %}
-      {% if forloop.first %}if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list}} )) then '{{search.name}}'
-      {% else %}else if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list}})) then '{{search.name}}'
+      {% if forloop.first %}if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list|safe}} )) then '{{search.name}}'
+      {% else %}else if (tb:hasW($ndThis, '{{search.single}}', {{search.line_list|safe}})) then '{{search.name}}'
       {% endif %}
       {% if forloop.last %}else ''{% endif %}
     {% endfor %}

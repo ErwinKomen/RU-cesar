@@ -21,8 +21,8 @@ var ru = (function ($, ru) {
         basket_result = "",           // URL to the results for this basket
         basket_data = null,           // DATA to be sent along
         lAddTableRow = [
-          { "table": "research_intro-wrd", "prefix": "construction", "counter": true, "events": null},
-          { "table": "research_intro-cns", "prefix": "construction", "counter": true, "events": null },
+          { "table": "research_intro-wrd", "prefix": "wrdconstruction", "counter": true, "events": null},
+          { "table": "research_intro-cns", "prefix": "cnsconstruction", "counter": true, "events": null },
           { "table": "research_shareg", "prefix": "shareg", "counter": false, "events": null },
           { "table": "research_gvar", "prefix": "gvar", "counter": false, "events": null },
           { "table": "research_vardef", "prefix": "vardef", "counter": false, "events": null },

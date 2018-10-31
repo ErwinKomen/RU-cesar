@@ -57,7 +57,7 @@ declare function tb:getFtList($search, $searchgroup
   let $ft_search_pos := $search/@class
   (: Include the user-specified features here :)
   {% for feat in feature_list %}
-  let $ft_{{feat.name}} := {% if feat.type == 'dvar' %}${{feat.dvar.name}}{% else %}{{feat.fname}}($search {% if dvar_all|length > 0 %}, {% endif %} {{dvar_all}}) {% endif %}
+		let $ft_{{feat.name}} := {% if feat.type == 'dvar' %}${{feat.dvar.name}}{% else %}{{feat.fname}}($search {% if dvar_all|length > 0 %}, {% endif %} {{dvar_all}}) {% endif %}
   {% endfor %}
 
   return concat($ft_search, ';', $ft_search_pos
