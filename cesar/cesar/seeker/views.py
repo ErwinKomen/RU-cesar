@@ -4575,6 +4575,58 @@ def research_edit(request, object_id=None):
     #   or editing the existing project
     return render(request, template, context)
 
+def research_simple(request):
+    """Allow the user to specify a simple search"""
+
+    # Initialisations
+    template = "seeker/research_simple.html"
+    arErr = []              # Start without errors
+    simplename = "_simple"  # Name of the simple project
+
+        # Get the correct owner
+    owner = User.objects.filter(Q(username=request.user)).first()
+
+    # Check if the user is authenticated
+    if owner == None or not request.user.is_authenticated:
+        # Simply redirect to the home page
+        return redirect('nlogin')
+
+    # Get the 'simple' project of this owner
+    lstQ = []
+    lstQ.append(Q(owner=owner))
+    lstQ.append(Q(name=simplename))
+    obj = Research.objects.filter(*lstQ).first()
+    if obj == None:
+        gateway = Gateway(name="simple")
+        gateway.save()
+        obj = Research(name=simplename, purpose="simple", targetType="w",
+                       gateway=gateway, owner=owner)
+        obj.save()
+    object_id = obj.id
+
+    intro_message = "Make a simple search"
+    intro_breadcrumb = "Simple"
+    sTargetType = ""
+
+    # Get a list of errors
+    error_list = [str(item) for item in arErr]
+
+    # Create the context
+    context = dict(
+        object_id = object_id,
+        original=obj,
+        intro_message=intro_message,
+        intro_breadcrumb=intro_breadcrumb,
+        targettype=sTargetType,
+        part_list=get_partlist(),
+        error_list=error_list
+        )
+
+    # Open the template that allows Editing an existing or Creating a new research project
+    #   or editing the existing project
+    return render(request, template, context)
+
+
 @csrf_exempt
 def import_json(request):
     """Import a JSON file that contains details of a (new) research project"""

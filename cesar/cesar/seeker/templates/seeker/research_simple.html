@@ -1,0 +1,162 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'seeker_list' %}">Search</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">
+    <h3>Simple search</h3>
+    <p>{{intro_message|safe}}</p>
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- Dashboard to specify the corpus and then execute the search -->
+    <div id="exe_dashboard" >
+      <form action="" method="post">
+        {% csrf_token %}
+        
+        <!-- Search word(s) -->
+        <div class="row container">
+          <div class="col-md-9 panel panel-default">
+            <label class="input-group" for="searchwords">
+              Find the following word(s)
+            </label>
+              <input name="searchwords" id="id_searchwords" class="form-control" value="" />
+          </div>
+        </div>
+
+        <!-- Corpus selection and execution -->
+        <div class="row container">
+          <div class="col-md-5 panel panel-default">
+            <div >
+              <span><b>Corpus</b></span>
+              <span class="pull-right">
+                <a class="btn btn-default btn-xs" id="search_refine"
+                    title="refine this search"
+                    targetid="search_refine_group"
+                    onclick="ru.cesar.seeker.toggle_click(this);">refine...</a>
+              </span>
+            </div>
+
+            <div class="input-group input-group-sm">
+              <!-- Storage for chosen corpus part -->
+              <div class="hidden">
+                <input name='searchPart' id='searchPart' class='form-control' value='' >
+                <input name='searchFormat' class='form-control' value='folia' >
+              </div>
+      
+              <!-- Let user choose a corpus-part -->
+              <label class='input-group-addon' for='part'>Search in</label>
+              <select class="form-control" name="select_part" id="select_part" 
+                      onchange="ru.cesar.seeker.corpus_choice(this, 'select_corpus_choice');">
+                <option value="">-</option>
+                {% for opt in part_list %}
+                  {% if opt.corpus_lng.first %}
+                    <optgroup label="{{opt.entry.language}}">
+                  {% endif %}
+                    <option value="{{opt.entry.id}}" {% if opt.entry.id == partchoice %} selected {% endif %}>{{opt.entry.name}}</option>
+                  {% if opt.corpus_lng.last %}
+                    </optgroup>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Refining a search -->
+            <div class="hidden" id="search_refine_group">
+              <!-- Specify number of (randomly chosen) texts -->
+              <table>
+                <tr>
+                  <td>Text selection:</td>
+                  <td>
+                    <select class="form-control" name="search_type" id="search_type"
+                            onchange="ru.cesar.seeker.corpus_refine(this, 'search_count_row');">
+                      <option value="">-</option>
+                      {% for opt in search_type %}
+                      <option value="{{opt.value}}">{{opt.name}}</option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                </tr>
+                <tr id="search_count_row" class="hidden"><td>Number of texts:</td><td><input id="search_count" maxlength="20" name="search_count" value="{{search_count}}" type="text" /></td></tr>
+              </table>
+              <div class="input-group input-group-sm">
+              </div>
+            </div>
+
+            <div id="select_corpus_choice" class="row">
+              <!-- This is where the details of the chosen corpus will appear-->
+              <div class="row">&nbsp;</div>
+            </div>
+
+          </div>
+
+          {% if object_id %}
+          <div class="col-md-3 col-md-offset-1 panel panel-default">
+            <b>Action</b>
+            <div class="row">
+
+              <div class="col-md-2 ">
+                <button type="button" class="btn jumbo-3" id="research_start" 
+                        ajaxurl="{% url 'search_prepare' object_id %}"
+                        onclick="ru.cesar.seeker.search_start(this);">Start</button>
+              </div>
+
+              <div class="col-md-offset-4 col-md-2 ">
+                <button type="button" class="btn jumbo-4 hidden" id="research_stop" 
+                        ajaxurl="{% url 'search_stop' object_id %}"
+                        onclick="ru.cesar.seeker.search_stop(this);">Stop</button>
+                <a class="btn jumbo-2 hidden" id="research_results"
+                    type="button" title="show results"
+                    href="">Results</a>
+              </div>
+
+
+            </div>
+            <div class="row">&nbsp;</div>
+            <div class="row">
+              <button type="button" class="btn btn-xs jumbo-1" id="research_download" 
+                      ajaxurl="{% url 'search_download' object_id %}"
+                      onclick="ru.cesar.seeker.search_download(this);">Download</button>
+            </div>
+            <div class="row">&nbsp;</div>
+          </div>
+          {% endif %}
+        </div>
+      </form>
+
+      <div class="row container">
+        <div class="col-md-9 panel panel-default">
+          <b>Progress</b>
+          <div class="row">
+            <div id="research_progress" class="col-md-12">
+              <div class="explanation">Select a corpus and press 'Start'. Progress indications will appear here.</div>
+            </div>
+          </div>
+          <div class="row">&nbsp;</div>
+          <div class="row">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  ru.cesar.seeker.init_events();
+</script>
+
+{% endblock content %}
+
+{% block script %}
+{% endblock %}
