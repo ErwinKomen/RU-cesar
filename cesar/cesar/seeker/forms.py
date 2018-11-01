@@ -21,6 +21,7 @@ SEARCHMAIN_CNS_FUNCTIONS = (
         ('c--m', 'Child category matches'),
     )
 
+
 rAlphaNumeric = re.compile(r"^[0-9a-zA-Z_]*$")
 
 def init_choices(obj, sFieldName, sSet, maybe_empty=False, bUseAbbr=False):
@@ -510,6 +511,12 @@ class QuantorSearchForm(ModelForm):
 
         model = Qsubinfo
         fields = "__all__"    # Standard fields
+
+
+class SimpleSearchForm(forms.Form):
+    targetType = forms.ChoiceField(label=_("Search type"), choices=TARGET_TYPE_CHOICES, required = True)
+    searchwords = forms.CharField(label=_("Word(s) to be found"), required=False)
+    searchpos = forms.CharField(label=_("Constituent categorie(s) to be found"), required = False)
 
 
 class UploadFileForm(forms.Form):

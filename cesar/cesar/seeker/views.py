@@ -40,6 +40,7 @@ from cesar.seeker.services import crpp_dbget
 from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
+SIMPLENAME = "aaa_simple"   # Name of the simple project
 
 
 def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
@@ -715,21 +716,29 @@ class ResearchExe(View):
                     self.oErr.Status("ResearchExe: action={} at [{}]".format(self.action, sNowTime))
                 if self.action == "prepare":
                     # Make sure we have the right paramters to work with
-                    if "select_part" in self.qd:
+                    if "select_part" in self.qd and self.qd.get("select_part") != "":
                         research = self.obj
                         # Check if this object is not currently being executed
                         if research.get_status() != "":
                             # Stop it
                             research.stop()
+
+                        # Check if this is a simple search
+                        if "is_simple_search" in self.qd:
+                            # It is a simple search: modify the research based on the information we receive
+                            modify_simple_search(research, self.qd)
+
                         # Find out which corpus/part has been chosen
                         select_part = self.qd.get("select_part")
                         select_format = self.qd.get("searchFormat")
+
                         # Possibly get searchtype and search count
                         search_type = self.qd.get("search_type")
                         search_count = self.qd.get("search_count")
                         oOptions = { 'search_type': search_type, 
                                      'search_count': search_count}
                         # Get the partId
+                        part = None
                         if select_part != "":
                             part = Part.objects.filter(Q(id=select_part)).first()
 
@@ -3833,12 +3842,19 @@ class ResultDetailView(DetailView):
         # Add some elements to the context
         research = self.basket.research
         context['object_id'] = self.object.id
-        context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
-        context['search_name'] = research.name
         context['original'] = research
-        context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
         context['quantor'] = self.quantor
         context['filters'] = self.basket.get_filters()
+        # Check if this is the simple search
+        if research.name == SIMPLENAME:
+            # This is the simple research project - special treatment
+            context['search_edit_url'] = reverse("seeker_simple")
+            context['search_name'] = "simple"
+            context['intro_message'] = "Simple search"
+        else:
+            context['search_edit_url'] = reverse("seeker_edit", kwargs={"object_id": research.id})
+            context['search_name'] = research.name
+            context['intro_message'] = "Research project: <b>{}</b>".format(research.name)
         # BEWARE: perhaps quantor is empty?
         if self.quantor == None:
             context['qclines'] = []
@@ -4580,51 +4596,129 @@ def research_simple(request):
 
     # Initialisations
     template = "seeker/research_simple.html"
-    arErr = []              # Start without errors
-    simplename = "_simple"  # Name of the simple project
+    arErr = []                  # Start without errors
+    simplename = SIMPLENAME     # Name of the simple project
+    sTargetType = "w"
+
+    # Action depends on GET or POST
+    if request.method == "GET": 
 
         # Get the correct owner
-    owner = User.objects.filter(Q(username=request.user)).first()
+        owner = User.objects.filter(Q(username=request.user)).first()
 
-    # Check if the user is authenticated
-    if owner == None or not request.user.is_authenticated:
-        # Simply redirect to the home page
-        return redirect('nlogin')
+        # Check if the user is authenticated
+        if owner == None or not request.user.is_authenticated:
+            # Simply redirect to the home page
+            return redirect('nlogin')
 
-    # Get the 'simple' project of this owner
-    lstQ = []
-    lstQ.append(Q(owner=owner))
-    lstQ.append(Q(name=simplename))
-    obj = Research.objects.filter(*lstQ).first()
-    if obj == None:
-        gateway = Gateway(name="simple")
-        gateway.save()
-        obj = Research(name=simplename, purpose="simple", targetType="w",
-                       gateway=gateway, owner=owner)
-        obj.save()
-    object_id = obj.id
+        # Get the 'simple' project of this owner
+        lstQ = []
+        lstQ.append(Q(owner=owner))
+        lstQ.append(Q(name=simplename))
+        obj = Research.objects.filter(*lstQ).first()
+        if obj == None:
+            gateway = Gateway(name="simple")
+            gateway.save()
+            obj = Research(name=simplename, purpose="simple", targetType=sTargetType,
+                           gateway=gateway, owner=owner)
+            obj.save()
+        object_id = obj.id
 
-    intro_message = "Make a simple search"
-    intro_breadcrumb = "Simple"
-    sTargetType = ""
+        # Create a form based on this research object
+        simpleform = SimpleSearchForm()
+        simpleform.fields["targetType"].initial = obj.targetType
+        simpleform.fields["searchwords"].initial = ""
+        simpleform.fields["searchpos"].initial = ""
+        cns = obj.gateway.constructions.first()
+        if cns != None and cns.search != None:
+            svalue = cns.search.value
+            if obj.targetType == "w":
+                simpleform.fields["searchwords"].initial = svalue
+            else:
+                simpleform.fields["searchpos"].initial = svalue
 
-    # Get a list of errors
-    error_list = [str(item) for item in arErr]
+        intro_message = "Make a simple search"
+        intro_breadcrumb = "Simple"
+        # Also provide a set of search options
+        search_type = [ {'name': 'all', 'value': 'all'},
+                        {'name': 'first n', 'value': 'first'},
+                        {'name': 'random n', 'value': 'random'}]
+        search_count = 1000
 
-    # Create the context
-    context = dict(
-        object_id = object_id,
-        original=obj,
-        intro_message=intro_message,
-        intro_breadcrumb=intro_breadcrumb,
-        targettype=sTargetType,
-        part_list=get_partlist(),
-        error_list=error_list
-        )
+        # Get a list of errors
+        error_list = [str(item) for item in arErr]
 
-    # Open the template that allows Editing an existing or Creating a new research project
-    #   or editing the existing project
-    return render(request, template, context)
+        # Create the context
+        context = dict(
+            object_id = object_id,
+            original=obj,
+            simpleform=simpleform,
+            intro_message=intro_message,
+            intro_breadcrumb=intro_breadcrumb,
+            targettype=sTargetType,
+            search_type = search_type,
+            search_count = search_count,
+            part_list=get_partlist(),
+            error_list=error_list
+            )
+
+        # Open the template that allows Editing an existing or Creating a new research project
+        #   or editing the existing project
+        return render(request, template, context)
+
+    elif request.method == "POST":
+        return None
+
+    else:
+        return None
+
+def modify_simple_search(research, qd):
+    """Modify and save the research on the basis of the info we get"""
+
+    # Sanity checking
+    if research == None:
+        return False
+
+    # Continue
+    if "targetType" in qd:
+        research.targetType = qd.get("targetType", "w")
+        # Save the adapted research
+        research.save()
+        
+        # Look for value
+        sValue = ""
+        sExclude = ""
+        if research.targetType == "w":
+            sValue = qd.get("searchwords", "")
+        else:
+            sValue = qd.get("searchpos", "")
+        # Adapt the value in searchman
+        if sValue != "":
+            search = None
+            cns = research.gateway.constructions.first()
+            if cns == None or cns.search == None:
+                # there is no construction yet: make a SearchMain and a Construction
+                if research.targetType == "w":
+                    search = SearchMain.create_item("word-group", sValue, 'groupmatches')
+                else:
+                    search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude)
+            # Make sure the correct SEARCH is set
+            if search == None:
+                search = cns.search
+            # Make sure the value of the word(s)/constituent(s) is set correctly
+            if research.targetType == "w":
+                search.adapt_item("word-group", sValue, 'groupmatches')
+            else:
+                search.adapt_item("const-group", sValue, 'groupmatches', sExclude)
+
+            # Make sure the construction is saved
+            if cns == None:
+                cns = Construction(name="simple", gateway=research.gateway, search=search)
+                cns.save()
+
+
+    # Return positively
+    return True
 
 
 @csrf_exempt

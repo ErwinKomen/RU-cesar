@@ -23,16 +23,58 @@
 
     <!-- Dashboard to specify the corpus and then execute the search -->
     <div id="exe_dashboard" >
-      <form action="" method="post">
+      <form action="" method="post" class="noblurring">
         {% csrf_token %}
         
         <!-- Search word(s) -->
         <div class="row container">
           <div class="col-md-9 panel panel-default">
-            <label class="input-group" for="searchwords">
-              Find the following word(s)
-            </label>
-              <input name="searchwords" id="id_searchwords" class="form-control" value="" />
+            <div>&nbsp;</div>
+
+            <!-- hidden input-->
+            <div id="" class="hidden">
+              <input id="id_targetType" name="targetType" type="text" value="{{simpleform.targetType.value}}" />
+              <input name="is_simple_search" type="text" value="yes" />
+            </div>
+
+            <!-- Table for input -->
+            <table class="func-view">
+              <tbody>
+                <!-- Looking for a word -->
+                <tr id="simple_specify_w" class="tablefield">
+                  <td class="tdnowrap">Find the following word(s)</td>
+                  <td style="width: 100%;">{{simpleform.searchwords}}</td>
+                </tr>
+
+                <!-- Looking for a POS-tag -->
+                <tr id="simple_specify_c" class="tablefield hidden">
+                  <td class="tdnowrap">Find constituents with the following categorie(s)</td>
+                  <td style="width: 100%;">{{simpleform.searchpos}}</td>
+                </tr>
+
+                <!-- Button row-->
+                <tr>
+                  <td colspan="2">
+                    <span class="pull-right">
+
+                    <a id="simple_select_w" 
+                       onclick="ru.cesar.seeker.simple_switch(this, 'w');"
+                       title="I want to look for word(s)" 
+                       class="hidden btn btn-default btn-xs">Switch: Find word(s)</a>
+                    <a id="simple_select_c" 
+                       onclick="ru.cesar.seeker.simple_switch(this, 'c');"
+                       title="I want to look for constituent categorie(s)" 
+                       class="hidden btn btn-default btn-xs">Switch: Find constituent(s)</a>
+                    <a id="simple_more" 
+                       onclick="ru.cesar.seeker.simple_switch(this, 'more');"
+                       title="Allow me to specify more" 
+                       class="btn jumbo-1 btn-xs">...</a>
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div>&nbsp;</div>
           </div>
         </div>
 
@@ -125,11 +167,8 @@
 
             </div>
             <div class="row">&nbsp;</div>
-            <div class="row">
-              <button type="button" class="btn btn-xs jumbo-1" id="research_download" 
-                      ajaxurl="{% url 'search_download' object_id %}"
-                      onclick="ru.cesar.seeker.search_download(this);">Download</button>
-            </div>
+            <div class="row">&nbsp;</div>
+            <div class="row">&nbsp;</div>
             <div class="row">&nbsp;</div>
           </div>
           {% endif %}

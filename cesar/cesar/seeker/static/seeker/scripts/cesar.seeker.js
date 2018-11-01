@@ -1682,7 +1682,7 @@ var ru = (function ($, ru) {
           });
 
           // Make sure all <input> elements in a <form> are treated uniformly
-          $("form input[type='text']").each(function () {
+          $("form:not(.noblurring) input[type='text']").each(function () {
             var $this = $(this),
                 $span = $this.prev("span");
             // Create span if not existing
@@ -1701,8 +1701,10 @@ var ru = (function ($, ru) {
             // Specify what to do on blurring the input
             $this.on("blur", function () {
               var $this = $(this);
-              // Show the value of the input in the span
-              $this.hide().siblings("span").text($this.val()).show();
+              if ($this.val().trim() !== "") {
+                // Show the value of the input in the span
+                $this.hide().siblings("span").text($this.val()).show();
+              }
             }).on("keydown", function (e) {
               // SPecify what to do if the tab is pressed
               if (e.which === 9) {
@@ -1717,7 +1719,7 @@ var ru = (function ($, ru) {
               }
             });
             // Make sure the <input> is hidden, unless it is empty
-            if ($this.val() !== "") {
+            if ($this.val().trim() !== "") {
               $this.hide();
             }
           });
@@ -1869,6 +1871,56 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("part_detail_toggle", ex);
+        }
+      },
+
+      /**
+       * simple_switch
+       *    Switch in the simple search view
+       *
+       */
+      simple_switch: function (elStart, sType) {
+        var elTargetType = "#id_targetType",
+            elSelectC = "#simple_select_c",
+            elSelectW = "#simple_select_w",
+            elSpecifyC = "#simple_specify_c",
+            elSpecifyW = "#simple_specify_w";
+
+        try {
+          switch (sType) {
+            case "w":
+              // Show the C button
+              $(elSelectC).removeClass("hidden");
+              $(elSelectW).addClass("hidden");
+              // Show the Word input
+              $(elSpecifyW).removeClass("hidden");
+              $(elSpecifyC).addClass("hidden");
+              // Adapt the value
+              $(elTargetType).val("w");
+              break;
+            case "c":
+              // Show the W button
+              $(elSelectC).addClass("hidden");
+              $(elSelectW).removeClass("hidden");
+              // Show the Constituent input
+              $(elSpecifyW).addClass("hidden");
+              $(elSpecifyC).removeClass("hidden");
+              // Adapt the value
+              $(elTargetType).val("c");
+              break;
+            case "more":
+              // Hide myself
+              $("#simple_more").addClass("hidden");
+              // Show the C button
+              $(elSelectC).removeClass("hidden");
+              $(elSelectW).addClass("hidden");
+              // Show the Word input
+              $(elSpecifyW).removeClass("hidden");
+              $(elSpecifyC).addClass("hidden");
+              break;
+          }
+        } catch (ex) {
+          private_methods.errMsg("simple_switch", ex);
         }
       },
 
@@ -2951,6 +3003,8 @@ var ru = (function ($, ru) {
 
           // Make an ASYNCHRONOUS ajax call to START OFF the search
           $.post(ajaxurl, data, function (response) {
+            var lHtml = [];
+
             if (response.status === undefined) {
               // Show an error somewhere
               private_methods.errMsg("Bad execute response");
@@ -2958,9 +3012,18 @@ var ru = (function ($, ru) {
             } else if (response.status === "error") {
               // Show the error that has occurred
               if ("html" in response) { sMsg = response['html']; }
-              if ("error_list" in response) { sMsg += response['error_list']; }
-              private_methods.errMsg("Execute error: " + sMsg);
-              $(sDivProgress).html("execution error");
+              if ("error_list" in response && response['error_list'] !== "") {
+                // Don't really use this:
+                sMsg += response['error_list'];
+                // Experimental: only show this error list
+                lHtml.push("<span style=\"color: darkred;\">");
+                lHtml.push(response['error_list']);
+                lHtml.push("</span>");
+                $(sDivProgress).html(lHtml.join("\n"));
+              } else {
+                private_methods.errMsg("Execute error: " + sMsg);
+                $(sDivProgress).html("execution error");
+              }
             } else {
               // All went well -- get the basket id
               basket_id = response.basket_id;
@@ -3009,6 +3072,8 @@ var ru = (function ($, ru) {
                     $(sDivProgress).html("execution error (see above)");
                   }
                   $("#action_inprogress").addClass("hidden");
+                  // Hide the stop button, because we have already stopped
+                  $("#research_stop").addClass("hidden");
                 } else {
                   // All went well, and the search has finished
                   // No further action is needed

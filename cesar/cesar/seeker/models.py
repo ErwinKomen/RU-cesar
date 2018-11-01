@@ -177,6 +177,32 @@ class SearchMain(models.Model):
 
         return obj
 
+    def adapt_item(self, function, value, operator, exclude=None):
+        """Adapt the search and save it"""
+
+        operator_matches = choice_value(SEARCH_OPERATOR, operator)
+        function_word = choice_value(SEARCH_FUNCTION, function)
+
+        need_saving = False
+        # Set the items
+        if self.function != function_word: 
+            self.function = function_word
+            need_saving = True
+        if self.operator != operator_matches: 
+            self.operator = operator_matches
+            need_saving = True
+        if self.value != value: 
+            self.value = value
+            need_saving = True
+        if self.exclude != exclude:
+            self.exclude = exclude
+            need_saving = True
+        # Need saving?
+        if need_saving:
+            # Save myself
+            self.save()
+        return self
+
     def get_search_spec(self, targetType):
         """Get the relevant search arguments in appropriate forms.
         

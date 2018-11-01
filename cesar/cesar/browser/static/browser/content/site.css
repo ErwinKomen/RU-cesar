@@ -932,6 +932,10 @@ table.result-list tr:hover {
   border: 1px solid white;
 }
 
+.tablefield input {
+  width: 100%;
+}
+
 table.compact-table, 
 table.compact-table tr, 
 table.compact-table td,
