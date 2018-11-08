@@ -548,7 +548,7 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                                             oBack['file'] = oText['name']
                                 else:
                                     # Not all fields were there in the [oText] we encountered
-                                    oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
+                                    oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText['name'], sFormat)
                                     oStatus.set("error", oBack)
                         # Show what is going on
                         oStatus.set("updating", oBack)
@@ -588,7 +588,7 @@ def process_textlist(oTxtlist, part, sFormat, oStatus, options):
                                     lstText.append(oNew)
                                 else:
                                     # Not all fields were there in the [oText] we encountered
-                                    oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText.fileName, sFormat)
+                                    oBack['note'] = "Did not find all obl fields in {} [{}]".format(oText['name'], sFormat)
                                     oStatus.set("error", oBack)
 
                         # Show what is going on
