@@ -1,7 +1,7 @@
 <TEI>{
-    (: This main query is meant for FOLIA encoding :)
+    (: This main query is meant for PSDX encoding :)
     
-    for $search in //su[tb:hasConstruction(self::su)]
+    for $search in //eTree[tb:hasConstruction(self::eTree)]
     
       (: Get the group this construction belongs to :)
       let $searchgroup := tb:getConstructionGroup($search)

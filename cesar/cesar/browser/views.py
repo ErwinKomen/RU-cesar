@@ -944,7 +944,7 @@ class TextDetailView(DetailView):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return nlogin(request)
-        return super(TextDetailView).get(request, *args, **kwargs)
+        return super(TextDetailView, self).get(request, *args, **kwargs)
 
     def post(self, request, pk):
         text = get_object_or_404(Text, pk=pk)
