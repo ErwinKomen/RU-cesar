@@ -26,7 +26,7 @@ declare function tb:hasE($ndThis as node()?, $sSingle as xs:string?, $seqLines a
 	let $bLemma := ($sLemma = '' or ($ftLemma != '' and ru:matches($sLemma, $ftLemma) )
 
   (: Action depends on exclusion being defined or not :)
-	let $bCategory := ( ( $sCatIncl = '' and $sCatExcl ) or  
+	let $bCategory := ( ( $sCatIncl = '' and $sCatExcl = '' ) or  
                       ( if ($sCatExcl = '') 
 	                        then ru:matches($ndThis/@Label, $sCatIncl) 
 												else if ($sCatIncl = '')
