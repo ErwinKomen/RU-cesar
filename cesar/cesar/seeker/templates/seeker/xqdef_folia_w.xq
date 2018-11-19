@@ -1,4 +1,4 @@
-(: Check whether the $ndThis node points to one of the word constructions that are defined :)
+(: Check whether the $ndThis node points to one of the WORD constructions that are defined :)
 declare function tb:hasConstruction($ndThis as node()?) as xs:boolean? {
 
   (: Determine whether $ndThis contains the word(s) we are interested in :)

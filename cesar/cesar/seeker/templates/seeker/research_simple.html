@@ -40,34 +40,37 @@
             <!-- Table for input -->
             <table class="func-view">
               <tbody>
+                <!-- Table header -->
+                <tr class="tablefield">
+                  <td colspan="4">Search through the texts, looking for... </td>
+                </tr>
+
                 <!-- Looking for a word -->
-                <tr id="simple_specify_w" class="tablefield">
-                  <td class="tdnowrap">Find the following word(s)</td>
-                  <td style="width: 100%;">{{simpleform.searchwords}}</td>
+                <tr id="simple_specify_w" class="tablefield simple-search-1">
+                  <td class="tdnowrap" title="A word (with wildcards) or a small phrase">Word or phrase:</td>
+                  <td colspan="3" style="width: 100%;">{{simpleform.searchwords}}</td>
                 </tr>
 
                 <!-- Looking for a POS-tag -->
-                <tr id="simple_specify_c" class="tablefield hidden">
-                  <td class="tdnowrap">Find constituents with the following categorie(s)</td>
-                  <td style="width: 100%;">{{simpleform.searchpos}}</td>
+                <tr id="simple_specify_c" class="tablefield simple-search-2 hidden">
+                  <td class="tdnowrap">Constituent category:</td>
+                  <td style="width: 50%;">{{simpleform.searchpos}}</td>
+                  <td class="tdnowrap" title="A constituent category to be excluded (use wildcards if needed)">Excluding:</td>
+                  <td style="width: 50%;">{{simpleform.searchexc}}</td>
+                </tr>
+                <!-- Looking for a lemma -->
+                <tr id="simple_specify_l" class="tablefield simple-search-2 hidden">
+                  <td class="tdnowrap" title="A lemma (use wildcards if needed)">Lemma:</td>
+                  <td colspan="3" style="width: 100%;">{{simpleform.searchlemma}}</td>
                 </tr>
 
                 <!-- Button row-->
                 <tr>
-                  <td colspan="2">
+                  <td colspan="4">
                     <span class="pull-right">
-
-                    <a id="simple_select_w" 
-                       onclick="ru.cesar.seeker.simple_switch(this, 'w');"
-                       title="I want to look for word(s)" 
-                       class="hidden btn btn-default btn-xs">Switch: Find word(s)</a>
-                    <a id="simple_select_c" 
-                       onclick="ru.cesar.seeker.simple_switch(this, 'c');"
-                       title="I want to look for constituent categorie(s)" 
-                       class="hidden btn btn-default btn-xs">Switch: Find constituent(s)</a>
                     <a id="simple_more" 
                        onclick="ru.cesar.seeker.simple_switch(this, 'more');"
-                       title="Allow me to specify more" 
+                       title="Let me to specify more" 
                        class="btn jumbo-1 btn-xs">...</a>
                     </span>
                   </td>
@@ -193,9 +196,8 @@
 
 <script>
   ru.cesar.seeker.init_events();
+  ru.cesar.seeker.init_simple();
 </script>
 
 {% endblock content %}
 
-{% block script %}
-{% endblock %}

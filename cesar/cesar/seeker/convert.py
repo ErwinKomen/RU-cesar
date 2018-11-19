@@ -148,27 +148,38 @@ def ConvertProjectToXquery(oData, basket):
                            feature_list=feature_list,
                            targetType=targetType)
 
-            # Action depends on the target type
-            if targetType == "w":
-                # Step #1: make the start of the main query
-                basket.set_status("Combining Main query")
-                sCodeQry = loader.get_template(template_main).render(context)
-                sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
+            # The action NO LONGER depends on the target type
+            # Step #1: make the start of the main query
+            basket.set_status("Combining Main query")
+            sCodeQry = loader.get_template(template_main).render(context)
+            sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
 
-                # Step #2: create the definitions part
-                basket.set_status("Combining Definitions")
-                sCodeDef = loader.get_template(template_def).render(context)
-                sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
-            elif targetType == "c":
-                # Step #1: make the start of the main query
-                basket.set_status("Combining Main query")
-                sCodeQry = loader.get_template(template_main).render(context)
-                sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
+            # Step #2: create the definitions part
+            basket.set_status("Combining Definitions")
+            sCodeDef = loader.get_template(template_def).render(context)
+            sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
 
-                # Step #2: create the definitions part
-                basket.set_status("Combining Definitions")
-                sCodeDef = loader.get_template(template_def).render(context)
-                sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
+            ## Action depends on the target type
+            #if targetType == "w":
+            #    # Step #1: make the start of the main query
+            #    basket.set_status("Combining Main query")
+            #    sCodeQry = loader.get_template(template_main).render(context)
+            #    sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
+
+            #    # Step #2: create the definitions part
+            #    basket.set_status("Combining Definitions")
+            #    sCodeDef = loader.get_template(template_def).render(context)
+            #    sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
+            #elif targetType == "c" or targetType == "e":
+            #    # Step #1: make the start of the main query
+            #    basket.set_status("Combining Main query")
+            #    sCodeQry = loader.get_template(template_main).render(context)
+            #    sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
+
+            #    # Step #2: create the definitions part
+            #    basket.set_status("Combining Definitions")
+            #    sCodeDef = loader.get_template(template_def).render(context)
+            #    sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
 
     except:
         # Show error message

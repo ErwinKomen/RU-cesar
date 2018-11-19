@@ -40,7 +40,7 @@ from cesar.seeker.services import crpp_dbget
 from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
-SIMPLENAME = "aaa_simple"   # Name of the simple project
+SIMPLENAME = "_simplesearch"   # Name of the simple project
 
 
 def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
@@ -1786,9 +1786,10 @@ class ResearchPart2(ResearchPart):
                                                 extra=0, can_delete=True, can_order=True)
     formset_objects = [{'formsetClass': WrdConstructionFormSet, 'prefix': 'wrdconstruction', 'readonly': False},
                        {'formsetClass': CnsConstructionFormSet, 'prefix': 'cnsconstruction', 'readonly': False}]
+    # TODO: possibly add ExtConstructionFormSet...
              
     def get_instance(self, prefix):
-        if prefix == 'wrdconstruction' or prefix == 'cnsconstruction':
+        if prefix == 'wrdconstruction' or prefix == 'cnsconstruction' or prefix == 'extconstruction':
             return self.obj.gateway
 
     def before_save(self, prefix, request, instance=None, form=None):
@@ -1802,6 +1803,9 @@ class ResearchPart2(ResearchPart):
             instance.search = SearchMain.create_item("const-group", form.cleaned_data['cat_incl'], 
                                                      'groupmatches', form.cleaned_data['cat_excl'])
             has_changed = True
+        elif prefix == 'extconstruction':
+            # TODO: How to process this one??
+            pass
         # Set the 'saved' one
         self.obj.save()
         return has_changed
@@ -1846,7 +1850,8 @@ class ResearchPart2(ResearchPart):
             return True
         else:
             return ( (prefix == 'wrdconstruction' and self.obj.targetType == "w") or \
-                     (prefix == 'cnsconstruction' and self.obj.targetType == "c") )
+                     (prefix == 'cnsconstruction' and self.obj.targetType == "c") or \
+                     (prefix == 'extconstruction' and self.obj.targetType == "e") )
 
 
 
@@ -4629,13 +4634,24 @@ def research_simple(request):
         simpleform.fields["targetType"].initial = obj.targetType
         simpleform.fields["searchwords"].initial = ""
         simpleform.fields["searchpos"].initial = ""
+        simpleform.fields["searchlemma"].initial = ""
+        simpleform.fields["searchexc"].initial = ""
         cns = obj.gateway.constructions.first()
         if cns != None and cns.search != None:
             svalue = cns.search.value
             if obj.targetType == "w":
+                # Simple word search
                 simpleform.fields["searchwords"].initial = svalue
-            else:
+            elif obj.targetType == "c":
+                # Constituent category search
                 simpleform.fields["searchpos"].initial = svalue
+            else:
+                # This should be targettype "e" (extended)
+                # Extended search: at least 'lemma' or 'constituent', and possibly also 'word'
+                simpleform.fields["searchwords"].initial = svalue
+                simpleform.fields["searchpos"].initial = cns.search.category
+                simpleform.fields["searchexc"].initial = cns.search.exclude
+                simpleform.fields["searchlemma"].initial = cns.search.lemma
 
         intro_message = "Make a simple search"
         intro_breadcrumb = "Simple"
@@ -4686,14 +4702,22 @@ def modify_simple_search(research, qd):
         research.save()
         
         # Look for value
-        sValue = ""
-        sExclude = ""
+        sValue = ""         # Word value
+        sExclude = ""       # Category to be excluded
+        sCategory = ""      # Extended: category
+        sLemma = ""         # Extended: lemma
         if research.targetType == "w":
             sValue = qd.get("searchwords", "")
-        else:
+        elif research.targetType == "c":
             sValue = qd.get("searchpos", "")
-        # Adapt the value in searchman
-        if sValue != "":
+            sExclude = qd.get("searchexc", "")
+        else:
+            sValue = qd.get("searchwords", "")
+            sCategory = qd.get("searchpos", "")
+            sLemma = qd.get("searchlemma", "")
+            sExclude = qd.get("searchexc", "")
+        # Adapt the value in searchmain
+        if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "":
             search = None
             cns = research.gateway.constructions.first()
             if cns == None or cns.search == None:
@@ -4701,15 +4725,17 @@ def modify_simple_search(research, qd):
                 if research.targetType == "w":
                     search = SearchMain.create_item("word-group", sValue, 'groupmatches')
                 else:
-                    search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude)
+                    # This is targetType "c" or "e"
+                    search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma)
             # Make sure the correct SEARCH is set
             if search == None:
                 search = cns.search
             # Make sure the value of the word(s)/constituent(s) is set correctly
             if research.targetType == "w":
                 search.adapt_item("word-group", sValue, 'groupmatches')
-            else:
-                search.adapt_item("const-group", sValue, 'groupmatches', sExclude)
+            else:   
+                # Targettype "c" or "e"
+                search.adapt_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma)
 
             # Make sure the construction is saved
             if cns == None:

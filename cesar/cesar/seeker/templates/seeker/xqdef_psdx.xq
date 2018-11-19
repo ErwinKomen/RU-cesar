@@ -7,8 +7,10 @@ declare variable $_{{gvar.name}} as xs:string := "{{gvar.value}}";
 
 {% if targetType == 'w' %}
 	{% include 'seeker/xqdef_psdx_w.xq' %}
-{% else %}
+{% elif targetType == 'c' %}
 	{% include 'seeker/xqdef_psdx_c.xq' %}
+{% else %}
+	{% include 'seeker/xqdef_psdx_e.xq' %}
 {% endif %}
 
 

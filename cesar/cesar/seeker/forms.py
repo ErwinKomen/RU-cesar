@@ -516,7 +516,9 @@ class QuantorSearchForm(ModelForm):
 class SimpleSearchForm(forms.Form):
     targetType = forms.ChoiceField(label=_("Search type"), choices=TARGET_TYPE_CHOICES, required = True)
     searchwords = forms.CharField(label=_("Word(s) to be found"), required=False)
+    searchlemma = forms.CharField(label=_("Lemma to be found"), required=False)
     searchpos = forms.CharField(label=_("Constituent categorie(s) to be found"), required = False)
+    searchexc = forms.CharField(label=_("Constituent categorie(s) to be excluded"), required = False)
 
 
 class UploadFileForm(forms.Form):

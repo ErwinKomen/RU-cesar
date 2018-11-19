@@ -7,19 +7,11 @@ declare variable $_{{gvar.name}} as xs:string := "{{gvar.value}}";
 
 {% if targetType == 'w' %}
 	{% include 'seeker/xqdef_folia_w.xq' %}
-{% else %}
+{% elif targetType == 'c' %}
 	{% include 'seeker/xqdef_folia_c.xq' %}
+{% else %}
+	{% include 'seeker/xqdef_folia_e.xq' %}
 {% endif %}
-
-(: ----------------------------------------------
-    Name: foliaw
-    Goal: Get the <w> constituent that has the same id 
-		      as the [ndThis] <wref> that we receive
-   ---------------------------------------------- :)
-declare function tb:foliaw($ndThis as node()?) as node()? {
-  let $sId := $ndThis/@id
-	return $ndThis/ancestor::s/descendant::w[@xml:id = $sId]
-};
 
 {% for item in dvar_list %}    {% for cvar in item.cvar_list %} {% if cvar.type == "calc" %}
 (: ----------------------------------------

@@ -81,6 +81,83 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  is_in_list
+       *      whether item called sName is in list lstThis
+       *
+       * @param {list} lstThis
+       * @param {string} sName
+       * @returns {boolean}
+       */
+      is_in_list: function (lstThis, sName) {
+        var i = 0;
+
+        try {
+          for (i = 0; i < lstThis.length; i++) {
+            if (lstThis[i]['name'] === sName) {
+              return true;
+            }
+          }
+          // Failure
+          return false;
+        } catch (ex) {
+          private_methods.showError("is_in_list", ex);
+          return false;
+        }
+      },
+
+      /**
+       *  get_list_value
+       *      get the value of the item called sName is in list lstThis
+       *
+       * @param {list} lstThis
+       * @param {string} sName
+       * @returns {string}
+       */
+      get_list_value: function (lstThis, sName) {
+        var i = 0;
+
+        try {
+          for (i = 0; i < lstThis.length; i++) {
+            if (lstThis[i]['name'] === sName) {
+              return lstThis[i]['value'];
+            }
+          }
+          // Failure
+          return "";
+        } catch (ex) {
+          private_methods.showError("get_list_value", ex);
+          return "";
+        }
+      },
+
+      /**
+       *  set_list_value
+       *      Set the value of the item called sName is in list lstThis
+       *
+       * @param {list} lstThis
+       * @param {string} sName
+       * @param {string} sValue
+       * @returns {boolean}
+       */
+      set_list_value: function (lstThis, sName, sValue) {
+        var i = 0;
+
+        try {
+          for (i = 0; i < lstThis.length; i++) {
+            if (lstThis[i]['name'] === sName) {
+              lstThis[i]['value'] = sValue;
+              return true;
+            }
+          }
+          // Failure
+          return false;
+        } catch (ex) {
+          private_methods.showError("set_list_value", ex);
+          return false;
+        }
+      },
+
+      /**
        * prepend_styles
        *    Get the html in sDiv, but prepend styles that are used in it
        * 
@@ -1875,48 +1952,63 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * init_simple
+       *    Initialize the layout of simple
+       *
+       */
+      init_simple: function () {
+        var elTargetType = "#id_targetType";
+
+        try {
+          switch ($(elTargetType).val()) {
+            case "e":
+            case "c":
+              // Make sure the the extended searching is shown
+              $(".simple-search-2").removeClass("hidden");
+              break;
+            case "w":
+              // Make sure the the extended searching is hidden
+              $(".simple-search-2").addClass("hidden");
+              break;
+          }
+        } catch (ex) {
+          private_methods.errMsg("init_simple", ex);
+        }
+      },
+
+      /**
        * simple_switch
        *    Switch in the simple search view
        *
        */
       simple_switch: function (elStart, sType) {
         var elTargetType = "#id_targetType",
-            elSelectC = "#simple_select_c",
-            elSelectW = "#simple_select_w",
-            elSpecifyC = "#simple_specify_c",
-            elSpecifyW = "#simple_specify_w";
+            elPos = "#id_searchpos",
+            elLemma = "#id_searchlemma",
+            elExc = "#id_searchexc",
+            elMore = "#simple_more";
 
         try {
           switch (sType) {
-            case "w":
-              // Show the C button
-              $(elSelectC).removeClass("hidden");
-              $(elSelectW).addClass("hidden");
-              // Show the Word input
-              $(elSpecifyW).removeClass("hidden");
-              $(elSpecifyC).addClass("hidden");
-              // Adapt the value
-              $(elTargetType).val("w");
-              break;
-            case "c":
-              // Show the W button
-              $(elSelectC).addClass("hidden");
-              $(elSelectW).removeClass("hidden");
-              // Show the Constituent input
-              $(elSpecifyW).addClass("hidden");
-              $(elSpecifyC).removeClass("hidden");
-              // Adapt the value
-              $(elTargetType).val("c");
-              break;
             case "more":
-              // Hide myself
-              $("#simple_more").addClass("hidden");
-              // Show the C button
-              $(elSelectC).removeClass("hidden");
-              $(elSelectW).addClass("hidden");
-              // Show the Word input
-              $(elSpecifyW).removeClass("hidden");
-              $(elSpecifyC).addClass("hidden");
+              // Check what we are up to
+              if ($(".simple-search-2.hidden").length === 0) {
+                // Nothing is hidden, so we are in extended search: return to simple search
+                $(".simple-search-2").addClass("hidden");
+                // Adapt the button to say we can turn to extended search
+                $(elMore).attr("title", "Let me specify more");
+                // Clear any extended search elements
+                $(elPos).val("");
+                $(elLemma).val("");
+                $(elExc).val("");
+                // Make sure the targettype is set correctly
+                $(elTargetType).val("w");
+              } else {
+                // We are in simple search: turn to extended search
+                $(".simple-search-2").removeClass("hidden");
+                // Adapt the button to say we can return to simple search
+                $(elMore).attr("title", "Return to simple search");
+              }
               break;
           }
         } catch (ex) {
@@ -2969,11 +3061,13 @@ var ru = (function ($, ru) {
       /**
        * search_start
        *   Check and then start a search
+       *
        *   Note: returning from the $.post call only means
        *         that a BASKET object has been created...
+       *   Note 2: this function can also be called from SIMPLE search.
        *
        */
-      search_start(elStart) {
+      search_start: function(elStart) {
         var sDivProgress = "#research_progress",
             ajaxurl = "",
             butWatch = null,  // The button that contains the in progress
@@ -2981,6 +3075,11 @@ var ru = (function ($, ru) {
             basket_id = -1,
             frm = null,
             sMsg = "",
+            sWord = "",         // For simple search
+            sLemma = "",        // For simple search
+            sCat = "",          // For simple search
+            sExc = "",          // For simple search
+            sTargetType = "",   // For simple search
             data = [];
 
         try {
@@ -2993,6 +3092,23 @@ var ru = (function ($, ru) {
           // Gather the information
           frm = $(elStart).closest("form");
           if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+          // Check if this is simple search
+          if (private_methods.is_in_list(data, "is_simple_search")) {
+            // Get the word, lemma, category
+            sWord = private_methods.get_list_value(data, "searchwords");
+            sLemma = private_methods.get_list_value(data, "searchlemma");
+            sCat = private_methods.get_list_value(data, "searchpos");
+            sExc = private_methods.get_list_value(data, "searchexc");
+            // Determine the targetType
+            sTargetType = "e";
+            if (sWord !== "" && sLemma === "" && sCat === "") { sTargetType = "w"; }
+            else if (sWord === "" && sLemma === "" && sCat !== "") { sTargetType = "c";}
+            // Set the targetType
+            $("#id_targetType").val(sTargetType);
+            // Change the value in the list
+            private_methods.set_list_value(data, "targetType", sTargetType);
+          }
 
           // Start the search
           $(sDivProgress).html("Contacting the search server")

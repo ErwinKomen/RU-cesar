@@ -50,16 +50,6 @@ declare function tb:getConstructionWgroup($ndThis as node()?) as xs:string? {
 };
 
 (: ----------------------------------------------
-    Name: foliaw
-    Goal: Get the <w> constituent that has the same id 
-		      as the [ndThis] <wref> that we receive
-   ---------------------------------------------- :)
-declare function tb:foliaw($ndThis as node()?) as node()? {
-  let $sId := $ndThis/@id
-	return $ndThis/ancestor::s/descendant::w[@xml:id = $sId]
-};
-
-(: ----------------------------------------------
     Name: getFtList
     Goal: Create a list of features
    ---------------------------------------------- :)

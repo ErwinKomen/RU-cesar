@@ -40,10 +40,12 @@ ERROR_CODE = "$__error__$"
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
+EXTENDED_SEARCH = 'e'
 TARGET_TYPE_CHOICES = (
     ('0', '----'),
     (WORD_ORIENTED, 'Word(s)'),
     (CONSTITUENT_ORIENTED, 'Constituent(s)'),
+    (EXTENDED_SEARCH, 'Extended'),
 )
 
 
@@ -137,6 +139,10 @@ class SearchMain(models.Model):
     value = models.CharField("Value", max_length=MAX_TEXT_LEN)
     # [0-1] The exclude value for this function
     exclude = models.CharField("Exclude", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] Extended: pos-tag
+    category = models.CharField("Constituent category", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] Extended: lemma
+    lemma = models.CharField("Lemma", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [1] Comparison operator: equals, matches, contains etc
     operator = models.CharField("Operator", choices=build_choice_list(SEARCH_OPERATOR), 
                               max_length=5, help_text=get_help(SEARCH_OPERATOR))
@@ -162,22 +168,32 @@ class SearchMain(models.Model):
         # Return the new copy
         return new_copy
 
-    def create_item(function, value, operator, exclude=None):
+    def create_item(function, value, operator, exclude=None, category=None, lemma=None):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
         function_word = choice_value(SEARCH_FUNCTION, function)
-        if exclude == None:
-            obj = SearchMain.objects.create(function=function_word,
-                                            operator=operator_matches,
-                                            value = value)
-        else:
-            obj = SearchMain.objects.create(function=function_word,
-                                            operator=operator_matches,
-                                            value = value,
-                                            exclude=exclude)
+        # Create initial object
+        obj = SearchMain.objects.create(function=function_word,
+                                        operator=operator_matches,
+                                        value = value)
+        need_saving = False
+        if exclude != None: 
+            obj.exclude = exclude
+            need_saving = True
+        if category != None: 
+            obj.category = category
+            need_saving = True
+        if lemma != None: 
+            obj.lemma = lemma
+            need_saving = True
 
+        if need_saving:
+            # Make sure it is saved
+            obj.save()
+
+        # Return the object as we have it
         return obj
 
-    def adapt_item(self, function, value, operator, exclude=None):
+    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None):
         """Adapt the search and save it"""
 
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
@@ -197,6 +213,12 @@ class SearchMain(models.Model):
         if self.exclude != exclude:
             self.exclude = exclude
             need_saving = True
+        if self.category != category: 
+            self.category = category
+            need_saving = True
+        if self.lemma != lemma: 
+            self.lemma = lemma
+            need_saving = True
         # Need saving?
         if need_saving:
             # Save myself
@@ -211,7 +233,9 @@ class SearchMain(models.Model):
            
         c: Give the include and exclude values"""
 
-        if targetType == 'w':
+        def val_convert(value):
+            """Convert word value"""
+
             # Initialisations
             lSingle = []
             lLine = []
@@ -227,9 +251,23 @@ class SearchMain(models.Model):
             sMulti = tuple(lLine)
             if len(sMulti) == 1:
                 sMulti = str(sMulti).replace(",)", ")")
+            return sSingle, sMulti
+
+        if targetType == 'w':
+            # Only look for one or more words
+            sSingle, sMulti = val_convert(self.value)
             return {'single': sSingle, 'line_list': sMulti}
         elif targetType == 'c':
+            # Only look for a category
             return {'cat_incl': self.value, 'cat_excl': self.exclude}
+        elif targetType == 'e': 
+            # Extended: look for combination of word/lemma/category
+            sSingle, sMulti = val_convert(self.value)
+            return {'single': sSingle, 
+                    'line_list': sMulti,
+                    'cat_incl': self.category, 
+                    'cat_excl': self.exclude,
+                    'lemma': self.lemma}
         else:
             return {}
         
@@ -444,9 +482,19 @@ class Gateway(models.Model):
         for item in qs:
             oSearch = item.search.get_search_spec(targetType)
             if targetType == 'w':
+                # Only word
                 oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
             elif targetType == 'c':
+                # Only constituent category
                 oItem = {'name': item.name, 'cat_incl': oSearch['cat_incl'], 'cat_excl': oSearch['cat_excl']}
+            elif targetType == 'e':
+                # Etended: combination of word(s), lemma, category
+                oItem = {'name': item.name, 
+                         'single': oSearch['single'], 
+                         'line_list': oSearch['line_list'], 
+                         'cat_incl': oSearch['cat_incl'], 
+                         'cat_excl': oSearch['cat_excl'],
+                         'lemma': oSearch['lemma']}
             else:
                 oItem = {}
             lBack.append(oItem)
@@ -2989,6 +3037,10 @@ class Research(models.Model):
                         search = SearchMain.create_item(cns['function'], cns['value'], cns['operator'])
                         if targetType == 'c':
                             search.exclude = cns['exclude']
+                        elif targetType == 'e':
+                            search.exclude = cns['exclude']
+                            search.category = cns['category']
+                            search.lemma = cns['lemma']
                         search.save()
                         construction = Construction(name=cns['name'], search=search, gateway=gateway)
                         construction.save()
