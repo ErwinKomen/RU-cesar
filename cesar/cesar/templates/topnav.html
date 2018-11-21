@@ -1,4 +1,6 @@
-﻿    <div class="navbar navbar-custom navbar-fixed-top">
+﻿{% load staticfiles %}
+
+    <div class="navbar navbar-custom navbar-fixed-top">
         <div class="container" url_home="{% url 'home' %}">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -151,6 +153,7 @@
                       <ul class="dropdown-menu">
                         <li><a href="{% url 'about' %}">About</a></li>
                         <li><a href="{% url 'contact' %}">Contact</a></li>
+                        <li><a href="{% static 'browser/content/CesarManual.pdf' %}" target="_blank">Manual (pdf)</a></li>
                         {% if user.is_authenticated %}
                           <form id="logoutForm" action="{% url 'logout' %}" method="post" class="navbar-right">
                               {% csrf_token %}

@@ -115,6 +115,7 @@
     <Content Include="cesar\browser\static\browser\content\acad.png" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.css" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.min.css" />
+    <Content Include="cesar\browser\static\browser\content\CesarManual.pdf" />
     <Content Include="cesar\browser\static\browser\content\ru-base.css" />
     <Content Include="cesar\browser\static\browser\content\ru-form.css" />
     <Content Include="cesar\browser\static\browser\content\ru-widgets.css" />

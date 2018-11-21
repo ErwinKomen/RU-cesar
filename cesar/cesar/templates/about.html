@@ -35,7 +35,10 @@
       </p>
       <p>
         <a class="btn btn-default" href="mailto:e.komen@let.ru.nl">Request assistance &raquo;</a>
-        <a class="btn btn-primary pull-right" href="{% url 'short' %}">Short overview</a>
+        <span class="pull-right">
+          <a class="btn btn-primary" href="{% static 'browser/content/CesarManual.pdf' %}" target="_blank">Manual (pdf)</a>
+          <a class="btn btn-primary" href="{% url 'short' %}">Short overview</a>
+        </span>
       </p>
     </div>
     <div class="col-md-6">
