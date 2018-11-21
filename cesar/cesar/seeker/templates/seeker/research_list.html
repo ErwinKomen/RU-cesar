@@ -367,11 +367,11 @@
                 </td>
                 <td class="tdnowrap" colspan="1">
                   <div class="part-del">
-                    <form action="{{item.project.get_delete_url}}" method="post">
+                    <form action="{{grp.prj.get_delete_url}}" method="post">
                       {% csrf_token %}
                         <a class="btn btn-info btn-xs" onclick="ru.cesar.seeker.toggle_del(this);">cancel</a>
                         <a class="btn btn-danger btn-xs" 
-                            url="{{item.project.get_delete_url}}" 
+                            url="{{grp.prj.get_delete_url}}" 
                             success="{% url 'seeker_list' %}"
                             onclick="ru.cesar.seeker.process_item(this);">delete</a>
                     </form>

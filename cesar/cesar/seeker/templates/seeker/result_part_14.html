@@ -1,5 +1,5 @@
 ﻿{% load i18n %}
-<!-- Result part 2: sentence view (kwic) -->
+<!-- Result part 14: sentence view (kwic) -->
 
     <table class="kwic-list">
       <tbody>
@@ -9,11 +9,11 @@
             <a onclick="ru.cesar.seeker.funcdefshow(this, 'meta-details');"
                title="{{result.TextId}}&#13;{{result.Locw}}">{{result.ResId}}</a>
           </td>
-          <td class="kwic-pre">{% if result.kwic_pre|length > 70 %}...{% endif %}{{result.kwic_pre|slice:"-70:"}}</td>
-          <td class="kwic-hit" ><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">
-            {{result.kwic_hit|slice:":50"}}{% if result.kwic_hit|length > 50 %}...{% endif %}</a>
+          <td class="kwic-pre" title="{{result.kwic_pre}}">{% if result.kwic_pre|length > 50 %}...{% endif %}{{result.kwic_pre|slice:"-50:"}}</td>
+          <td class="kwic-hit"><a onclick="ru.cesar.seeker.funcdefshow(this, 'kwic-details');" title="details">
+            {{result.kwic_hit|slice:":40"}}{% if result.kwic_hit|length > 40 %}...{% endif %}</a>
           </td>
-          <td class="kwic-fol">{{result.kwic_fol|truncatewords:9}}</td>
+          <td class="kwic-fol" title="{{result.kwic_fol}}">{{result.kwic_fol|slice:":50"}}{% if result.kwic_fol|length > 50 %}...{% endif %}</td>
           <td class="kwic-actions tdnowrap">
             <a class="btn btn-default btn-xs" id="result_part4_button" 
                 targeturl="{% url 'result_part_4' object_id=kwic_id %}"

@@ -3164,7 +3164,10 @@ class Research(models.Model):
     def get_delete_url(self):
         """Produce an URL to be called when requesting to delete [self]"""
 
-        return reverse('seeker_delete', kwargs={'object_id': self.id})
+        sUrl = reverse('seeker_delete', kwargs={'object_id': self.id})
+        if sUrl == "":
+            iStop = 1
+        return sUrl
 
     def has_permission(self, usr, permission):
         """CHeck if this user has the indicated permission"""
