@@ -414,6 +414,21 @@ def sync_crpp_start(request):
                                 oBack = oResult
                 # Completely ready
                 oStatus.set("done", oBack)
+
+            elif synctype == "clearsentences":
+                # Clear all the Sentence elements
+                oStatus.set("contacting", msg="Obtaining data from /crpp")
+                oBack = {}
+
+                # ================ IMPORTANT ===========================
+                # Delete everything that is already theres
+                oStatus.set("deleting")
+                Sentence.objects.all().delete()
+
+                # Completely ready
+                oStatus.set("done", oBack)
+                
+
     except:
         oErr.DoError("sync_crpp_start error")
         data['status'] = "error"

@@ -120,7 +120,7 @@
           The information stored in the server gets transferred to the Cesar application, and is then accessible from there.</p>
       </div>
       <div class="col-md-8">
-        <form id="sync_form_texts" method="POST">
+        <form id="sync_form_alltexts" method="POST">
           <div class="row">
             <div class="col-md-3">
               <span><a id="sync_start_alltexts" class="btn btn-primary btn-xs" 
@@ -134,6 +134,35 @@
             </div>
           </div>
           <div id="sync_details_alltexts" class="row"></div>
+        </form>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- Clear all <Sentence> elements -->
+  <fieldset class="module aligned" style="border: 1px solid darkgray; padding-top: 15px;  padding-bottom: 15px;">
+    <div class="row">
+      <div class="col-md-4">
+        <h3 class="straight" style="margin-top: 0px; margin-left: 10px;">Clear all sentences</h3>
+          <p><b>This DELETES all the <code>Sentence</code> instances</b></p>
+          <p style="margin-top: 0px; margin-left: 10px;">This action is okay to be done every once in a while.
+        The <code>Sentence</code> instances are deleted, but they are generated again on the fly when the user wants to look at a particular text.</p>
+      </div>
+      <div class="col-md-8">
+        <form id="sync_form_clearsentences" method="POST">
+          <div class="row">
+            <div class="col-md-3">
+              <span><a id="sync_start_clearsentences" class="btn btn-primary btn-xs" 
+                  sync-start="{% url 'sync_start' %}?synctype=clearsentences" 
+                  sync-progress="{% url 'sync_progress' %}?synctype=clearsentences" 
+                  onclick="ru.cesar.sync_start('clearsentences')">Clear all sentences</a>
+              </span>
+            </div>
+            <div id="sync_progress_clearsentences" class="col-md-9">
+              <!-- This is where the progress will be reported -->
+            </div>
+          </div>
+          <div id="sync_details_clearsentences" class="row"></div>
         </form>
       </div>
     </div>
