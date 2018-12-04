@@ -4537,6 +4537,7 @@ def research_edit(request, object_id=None):
     # Initialisations
     template = 'seeker/research_details.html'
     arErr = []              # Start out with no errors
+    partchoice = None       # Default value for part choice
 
     # Check if the user is authenticated
     if not request.user.is_authenticated:
@@ -4569,7 +4570,15 @@ def research_edit(request, object_id=None):
         if 'basket_id' in request.GET:
             basket_id = request.GET.get('basket_id')
             basket = Basket.objects.filter(id=basket_id).first()
+            # There already is a search: find its associated part
+            if basket != None:
+                partchoice = basket.part.id
         else:
+            # There already is a search: find its associated part
+            basket = Basket.objects.filter(research=obj).order_by('-saved').first()
+            if basket != None:
+                partchoice = basket.part.id
+            # Reset the basket, because it is not used in this call
             basket = None
 
     search_count = 1000
@@ -4588,6 +4597,7 @@ def research_edit(request, object_id=None):
         targettype=sTargetType,
         search_type = search_type,
         search_count = search_count,
+        partchoice=partchoice,
         basket=basket,
         error_list=error_list
         )
@@ -4621,12 +4631,18 @@ def research_simple(request):
         lstQ.append(Q(owner=owner))
         lstQ.append(Q(name=simplename))
         obj = Research.objects.filter(*lstQ).first()
+        partchoice = None
         if obj == None:
             gateway = Gateway(name="simple")
             gateway.save()
             obj = Research(name=simplename, purpose="simple", targetType=sTargetType,
                            gateway=gateway, owner=owner)
             obj.save()
+        else:
+            # There already is a search: find its associated part
+            basket = Basket.objects.filter(research=obj).order_by('-saved').first()
+            if basket != None:
+                partchoice = basket.part.id
         object_id = obj.id
 
         # Create a form based on this research object
@@ -4675,6 +4691,7 @@ def research_simple(request):
             search_type = search_type,
             search_count = search_count,
             part_list=get_partlist(),
+            partchoice = partchoice,
             error_list=error_list
             )
 

@@ -47,20 +47,20 @@
 
                 <!-- Looking for a word -->
                 <tr id="simple_specify_w" class="tablefield simple-search-1">
-                  <td class="tdnowrap" title="A word (with wildcards) or a small phrase">Word or phrase:</td>
+                  <td class="tdnowrap vmiddle" title="A word (with wildcards) or a small phrase">Word or phrase:</td>
                   <td colspan="3" style="width: 100%;">{{simpleform.searchwords}}</td>
                 </tr>
 
                 <!-- Looking for a POS-tag -->
                 <tr id="simple_specify_c" class="tablefield simple-search-2 hidden">
-                  <td class="tdnowrap">Constituent category:</td>
+                  <td class="tdnowrap vmiddle" >Constituent category:</td>
                   <td style="width: 50%;">{{simpleform.searchpos}}</td>
-                  <td class="tdnowrap" title="A constituent category to be excluded (use wildcards if needed)">Excluding:</td>
+                  <td class="tdnowrap vmiddle" title="A constituent category to be excluded (use wildcards if needed)">Excluding:</td>
                   <td style="width: 50%;">{{simpleform.searchexc}}</td>
                 </tr>
                 <!-- Looking for a lemma -->
                 <tr id="simple_specify_l" class="tablefield simple-search-2 hidden">
-                  <td class="tdnowrap" title="A lemma (use wildcards if needed)">Lemma:</td>
+                  <td class="tdnowrap vmiddle" title="A lemma (use wildcards if needed)">Lemma:</td>
                   <td colspan="3" style="width: 100%;">{{simpleform.searchlemma}}</td>
                 </tr>
 
@@ -155,7 +155,7 @@
               <div class="col-md-2 ">
                 <button type="button" class="btn jumbo-3" id="research_start" 
                         ajaxurl="{% url 'search_prepare' object_id %}"
-                        onclick="ru.cesar.seeker.search_start(this);">Start</button>
+                        onclick="ru.cesar.seeker.search_start(this, ru.cesar.seeker.save_as);">Start</button>
               </div>
 
               <div class="col-md-offset-4 col-md-2 ">
@@ -169,9 +169,6 @@
 
 
             </div>
-            <div class="row">&nbsp;</div>
-            <div class="row">&nbsp;</div>
-            <div class="row">&nbsp;</div>
             <div class="row">&nbsp;</div>
           </div>
           {% endif %}
@@ -190,6 +187,45 @@
           <div class="row">&nbsp;</div>
         </div>
       </div>
+
+      <!-- Allow saving this search with some name -->
+      <div class="row container hidden" id="save_as">
+        <div class="col-md-9 panel panel-default">
+          <form action="" method="post" class="noblurring">
+            {% csrf_token %}
+
+            <!-- Ask user where to save it -->
+            <div>&nbsp;</div>
+            <table class="func-view">
+              <tbody>
+                <!-- Table header -->
+                <tr class="tablefield">
+                  <td colspan="2">If you would like to extend this simple search, give it a name </td>
+                </tr>
+                <tr class="tablefield">
+                  <td class="tdnowrap vmiddle">Name:</td>
+                  <td colspan="3" style="width: 100%;">{{saveasform.name}}</td>
+                </tr>
+                <!-- Button row-->
+                <tr>
+                  <td colspan="2">
+                    <span class="pull-right">
+                    <a id="simple_saveas" 
+                       onclick=""
+                       title="Save project with this name" 
+                       class="btn jumbo-1 btn-xs">Save</a>
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div>&nbsp;</div>
+          </form>
+
+        </div>
+      </div>
+
     </div>
 
   </div>

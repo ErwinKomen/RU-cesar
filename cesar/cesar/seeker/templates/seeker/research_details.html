@@ -209,6 +209,7 @@
       
                   <!-- Let user choose a corpus-part -->
                   <label class='input-group-addon' for='part'>Search in</label>
+                  <!-- partchoice = {% if partchoice %}{{partchoice}}{% else %}(none){% endif %}-->
                   <select class="form-control" name="select_part" id="select_part" 
                           onchange="ru.cesar.seeker.corpus_choice(this, 'select_corpus_choice');">
                     <option value="">-</option>

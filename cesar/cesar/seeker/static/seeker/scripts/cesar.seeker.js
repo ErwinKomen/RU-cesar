@@ -3067,7 +3067,7 @@ var ru = (function ($, ru) {
        *   Note 2: this function can also be called from SIMPLE search.
        *
        */
-      search_start: function(elStart) {
+      search_start: function(elStart, after_finish) {
         var sDivProgress = "#research_progress",
             ajaxurl = "",
             butWatch = null,  // The button that contains the in progress
@@ -3164,7 +3164,7 @@ var ru = (function ($, ru) {
               $("#research_start").prop("disabled", true);
 
               // Start the next call for status after 2 seconds
-              setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
+              setTimeout(function () { ru.cesar.seeker.search_progress(after_finish); }, 500);
 
               // Now make sure that the Translation + Execution starts
               $.post(basket_start, data, function (response) {
@@ -3192,7 +3192,7 @@ var ru = (function ($, ru) {
                   $("#research_stop").addClass("hidden");
                 } else {
                   // All went well, and the search has finished
-                  // No further action is needed
+                  // No further action is needed unless after_finish is defined
                 }
                 // Re-enable the START button in all cases
                 $("#research_start").prop("disabled", false);
@@ -3200,6 +3200,18 @@ var ru = (function ($, ru) {
             }
           });
 
+        } catch (ex) {
+          private_methods.errMsg("search_start", ex);
+        }
+      },
+
+      /**
+       *  save_as
+       *
+       */
+      save_as() {
+        try {
+          $("#save_as").removeClass("hidden");
         } catch (ex) {
           private_methods.errMsg("search_start", ex);
         }
@@ -3242,7 +3254,7 @@ var ru = (function ($, ru) {
        *   Elicit and show the status of an ongoing search
        *
        */
-      search_progress() {
+      search_progress(after_finish) {
         var sDivProgress = "#research_progress",
             response = null,
             html = [],
@@ -3267,7 +3279,7 @@ var ru = (function ($, ru) {
                       // Show the status of the project
                       $(sDivProgress).html(response.html);
                       // Make sure we are called again
-                      setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
+                      setTimeout(function () { ru.cesar.seeker.search_progress(after_finish); }, 500);
                       break;
                     case "completed":
                       // Prevent error progression
@@ -3284,6 +3296,9 @@ var ru = (function ($, ru) {
                       $("#research_results").attr("href", basket_result);
                       // Hide the IN-PROGRESS button
                       $("#action_inprogress").addClass("hidden");
+                      if (after_finish !== undefined) {
+                        after_finish();
+                      }
                       break;
                     case "error":
                       // THis is an Xquery error
@@ -3311,7 +3326,7 @@ var ru = (function ($, ru) {
                         private_methods.errMsg("Unknown statuscode: [" + response.statuscode + "]");
                       }
                       // We continue anyway, because this is not an error
-                      setTimeout(function () { ru.cesar.seeker.search_progress(); }, 500);
+                      setTimeout(function () { ru.cesar.seeker.search_progress(after_finish); }, 500);
                       break;
                   }
                   break;
