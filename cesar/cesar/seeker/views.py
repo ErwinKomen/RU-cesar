@@ -703,59 +703,74 @@ class ResearchExe(View):
     bDebug = True
 
     def post(self, request, object_id=None):
-        # A POST request means we are trying to SAVE something
-        self.initializations(request, object_id)
-        if self.checkAuthentication(request):
-            # Define the context
-            sStatusCode = "none"
-            context = dict(object_id = object_id, savedate=None, statuscode=sStatusCode)
-            # Action depends on 'action' value
-            if self.action != "" and self.obj != None:
-                if self.bDebug: 
-                    sNowTime = get_crpp_date(timezone.now())
-                    self.oErr.Status("ResearchExe: action={} at [{}]".format(self.action, sNowTime))
-                if self.action == "prepare":
-                    # Make sure we have the right paramters to work with
-                    if "select_part" in self.qd and self.qd.get("select_part") != "":
-                        research = self.obj
-                        # Check if this object is not currently being executed
-                        if research.get_status() != "":
-                            # Stop it
-                            research.stop()
+        try:
+            # A POST request means we are trying to SAVE something
+            self.initializations(request, object_id)
+            if self.checkAuthentication(request):
+                # Define the context
+                sStatusCode = "none"
+                context = dict(object_id = object_id, savedate=None, statuscode=sStatusCode)
+                # Action depends on 'action' value
+                if self.action != "" and self.obj != None:
+                    if self.bDebug: 
+                        sNowTime = get_crpp_date(timezone.now())
+                        self.oErr.Status("ResearchExe: action={} at [{}]".format(self.action, sNowTime))
+                    if self.action == "prepare":
+                        # Make sure we have the right paramters to work with
+                        if "select_part" in self.qd and self.qd.get("select_part") != "":
+                            research = self.obj
+                            # Check if this object is not currently being executed
+                            if research.get_status() != "":
+                                # Stop it
+                                research.stop()
 
-                        # Check if this is a simple search
-                        if "is_simple_search" in self.qd:
-                            # It is a simple search: modify the research based on the information we receive
-                            modify_simple_search(research, self.qd)
+                            # Check if this is a simple search
+                            if "is_simple_search" in self.qd:
+                                # It is a simple search: modify the research based on the information we receive
+                                modify_simple_search(research, self.qd)
 
-                        # Find out which corpus/part has been chosen
-                        select_part = self.qd.get("select_part")
-                        select_format = self.qd.get("searchFormat")
+                            # Find out which corpus/part has been chosen
+                            select_part = self.qd.get("select_part")
+                            select_format = self.qd.get("searchFormat")
 
-                        # Possibly get searchtype and search count
-                        search_type = self.qd.get("search_type")
-                        search_count = self.qd.get("search_count")
-                        oOptions = { 'search_type': search_type, 
-                                     'search_count': search_count}
-                        # Get the partId
-                        part = None
-                        if select_part != "":
-                            part = Part.objects.filter(Q(id=select_part)).first()
+                            # Possibly get searchtype and search count
+                            search_type = self.qd.get("search_type")
+                            search_count = self.qd.get("search_count")
+                            oOptions = { 'search_type': search_type, 
+                                         'search_count': search_count}
+                            # Get the partId
+                            part = None
+                            if select_part != "":
+                                part = Part.objects.filter(Q(id=select_part)).first()
 
-                        # Check if format adaptation is needed, should there be a better match
-                        select_format = get_best_format(part, select_format)
+                            # Check if format adaptation is needed, should there be a better match
+                            select_format = get_best_format(part, select_format)
 
-                        # Check if the necessary ingredient(s) are there
-                        basket = self.get_basket(select_format, part)
-                        # Set the status and the jobid
-                        basket.status = "prepared"
-                        basket.jobid = ""
-                        # Set options
-                        basket.options = json.dumps(oOptions)
-                        # Save the basket
-                        basket.save()
-                        context['statuscode'] = "prepared"
-                        self.data['status'] = "prepared"
+                            # Check if the necessary ingredient(s) are there
+                            basket = self.get_basket(select_format, part)
+                            # Set the status and the jobid
+                            basket.status = "prepared"
+                            basket.jobid = ""
+                            # Set options
+                            basket.options = json.dumps(oOptions)
+                            # Save the basket
+                            basket.save()
+                            context['statuscode'] = "prepared"
+                            self.data['status'] = "prepared"
+                            self.data['basket_id'] = basket.id
+                            # Also provide all relevent command urls for the caller
+                            self.data['basket_start'] = reverse("search_start", kwargs={'object_id': basket.id})
+                            self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket.id})
+                            self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
+                            self.data['basket_watch'] = reverse("search_watch", kwargs={'object_id': basket.id})
+                            self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
+                            # Also indicate the statuscode
+                            sStatusCode = "preparing" 
+                        else:
+                            self.arErr.append("No corpus part to be searched has been selected")
+                    elif self.action == "watch":
+                        # Get the basket
+                        basket = self.obj
                         self.data['basket_id'] = basket.id
                         # Also provide all relevent command urls for the caller
                         self.data['basket_start'] = reverse("search_start", kwargs={'object_id': basket.id})
@@ -763,264 +778,261 @@ class ResearchExe(View):
                         self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
                         self.data['basket_watch'] = reverse("search_watch", kwargs={'object_id': basket.id})
                         self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
-                        # Also indicate the statuscode
-                        sStatusCode = "preparing" 
-                    else:
-                        self.arErr.append("No corpus part to be searched has been selected")
-                elif self.action == "watch":
-                    # Get the basket
-                    basket = self.obj
-                    self.data['basket_id'] = basket.id
-                    # Also provide all relevent command urls for the caller
-                    self.data['basket_start'] = reverse("search_start", kwargs={'object_id': basket.id})
-                    self.data['basket_progress'] = reverse("search_progress", kwargs={'object_id': basket.id})
-                    self.data['basket_stop'] = reverse("search_stop", kwargs={'object_id': basket.id})
-                    self.data['basket_watch'] = reverse("search_watch", kwargs={'object_id': basket.id})
-                    self.data['basket_result'] = reverse("result_details", kwargs={'pk': basket.id})
-                    sStatusCode = "watching"
-                    basket.set_status("caught the search")
-                elif self.action == "start":
-                    # the basket is the object
-                    basket = self.obj
-                    # Start translation + execution
-                    oBack = basket.research.execute(basket)
-                    if self.bDebug: 
-                        self.oErr.Status("ResearchExe: start...")
-                        for key in oBack:
-                            self.oErr.Status("   {}={}".format(key, str(oBack[key])[:20]))
-                    # Check for errors
-                    if oBack['status'] == "error":
-                        # Make sure we set the basket status
-                        self.obj.set_status("error")
-                        # Add error to the error array
-                        self.arErr.append(oBack['msg'])
-                        sStatusCode = "error"
-                        self.data['statuscode'] = "error"
-                        self.oErr.Status("ResearchExe error: " + oBack['msg'])
-                        if 'msg_list' in oBack:
-                            context['msg_list'] = oBack['msg_list']
-                        context['msg'] = oBack['msg']
-                        # If we have an instance, then provide that in the context
-                        if 'id' in oBack and 'type' in oBack:
-                            # Get the type and the instance
-                            inst_type = oBack['type']
-                            inst_id = oBack['id']
-                            context['error_jumptype'] = inst_type
-                            context['error_jumpid'] = inst_id
-                            # Provide a jump to the correction of the function
-                            if inst_type == "feat":
-                                # Jump to 72 with the correct object_id
-                                context['error_jumpto'] = reverse("research_part_72", kwargs={'object_id': inst_id})
-                            elif inst_type == "cond":
-                                # Jump to a condition
-                                context['error_jumpto'] = reverse("research_part_62", kwargs={'object_id': inst_id})
-                            elif inst_type == "cvar":
-                                # Jump to a construction variable
-                                context['error_jumpto'] = reverse("research_part_43", kwargs={'object_id': inst_id})
+                        sStatusCode = "watching"
+                        basket.set_status("caught the search")
+                    elif self.action == "start":
+                        # the basket is the object
+                        basket = self.obj
+                        # Start translation + execution
+                        oBack = basket.research.execute(basket)
+                        if self.bDebug: 
+                            self.oErr.Status("ResearchExe: start...")
+                            for key in oBack:
+                                self.oErr.Status("   {}={}".format(key, str(oBack[key])[:20]))
+                        # Check for errors
+                        if oBack['status'] == "error":
+                            # Make sure we set the basket status
+                            self.obj.set_status("error")
+                            # Add error to the error array
+                            self.arErr.append(oBack['msg'])
+                            sStatusCode = "error"
+                            self.data['statuscode'] = "error"
+                            self.oErr.Status("ResearchExe error: " + oBack['msg'])
+                            if 'msg_list' in oBack:
+                                context['msg_list'] = oBack['msg_list']
+                            context['msg'] = oBack['msg']
+                            # If we have an instance, then provide that in the context
+                            if 'id' in oBack and 'type' in oBack:
+                                # Get the type and the instance
+                                inst_type = oBack['type']
+                                inst_id = oBack['id']
+                                context['error_jumptype'] = inst_type
+                                context['error_jumpid'] = inst_id
+                                # Provide a jump to the correction of the function
+                                if inst_type == "feat":
+                                    # Jump to 72 with the correct object_id
+                                    context['error_jumpto'] = reverse("research_part_72", kwargs={'object_id': inst_id})
+                                elif inst_type == "cond":
+                                    # Jump to a condition
+                                    context['error_jumpto'] = reverse("research_part_62", kwargs={'object_id': inst_id})
+                                elif inst_type == "cvar":
+                                    # Jump to a construction variable
+                                    context['error_jumpto'] = reverse("research_part_43", kwargs={'object_id': inst_id})
 
-                elif self.action == "stop":
-                    # Need to stop the execution of the project
-                    # Find out which basket is treating this
-                    basket = self.obj
-                    sStatusCode = "stopping"
-                    # Stop the basket
-                    basket.research.stop_execute()
-                elif self.action == "progress":
-                    ## First check: if we are in error, then do not continue
-                    #if self.obj.get_status() == "error":
-                    #    sStatusCode = "error"
-                    #    self.data['status'] = "error"
-                    #else:
+                    elif self.action == "stop":
+                        # Need to stop the execution of the project
+                        # Find out which basket is treating this
+                        basket = self.obj
+                        sStatusCode = "stopping"
+                        # Stop the basket
+                        basket.research.stop_execute()
+                    elif self.action == "progress":
+                        ## First check: if we are in error, then do not continue
+                        #if self.obj.get_status() == "error":
+                        #    sStatusCode = "error"
+                        #    self.data['status'] = "error"
+                        #else:
 
-                    # Need to get the status of the project
-                    # NOTE: the self.obj now is the BASKET!!
-                    self.obj.set_status("loading current status")
-                    oBack = self.obj.get_progress()
-                    if oBack['commandstatus'] == "error":
-                        self.arErr.append(oBack['msg'])
-                        context['statuscode'] = "error"
-                    else:
-                        # All went well: provide information for the context
-                        sStatusCode = ""
-                        if 'code' in oBack['status']:
-                            sStatusCode = oBack['status']['code']
-                        elif 'code' in oBack:
-                            sStatusCode = oBack['code']
+                        # Need to get the status of the project
+                        # NOTE: the self.obj now is the BASKET!!
+                        self.obj.set_status("loading current status")
+                        oBack = self.obj.get_progress()
+                        if oBack['commandstatus'] == "error":
+                            self.arErr.append(oBack['msg'])
+                            context['statuscode'] = "error"
                         else:
-                            # This may be a problem?
-                            iStop = True
-                        # Pass on the status code in the context
-                        context['statuscode'] = sStatusCode
-                        # Action depends on the status code
-                        if sStatusCode == "working":
-                            # Now we have one set of feedback
-                            for item in self.progress:
-                                context[item] = oBack[item]
-                            # Add percentages
-                            if oBack['total'] == 0:
-                                context['ptc_count'] = 0
-                                context['ptc_ready'] = 0
-                                context['pipecount'] = 0
-                                context['ptc_done'] = 0
+                            # All went well: provide information for the context
+                            sStatusCode = ""
+                            if 'code' in oBack['status']:
+                                sStatusCode = oBack['status']['code']
+                            elif 'code' in oBack:
+                                sStatusCode = oBack['code']
                             else:
-                                context['ptc_count'] = 100 * oBack['count'] / oBack['total']
-                                context['ptc_ready'] = 100 * oBack['ready'] / oBack['total']
-                                context['pipecount'] = oBack['count'] - oBack['ready']
-                                context['ptc_done'] = int(context['ptc_ready'])
-                            context['found'] = oBack['found']
-                        elif sStatusCode == "preparing":
-                            # Show where we are in preparing
-                            sStatus = self.obj.get_status()
-                            context['prep_status'] = sStatus
-                            context['prep_job'] = "no job running yet" if self.obj.jobid == "" else self.obj.jobid
-                            if sStatus == "error":
-                                sStatusCode = "stop"
-                        elif sStatusCode == "error":
-                            # Add the error description to the list
-                            if 'message' in oBack:
-                                # Try to decypher
-                                sMsg = oBack['message']
-                                try:
-                                    if sMsg.startswith("{"):
-                                        # Find the first closing }
-                                        sJson = sMsg.split('}', 1)[0] + "}"
-                                        oJson = json.loads(sJson)
-                                        lErr = []
-                                        for key,value in oJson.items():
-                                            self.arErr.append("{}: {}".format(key,value))
-                                    else:
-                                        # Not structured
+                                # This may be a problem?
+                                iStop = True
+                            # Pass on the status code in the context
+                            context['statuscode'] = sStatusCode
+
+                            if self.bDebug: self.oErr.Status("ResearchExe: statuscode=[{}]".format(sStatusCode))
+
+                            # Action depends on the status code
+                            if sStatusCode == "working":
+                                # Now we have one set of feedback
+                                for item in self.progress:
+                                    context[item] = oBack[item]
+                                # Add percentages
+                                if oBack['total'] == 0:
+                                    context['ptc_count'] = 0
+                                    context['ptc_ready'] = 0
+                                    context['pipecount'] = 0
+                                    context['ptc_done'] = 0
+                                else:
+                                    context['ptc_count'] = 100 * oBack['count'] / oBack['total']
+                                    context['ptc_ready'] = 100 * oBack['ready'] / oBack['total']
+                                    context['pipecount'] = oBack['count'] - oBack['ready']
+                                    context['ptc_done'] = int(context['ptc_ready'])
+                                context['found'] = oBack['found']
+                            elif sStatusCode == "preparing":
+                                # Show where we are in preparing
+                                sStatus = self.obj.get_status()
+                                context['prep_status'] = sStatus
+                                context['prep_job'] = "no job running yet" if self.obj.jobid == "" else self.obj.jobid
+                                if sStatus == "error":
+                                    sStatusCode = "stop"
+                            elif sStatusCode == "error":
+                                # Add the error description to the list
+                                if 'message' in oBack:
+                                    # Try to decypher
+                                    sMsg = oBack['message']
+                                    try:
+                                        if sMsg.startswith("{"):
+                                            # Find the first closing }
+                                            sJson = sMsg.split('}', 1)[0] + "}"
+                                            oJson = json.loads(sJson)
+                                            lErr = []
+                                            for key,value in oJson.items():
+                                                self.arErr.append("{}: {}".format(key,value))
+                                        else:
+                                            # Not structured
+                                            self.arErr.append(sMsg)
+                                    except:
+                                        # Could not decypher
                                         self.arErr.append(sMsg)
-                                except:
-                                    # Could not decypher
-                                    self.arErr.append(sMsg)
+                                else:
+                                    self.arErr.append("The /crpp engine returns an unknown error")
+                            elif sStatusCode == "completed":
+                                # Adapt the table we receive
+                                oTable = oBack["table"]
+                                for qcItem in oTable:
+                                    sub = []
+                                    for idx in range(0, len(qcItem['subcats'])):
+                                        subcat = qcItem['subcats'][idx]
+                                        subcount = qcItem['counts'][idx]
+                                        sub.append({"subcat": subcat, "subcount": subcount})
+                                    qcItem['sub'] = sub
+                                # Copy all the items from [oBack] to [context]
+                                for item in self.completed:
+                                    context[item] = oBack[item]
+
+                                # Make sure the searchTime is provided in seconds
+                                context['searchTime'] = context['searchTime'] / 1000
+
+                                # Final action: make all the information available into a Quantor for this basket
+                                oQset = self.obj.set_quantor(oBack)
+                                if oQset['status'] != 'ok':
+                                    msg = "Could not set quantor"
+                                    if 'msg' in oQset: msg = oQset['msg']
+                                    self.arErr.append(msg)
+                    elif self.action == "download":
+                        if "select_part" in self.qd:
+                            # Find out which corpus/part has been chosen
+                            select_part = self.qd.get("select_part")
+                            select_format = self.qd.get("searchFormat")
+
+                            # Check if format adaptation is needed, should there be a better match
+                            select_format = get_best_format(select_part, select_format)
+
+                            # Determine which basket this is in
+                            basket = self.get_basket(select_format, select_part)
+                            # Translate project to Xquery
+                            oBack = self.obj.to_crpx(select_part, select_format, basket)
+                            # Check for errors
+                            if oBack['status'] == "error":
+                                # Add error to the error array
+                                self.arErr.append(oBack['msg'])
                             else:
-                                self.arErr.append("The /crpp engine returns an unknown error")
-                        elif sStatusCode == "completed":
-                            # Adapt the table we receive
-                            oTable = oBack["table"]
-                            for qcItem in oTable:
-                                sub = []
-                                for idx in range(0, len(qcItem['subcats'])):
-                                    subcat = qcItem['subcats'][idx]
-                                    subcount = qcItem['counts'][idx]
-                                    sub.append({"subcat": subcat, "subcount": subcount})
-                                qcItem['sub'] = sub
-                            # Copy all the items from [oBack] to [context]
-                            for item in self.completed:
-                                context[item] = oBack[item]
-
-                            # Make sure the searchTime is provided in seconds
-                            context['searchTime'] = context['searchTime'] / 1000
-
-                            # Final action: make all the information available into a Quantor for this basket
-                            oQset = self.obj.set_quantor(oBack)
-                            if oQset['status'] != 'ok':
-                                msg = "Could not set quantor"
-                                if 'msg' in oQset: msg = oQset['msg']
-                                self.arErr.append(msg)
-                elif self.action == "download":
-                    if "select_part" in self.qd:
-                        # Find out which corpus/part has been chosen
-                        select_part = self.qd.get("select_part")
-                        select_format = self.qd.get("searchFormat")
-
-                        # Check if format adaptation is needed, should there be a better match
-                        select_format = get_best_format(select_part, select_format)
-
-                        # Determine which basket this is in
-                        basket = self.get_basket(select_format, select_part)
-                        # Translate project to Xquery
-                        oBack = self.obj.to_crpx(select_part, select_format, basket)
+                                # Get the name adn the contents
+                                sCrpxName = oBack['crpx_name']
+                                sCrpxText = oBack['crpx_text']
+                                response = HttpResponse(sCrpxText, content_type="application/xml")
+                                response['Content-Disposition'] = 'attachment; filename="'+sCrpxName+'.crpx"'     
+                                return response
+                    elif self.action == "downloadjson":
+                        # Prepare to download the search project as json
+                        oBack = self.obj.get_json()
                         # Check for errors
                         if oBack['status'] == "error":
                             # Add error to the error array
                             self.arErr.append(oBack['msg'])
                         else:
                             # Get the name adn the contents
-                            sCrpxName = oBack['crpx_name']
-                            sCrpxText = oBack['crpx_text']
-                            response = HttpResponse(sCrpxText, content_type="application/xml")
-                            response['Content-Disposition'] = 'attachment; filename="'+sCrpxName+'.crpx"'     
+                            sJsonName = oBack['json_name']
+                            sJsonText = oBack['json_data']
+                            response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
+                            response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
                             return response
-                elif self.action == "downloadjson":
-                    # Prepare to download the search project as json
-                    oBack = self.obj.get_json()
-                    # Check for errors
-                    if oBack['status'] == "error":
-                        # Add error to the error array
-                        self.arErr.append(oBack['msg'])
-                    else:
-                        # Get the name adn the contents
-                        sJsonName = oBack['json_name']
-                        sJsonText = oBack['json_data']
-                        response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
-                        response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
-                        return response
-                elif self.action == "downloadfunction":
-                    # Prepare to download the FUNCTION as json
-                    # THIS WOULD ONLY DOWNLOAD THE TOP FUNCTION: oBack = self.obj.get_output()
-                    if self.obj == None:
-                        oBack['status'] = "error"
-                        if not 'msg' in oBack:
-                            oBack['msg'] = "ResearchExe - downloadfunction - no OBJ defined"
-                    else:
-                        if self.obj.root != None:
-                            oBack = self.obj.root.get_json()
-                            oBack['name'] = "{}-{}".format(self.obj.root.construction.name, self.obj.root.variable.name)
-                        elif self.obj.rootcond != None:
-                            oBack = self.obj.rootcond.get_json()
-                            oBack['name'] = "{}".format(self.obj.rootcond.name)
-                        elif self.obj.rootfeat != None:
-                            oBack = self.obj.rootfeat.get_json()
-                            oBack['name'] = "{}".format(self.obj.rootfeat.name)
-                        else:
+                    elif self.action == "downloadfunction":
+                        # Prepare to download the FUNCTION as json
+                        # THIS WOULD ONLY DOWNLOAD THE TOP FUNCTION: oBack = self.obj.get_output()
+                        if self.obj == None:
                             oBack['status'] = "error"
                             if not 'msg' in oBack:
-                                oBack['msg'] = "ResearchExe - downloadfunction - no root (cvar/cond/feat) defined"
-                    # Check for errors
-                    if 'status' in oBack and oBack['status'] == "error":
-                        # Add error to the error array
-                        self.arErr.append(oBack['msg'])
-                    else:
-                        # Get the name and the contents
-                        sProjectName = "anonymous"
-                        research = self.obj.get_research()
-                        if research != None:
-                            sProjectName = "{}_{}".format(research.name, research.owner.username)
-                        oCode = oBack
-                        sJsonName = "{}_{}".format(sProjectName, oCode['name'])
-                        sJsonText = json.dumps(oCode, 2)
-                        response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
-                        response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
-                        return response
+                                oBack['msg'] = "ResearchExe - downloadfunction - no OBJ defined"
+                        else:
+                            if self.obj.root != None:
+                                oBack = self.obj.root.get_json()
+                                oBack['name'] = "{}-{}".format(self.obj.root.construction.name, self.obj.root.variable.name)
+                            elif self.obj.rootcond != None:
+                                oBack = self.obj.rootcond.get_json()
+                                oBack['name'] = "{}".format(self.obj.rootcond.name)
+                            elif self.obj.rootfeat != None:
+                                oBack = self.obj.rootfeat.get_json()
+                                oBack['name'] = "{}".format(self.obj.rootfeat.name)
+                            else:
+                                oBack['status'] = "error"
+                                if not 'msg' in oBack:
+                                    oBack['msg'] = "ResearchExe - downloadfunction - no root (cvar/cond/feat) defined"
+                        # Check for errors
+                        if 'status' in oBack and oBack['status'] == "error":
+                            # Add error to the error array
+                            self.arErr.append(oBack['msg'])
+                        else:
+                            # Get the name and the contents
+                            sProjectName = "anonymous"
+                            research = self.obj.get_research()
+                            if research != None:
+                                sProjectName = "{}_{}".format(research.name, research.owner.username)
+                            oCode = oBack
+                            sJsonName = "{}_{}".format(sProjectName, oCode['name'])
+                            sJsonText = json.dumps(oCode, 2)
+                            response = HttpResponse(sJsonText, content_type="application/json; charset=utf-8")
+                            response['Content-Disposition'] = 'attachment; filename="'+sJsonName+'.json"'     
+                            return response
 
-            # Make sure we have a list of any errors
-            error_list = [str(item) for item in self.arErr]
-            self.data['error_list'] = error_list
-            self.data['errors'] = self.arErr
-            if len(self.arErr) >0:
-                # debugging error stuff
-                self.oErr.Status("ResearchExe error loc=1")
-                # Pass on the statuscode to the context for the template rendering
-                context['status'] = "error"
-                # Pass on the status to the calling function through [self.data]
-                self.data['status'] = "error"
-                self.data['statuscode'] = "error"
-                context['statuscode'] = "error"
+                # Make sure we have a list of any errors
+                error_list = [str(item) for item in self.arErr]
+                self.data['error_list'] = error_list
+                self.data['errors'] = self.arErr
+                if len(self.arErr) >0:
+                    # debugging error stuff
+                    self.oErr.Status("ResearchExe error loc=1")
+                    # Pass on the statuscode to the context for the template rendering
+                    context['status'] = "error"
+                    # Pass on the status to the calling function through [self.data]
+                    self.data['status'] = "error"
+                    self.data['statuscode'] = "error"
+                    context['statuscode'] = "error"
+                else:
+                    # Pass on the statuscode
+                    self.data['statuscode'] = sStatusCode
+                    context['status'] = self.data['status']
+
+                # Add items to context
+                context['error_list'] = error_list
+            
+                # Get the HTML response
+                self.data['html'] = render_to_string(self.template_name, context, request)
+            
             else:
-                # Pass on the statuscode
-                self.data['statuscode'] = sStatusCode
-                context['status'] = self.data['status']
+                self.data['html'] = "Please log in before continuing"
 
-            # Add items to context
-            context['error_list'] = error_list
-            
-            # Get the HTML response
-            self.data['html'] = render_to_string(self.template_name, context, request)
-            
-        else:
-            self.data['html'] = "Please log in before continuing"
+        except:
+            # If there is a real error, then the user should know too
+            self.data['status'] = "error"
+            self.data['statuscode'] = "error"
+            sMsg = self.oErr.get_error_message()
+            self.data['html'] = sMsg
+            self.oErr.Status("ResearchExe: point #8 gives message: {}".format(sMsg))
 
         # Return the information
         return JsonResponse(self.data)
