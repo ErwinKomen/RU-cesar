@@ -54,6 +54,7 @@ urlpatterns = [
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),
     url(r'^seek/wizard/new/$', cesar.seeker.views.research_edit, name='seeker_define'),
     url(r'^seek/wizard/simple/$', cesar.seeker.views.research_simple, name='seeker_simple'),
+    url(r'^seek/wizard/simple/save/$', cesar.seeker.views.research_simple_save, name='simple_save'),
     url(r'^seek/wizard/import/$', cesar.seeker.views.import_json, name='import_file'),
     url(r'^seek/wizard/copy/(?P<object_id>\d+)/$', ResearchCopy.as_view(), name='seeker_copy'),
     url(r'^seek/wizard/delete/(?P<object_id>\d+)/$', ResearchDelete.as_view(), name='seeker_delete'),

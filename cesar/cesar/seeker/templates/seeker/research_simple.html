@@ -154,6 +154,7 @@
 
               <div class="col-md-2 ">
                 <button type="button" class="btn jumbo-3" id="research_start" 
+                        title="Start searching the corpus"
                         ajaxurl="{% url 'search_prepare' object_id %}"
                         onclick="ru.cesar.seeker.search_start(this, ru.cesar.seeker.save_as);">Start</button>
               </div>
@@ -177,7 +178,16 @@
 
       <div class="row container">
         <div class="col-md-9 panel panel-default">
-          <b>Progress</b>
+          <span><b>Progress</b></span>
+          <!-- Save button is shown upon completion -->
+          <span id="save_as" class="pull-right hidden">
+                <a class="btn jumbo-1 btn-xs" title="let me save this search" 
+                   targetid="save-as-service"
+                   onclick="ru.cesar.seeker.toggle_click(this);">keep this search...</a>
+
+          </span>
+
+          <!-- Progress of the search-->
           <div class="row">
             <div id="research_progress" class="col-md-12">
               <div class="explanation">Select a corpus and press 'Start'. Progress indications will appear here.</div>
@@ -186,44 +196,7 @@
           <div class="row">&nbsp;</div>
           <div class="row">&nbsp;</div>
         </div>
-      </div>
 
-      <!-- Allow saving this search with some name -->
-      <div class="row container hidden" id="save_as">
-        <div class="col-md-9 panel panel-default">
-          <form action="" method="post" class="noblurring">
-            {% csrf_token %}
-
-            <!-- Ask user where to save it -->
-            <div>&nbsp;</div>
-            <table class="func-view">
-              <tbody>
-                <!-- Table header -->
-                <tr class="tablefield">
-                  <td colspan="2">If you would like to extend this simple search, give it a name </td>
-                </tr>
-                <tr class="tablefield">
-                  <td class="tdnowrap vmiddle">Name:</td>
-                  <td colspan="3" style="width: 100%;">{{saveasform.name}}</td>
-                </tr>
-                <!-- Button row-->
-                <tr>
-                  <td colspan="2">
-                    <span class="pull-right">
-                    <a id="simple_saveas" 
-                       onclick=""
-                       title="Save project with this name" 
-                       class="btn jumbo-1 btn-xs">Save</a>
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div>&nbsp;</div>
-          </form>
-
-        </div>
       </div>
 
     </div>

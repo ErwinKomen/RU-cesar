@@ -3209,11 +3209,84 @@ var ru = (function ($, ru) {
        *  save_as
        *
        */
-      save_as() {
+      save_as : function() {
         try {
           $("#save_as").removeClass("hidden");
         } catch (ex) {
-          private_methods.errMsg("search_start", ex);
+          private_methods.errMsg("save_as", ex);
+        }
+      },
+
+      /**
+       * simple_save
+       *   Save a simple search
+       *
+       */
+      simple_save: function (elStart) {
+        var sDivProgress = "#research_progress",
+            ajaxurl = "",
+            response = null,
+            frm = null,
+            sSaveName = "",
+            sUrl = "",
+            sMsg = "",
+            lHtml = [],
+            data = [];
+
+        try {
+          // Clear the errors
+          private_methods.errClear();
+
+          // obligatory parameter: ajaxurl
+          ajaxurl = $(elStart).attr("ajaxurl");
+
+          // Gather the information
+          frm = $(elStart).closest("form");
+          if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+          // Make a call to the ajaxurl
+          $.post(ajaxurl, data, function (response) {
+            if (response.status === undefined) {
+              // Show an error somewhere
+              private_methods.errMsg("Bad execute response");
+              $(sDivProgress).html("Bad execute response:<br>" + response);
+            } else if (response.status === "error") {
+              // Show the error that has occurred
+              if ("html" in response) { sMsg = response['html']; }
+              if ("error_list" in response && response['error_list'] !== "") {
+                // Don't really use this:
+                sMsg += response['error_list'];
+                // Experimental: only show this error list
+                lHtml.push("<span style=\"color: darkred;\">");
+                lHtml.push(response['error_list']);
+                lHtml.push("</span>");
+                $(sDivProgress).html(lHtml.join("\n"));
+              } else {
+                private_methods.errMsg("Execute error: " + sMsg);
+                $(sDivProgress).html("execution error");
+              }
+            } else {
+              // Everything went well
+              sSaveName = response['name'];
+              sUrl = response['editurl'];
+              // Create a response
+              lHtml.push("<div>");
+              lHtml.push("<p>The simple search has been saved as project ["+sSaveName+"]</p>");
+              lHtml.push("<p>");
+              lHtml.push("<a type='button' title='open the new project' class='btn btn-success btn-xs'");
+              lHtml.push(" href=\""+sUrl+"\">");
+              lHtml.push(" <span class='glyphicon glyphicon-folder-open' aria-hidden='true'></span>");
+              lHtml.push("</a>");
+              lHtml.push("</p>");
+              lHtml.push("</div>");
+              // Show the responses
+              $(sDivProgress).html(lHtml.join("\n"));
+
+            }
+          });
+
+        } catch (ex) {
+          private_methods.errMsg("simple_save", ex);
         }
       },
       
@@ -3222,7 +3295,7 @@ var ru = (function ($, ru) {
        *   Stop an already going search
        *
        */
-      search_stop(el) {
+      search_stop : function(el) {
         var sDivProgress = "#research_progress",
             response = null;
         try {

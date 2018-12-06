@@ -4763,6 +4763,71 @@ def modify_simple_search(research, qd):
     # Return positively
     return True
 
+def research_simple_save(request):
+    """Given a simple search that has already run, save it under the name provided"""
+
+    # Initialisations
+    arErr = []
+    simplename = SIMPLENAME     # Name of the simple project
+    data = {'status': 'error', 'html': ''}
+
+    # This only works for action POST
+    if request.method == "POST":
+
+        # There should be a parameter: savename
+        params = request.POST
+        if 'savename' not in params:
+            data['html'] = "Need parameter [savename]"
+            return JsonResponse(data)
+        sSaveName = params['savename']
+
+        # Get the correct owner
+        owner = User.objects.filter(Q(username=request.user)).first()
+
+        # Check if the user is authenticated
+        if owner == None or not request.user.is_authenticated:
+            # Simply redirect to the home page
+            return redirect('nlogin')
+
+        # Get the 'simple' project of this owner
+        lstQ = []
+        lstQ.append(Q(owner=owner))
+        lstQ.append(Q(name=simplename))
+        obj = Research.objects.filter(*lstQ).first()
+        # Double check to see if the search has run
+        if obj != None:
+            # There already is a search: find its associated part
+            basket = Basket.objects.filter(research=obj).order_by('-saved').first()
+            if basket != None:
+                # This search has run recently, so that is good
+                object_id = obj.id
+                # Get the JSON definition of the search 
+                oProj = obj.get_json()
+                if 'json_data' in oProj:
+                    sData = oProj['json_data'].decode("utf-8")
+                    data = json.loads(sData)
+
+                    # Create a new research based on the JSON definition
+                    research = Research.read_data(owner.username, "", arErr, data, sSaveName)
+                    # Check if a new object has been made
+                    if research != None:
+                        # Indicate in the reply that all has gone well
+                        data['status'] = "ok"
+                        # Get the URL to edit it
+                        data['editurl'] = reverse("seeker_edit", kwargs={"object_id": research.id})
+                        data['name'] = sSaveName
+                    else:
+                        data['html'] = "Could not create a project with that name (does it exist already?)"
+                else:
+                    data['html'] = "Could not process JSON data of simple search"
+            else:
+                data['html'] = "First execute a simple search"
+        else:
+            data['html'] = "First define and execute a simple search"
+
+    # Return the information
+    return JsonResponse(data)
+
 
 @csrf_exempt
 def import_json(request):

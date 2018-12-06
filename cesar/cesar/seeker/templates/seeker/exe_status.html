@@ -59,21 +59,58 @@
     {% endif %}
   </div>
 {% elif statuscode == "completed" %}
-  <div class='col-md-12'>
-    The search has finished in {{searchTime|floatformat:3}} seconds.
-    <!-- walk through all the QC items -->
-    {% for qcItem in table %}
-    <h4>Output {{qcItem.qc}}: {{qcItem.result}}</h4>
-    <table class='seeker-choice'>
-      <tr><td align="right">Total count:</td><td align="right">{{qcItem.total}}</td></tr>
-      {% for subres in qcItem.sub %}
-      <tr>
-        <td align="right" class="b">{{subres.subcat}}</td>
-        <td align="right">{{subres.subcount}}</td>
-      </tr>
+  <div class="row">
+    <div class='col-md-6'>
+      The search has finished in {{searchTime|floatformat:3}} seconds.
+      <!-- walk through all the QC items -->
+      {% for qcItem in table %}
+      <h4>Output {{qcItem.qc}}: {{qcItem.result}}</h4>
+      <table class='seeker-choice'>
+        <tr><td align="right">Total count:</td><td align="right">{{qcItem.total}}</td></tr>
+        {% for subres in qcItem.sub %}
+        <tr>
+          <td align="right" class="b">{{subres.subcat}}</td>
+          <td align="right">{{subres.subcount}}</td>
+        </tr>
+        {% endfor %}
+      </table>
       {% endfor %}
-    </table>
-    {% endfor %}
+    </div>
+
+    <!-- Save instructions-->
+    <div id="save-as-service"  class="col-md-6 hidden">
+      <form action="" method="post">
+        {% csrf_token %}
+        <div class="row">
+          <div class="col-md-12">
+
+              <!-- Ask user where to save it -->
+              <div>&nbsp;</div>
+              <table>
+                <tbody>
+                  <tr class="tablefield">
+                    <td class="tdnowrap vmiddle">Name:</td>
+                    <td style="width: 100%;">
+                      <input id="id_savename" name="savename" value="" type="text">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div>&nbsp;</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12" align="right">
+            <button type="button" class="btn jumbo-3" id="simple_saveas" 
+                    title="Save project with this name"
+                    ajaxurl="{% url 'simple_save' %}"
+                    onclick="ru.cesar.seeker.simple_save(this);">Save</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
   </div>
 {% endif %}
 <div class="errors">

@@ -2997,14 +2997,16 @@ class Research(models.Model):
             oBack['msg'] = oErr.get_error_message()
             return oBack
 
-    def read_data(username, data_file, arErr):
+    def read_data(username, data_file, arErr, oData = None, sName = None):
         """Import a JSON specification and create a new research object from it"""
 
         obj = None
         try:
-            oData = import_data_file(data_file, arErr)
+            if oData == None:
+                oData = import_data_file(data_file, arErr)
             # Get the name of the new project
-            sName = "{}_{}".format(oData['name'], oData['owner'])
+            if sName == None:
+                sName = "{}_{}".format(oData['name'], oData['owner'])
             # Get a handle to the user
             owner = User.objects.filter(username=username).first()
             # Check if we can use this name or if it is already in use
