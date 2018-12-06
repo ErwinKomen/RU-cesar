@@ -3281,7 +3281,8 @@ var ru = (function ($, ru) {
               lHtml.push("</div>");
               // Show the responses
               $(sDivProgress).html(lHtml.join("\n"));
-
+              // Remove the SAVE as advise
+              $("#save_as").addClass("hidden");
             }
           });
 
