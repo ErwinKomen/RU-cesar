@@ -12,9 +12,18 @@
 {% block content %}
 
   <!-- Contents -->
-  <div class="container body-content">
-    <h3>Simple search</h3>
-    <p>{{intro_message|safe}}</p>
+  <div class="container body-content">    
+    <h3>
+      <span id="search_mode">Simple search</span>
+      <span class="pull-right">
+        <a class="btn btn-success btn-xs" 
+           title="Switch to extended search" 
+           onclick="ru.cesar.seeker.switch_mode(this, '#search_mode');">
+          <span class="glyphicon glyphicon-tree-deciduous" aria-hidden="true"></span>
+        </a>
+      </span>
+    </h3>
+    <!-- <p>{{intro_message|safe}}</p> -->
     <div id="research_err">
       {% for item in error_list %}
       {{item}}
@@ -37,46 +46,55 @@
               <input name="is_simple_search" type="text" value="yes" />
             </div>
 
-            <!-- Table for input -->
-            <table class="func-view">
-              <tbody>
-                <!-- Table header -->
-                <tr class="tablefield">
-                  <td colspan="4">Search through the texts, looking for... </td>
-                </tr>
+            <!-- Simple search mode -->
+            <div id="search_mode_simple">
+              <!-- Table for input -->
+              <table class="func-view">
+                <tbody>
+                  <!-- Table header -->
+                  <tr class="tablefield">
+                    <td colspan="4">Search through the texts, looking for... </td>
+                  </tr>
 
-                <!-- Looking for a word -->
-                <tr id="simple_specify_w" class="tablefield simple-search-1">
-                  <td class="tdnowrap vmiddle" title="A word (with wildcards) or a small phrase">Word or phrase:</td>
-                  <td colspan="3" style="width: 100%;">{{simpleform.searchwords}}</td>
-                </tr>
+                  <!-- Looking for a word -->
+                  <tr id="simple_specify_w" class="tablefield simple-search-1">
+                    <td class="tdnowrap vmiddle" title="A word (with wildcards) or a small phrase">Word or phrase:</td>
+                    <td colspan="3" style="width: 100%;">{{simpleform.searchwords}}</td>
+                  </tr>
 
-                <!-- Looking for a POS-tag -->
-                <tr id="simple_specify_c" class="tablefield simple-search-2 hidden">
-                  <td class="tdnowrap vmiddle" >Constituent category:</td>
-                  <td style="width: 50%;">{{simpleform.searchpos}}</td>
-                  <td class="tdnowrap vmiddle" title="A constituent category to be excluded (use wildcards if needed)">Excluding:</td>
-                  <td style="width: 50%;">{{simpleform.searchexc}}</td>
-                </tr>
-                <!-- Looking for a lemma -->
-                <tr id="simple_specify_l" class="tablefield simple-search-2 hidden">
-                  <td class="tdnowrap vmiddle" title="A lemma (use wildcards if needed)">Lemma:</td>
-                  <td colspan="3" style="width: 100%;">{{simpleform.searchlemma}}</td>
-                </tr>
+                  <!-- Looking for a POS-tag -->
+                  <tr id="simple_specify_c" class="tablefield simple-search-2 hidden">
+                    <td class="tdnowrap vmiddle" >Constituent category:</td>
+                    <td style="width: 50%;">{{simpleform.searchpos}}</td>
+                    <td class="tdnowrap vmiddle" title="A constituent category to be excluded (use wildcards if needed)">Excluding:</td>
+                    <td style="width: 50%;">{{simpleform.searchexc}}</td>
+                  </tr>
+                  <!-- Looking for a lemma -->
+                  <tr id="simple_specify_l" class="tablefield simple-search-2 hidden">
+                    <td class="tdnowrap vmiddle" title="A lemma (use wildcards if needed)">Lemma:</td>
+                    <td colspan="3" style="width: 100%;">{{simpleform.searchlemma}}</td>
+                  </tr>
 
-                <!-- Button row-->
-                <tr>
-                  <td colspan="4">
-                    <span class="pull-right">
-                    <a id="simple_more" 
-                       onclick="ru.cesar.seeker.simple_switch(this, 'more');"
-                       title="Let me to specify more" 
-                       class="btn jumbo-1 btn-xs">...</a>
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  <!-- Button row-->
+                  <tr>
+                    <td colspan="4">
+                      <span class="pull-right">
+                      <a id="simple_more" 
+                         onclick="ru.cesar.seeker.simple_switch(this, 'more');"
+                         title="Let me to specify more" 
+                         class="btn jumbo-1 btn-xs">...</a>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Extended search mode -->
+            <div id="search_mode_extended" class="hidden">
+              This is extended search mode...
+            </div>
+
             <div>&nbsp;</div>
           </div>
         </div>

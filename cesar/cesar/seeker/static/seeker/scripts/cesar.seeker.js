@@ -1977,6 +1977,36 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * switch_mode
+       *    Switch between simple and extended search mode
+       *
+       */
+      switch_mode: function (elStart, elLabel) {
+        var elSimple = "#search_mode_simple",
+            elExtend = "#search_mode_extended";
+
+        try {
+          if ($(elStart).attr("title").indexOf("extended") >= 0) {
+            // Switch from simple to extended
+            $(elStart).attr("title", "Switch to simple search");
+            $(elLabel).html("Extended search");
+            // Show extended
+            $(elSimple).addClass("hidden");
+            $(elExtend).removeClass("hidden");
+          } else {
+            // Switch from extended to simple
+            $(elStart).attr("title", "Switch to extended search");
+            $(elLabel).html("Simple search");
+            // Show simple
+            $(elSimple).removeClass("hidden");
+            $(elExtend).addClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("switch_mode", ex);
+        }
+      },
+
+      /**
        * simple_switch
        *    Switch in the simple search view
        *
@@ -2003,11 +2033,13 @@ var ru = (function ($, ru) {
                 $(elExc).val("");
                 // Make sure the targettype is set correctly
                 $(elTargetType).val("w");
+                $(elMore).html("more");
               } else {
                 // We are in simple search: turn to extended search
                 $(".simple-search-2").removeClass("hidden");
                 // Adapt the button to say we can return to simple search
                 $(elMore).attr("title", "Return to simple search");
+                $(elMore).html("less");
               }
               break;
           }
