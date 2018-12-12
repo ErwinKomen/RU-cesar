@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin
 from django.forms import Textarea
 
 from cesar.browser.models import *
@@ -206,6 +208,7 @@ class CorpusAdmin(admin.ModelAdmin):
         }
 
 
+
 # Models that serve others
 admin.site.register(FieldChoice, FieldChoiceAdmin)
 admin.site.register(HelpChoice)
@@ -223,3 +226,11 @@ admin.site.register(Part, PartAdmin)
 admin.site.register(Download, DownloadAdmin)
 admin.site.register(Text, TextAdmin)
 admin.site.register(Sentence, SentenceAdmin)
+
+# How to display user information
+admin.site.unregister(User)
+# What to display in a list
+UserAdmin.list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined', 'last_login']
+# Turn it on again
+admin.site.register(User, UserAdmin)
+
