@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d565a16b-3481-4b3c-8554-8308d2d5d15f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>metadate.py</StartupFile>
+    <StartupFile>lingopart.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -15,6 +15,9 @@
     <InterpreterId>{2692852f-dd1d-40b7-8498-465ac86e8866}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>-i "U:\Data Files\TG\Lingoturk\Chinese\tmp84.csv" </CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,6 +31,9 @@
     <Compile Include="anon.py" />
     <Compile Include="erwin.py" />
     <Compile Include="filter.py" />
+    <Compile Include="lingopart.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="main.py" />
     <Compile Include="metadate.py">
       <SubType>Code</SubType>
@@ -45,6 +51,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="reanom.py" />
+    <Compile Include="util.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="..\..\..\..\..\env\anon\">
