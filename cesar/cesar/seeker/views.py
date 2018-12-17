@@ -716,7 +716,7 @@ class ResearchExe(View):
                         sNowTime = get_crpp_date(timezone.now())
                         self.oErr.Status("ResearchExe: action={} at [{}]".format(self.action, sNowTime))
                     if self.action == "prepare":
-                        # Make sure we have the right paramters to work with
+                        # Make sure we have the right parameters to work with
                         if "select_part" in self.qd and self.qd.get("select_part") != "":
                             research = self.obj
                             # Check if this object is not currently being executed
@@ -4664,6 +4664,7 @@ def research_simple(request):
         simpleform.fields["searchpos"].initial = ""
         simpleform.fields["searchlemma"].initial = ""
         simpleform.fields["searchexc"].initial = ""
+        simpleform.fields["searchcql"].initial = ""
         cns = obj.gateway.constructions.first()
         if cns != None and cns.search != None:
             svalue = cns.search.value
@@ -4673,6 +4674,8 @@ def research_simple(request):
             elif obj.targetType == "c":
                 # Constituent category search
                 simpleform.fields["searchpos"].initial = svalue
+            elif obj.targetType == "q":     # Cesar CQL
+                simpleform.fields["searchcql"].initial = svalue
             else:
                 # This should be targettype "e" (extended)
                 # Extended search: at least 'lemma' or 'constituent', and possibly also 'word'

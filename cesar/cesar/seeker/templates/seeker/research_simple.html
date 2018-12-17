@@ -92,7 +92,23 @@
 
             <!-- Extended search mode -->
             <div id="search_mode_extended" class="hidden">
-              This is extended search mode...
+              <!-- Table for input -->
+              <table class="func-view">
+                <tbody>
+                  <!-- Table header -->
+                  <tr class="tablefield">
+                    <td colspan="4">Please enter the search code in the Cesar CQL-type fashion </td>
+                  </tr>
+
+                  <!-- Looking for a word -->
+                  <tr id="extended_specify_" class="tablefield">
+                    <td class="tdnowrap" valign="top" title="Your Cesar CQL code">Code:</td>
+                    <td colspan="3" style="width: 100%;">{{simpleform.searchcql}}</td>
+                  </tr>
+
+                </tbody>
+              </table>
+
             </div>
 
             <div>&nbsp;</div>

@@ -1957,7 +1957,9 @@ var ru = (function ($, ru) {
        *
        */
       init_simple: function () {
-        var elTargetType = "#id_targetType";
+        var elSimple = "#search_mode_simple",
+            elExtend = "#search_mode_extended",
+            elTargetType = "#id_targetType";
 
         try {
           switch ($(elTargetType).val()) {
@@ -1969,6 +1971,14 @@ var ru = (function ($, ru) {
             case "w":
               // Make sure the the extended searching is hidden
               $(".simple-search-2").addClass("hidden");
+              break;
+            case "q":
+              // We should be in extended mode
+              $(elStart).attr("title", "Switch to simple search");
+              $(elLabel).html("Extended search");
+              // Show extended
+              $(elSimple).addClass("hidden");
+              $(elExtend).removeClass("hidden");
               break;
           }
         } catch (ex) {
@@ -1982,7 +1992,9 @@ var ru = (function ($, ru) {
        *
        */
       switch_mode: function (elStart, elLabel) {
-        var elSimple = "#search_mode_simple",
+        var elTargetType = "#id_targetType",
+            elCql = "#id_searchcql",
+            elSimple = "#search_mode_simple",
             elExtend = "#search_mode_extended";
 
         try {
@@ -2000,6 +2012,8 @@ var ru = (function ($, ru) {
             // Show simple
             $(elSimple).removeClass("hidden");
             $(elExtend).addClass("hidden");
+            // Clear CQL
+            $(elCql).val("");
           }
         } catch (ex) {
           private_methods.errMsg("switch_mode", ex);
@@ -3111,6 +3125,7 @@ var ru = (function ($, ru) {
             sLemma = "",        // For simple search
             sCat = "",          // For simple search
             sExc = "",          // For simple search
+            sCql = "",          // For extended search
             sTargetType = "",   // For simple search
             data = [];
 
@@ -3132,9 +3147,11 @@ var ru = (function ($, ru) {
             sLemma = private_methods.get_list_value(data, "searchlemma");
             sCat = private_methods.get_list_value(data, "searchpos");
             sExc = private_methods.get_list_value(data, "searchexc");
+            sCql = private_methods.get_list_value(data, "searchcql");
             // Determine the targetType
             sTargetType = "e";
-            if (sWord !== "" && sLemma === "" && sCat === "") { sTargetType = "w"; }
+            if (sCql !== "") {sTargetType = "q"; }
+            else if (sWord !== "" && sLemma === "" && sCat === "") { sTargetType = "w"; }
             else if (sWord === "" && sLemma === "" && sCat !== "") { sTargetType = "c";}
             // Set the targetType
             $("#id_targetType").val(sTargetType);

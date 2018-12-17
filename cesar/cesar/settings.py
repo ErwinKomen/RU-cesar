@@ -33,9 +33,9 @@ elif "131.174" in hst:
     APP_PREFIX = ""
     admin.site.site_url = '/'
 elif "/var/www" in WRITABLE_DIR:
-    # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/crp
-    APP_PREFIX = "crp/"
-    admin.site.site_url = '/crp'
+    # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/cesar
+    APP_PREFIX = "cesar/"
+    admin.site.site_url = '/cesar'
 else:
     admin.site.site_url = '/dd'
 

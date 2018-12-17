@@ -304,3 +304,4 @@ ModelManifest.xml
 /anon/processor/entity_mapping/__init__.py
 /anon/processor/__init__.py
 /cesar/cesar/browser/static/browser/content/CesarManual.pdf
+/anon/__pycache__

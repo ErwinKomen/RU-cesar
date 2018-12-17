@@ -519,6 +519,9 @@ class SimpleSearchForm(forms.Form):
     searchlemma = forms.CharField(label=_("Lemma to be found"), required=False)
     searchpos = forms.CharField(label=_("Constituent categorie(s) to be found"), required = False)
     searchexc = forms.CharField(label=_("Constituent categorie(s) to be excluded"), required = False)
+    searchcql = forms.CharField(required = False, widget=SeekerTextarea(attrs={'rows': 3, 'cols': 80, 'style': 'height: 90px;'}))
+
+
 
 
 class UploadFileForm(forms.Form):
