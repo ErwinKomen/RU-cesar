@@ -103,10 +103,14 @@ def process_lingopart(oArgs):
                     # One statistics object contains at least a "name" and a value in the form of "answer"
                     # Note that the value may be an integer or a string or a boolean
                     sName = oStats['name']
-                    oRow[sName] = oStats['answer']
+                    if 'answer' in oStats:
+                        oRow[sName] = oStats['answer']
+                    else:
+                        oRow[sName] = '(not filled in)'
                     # Check for the heading
                     if sName not in lHeadings:
                         lHeadings.append(sName)
+
 
                 # Add this object to the list
                 lPartInfo.append(oRow)
