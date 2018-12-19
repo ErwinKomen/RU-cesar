@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d565a16b-3481-4b3c-8554-8308d2d5d15f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>lingopart.py</StartupFile>
+    <StartupFile>lingoconvert.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -16,7 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-i "U:\Data Files\TG\Lingoturk\Chinese\tmp84.csv" </CommandLineArguments>
+    <CommandLineArguments>-i "U:\Data Files\TG\Lingoturk\Chinese\experiment_85_results.csv" </CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -31,6 +31,9 @@
     <Compile Include="anon.py" />
     <Compile Include="erwin.py" />
     <Compile Include="filter.py" />
+    <Compile Include="lingoconvert.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="lingopart.py">
       <SubType>Code</SubType>
     </Compile>
