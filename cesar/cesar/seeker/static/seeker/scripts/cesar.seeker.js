@@ -1958,6 +1958,8 @@ var ru = (function ($, ru) {
        */
       init_simple: function () {
         var elSimple = "#search_mode_simple",
+            elStart = "#search_mode_switch",
+            elLabel = "#search_mode",
             elExtend = "#search_mode_extended",
             elTargetType = "#id_targetType";
 

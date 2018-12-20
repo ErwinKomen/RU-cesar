@@ -4727,6 +4727,8 @@ def modify_simple_search(research, qd):
     if research == None:
         return False
 
+    oErr = ErrHandle()
+
     # Continue
     if "targetType" in qd:
         research.targetType = qd.get("targetType", "w")
@@ -4738,36 +4740,54 @@ def modify_simple_search(research, qd):
         sExclude = ""       # Category to be excluded
         sCategory = ""      # Extended: category
         sLemma = ""         # Extended: lemma
-        if research.targetType == "w":
+        sCql = ""           # CQL
+        if research.targetType == "w":              # Word-level
             sValue = qd.get("searchwords", "")
-        elif research.targetType == "c":
+        elif research.targetType == "q":            # Cesar CQL
+            sCql = qd.get("searchcql", "")
+        elif research.targetType == "c":            # Construction level
             sValue = qd.get("searchpos", "")
             sExclude = qd.get("searchexc", "")
-        else:
+        else:                                       # Extended
             sValue = qd.get("searchwords", "")
             sCategory = qd.get("searchpos", "")
             sLemma = qd.get("searchlemma", "")
             sExclude = qd.get("searchexc", "")
         # Adapt the value in searchmain
-        if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "":
+        if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "" or sCql != "":
             search = None
             cns = research.gateway.constructions.first()
             if cns == None or cns.search == None:
                 # there is no construction yet: make a SearchMain and a Construction
                 if research.targetType == "w":
                     search = SearchMain.create_item("word-group", sValue, 'groupmatches')
-                else:
+                elif research.targetType == "c" or research.targetType == "e":
                     # This is targetType "c" or "e"
                     search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma)
+                elif research.targetType == "q":
+                    # CQL translation
+                    search = SearchMain.create_item("const-group", sValue, 'groupmatches', cql = sCql)
+                else:
+                    # This may not happen
+                    oErr.DoError("modify_simple_search: targettype not known")
+                    return False
+
             # Make sure the correct SEARCH is set
             if search == None:
                 search = cns.search
             # Make sure the value of the word(s)/constituent(s) is set correctly
             if research.targetType == "w":
                 search.adapt_item("word-group", sValue, 'groupmatches')
-            else:   
+            elif research.targetType == "c" or research.targetType == "e":
                 # Targettype "c" or "e"
                 search.adapt_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma)
+            elif research.targetType == "q":
+                # CQL translation
+                search.adapt_item("const-group", sValue, 'groupmatches', cql = sCql)
+            else:  
+                # This may not happen
+                oErr.DoError("modify_simple_search: targettype not known")
+                return False
 
             # Make sure the construction is saved
             if cns == None:

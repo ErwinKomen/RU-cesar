@@ -143,6 +143,8 @@ class SearchMain(models.Model):
     category = models.CharField("Constituent category", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [0-1] Extended: lemma
     lemma = models.CharField("Lemma", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] None of the above: CQL
+    cql = models.CharField("Cql", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [1] Comparison operator: equals, matches, contains etc
     operator = models.CharField("Operator", choices=build_choice_list(SEARCH_OPERATOR), 
                               max_length=5, help_text=get_help(SEARCH_OPERATOR))
@@ -168,7 +170,7 @@ class SearchMain(models.Model):
         # Return the new copy
         return new_copy
 
-    def create_item(function, value, operator, exclude=None, category=None, lemma=None):
+    def create_item(function, value, operator, exclude=None, category=None, lemma=None, cql=None):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
         function_word = choice_value(SEARCH_FUNCTION, function)
         # Create initial object
@@ -185,6 +187,9 @@ class SearchMain(models.Model):
         if lemma != None: 
             obj.lemma = lemma
             need_saving = True
+        if cql != None:
+            obj.cql = cql
+            need_saving = True
 
         if need_saving:
             # Make sure it is saved
@@ -193,7 +198,7 @@ class SearchMain(models.Model):
         # Return the object as we have it
         return obj
 
-    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None):
+    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None, cql=None):
         """Adapt the search and save it"""
 
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
@@ -218,6 +223,9 @@ class SearchMain(models.Model):
             need_saving = True
         if self.lemma != lemma: 
             self.lemma = lemma
+            need_saving = True
+        if cql != None:
+            self.cql = cql
             need_saving = True
         # Need saving?
         if need_saving:
@@ -260,6 +268,9 @@ class SearchMain(models.Model):
         elif targetType == 'c':
             # Only look for a category
             return {'cat_incl': self.value, 'cat_excl': self.exclude}
+        elif targetType == 'q': 
+            # CQL definition
+            return {'cql': self.cql }
         elif targetType == 'e': 
             # Extended: look for combination of word/lemma/category
             sSingle, sMulti = val_convert(self.value)
@@ -495,6 +506,9 @@ class Gateway(models.Model):
                          'cat_incl': oSearch['cat_incl'], 
                          'cat_excl': oSearch['cat_excl'],
                          'lemma': oSearch['lemma']}
+            elif targetType == 'q':
+                # CQL type definition
+                oItem = {'cql': oSearch['cql'] }
             else:
                 oItem = {}
             lBack.append(oItem)
@@ -3043,6 +3057,8 @@ class Research(models.Model):
                             search.exclude = cns['exclude']
                             search.category = cns['category']
                             search.lemma = cns['lemma']
+                        elif targetType == "q":
+                            search.cql = cns['cql']
                         search.save()
                         construction = Construction(name=cns['name'], search=search, gateway=gateway)
                         construction.save()
