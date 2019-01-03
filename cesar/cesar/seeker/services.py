@@ -183,7 +183,7 @@ def crpp_hitinfo(sUser, sCrpName, sLng, iQcNum, iStart, iCount, filter=None, sor
 
 def crpp_command(sCommand, oToCrpp):
     # Set the correct URL
-    url = CRPP_HOME + '/crpp/'+sCommand
+    url = CRPP_HOME + '/'+sCommand
     # Default reply
     oBack = {}
     # Get the data from the CRPP api

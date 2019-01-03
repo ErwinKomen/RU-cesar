@@ -24,6 +24,9 @@ if "RU-cesar\\writable" in WRITABLE_DIR:
     # Need another string
     WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../../writable/database/"))
 
+# Surfsara VM:
+CRPP_HOME = 'http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/crpp'
+
 APP_PREFIX = "dd/"
 if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     APP_PREFIX = ""
@@ -32,6 +35,8 @@ elif "131.174" in hst:
     # Configuration within the Radboud University environment
     APP_PREFIX = ""
     admin.site.site_url = '/'
+    # Ponyland-internal:
+    CRPP_HOME = 'http://localhost:8080/CrppS'
 elif "/var/www" in WRITABLE_DIR:
     # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/cesar
     APP_PREFIX = "cesar/"
@@ -54,8 +59,6 @@ SECRET_KEY = '379848c4-ce15-403e-a74a-f994d720554b'
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
-
-CRPP_HOME = 'http://corpus-studio-web.cttnww-meertens.surf-hosted.nl'
 
 
 # Application definition

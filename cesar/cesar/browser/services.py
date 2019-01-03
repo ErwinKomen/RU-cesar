@@ -16,7 +16,7 @@ def get_crpp_info():
     """Read the list of available corpora from the /crpp service (if available)"""
 
     # Set the correct URL
-    url = CRPP_HOME + "/crpp/serverinfo"
+    url = CRPP_HOME + "/serverinfo"
     # Default reply
     oBack = {}
     # Get the data from the CRPP api
@@ -58,7 +58,7 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
         if sPart != None and sPart != "":
             oTxtList['dir'] = sPart
         # Set the correct URL
-        url = CRPP_HOME + '/crpp/txtlist?' + json.dumps(oTxtList)
+        url = CRPP_HOME + '/txtlist?' + json.dumps(oTxtList)
         # Default reply
         oBack = {}
         # Get the data from the CRPP api
@@ -81,7 +81,7 @@ def get_crpp_texts(sLng, sPart, sFormat, status):
                 sJobId = oContent['jobid']
                 # Now continue to ask for the status
                 oTxtListStatus = {'userid': "erwin", 'jobid': sJobId}
-                url = CRPP_HOME + '/crpp/statusxl?' + json.dumps(oTxtListStatus)
+                url = CRPP_HOME + '/statusxl?' + json.dumps(oTxtListStatus)
                 bDone = False
                 while not bDone:
                     # Get the data from the CRPP api
@@ -186,7 +186,7 @@ def get_crpp_text(sLng, sPart, sFormat, sName):
     if sPart != None and sPart != "":
         oTxtReq['dir'] = sPart
     # Set the correct URL
-    url = CRPP_HOME + '/crpp/txt?' + json.dumps(oTxtReq)
+    url = CRPP_HOME + '/txt?' + json.dumps(oTxtReq)
     # Default reply
     oBack = {}
     # Get the data from the CRPP api
@@ -220,7 +220,7 @@ def get_crpp_sent_info(options):
 
     try:
         # Set the correct URL
-        url = CRPP_HOME + "/crpp/txt?" + json.dumps(options)
+        url = CRPP_HOME + "/txt?" + json.dumps(options)
         # Get the data from the CRPP api
         r = requests.get(url)
         # Action depends on what we receive
