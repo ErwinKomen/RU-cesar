@@ -13,11 +13,11 @@
     <Setting Name="DbaseInput" Value="False" />
     <Setting Name="Stream" Value="True" />
     <Setting Name="Name" Value="{{research.name}}" />
-    <Setting Name="QueryDir" Value="/etc/project/{{research.owner.username}}/xq" />
+    <Setting Name="QueryDir" Value="{{projectdir}}/{{research.owner.username}}/xq" />
     <Setting Name="Source" Value="*{{extension}}" />
-    <Setting Name="DstDir" Value="/etc/project/{{research.owner.username}}/out" />
+    <Setting Name="DstDir" Value="{{projectdir}}/{{research.owner.username}}/out" />
     <Setting Name="SrcDir" Value="{{dir}}" />
-    <Setting Name="OutputDir" Value="/etc/project/{{research.owner.username}}/out" />
+    <Setting Name="OutputDir" Value="{{projectdir}}/{{research.owner.username}}/out" />
     <Setting Name="Goal" Value="{{research.purpose}}" />
     <Setting Name="Comments" Value="Automatically created by Cesar conversion" />
     <Setting Name="Author" Value="{{research.owner.first_name}} {{research.owner.last_name}}" />

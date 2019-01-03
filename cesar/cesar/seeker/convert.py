@@ -13,6 +13,7 @@ import re
 # Application-specific
 from cesar import utils
 from cesar.seeker.models import Construction, ConstructionVariable, ERROR_CODE
+from cesar.settings import PROJECT_DIR
 
 def ConvertProjectToXquery(oData, basket):
     """Convert the project oData.gateway of type oData.targetType into Xquery suitable for oData.format"""
@@ -260,6 +261,7 @@ def ConvertProjectToCrpx(basket):
                        extension=extension,
                        lng=lng,
                        dir=dir,
+                       projectdir=PROJECT_DIR,
                        outfeat=outfeat,
                        queryname=queryname,
                        defname=defname,
