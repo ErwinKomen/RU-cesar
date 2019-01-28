@@ -519,10 +519,27 @@ class SimpleSearchForm(forms.Form):
     searchlemma = forms.CharField(label=_("Lemma to be found"), required=False)
     searchpos = forms.CharField(label=_("Constituent categorie(s) to be found"), required = False)
     searchexc = forms.CharField(label=_("Constituent categorie(s) to be excluded"), required = False)
+    searchrel = forms.CharField(label=_("Related constituent(s)"), required = False)
     searchcql = forms.CharField(required = False, widget=SeekerTextarea(attrs={'rows': 3, 'cols': 80, 'style': 'height: 90px;'}))
 
 
+class RelatedForm(forms.Form):
+    """One 'related' constituent definition for SimpleSearch"""
 
+    name = forms.CharField(label=_("Short name"), required = True,
+                           widget=forms.TextInput(attrs={'placeholder': 'Short name'}))
+    cat = forms.CharField(label=_("Category"), required = False,
+                           widget=forms.TextInput(attrs={'placeholder': 'Constituent category', 'style': 'width: 100%;'}))
+    raxis = forms.ChoiceField(label=_("Relation"), required = True)
+    towards = forms.ChoiceField(label=_("Towards constituent"), required = True)
 
+    def __init__(self, *args, **kwargs):
+        super(RelatedForm, self).__init__(*args, **kwargs)
+        # Initial choices for 'raxis'
+        self.fields['raxis'].choices = Relation.get_choices('axis')
+        # Initial default choice for 'towards'
+        self.fields['towards'].choices = [ ('search', 'Search Hit') ]
+
+    
 class UploadFileForm(forms.Form):
     file_source = forms.FileField(label="Specify which file should be loaded")

@@ -30,6 +30,7 @@ var ru = (function ($, ru) {
           { "table": "research_cond", "prefix": "cond", "counter": true, "events": function () { ru.cesar.seeker.init_cond_events(); } },
           { "table": "research_feat", "prefix": "feat", "counter": true, "events": function () { ru.cesar.seeker.init_feat_events(); } },
           { "table": "result_kwicfilter", "prefix": "filter", "counter": true, "events": null },
+          { "table": "search_mode_simple", "prefix": "simplerel", "counter": true, "events": function () { ru.cesar.seeker.init_simple_events(); } }
       ];
 
 
@@ -865,11 +866,21 @@ var ru = (function ($, ru) {
        *
        */
       cloneMore: function (selector, type, number) {
+        var elTotalForms = null,
+            total = 0;
+
         try {
           // Clone the element in [selector]
           var newElement = $(selector).clone(true);
           // Find the total number of [type] elements
-          var total = $('#id_' + type + '-TOTAL_FORMS').val();
+          elTotalForms = $('#id_' + type + '-TOTAL_FORMS').first();
+          // Determine the total of already available forms
+          if (elTotalForms === null) {
+            // There is no TOTAL_FORMS for this type, so calculate myself
+          } else {
+            // Just copy the TOTAL_FORMS value
+            total = $(elTotalForms).val();
+          }
 
           // Find each <input> element
           newElement.find(':input').each(function () {
@@ -1529,6 +1540,21 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  init_simple_events
+       *      Bind events to work with the simple form
+       *
+       */
+      init_simple_events: function () {
+        try {
+          $(".delete-row").unbind("click");
+          $('tr td a.delete-row').click(ru.cesar.seeker.tabular_deleterow);
+          //$(".delete-row").click(function (elThis) { ru.cesar.seeker.tabular_deleterow(); });
+        } catch (ex) {
+          private_methods.errMsg("init_simple_events", ex);
+        }
+      },
+
+      /**
        *  init_cond_events
        *      Bind events to work with conditions
        *
@@ -1722,7 +1748,12 @@ var ru = (function ($, ru) {
        */
       init_events: function () {
         try {
-          $('tr.add-row a').click(ru.cesar.seeker.tabular_addrow);
+          // NOTE: only treat the FIRST <a> within a <tr class='add-row'>
+          //$('tr.add-row a').first().click(ru.cesar.seeker.tabular_addrow);
+          $("tr.add-row").each(function () {
+            $(this).find("a").first().click(ru.cesar.seeker.tabular_addrow);
+          });
+          $('tr td a.delete-row').click(ru.cesar.seeker.tabular_deleterow);
           $('.inline-group > div > a.btn').click(function () {
             var elGroup = null,
                 elTabular = null,
@@ -1952,6 +1983,28 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * show_related
+       *    Set the 'related' button
+       *
+       */
+      show_related: function (bShow) {
+        var elAddRel = "#add_related";
+
+        try {
+          if (bShow) {
+            $(elAddRel).attr("title", "Hide related");
+            $(elAddRel).html("no related constituents");
+          } else {
+            $(elAddRel).attr("title", "Show related");
+            $(elAddRel).html("related constituents");
+          }
+        } catch (ex) {
+          private_methods.errMsg("show_related", ex);
+        }
+
+      },
+
+      /**
        * init_simple
        *    Initialize the layout of simple
        *
@@ -1960,15 +2013,27 @@ var ru = (function ($, ru) {
         var elSimple = "#search_mode_simple",
             elStart = "#search_mode_switch",
             elLabel = "#search_mode",
+            elRelated = "#related_constituents",
             elExtend = "#search_mode_extended",
             elTargetType = "#id_targetType";
 
         try {
+          // Initially Hide related
+          $(elRelated).addClass("hidden");
+
           switch ($(elTargetType).val()) {
             case "e":
             case "c":
               // Make sure the the extended searching is shown
               $(".simple-search-2").removeClass("hidden");
+              // Check if [related_constituents] should be shown or not
+              if ($(".rel-form").length > 0) {
+                // Show related
+                $(elRelated).removeClass("hidden");
+                ru.cesar.seeker.show_related(true);
+              } else {
+                ru.cesar.seeker.show_related(false);
+              }
               break;
             case "w":
               // Make sure the the extended searching is hidden
@@ -1996,6 +2061,7 @@ var ru = (function ($, ru) {
       switch_mode: function (elStart, elLabel) {
         var elTargetType = "#id_targetType",
             elCql = "#id_searchcql",
+            elRelated = "#related_constituents",
             elSimple = "#search_mode_simple",
             elExtend = "#search_mode_extended";
 
@@ -2023,6 +2089,32 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * related_switch
+       *    Switch show/hide the 'related constituents' for simple search view
+       *
+       */
+      related_switch: function (elStart, sTarget, sType) {
+        var elTarget = "#" + sTarget;
+            
+        try {
+          if ($(elTarget).hasClass("hidden")) {
+            // From hidden to SHOW
+            $(elTarget).removeClass("hidden");
+            ru.cesar.seeker.show_related(true);
+          } else {
+            // From showing to HIDDEN
+            $(elTarget).addClass("hidden");
+            ru.cesar.seeker.show_related(false);
+            // Remove all rows that are filled
+            $(".rel-form").remove();
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("related_switch", ex);
+        }
+      },
+
+      /**
        * simple_switch
        *    Switch in the simple search view
        *
@@ -2032,6 +2124,7 @@ var ru = (function ($, ru) {
             elPos = "#id_searchpos",
             elLemma = "#id_searchlemma",
             elExc = "#id_searchexc",
+            elRelated = "#related_constituents",
             elMore = "#simple_more";
 
         try {
@@ -2050,12 +2143,18 @@ var ru = (function ($, ru) {
                 // Make sure the targettype is set correctly
                 $(elTargetType).val("w");
                 $(elMore).html("more");
+                // Remove all rows that are filled
+                $(".rel-form").remove();
+                $(elRelated).addClass("hidden");
+                ru.cesar.seeker.show_related(false);
               } else {
                 // We are in simple search: turn to extended search
                 $(".simple-search-2").removeClass("hidden");
                 // Adapt the button to say we can return to simple search
                 $(elMore).attr("title", "Return to simple search");
                 $(elMore).html("less");
+                // Show related button
+                ru.cesar.seeker.show_related(true);
               }
               break;
           }
@@ -3497,6 +3596,38 @@ var ru = (function ($, ru) {
        */
       sent_click: function () {
         $("#sentence-fetch").removeClass("hidden");
+      },
+
+      /**
+       * tabular_deleterow
+       *   Delete one row from a tabular inline
+       *
+       */
+      tabular_deleterow: function () {
+        var sId = "",
+            elRow = null,
+            bValidated = false;
+
+        try {
+          // Find out just where we are
+          sId = $(this).closest("div").attr("id");
+          // The validation action depends on this id
+          switch (sId) {
+            case "search_mode_simple":
+              // TODO: add proper validation
+              bValidated = true;
+              break;
+          }
+          // Continue with deletion only if validated
+          if (bValidated) {
+            // Get to the row
+            elRow = $(this).closest("tr");
+            $(elRow).remove();
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("tabular_deleterow", ex);
+        }
       },
 
       /**

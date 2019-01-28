@@ -37,6 +37,7 @@ SEARCH_INCLUDE = "search.include"                   # true, false
 SEARCH_FILTEROPERATOR = "search.filteroperator"     # first, and, andnot
 
 ERROR_CODE = "$__error__$"
+SIMPLENAME = "_simplesearch"   # Name of the simple project
 
 WORD_ORIENTED = 'w'
 CONSTITUENT_ORIENTED = 'c'
@@ -143,6 +144,8 @@ class SearchMain(models.Model):
     category = models.CharField("Constituent category", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [0-1] Extended: lemma
     lemma = models.CharField("Lemma", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] Extended: related
+    related = models.TextField("Related constituent(s)", null=True, blank=True)
     # [0-1] None of the above: CQL
     cql = models.CharField("Cql", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [1] Comparison operator: equals, matches, contains etc
@@ -170,7 +173,7 @@ class SearchMain(models.Model):
         # Return the new copy
         return new_copy
 
-    def create_item(function, value, operator, exclude=None, category=None, lemma=None, cql=None):
+    def create_item(function, value, operator, exclude=None, category=None, lemma=None, related=None, cql=None):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
         function_word = choice_value(SEARCH_FUNCTION, function)
         # Create initial object
@@ -187,6 +190,9 @@ class SearchMain(models.Model):
         if lemma != None: 
             obj.lemma = lemma
             need_saving = True
+        if related != None: 
+            obj.related = related
+            need_saving = True
         if cql != None:
             obj.cql = cql
             need_saving = True
@@ -198,7 +204,7 @@ class SearchMain(models.Model):
         # Return the object as we have it
         return obj
 
-    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None, cql=None):
+    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None, related=None, cql=None):
         """Adapt the search and save it"""
 
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
@@ -223,6 +229,9 @@ class SearchMain(models.Model):
             need_saving = True
         if self.lemma != lemma: 
             self.lemma = lemma
+            need_saving = True
+        if self.related != related: 
+            self.related = related
             need_saving = True
         if cql != None:
             self.cql = cql
@@ -261,26 +270,31 @@ class SearchMain(models.Model):
                 sMulti = str(sMulti).replace(",)", ")")
             return sSingle, sMulti
 
+        response = {}
         if targetType == 'w':
             # Only look for one or more words
             sSingle, sMulti = val_convert(self.value)
-            return {'single': sSingle, 'line_list': sMulti}
+            response =  {'single': sSingle, 'line_list': sMulti}
         elif targetType == 'c':
             # Only look for a category
-            return {'cat_incl': self.value, 'cat_excl': self.exclude}
+            response =  {'cat_incl': self.value, 'cat_excl': self.exclude}
         elif targetType == 'q': 
             # CQL definition
-            return {'cql': self.cql }
+            response =  {'cql': self.cql }
         elif targetType == 'e': 
             # Extended: look for combination of word/lemma/category
             sSingle, sMulti = val_convert(self.value)
-            return {'single': sSingle, 
+            response = {'single': sSingle, 
                     'line_list': sMulti,
                     'cat_incl': self.category, 
                     'cat_excl': self.exclude,
                     'lemma': self.lemma}
-        else:
-            return {}
+        # Only add 'related'if it is there
+        if self.related != None and self.related != "":
+            # Translate the String into JSON
+            response['related'] = json.loads(self.related)
+        # Return the response
+        return response
         
 
 class GatewayManager(models.Manager):
@@ -485,6 +499,35 @@ class Gateway(models.Model):
         # Return the new copy
         return new_copy
 
+    def clear_search(self):
+        """Clear any associated (a) data-dependant variables, (b) conditions, (c) features""" 
+
+        oErr = ErrHandle()
+        try:
+            # Delete the definition variables
+            dvar_set = self.definitionvariables.all().order_by('-order', '-id')
+            for dvar in dvar_set:
+                dvar.delete()
+            # Delete the construction variables (not the constructions)
+            cns_set = self.constructions.all()
+            for cns_this in cns_set:
+                for cvar_this in cns_this.constructionvariables.all():
+                    cvar_this.delete()
+            # Delete the conditions (and what is under them)
+            cond_set = self.conditions.all()
+            for cond_this in cond_set:
+                cond_this.delete()
+            # Delete the features (and what is under them)
+            feat_set = self.features.all()
+            for feat_this in feat_set:
+                feat_this.delete()
+
+            # Return okay
+            return True
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError
+
     def get_search_list(self):
         """List the names of the constructions plus their search group and specification"""
         qs = self.constructions.all().select_related()
@@ -511,8 +554,51 @@ class Gateway(models.Model):
                 oItem = {'cql': oSearch['cql'] }
             else:
                 oItem = {}
+            # Potentially also 'related'
+            if (targetType == 'c' or targetType == 'e') and ('related' in oSearch):
+                oItem['related'] = oSearch['related']
             lBack.append(oItem)
         return lBack
+
+    def do_simple_related(self):
+        """Evaluate the searches in the list, and expand 'Related' """
+
+        # Is this a SIMPLESEARCH of the correct target type?
+        targetType = self.research.targetType
+
+        if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e"):
+            # Clear any previous: (a) data-dependant variables, (b) conditions, (c) features
+            if not self.clear_search():
+                # Show error message
+                oErr.DoError("ConvertProjectToXquery error: cannot clear previous search")
+                return
+
+            # Evaluate all constructions
+            qs = self.constructions.all()
+            for item in qs:
+                # Get the search specification for this construction
+                oSearch = item.search.get_search_spec(targetType)
+                # Check if this has related
+                if 'related' in oSearch:
+                    # Yes, related criteria: interpret this list
+                    for oRel in oSearch['related']:
+                        # Get the characteristics of this construction
+                        sName = oRel['name']        # Name of this variable
+                        cat = oRel['cat']           # Syntactic category of the target
+                        raxis_id = oRel['raxis']    # Value number of the axis
+                        towards = oRel['towards']   # Name of the item with which we relate
+
+                        # Get the correct relation
+                        
+
+                        # Add a data-dependant variable for this related construction
+
+                        # Add a condition to test that this related construction exists
+
+                        # Add an output feature to show the text of this related construction
+
+                        pass
+
 
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""

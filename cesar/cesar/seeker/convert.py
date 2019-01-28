@@ -61,8 +61,12 @@ def ConvertProjectToXquery(oData, basket):
             # Search elements are the 'constructions'
             basket.set_status("collecting constructions")
             constructions = gateway.constructions.all()
+
             # the names of the constructions plus their search group and specification
             search_list = gateway.get_search_list()
+
+            # If there are any related constituents in a simple search, then create the correct variables and things
+            gateway.do_simple_related()
 
             # The data-dependant variables need to be divided over the search elements
             basket.set_status("converting data-dependant variables")

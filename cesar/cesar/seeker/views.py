@@ -32,6 +32,7 @@ from io import StringIO
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
+from cesar.seeker.models import SIMPLENAME
 from cesar.seeker.convert import decompressSafe, get_crpp_date
 from cesar.browser.models import Part, Corpus, Sentence
 from cesar.browser.views import get_item_list, adapt_search
@@ -40,7 +41,9 @@ from cesar.seeker.services import crpp_dbget
 from cesar.settings import APP_PREFIX
 
 paginateEntries = 20
-SIMPLENAME = "_simplesearch"   # Name of the simple project
+
+# DEFINE a 'related' formset
+RelatedFormset = formset_factory(RelatedForm, can_delete=True, extra=0, min_num=0)
 
 
 def check_arguments(arg_formset, functiondef, qs_gvar, qs_cvar, qs_dvar, target):
@@ -4657,6 +4660,11 @@ def research_simple(request):
                 partchoice = basket.part.id
         object_id = obj.id
 
+        # Initially the 'related' formset is empty
+        related_formset = None
+        # Prepare a related formset without initial data
+        related_formset = RelatedFormset(prefix='simplerel')
+
         # Create a form based on this research object
         simpleform = SimpleSearchForm()
         simpleform.fields["targetType"].initial = obj.targetType
@@ -4664,6 +4672,7 @@ def research_simple(request):
         simpleform.fields["searchpos"].initial = ""
         simpleform.fields["searchlemma"].initial = ""
         simpleform.fields["searchexc"].initial = ""
+        simpleform.fields["searchrel"].initial = ""
         simpleform.fields["searchcql"].initial = ""
         cns = obj.gateway.constructions.first()
         if cns != None and cns.search != None:
@@ -4684,6 +4693,13 @@ def research_simple(request):
                 simpleform.fields["searchexc"].initial = cns.search.exclude
                 simpleform.fields["searchlemma"].initial = cns.search.lemma
 
+            if cns.search.related != None and cns.search.related != "":
+                # Treat 'related'
+                simpleform.fields["searchrel"].initial = cns.search.related
+                # Fill the 'related' formset with data from [related]
+                lSearchRelated = json.loads(cns.search.related)
+                related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
+
         intro_message = "Make a simple search"
         intro_breadcrumb = "Simple"
         # Also provide a set of search options
@@ -4691,6 +4707,11 @@ def research_simple(request):
                         {'name': 'first n', 'value': 'first'},
                         {'name': 'random n', 'value': 'random'}]
         search_count = 1000
+
+        # Provide a list of axis
+        axis_list = []
+        for rel in Relation.objects.filter(Q(type='axis')).order_by('name'):
+            axis_list.append({"id": rel.id, "name": rel.name})
 
         # Get a list of errors
         error_list = [str(item) for item in arErr]
@@ -4700,6 +4721,8 @@ def research_simple(request):
             object_id = object_id,
             original=obj,
             simpleform=simpleform,
+            related_formset=related_formset,
+            axis_list=axis_list,
             intro_message=intro_message,
             intro_breadcrumb=intro_breadcrumb,
             targettype=sTargetType,
@@ -4740,6 +4763,7 @@ def modify_simple_search(research, qd):
         sExclude = ""       # Category to be excluded
         sCategory = ""      # Extended: category
         sLemma = ""         # Extended: lemma
+        sRelated = ""       # Extended: related constituent(s)
         sCql = ""           # CQL
         if research.targetType == "w":              # Word-level
             sValue = qd.get("searchwords", "")
@@ -4753,6 +4777,23 @@ def modify_simple_search(research, qd):
             sCategory = qd.get("searchpos", "")
             sLemma = qd.get("searchlemma", "")
             sExclude = qd.get("searchexc", "")
+            # sRelated = qd.get("searchrel", "")      # Related constituent(s)
+
+        # Get the 'simplerel' formset from the input
+        formset = RelatedFormset(qd, prefix='simplerel')
+        # if formset.is_valid():
+        if formset != None and formset.is_valid():
+            lRelated = []
+            # Walk the forms in the formset
+            for rel_form in formset:
+                if rel_form.is_valid():
+                    # Process the information in this form
+                    # oFields = rel_form.cleaned_data
+                    oFields = copy.copy(rel_form.cleaned_data)
+                    # lRelated.append({"name": oFields['name'], "cat": oFields['cat'], "raxis": oFields['raxis'], "towards": oFields['towards']})
+                    lRelated.append(oFields)
+            sRelated = json.dumps(lRelated)
+
         # Adapt the value in searchmain
         if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "" or sCql != "":
             search = None
@@ -4762,8 +4803,8 @@ def modify_simple_search(research, qd):
                 if research.targetType == "w":
                     search = SearchMain.create_item("word-group", sValue, 'groupmatches')
                 elif research.targetType == "c" or research.targetType == "e":
-                    # This is targetType "c" or "e"
-                    search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma)
+                    # This is targetType "c" (constituent) or "e" (extended)
+                    search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma, sRelated)
                 elif research.targetType == "q":
                     # CQL translation
                     search = SearchMain.create_item("const-group", sValue, 'groupmatches', cql = sCql)
@@ -4779,8 +4820,8 @@ def modify_simple_search(research, qd):
             if research.targetType == "w":
                 search.adapt_item("word-group", sValue, 'groupmatches')
             elif research.targetType == "c" or research.targetType == "e":
-                # Targettype "c" or "e"
-                search.adapt_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma)
+                # Targettype "c" (constituent) or "e" (extended)
+                search.adapt_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma, sRelated)
             elif research.targetType == "q":
                 # CQL translation
                 search.adapt_item("const-group", sValue, 'groupmatches', cql = sCql)

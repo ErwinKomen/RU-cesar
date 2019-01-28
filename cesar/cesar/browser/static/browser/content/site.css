@@ -365,6 +365,10 @@ svg g.lithium-node:hover > text {
 .glyphicon-plus {
     color: mediumseagreen;
 }
+.glyphicon-remove {
+  color: red;
+  left: 6px;
+}
 
 .result-part .row {
     margin-right: 20px;
