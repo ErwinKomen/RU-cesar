@@ -15,7 +15,7 @@ errHandle = util.ErrHandle()
 # Name :    main
 # Goal :    Main body of the function
 # History:
-# 19/dec/2019    ERK Created
+# 19/dec/2018    ERK Created
 # ----------------------------------------------------------------------------------
 def main(prgName, argv) :
   flInput = ''        # input file name
@@ -66,7 +66,7 @@ def main(prgName, argv) :
 # Name :    process_lingo_convert_results
 # Goal :    Convert one CSV results file into an excel, converting the answers in Pinyin
 # History:
-# 19/dec/2019    ERK Created
+# 19/dec/2018    ERK Created
 # ----------------------------------------------------------------------------------
 def process_lingo_convert_results(oArgs):
     """Process one lingo results CSV file"""
