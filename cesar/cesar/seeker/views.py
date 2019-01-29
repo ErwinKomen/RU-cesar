@@ -4881,10 +4881,10 @@ def research_simple_save(request):
                 oProj = obj.get_json()
                 if 'json_data' in oProj:
                     sData = oProj['json_data'].decode("utf-8")
-                    data = json.loads(sData)
+                    oData = json.loads(sData)
 
                     # Create a new research based on the JSON definition
-                    research = Research.read_data(owner.username, "", arErr, data, sSaveName)
+                    research = Research.read_data(owner.username, "", arErr, oData, sSaveName)
                     # Check if a new object has been made
                     if research != None:
                         # Indicate in the reply that all has gone well

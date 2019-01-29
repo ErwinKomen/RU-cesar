@@ -91,10 +91,10 @@
                           {% for rel_form in related_formset %}
                           <tr class="form-row rel-form">
                             <td valign="top">{{forloop.counter}}</td>
-                            <td valign="top">{{rel_form.name}}</td>
+                            <td valign="top" class="rel-name">{{rel_form.name}}</td>
                             <td valign="top">{{rel_form.cat}}</td>
                             <td valign="top">{{rel_form.raxis}}</td>
-                            <td valign="top">{{rel_form.towards}}</td>
+                            <td valign="top" class="rel-towards">{{rel_form.towards}}</td>
                             <td title="Delete this relation" style="vertical-align: middle;">
                               <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
                             </td>
@@ -102,12 +102,12 @@
                           {% endfor %}
 
                           <!-- Empty row with related constituent specification-->
-                          <tr class="form-row empty-form row1">
+                          <tr class="form-row empty-form rel-form row1">
                             <td valign="top">__counter__</td>
-                            <td valign="top">{{related_formset.empty_form.name}}</td>
+                            <td valign="top" class="rel-name">{{related_formset.empty_form.name}}</td>
                             <td valign="top">{{related_formset.empty_form.cat}}</td>
                             <td valign="top">{{related_formset.empty_form.raxis}}</td>
-                            <td valign="top">{{related_formset.empty_form.towards}}</td>
+                            <td valign="top" class="rel-towards">{{related_formset.empty_form.towards}}</td>
                             <td title="Delete this relation" style="vertical-align: middle; text-align: center;">
                               <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
                             </td>

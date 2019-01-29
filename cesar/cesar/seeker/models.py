@@ -565,6 +565,7 @@ class Gateway(models.Model):
 
         # Is this a SIMPLESEARCH of the correct target type?
         targetType = self.research.targetType
+        gateway = self
 
         if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e"):
             # Clear any previous: (a) data-dependant variables, (b) conditions, (c) features
@@ -573,31 +574,112 @@ class Gateway(models.Model):
                 oErr.DoError("ConvertProjectToXquery error: cannot clear previous search")
                 return
 
+            # initializing
+            dvar_order = 0
+            cond_order = 0
+            feat_order = 0
+
             # Evaluate all constructions
             qs = self.constructions.all()
-            for item in qs:
+            for construction in qs:
                 # Get the search specification for this construction
-                oSearch = item.search.get_search_spec(targetType)
+                oSearch = construction.search.get_search_spec(targetType)
                 # Check if this has related
                 if 'related' in oSearch:
                     # Yes, related criteria: interpret this list
-                    for oRel in oSearch['related']:
+                    for idx, oRel in enumerate(oSearch['related']):
                         # Get the characteristics of this construction
                         sName = oRel['name']        # Name of this variable
                         cat = oRel['cat']           # Syntactic category of the target
+                        if cat == None or cat == "":
+                            cat = "*"
                         raxis_id = oRel['raxis']    # Value number of the axis
                         towards = oRel['towards']   # Name of the item with which we relate
+                        varType = "calc"
 
-                        # Get the correct relation
+                        # Get the correct relation from raxis_id
+                        raxis = Relation.objects.filter(id=raxis_id).first()
+
+                        # Get the constituent towards with we are working
+                        cnstype = "hit" if towards == "search" else "dvar"
+                        if cnstype == "hit":
+                            cnsval = "$search"
+                        else:
+                            cnsval = "TODO"
                         
+                        # First add a DVAR for this line -- this automatically creates a CVAR
+                        dvar_order += 1
+                        dvar = VarDef(name=sName, order=dvar_order, description="dvar for line #{}".format(idx),
+                                      type=varType, gateway=gateway)
+                        dvar.save()
+                        # Retrieve the CVAR
+                        cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
+                        cvar.type=varType
 
-                        # Add a data-dependant variable for this related construction
+                        # Add details for function [get_first_relative_cns]
+                        arglist = []
+                        arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                        arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                        arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
+                        lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
+                        # Create the function
+                        func_main = Function.create_from_list(lFunc, gateway, "cvar", cvar, None, None)
+                        func_main.save()
+                        cvar.function = func_main
+                        cvar.functiondef = func_main.functiondef
+                        cvar.save()
 
                         # Add a condition to test that this related construction exists
+                        cond_order += 1
+                        cond = Condition(name="exist_{}".format(sName), order=cond_order,
+                                      description="check existence of ${}".format(sName), include="true",
+                                      condtype="func", gateway=gateway)
+                        cond.save()
+                        # Create and add details for the function: exist
+                        arglist = []
+                        arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                        lFunc = [ {"function": "exists", "line": 0, "arglist": arglist}]
+                        # Yes, create the functions
+                        func_main = Function.create_from_list(lFunc, gateway, "cond", None, cond, None)
+                        func_main.save()
+                        cond.function = func_main
+                        cond.functiondef = func_main.functiondef
+                        cond.save()
 
-                        # Add an output feature to show the text of this related construction
+                        # Add an output feature to show the TEXT of this related construction
+                        feat_order += 1
+                        feat = Feature(name="text_of_{}".format(sName), order=feat_order,
+                                      description="The text of constituent ${}".format(sName), include="true",
+                                      feattype="func", gateway=gateway)
+                        feat.save()
+                        # Create and add details for the function: exist
+                        arglist = []
+                        arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                        lFunc = [ {"function": "get_text", "line": 0, "arglist": arglist}]
+                        # create the functions
+                        func_main = Function.create_from_list(lFunc, gateway, "feat", None, None, feat)
+                        func_main.save()
+                        feat.function = func_main
+                        feat.functiondef = func_main.functiondef
+                        feat.save()
 
-                        pass
+
+                        # Add an output feature to show the CATEGORY of this related construction
+                        feat_order += 1
+                        feat = Feature(name="cat_of_{}".format(sName), order=feat_order,
+                                      description="The category of constituent ${}".format(sName), include="true",
+                                      feattype="func", gateway=gateway)
+                        feat.save()
+                        # Create and add details for the function: exist
+                        arglist = []
+                        arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                        lFunc = [ {"function": "get_cat", "line": 0, "arglist": arglist}]
+                        # create the functions
+                        func_main = Function.create_from_list(lFunc, gateway, "feat", None, None, feat)
+                        func_main.save()
+                        feat.function = func_main
+                        feat.functiondef = func_main.functiondef
+                        feat.save()
 
 
     def delete(self, using = None, keep_parents = False):

@@ -30,7 +30,9 @@ var ru = (function ($, ru) {
           { "table": "research_cond", "prefix": "cond", "counter": true, "events": function () { ru.cesar.seeker.init_cond_events(); } },
           { "table": "research_feat", "prefix": "feat", "counter": true, "events": function () { ru.cesar.seeker.init_feat_events(); } },
           { "table": "result_kwicfilter", "prefix": "filter", "counter": true, "events": null },
-          { "table": "search_mode_simple", "prefix": "simplerel", "counter": true, "events": function () { ru.cesar.seeker.init_simple_events(); } }
+          {"table": "search_mode_simple", "prefix": "simplerel", "counter": true,
+          "events": function () { ru.cesar.seeker.init_simple_events(); }, "follow": function () { ru.cesar.seeker.simple_update(); }
+          }
       ];
 
 
@@ -952,8 +954,12 @@ var ru = (function ($, ru) {
             });
           }
 
+          // Return the new <tr> 
+          return newElement;
+
         } catch (ex) {
           private_methods.errMsg("cloneMore", ex);
+          return null;
         }
       },
 
@@ -1551,6 +1557,66 @@ var ru = (function ($, ru) {
           //$(".delete-row").click(function (elThis) { ru.cesar.seeker.tabular_deleterow(); });
         } catch (ex) {
           private_methods.errMsg("init_simple_events", ex);
+        }
+      },
+
+      /**
+       *  simple_update
+       *      Update the 'Towards' list in all rows of simple
+       *
+       */
+      simple_update: function () {
+        var elRelated = "#related_constituents",
+            elTowards = null,
+            elName = "",
+            sKey = "",
+            sValue = "",
+            sName = "",
+            sInsert = "",
+            sSelected = "",
+            i = 0,
+            lNames = [{ name: "search", "value": "Search Hit" }],
+            lHtml = [],
+            lRow = [];
+
+        try {
+          // walk the rows of the table
+          $(elRelated).find("tr.form-row").not(".empty-form").each(function (idx, elRow) {
+            // Add the row information to this item
+            // elName = "#id_simplerel-" + idx + "-name";
+            // elTowards = "#id_simplerel-" + idx + "-towards";
+            elName = $(elRow).find(".rel-name input").first();
+            elTowards = $(elRow).find(".rel-towards select").first();
+            // Get the currently selected name
+            sSelected = $(elTowards).val();
+
+            // Adapt class
+            if (!$(elRow).hasClass("rel-form")) {
+              $(elRow).addClass("rel-form");
+            }
+
+            // Process the list of names so far
+            lHtml = [];
+            sName = "search";
+            for (i = 0; i < lNames.length; i++) {
+              sKey = lNames[i]['name'];
+              sValue = lNames[i]['value'];
+              sInsert = (sSelected === sKey) ? "selected=\"selected\" " : "";
+              lHtml.push("<option value=\"" + sKey + "\" " + sInsert + ">" + sValue + "</option>");
+            }
+            // Adapt the select box
+            $(elTowards).html(lHtml.join("\n"));
+
+            // Get the name of this variable
+            // sName = $(elName).val();
+            sName = $(elName)[0].value;
+
+            // Add the new name to the list
+            lNames.push({ name: sName, value: sName });
+          });
+
+        } catch (ex) {
+          private_methods.errMsg("simple_update", ex);
         }
       },
 
@@ -3623,6 +3689,13 @@ var ru = (function ($, ru) {
             // Get to the row
             elRow = $(this).closest("tr");
             $(elRow).remove();
+            // The validation action depends on this id
+            switch (sId) {
+              case "search_mode_simple":
+                // Update
+                ru.cesar.seeker.simple_update();
+                break;
+            }
           }
 
         } catch (ex) {
@@ -3641,6 +3714,7 @@ var ru = (function ($, ru) {
         //    arNumber = [true, true, false, false, false, true],
         var arTdef = lAddTableRow,
             oTdef = {},
+            rowNew = null,
             elTable = null,
             iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)
             sId = "",
@@ -3658,10 +3732,14 @@ var ru = (function ($, ru) {
               elTable = $(this).closest("tbody").children("tr.form-row.empty-form")
 
               // Perform the cloneMore function to this <tr>
-              ru.cesar.seeker.cloneMore(elTable, oTdef.prefix, oTdef.counter);
+              rowNew = ru.cesar.seeker.cloneMore(elTable, oTdef.prefix, oTdef.counter);
               // Call the event initialisation again
               if (oTdef.events !== null) {
                 oTdef.events();
+              }
+              // Any follow-up activity
+              if ('follow' in oTdef && oTdef['follow'] !== null) {
+                oTdef.follow(rowNew);
               }
               // We are done...
               break;
