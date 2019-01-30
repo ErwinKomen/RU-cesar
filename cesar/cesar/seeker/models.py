@@ -555,7 +555,7 @@ class Gateway(models.Model):
             else:
                 oItem = {}
             # Potentially also 'related'
-            if (targetType == 'c' or targetType == 'e') and ('related' in oSearch):
+            if (targetType == 'c' or targetType == 'e' or targetType =='w') and ('related' in oSearch):
                 oItem['related'] = oSearch['related']
             lBack.append(oItem)
         return lBack
@@ -567,7 +567,7 @@ class Gateway(models.Model):
         targetType = self.research.targetType
         gateway = self
 
-        if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e"):
+        if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e" or targetType == "w"):
             # Clear any previous: (a) data-dependant variables, (b) conditions, (c) features
             if not self.clear_search():
                 # Show error message

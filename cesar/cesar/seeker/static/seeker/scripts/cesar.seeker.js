@@ -2081,11 +2081,16 @@ var ru = (function ($, ru) {
             elLabel = "#search_mode",
             elRelated = "#related_constituents",
             elExtend = "#search_mode_extended",
-            elTargetType = "#id_targetType";
+            elForms = "#id_simplerel-TOTAL_FORMS",
+            elTargetType = "#id_targetType",
+            iForms = 0;
 
         try {
           // Initially Hide related
           $(elRelated).addClass("hidden");
+
+          // Get the number of forms
+          iForms = $(elForms).val();
 
           switch ($(elTargetType).val()) {
             case "e":
@@ -2093,7 +2098,7 @@ var ru = (function ($, ru) {
               // Make sure the the extended searching is shown
               $(".simple-search-2").removeClass("hidden");
               // Check if [related_constituents] should be shown or not
-              if ($(".rel-form").length > 0) {
+              if (iForms > 0) {
                 // Show related
                 $(elRelated).removeClass("hidden");
                 ru.cesar.seeker.show_related(true);
@@ -2104,6 +2109,14 @@ var ru = (function ($, ru) {
             case "w":
               // Make sure the the extended searching is hidden
               $(".simple-search-2").addClass("hidden");
+              // Check if [related_constituents] should be shown or not
+              if (iForms > 0) {
+                // Show related
+                $(elRelated).removeClass("hidden");
+                ru.cesar.seeker.show_related(true);
+              } else {
+                ru.cesar.seeker.show_related(false);
+              }
               break;
             case "q":
               // We should be in extended mode
@@ -2160,7 +2173,8 @@ var ru = (function ($, ru) {
        *
        */
       related_switch: function (elStart, sTarget, sType) {
-        var elTarget = "#" + sTarget;
+        var elTarget = "#" + sTarget,
+            elForms = "#id_simplerel-TOTAL_FORMS";
             
         try {
           if ($(elTarget).hasClass("hidden")) {
@@ -2171,12 +2185,62 @@ var ru = (function ($, ru) {
             // From showing to HIDDEN
             $(elTarget).addClass("hidden");
             ru.cesar.seeker.show_related(false);
-            // Remove all rows that are filled
-            $(".rel-form").remove();
+            // Remove all rows that are filled -- except the EMPTY form
+            $(".rel-form").not(".empty-form").remove();
+
+            // Also reset the number of forms
+            $(elForms).val("0");
+
+            // Modify the simple search at the server
+            ru.cesar.seeker.simple_modify(elStart);
           }
 
         } catch (ex) {
           private_methods.errMsg("related_switch", ex);
+        }
+      },
+
+      /**
+       * simple_switch
+       *    Switch in the simple search view
+       *
+       */
+      simple_modify: function (elStart) {
+        var targeturl = "",
+            elMsg = "#simple_modifying",
+            data = [],
+            frm = null;
+
+        try {
+          // Get the closest form
+          frm = $(elStart).closest("form");
+          if (frm !== undefined) {
+            data = $(frm).serializeArray();
+          }
+
+          // Modify the simple search in the server
+          targeturl = $(elStart).attr("targeturl");
+          if (targeturl !== undefined && targeturl !== "") {
+            $.post(targeturl, data, function (response) {
+              // Sanity check
+              if (response !== undefined) {
+                if (response.status == "ok") {
+                  if ('html' in response) {
+                    $(elMsg).html(response['html']);
+                    // Remove the contents after some time
+                    setTimeout(function () { $(elMsg).html(""); }, 3000);
+                  } else {
+                    $(elMsg).html("Response is okay, but [html] is missing");
+                  }
+                } else {
+                  $(elMsg).html("Could not interpret response " + response.status);
+                }
+              }
+            });
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("simple_modify", ex);
         }
       },
 
@@ -2191,6 +2255,7 @@ var ru = (function ($, ru) {
             elLemma = "#id_searchlemma",
             elExc = "#id_searchexc",
             elRelated = "#related_constituents",
+            elForms = "#id_simplerel-TOTAL_FORMS",
             elMore = "#simple_more";
 
         try {
@@ -2210,9 +2275,16 @@ var ru = (function ($, ru) {
                 $(elTargetType).val("w");
                 $(elMore).html("more");
                 // Remove all rows that are filled
-                $(".rel-form").remove();
+                $(".rel-form").not(".empty-form").remove();
                 $(elRelated).addClass("hidden");
                 ru.cesar.seeker.show_related(false);
+
+                // Also reset the number of forms
+                $(elForms).val("0");
+
+                // Modify the simple search at the server
+                ru.cesar.seeker.simple_modify(elStart);
+
               } else {
                 // We are in simple search: turn to extended search
                 $(".simple-search-2").removeClass("hidden");
@@ -3672,11 +3744,16 @@ var ru = (function ($, ru) {
       tabular_deleterow: function () {
         var sId = "",
             elRow = null,
+            elForms = "#id_simplerel-TOTAL_FORMS",
+            iForms = 0,
+            prefix = "simplerel",
             bValidated = false;
 
         try {
           // Find out just where we are
           sId = $(this).closest("div").attr("id");
+          // Find out how many forms there are right now
+          iForms = $(elForms).val();
           // The validation action depends on this id
           switch (sId) {
             case "search_mode_simple":
@@ -3689,6 +3766,39 @@ var ru = (function ($, ru) {
             // Get to the row
             elRow = $(this).closest("tr");
             $(elRow).remove();
+            // Decrease the amount of forms
+            iForms -= 1;
+            $(elForms).val(iForms);
+
+            // Re-do the numbering of the forms that are shown
+            $(".rel-form").not(".empty-form").each(function (idx, elThisRow) {
+              var iCounter = 0, sRowId = "", arRowId = [];
+
+              iCounter = idx + 1;
+              // Adapt the ID attribute -- if it EXISTS
+              sRowId = $(elThisRow).attr("id");
+              if (sRowId !== undefined) {
+                arRowId = sRowId.split("-");
+                arRowId[1] = idx;
+                sRowId = arRowId.join("-");
+                $(elThisRow).attr("id", sRowId);
+              }
+
+              // Adjust the number in the FIRST <td>
+              $(elThisRow).find("td").first().html(iCounter.toString());
+
+              // Adjust the numbering of the INPUT and SELECT in this row
+              $(elThisRow).find("input, select").each(function (j, elInput) {
+                // Adapt the name of this input
+                var sName = $(elInput).attr("name");
+                var arName = sName.split("-");
+                arName[1] = idx;
+                sName = arName.join("-");
+                $(elInput).attr("name", sName);
+                $(elInput).attr("id", "id_" + sName);
+              });
+            });
+
             // The validation action depends on this id
             switch (sId) {
               case "search_mode_simple":

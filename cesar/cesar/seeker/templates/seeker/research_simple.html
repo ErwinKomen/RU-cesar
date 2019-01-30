@@ -133,20 +133,25 @@
                       <span>
                         <a id="add_related"
                            onclick="ru.cesar.seeker.related_switch(this, 'related_constituents', 'no related');"
+                           targeturl="{% url 'seeker_simple' %}"
                            class="btn btn-xs jumbo-1"
                            title="Add related constituents">related</a>
                       </span>
+                      <!-- Errors while saving -->
+                      <span id="simple_modifying"></span>
                       <span class="pull-right">
                         <a id="simple_more" 
                            onclick="ru.cesar.seeker.simple_switch(this, 'more');"
+                           targeturl="{% url 'seeker_simple' %}"
                            title="Let me to specify more" 
-                           class="btn jumbo-1 btn-xs">...</a>
+                           class="btn jumbo-1 btn-xs">more</a>
                       </span>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+
 
             <!-- Extended search mode -->
             <div id="search_mode_extended" class="hidden">

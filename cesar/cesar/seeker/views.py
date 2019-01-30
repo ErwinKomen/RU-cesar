@@ -4628,6 +4628,7 @@ def research_simple(request):
     template = "seeker/research_simple.html"
     arErr = []                  # Start without errors
     simplename = SIMPLENAME     # Name of the simple project
+    oErr = ErrHandle()
     sTargetType = "w"
 
     # Action depends on GET or POST
@@ -4738,7 +4739,45 @@ def research_simple(request):
         return render(request, template, context)
 
     elif request.method == "POST":
-        return None
+        # The POST method is reserved for MODIFYING an existing simple search
+        data = {'status': 'ok', 'html': ''}
+
+        # Get the correct owner
+        owner = User.objects.filter(Q(username=request.user)).first()
+
+        # Check if the user is authenticated
+        if owner == None or not request.user.is_authenticated:
+            # Simply redirect to the home page
+            return redirect('nlogin')
+
+        try:
+            # Get the parameters
+            qd = request.POST
+            # Get the correct research project FOR THIS USER
+            lstQ = []
+            lstQ.append(Q(owner=owner))
+            lstQ.append(Q(name=SIMPLENAME))
+            research = Research.objects.filter(*lstQ).first()
+            if research == None:
+                # There is no simple research project to adapt
+                data['status'] = 'error'
+                data['html'] = "research_simple cannot find a Research project that should be adapted"
+            else:
+                # Found the research
+                if modify_simple_search(research, qd):
+                    # We are okay
+                    data['html'] = "The simple project has been adapted"
+                else:
+                    # Something went wrong
+                    data['status'] = 'error'
+                    data['html'] = "research_simple: modify_simple_search returns with an error"
+            
+        except:
+            data['status'] = 'error'
+            data['html'] = oErr.get_error_message()
+
+        # What we return should be a JSON response
+        return JsonResponse(data)
 
     else:
         return None
@@ -4782,7 +4821,8 @@ def modify_simple_search(research, qd):
         # Get the 'simplerel' formset from the input
         formset = RelatedFormset(qd, prefix='simplerel')
         # if formset.is_valid():
-        if formset != None and formset.is_valid():
+        bResetRelated = False
+        if formset != None and formset.total_form_count() > 0 and formset.is_valid():
             lRelated = []
             # Walk the forms in the formset
             for rel_form in formset:
@@ -4793,15 +4833,24 @@ def modify_simple_search(research, qd):
                     # lRelated.append({"name": oFields['name'], "cat": oFields['cat'], "raxis": oFields['raxis'], "towards": oFields['towards']})
                     lRelated.append(oFields)
             sRelated = json.dumps(lRelated)
+        else:
+            # There are zero forms, so remove any related, if there are any
+            bResetRelated = True
 
         # Adapt the value in searchmain
-        if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "" or sCql != "":
+        if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "" or sCql != "" or bResetRelated:
             search = None
             cns = research.gateway.constructions.first()
             if cns == None or cns.search == None:
                 # there is no construction yet: make a SearchMain and a Construction
                 if research.targetType == "w":
                     search = SearchMain.create_item("word-group", sValue, 'groupmatches')
+                    if sRelated == None or sRelated == "":
+                        # This is simple 'w' without related constituents
+                        search = SearchMain.create_item("word-group", sValue, 'groupmatches')
+                    else:
+                        # This is 'w' + related
+                        search = SearchMain.create_item("word-group", sValue, 'groupmatches', related=sRelated)
                 elif research.targetType == "c" or research.targetType == "e":
                     # This is targetType "c" (constituent) or "e" (extended)
                     search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma, sRelated)
@@ -4816,9 +4865,19 @@ def modify_simple_search(research, qd):
             # Make sure the correct SEARCH is set
             if search == None:
                 search = cns.search
+            # Possibly reset related
+            if bResetRelated:
+                # Yes: remove all related items
+                search.related = ""
+                search.save()
             # Make sure the value of the word(s)/constituent(s) is set correctly
             if research.targetType == "w":
-                search.adapt_item("word-group", sValue, 'groupmatches')
+                if sRelated == None or sRelated == "":
+                    # This is simple 'w' without related constituents
+                    search.adapt_item("word-group", sValue, 'groupmatches')
+                else:
+                    # This is 'w' + related
+                    search.adapt_item("word-group", sValue, 'groupmatches', related=sRelated)
             elif research.targetType == "c" or research.targetType == "e":
                 # Targettype "c" (constituent) or "e" (extended)
                 search.adapt_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma, sRelated)
