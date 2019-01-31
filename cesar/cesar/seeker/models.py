@@ -605,7 +605,10 @@ class Gateway(models.Model):
                         if cnstype == "hit":
                             cnsval = "$search"
                         else:
-                            cnsval = "TODO"
+                            # Prepend a dollar sign, if it is not there already
+                            cnsval = towards
+                            if cnsval[0] != "$":
+                                cnsval = "$" + cnsval
                         
                         # First add a DVAR for this line -- this automatically creates a CVAR
                         dvar_order += 1

@@ -14,6 +14,7 @@ var ru = (function ($, ru) {
         loc_bExeErr = false,          // Internal way to see that an execution error has occurred
         oSyncTimer = null,
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
+        loc_towards = [],             // Copy of the most updated TOWARDS table
         basket_progress = "",         // URL to get progress
         basket_start = "",            // URL to start Translation + Execution
         basket_stop = "",             // URL to stop the basket
@@ -1614,6 +1615,12 @@ var ru = (function ($, ru) {
             // Add the new name to the list
             lNames.push({ name: sName, value: sName });
           });
+
+          // Make a copy of the names
+          loc_towards = [];
+          for (i = 0; i < lNames.length; i++) {
+            loc_towards.push(lNames[i]);
+          }
 
         } catch (ex) {
           private_methods.errMsg("simple_update", ex);
@@ -3396,6 +3403,8 @@ var ru = (function ($, ru) {
             $("#id_targetType").val(sTargetType);
             // Change the value in the list
             private_methods.set_list_value(data, "targetType", sTargetType);
+            // pass on the list of possible 'towards' names
+            data.push({"name": "ltowards", "value": JSON.stringify(loc_towards)});
           }
 
           // Start the search

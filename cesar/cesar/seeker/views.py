@@ -43,6 +43,7 @@ from cesar.settings import APP_PREFIX
 paginateEntries = 20
 
 # DEFINE a 'related' formset
+# RelatedFormset = formset_factory(RelatedForm, formset=BaseRelatedFormset, can_delete=True, extra=0, min_num=0)
 RelatedFormset = formset_factory(RelatedForm, can_delete=True, extra=0, min_num=0)
 
 
@@ -4700,6 +4701,13 @@ def research_simple(request):
                 # Fill the 'related' formset with data from [related]
                 lSearchRelated = json.loads(cns.search.related)
                 related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
+                lTowards = [("search", "Search Hit")]
+                i = 0
+                for form in related_formset:
+                    form.fields['towards'].choices = lTowards
+                    sDvar = lSearchRelated[i]['name']
+                    tThis = (sDvar, sDvar)
+                    lTowards.append( tThis )
 
         intro_message = "Make a simple search"
         intro_breadcrumb = "Simple"
@@ -4803,6 +4811,7 @@ def modify_simple_search(research, qd):
         sCategory = ""      # Extended: category
         sLemma = ""         # Extended: lemma
         sRelated = ""       # Extended: related constituent(s)
+        lTowards = []       # List of towards options
         sCql = ""           # CQL
         if research.targetType == "w":              # Word-level
             sValue = qd.get("searchwords", "")
@@ -4818,24 +4827,36 @@ def modify_simple_search(research, qd):
             sExclude = qd.get("searchexc", "")
             # sRelated = qd.get("searchrel", "")      # Related constituent(s)
 
+        # Adapt the 'RelatedForm' with the information from lTowards
+        lTmp = json.loads(qd.get('ltowards', '[]'))
+        lTowards = [(x['name'], x['value']) for x in lTmp if x['name'] != ""]
+
         # Get the 'simplerel' formset from the input
         formset = RelatedFormset(qd, prefix='simplerel')
+        for form in formset:
+            form.fields['towards'].choices = lTowards
         # if formset.is_valid():
         bResetRelated = False
-        if formset != None and formset.total_form_count() > 0 and formset.is_valid():
-            lRelated = []
-            # Walk the forms in the formset
-            for rel_form in formset:
-                if rel_form.is_valid():
-                    # Process the information in this form
-                    # oFields = rel_form.cleaned_data
-                    oFields = copy.copy(rel_form.cleaned_data)
-                    # lRelated.append({"name": oFields['name'], "cat": oFields['cat'], "raxis": oFields['raxis'], "towards": oFields['towards']})
-                    lRelated.append(oFields)
-            sRelated = json.dumps(lRelated)
-        else:
-            # There are zero forms, so remove any related, if there are any
-            bResetRelated = True
+        if formset != None:
+            # Check for validness
+            if formset.is_valid():
+                # Everything okay, continue
+                if formset.total_form_count() == 0:
+                    bResetRelated = True
+                else:
+                    lRelated = []
+                    # Walk the forms in the formset
+                    for rel_form in formset:
+                        if rel_form.is_valid():
+                            # Process the information in this form
+                            # oFields = rel_form.cleaned_data
+                            oFields = copy.copy(rel_form.cleaned_data)
+                            # lRelated.append({"name": oFields['name'], "cat": oFields['cat'], "raxis": oFields['raxis'], "towards": oFields['towards']})
+                            lRelated.append(oFields)
+                    sRelated = json.dumps(lRelated)
+            else:
+                # One of the forms is not valid, got to do something about it
+                return False
 
         # Adapt the value in searchmain
         if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "" or sCql != "" or bResetRelated:

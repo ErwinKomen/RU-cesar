@@ -5,7 +5,7 @@ Definition of forms for the SEEKER app.
 from django import forms
 #from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.forms import ModelForm, formset_factory, modelformset_factory
+from django.forms import ModelForm, formset_factory, modelformset_factory, BaseFormSet
 from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
 from cesar.seeker.widgets import SeekerTextarea
