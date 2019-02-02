@@ -15,11 +15,13 @@ var ru = (function ($, ru) {
         oSyncTimer = null,
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         loc_towards = [],             // Copy of the most updated TOWARDS table
+        loc_related = [],             // Which related variable has which towards choice
         basket_progress = "",         // URL to get progress
         basket_start = "",            // URL to start Translation + Execution
         basket_stop = "",             // URL to stop the basket
         basket_watch = "",            // URL to watch basket that is in progress
         basket_result = "",           // URL to the results for this basket
+        loc_bSimpleNameError = false,
         basket_data = null,           // DATA to be sent along
         lAddTableRow = [
           { "table": "research_intro-wrd", "prefix": "wrdconstruction", "counter": true, "events": null},
@@ -1552,12 +1554,73 @@ var ru = (function ($, ru) {
        *
        */
       init_simple_events: function () {
+        var sEvTypes = "change paste input";
+
         try {
+          // Bind one 'tabular_deletrow' event handler to clicking that button
           $(".delete-row").unbind("click");
           $('tr td a.delete-row').click(ru.cesar.seeker.tabular_deleterow);
+
+          // Make sure the initial names are stored
+          ru.cesar.seeker.simple_store_names();
+
+          // Bind the correct name-change handler to related name change
+          $(".rel-name").unbind(sEvTypes);
+          $("tr.rel-form td.rel-name input").on(sEvTypes,
+            function () { ru.cesar.seeker.simple_names_update(this, "input"); }
+            );
+
           //$(".delete-row").click(function (elThis) { ru.cesar.seeker.tabular_deleterow(); });
         } catch (ex) {
           private_methods.errMsg("init_simple_events", ex);
+        }
+      },
+
+      /**
+       *  simple_names_update
+       *      Update the names and corresponding 'Towards' list in all rows of simple
+       *
+       */
+      simple_names_update: function (elThis, sType) {
+        var i = 0,
+            oRelated = {},
+            sVarPrev = "",    // Previous name
+            sVarName = "",    // New name
+            sVarId = "";
+
+        try {
+          switch (sType) {
+            case "input":
+              // This is an event on the [input] for simple_names
+              // Make sure no space gets inserted
+              sVarName = $(elThis).val();
+              if (sVarName.indexOf(" ") >= 0) {
+                $("#simple_modifying").html("<code>ERROR</code>: remove space in [" + sVarName + "]");
+                loc_bSimpleNameError = true;
+              } else {
+                $("#simple_modifying").html("");
+                loc_bSimpleNameError = false;
+                // Everything is okay: make sure changes ripple through 'down'
+                sVarId = $(elThis).attr("id");
+                // Look for this id/name in the related table
+                for (i = 0; i < loc_related.length; i++) {
+                  oRelated = loc_related[i];
+                  if (oRelated['varid'] === sVarId) {
+                    // We have the correct variable: Note the previous name
+                    sVarPrev = oRelated['varname'];
+                    break;
+                  }
+                }
+                // Emend the name in the towards tables
+                if (sVarPrev !== "") {
+                  ru.cesar.seeker.simple_store_names(sVarPrev, sVarName);
+                }
+              }
+              break;
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("simple_names_update", ex);
         }
       },
 
@@ -1584,8 +1647,6 @@ var ru = (function ($, ru) {
           // walk the rows of the table
           $(elRelated).find("tr.form-row").not(".empty-form").each(function (idx, elRow) {
             // Add the row information to this item
-            // elName = "#id_simplerel-" + idx + "-name";
-            // elTowards = "#id_simplerel-" + idx + "-towards";
             elName = $(elRow).find(".rel-name input").first();
             elTowards = $(elRow).find(".rel-towards select").first();
             // Get the currently selected name
@@ -1609,18 +1670,70 @@ var ru = (function ($, ru) {
             $(elTowards).html(lHtml.join("\n"));
 
             // Get the name of this variable
-            // sName = $(elName).val();
             sName = $(elName)[0].value;
 
             // Add the new name to the list
             lNames.push({ name: sName, value: sName });
           });
 
-          // Make a copy of the names
-          loc_towards = [];
-          for (i = 0; i < lNames.length; i++) {
-            loc_towards.push(lNames[i]);
-          }
+          // Update names
+          ru.cesar.seeker.simple_store_names();
+
+        } catch (ex) {
+          private_methods.errMsg("simple_update", ex);
+        }
+      },
+
+      /**
+       *  simple_store_names
+       *      Store all the names in variables of simple-related
+       *
+       */
+      simple_store_names: function (sPrev, sNew) {
+        var elRelated = "#related_constituents",
+            elTowards = null,
+            elName = "",
+            sName = "",
+            sNameId = "",
+            sSelected = "",
+            lRow = [];
+
+        try {
+          // EMpty the current array
+          loc_towards = [{ name: "search", "value": "Search Hit" }];
+          loc_related = [];
+
+          // walk the rows of the table
+          $(elRelated).find("tr.form-row").not(".empty-form").each(function (idx, elRow) {
+            // Get the name of the variable
+            elName = $(elRow).find(".rel-name input").first();
+
+            // Possibly emend the [towards] contents
+            if (sPrev !== undefined && sPrev !== "" && sNew !== undefined && sNew !== "") {
+              // Find and change the variable in the towards table
+              $(elRow).find(".rel-towards option").each(function (j, elT) {
+                if ($(elT)[0].value === sPrev) {
+                  $(elT).val(sNew);
+                  $(elT).html(sNew);
+                }
+              });
+            }
+
+            // Get the currently selected name
+            elTowards = $(elRow).find(".rel-towards select").first();
+            sSelected = $(elTowards).val();
+
+            // Get the name of this variable
+            sName = $(elName)[0].value;
+            sNameId = $(elName).attr("id");
+
+            // Add the new name to the list
+            loc_towards.push({ name: sName, value: sName });
+
+            // Update the full 'related' information of this line
+            loc_related.push({line: idx, varname: sName, varid: sNameId, towards: sSelected });
+
+          });
 
         } catch (ex) {
           private_methods.errMsg("simple_update", ex);
@@ -1850,7 +1963,7 @@ var ru = (function ($, ru) {
           $('td span.var-up').unbind('click').click(ru.cesar.seeker.var_up);
 
           // Allow form-row items to be selected or unselected
-          $('tr.form-row').each(function () {
+          $('tr.form-row').not(".rel-form").each(function () {
             // Add it to the first visible cell
             $(this).find("td").not(".hidden").first().unbind('click').click(ru.cesar.seeker.form_row_select);
             // Make sure any other cells  that have an <input> or a <td-toggle-textarea> are set too
@@ -2134,6 +2247,8 @@ var ru = (function ($, ru) {
               $(elExtend).removeClass("hidden");
               break;
           }
+
+          ru.cesar.seeker.init_simple_events();
         } catch (ex) {
           private_methods.errMsg("init_simple", ex);
         }
@@ -3404,6 +3519,12 @@ var ru = (function ($, ru) {
             // Change the value in the list
             private_methods.set_list_value(data, "targetType", sTargetType);
             // pass on the list of possible 'towards' names
+            if (loc_towards.length === 0) {
+              // Double check this list
+              $("#related_constituents tr .rel-form").not(".empty-form").find("td.rel-name input").each(function (k, el) {
+                loc_towards.push($(el).val());
+              });
+            }
             data.push({"name": "ltowards", "value": JSON.stringify(loc_towards)});
           }
 

@@ -4708,6 +4708,7 @@ def research_simple(request):
                     sDvar = lSearchRelated[i]['name']
                     tThis = (sDvar, sDvar)
                     lTowards.append( tThis )
+                    i += 1
 
         intro_message = "Make a simple search"
         intro_breadcrumb = "Simple"

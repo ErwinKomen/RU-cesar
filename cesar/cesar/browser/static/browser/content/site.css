@@ -59,7 +59,7 @@ input[type="checkbox"].input-validation-error {
 a.list-group-item-info:hover {
   background-color: lightgoldenrodyellow !important;
 }
-table tbody tr:hover {
+table tbody tr :not(.rel-form, .add-row) :hover   {
   background-color: lightgoldenrodyellow !important;
 }
 
