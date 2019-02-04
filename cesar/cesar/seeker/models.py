@@ -125,7 +125,7 @@ def import_data_file(sContents, arErr):
         return oData
     except:
         sMsg = errHandle.get_error_message()
-        errHandle.DoError("import_data_file error:")
+        arErr.DoError("import_data_file error:")
         return {}
 
 
