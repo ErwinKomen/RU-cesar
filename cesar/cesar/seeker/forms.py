@@ -532,6 +532,8 @@ class RelatedForm(forms.Form):
                            widget=forms.TextInput(attrs={'placeholder': 'Constituent category', 'style': 'width: 100%;'}))
     raxis = forms.ChoiceField(label=_("Relation"), required = True)
     towards = forms.ChoiceField(label=_("Towards constituent"), required = True)
+    pos = forms.ChoiceField(label=_("Position"), required = False)
+    skip = forms.ChoiceField(label=_("Skipping"), required=False)
 
     def __init__(self, *args, **kwargs):
         super(RelatedForm, self).__init__(*args, **kwargs)
@@ -539,6 +541,10 @@ class RelatedForm(forms.Form):
         self.fields['raxis'].choices = Relation.get_choices('axis')
         # Initial default choice for 'towards'
         self.fields['towards'].choices = [ ('search', 'Search Hit') ]
+        # Initial choices for 'pos'
+        self.fields['pos'].choices = [('', 'any'), ('1', 'first'), ('2', 'second'), ('last()', 'last')]
+        # Initial choices for 'skip'
+        self.fields['skip'].choices = [('', 'none'), ('e', 'empty'), ('c', 'conj'), ('e_c', 'empty + conj')]
 
     
 class UploadFileForm(forms.Form):

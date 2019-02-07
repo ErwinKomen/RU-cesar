@@ -84,7 +84,18 @@
                     <td colspan="4">
                       <table>
                         <thead>
-                          <tr><th>#</th><th>Name</th><th style="width: 100%;">Category</th><th>Relation</th><th>Towards</th><th></th></tr>
+                          <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th style="width: 100%;">Category</th>
+                            <th>Relation</th>
+                            <th>Towards</th>
+                            <!-- Optional columns for (a) position and (b) skipping -->
+                            <th class="res-pos hidden">Position</th>
+                            <th class="res-skip hidden">Skipping</th>
+                            <!-- Column for button(s)-->
+                            <th></th>
+                          </tr>
                         </thead>
                         <tbody>
                           <!-- Copy from the formset -->
@@ -95,6 +106,8 @@
                             <td valign="top">{{rel_form.cat}}</td>
                             <td valign="top">{{rel_form.raxis}}</td>
                             <td valign="top" class="rel-towards">{{rel_form.towards}}</td>
+                            <td valign="top" class="rel-pos hidden">{{rel_form.pos}}</td>
+                            <td valign="top" class="res-skip hidden">{{rel_form.skip}}</td>
                             <td title="Delete this relation" style="vertical-align: middle;">
                               <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
                             </td>
@@ -108,6 +121,8 @@
                             <td valign="top">{{related_formset.empty_form.cat}}</td>
                             <td valign="top">{{related_formset.empty_form.raxis}}</td>
                             <td valign="top" class="rel-towards">{{related_formset.empty_form.towards}}</td>
+                            <td valign="top" class="rel-pos hidden">{{related_formset.empty_form.pos}}</td>
+                            <td valign="top" class="res-skip hidden">{{related_formset.empty_form.skip}}</td>
                             <td title="Delete this relation" style="vertical-align: middle; text-align: center;">
                               <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
                             </td>
