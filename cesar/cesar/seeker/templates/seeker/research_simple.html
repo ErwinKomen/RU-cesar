@@ -53,7 +53,7 @@
             <!-- Simple search mode -->
             <div id="search_mode_simple">
               <!-- Table for input -->
-              <table class="func-view">
+              <table class="func-view compact-simple">
                 <tbody>
                   <!-- Table header -->
                   <tr class="tablefield">
@@ -91,10 +91,14 @@
                             <th>Relation</th>
                             <th>Towards</th>
                             <!-- Optional columns for (a) position and (b) skipping -->
-                            <th class="res-pos hidden">Position</th>
-                            <th class="res-skip hidden">Skipping</th>
+                            <!--
+                            <th class="rel-pos hidden">Position</th>
+                            <th class="rel-skip hidden">Skipping</th>
+                              -->
                             <!-- Column for button(s)-->
-                            <th></th>
+                            <th>
+                              <!-- Provide a button to toggle 'more options' -->
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -103,11 +107,17 @@
                           <tr class="form-row rel-form">
                             <td valign="top">{{forloop.counter}}</td>
                             <td valign="top" class="rel-name">{{rel_form.name}}</td>
-                            <td valign="top">{{rel_form.cat}}</td>
-                            <td valign="top">{{rel_form.raxis}}</td>
-                            <td valign="top" class="rel-towards">{{rel_form.towards}}</td>
-                            <td valign="top" class="rel-pos hidden">{{rel_form.pos}}</td>
-                            <td valign="top" class="res-skip hidden">{{rel_form.skip}}</td>
+                            <td valign="top">
+                              <div>{{rel_form.cat}}</div>
+                              <div class="rel-skip hidden">Skipping: {{rel_form.skip}}</div>
+                            </td>
+                            <td valign="top">
+                              <div>{{rel_form.raxis}}</div>
+                              <div class="rel-pos hidden">Position: {{rel_form.pos}}</div>
+                            </td>
+                            <td valign="top" class="rel-towards">
+                              <div>{{rel_form.towards}}</div>
+                            </td>
                             <td title="Delete this relation" style="vertical-align: middle;">
                               <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
                             </td>
@@ -118,11 +128,17 @@
                           <tr class="form-row empty-form rel-form row1">
                             <td valign="top">__counter__</td>
                             <td valign="top" class="rel-name">{{related_formset.empty_form.name}}</td>
-                            <td valign="top">{{related_formset.empty_form.cat}}</td>
-                            <td valign="top">{{related_formset.empty_form.raxis}}</td>
-                            <td valign="top" class="rel-towards">{{related_formset.empty_form.towards}}</td>
-                            <td valign="top" class="rel-pos hidden">{{related_formset.empty_form.pos}}</td>
-                            <td valign="top" class="res-skip hidden">{{related_formset.empty_form.skip}}</td>
+                            <td valign="top">
+                              <div>{{related_formset.empty_form.cat}}</div>
+                              <div class="rel-skip hidden">Skipping: {{related_formset.empty_form.skip}}</div>
+                            </td>
+                            <td valign="top">
+                              <div>{{related_formset.empty_form.raxis}}</div>
+                              <div class="rel-pos hidden">Position: {{related_formset.empty_form.pos}}</div>
+                            </td>
+                            <td valign="top" class="rel-towards">
+                              <div>{{related_formset.empty_form.towards}}</div>
+                            </td>
                             <td title="Delete this relation" style="vertical-align: middle; text-align: center;">
                               <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
                             </td>
@@ -130,9 +146,22 @@
 
                           <!-- Row with the PLUS sign-->
                           <tr class="add-row">
-                            <td colspan="6">
+                            <td colspan="8">
                               <span id="add_related_constituent">
                                 <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add a related constituent</a>
+                              </span>
+                              <!-- Buttons to toggle POSITION and SKIP -->
+                              <span class="pull-right">
+                                <span>
+                                  <a class="btn btn-xs jumbo-1" 
+                                     onclick="ru.cesar.seeker.related_column(this, '.rel-pos');"
+                                     title="Specify position of related constituent">position</a>
+                                </span>
+                                <span>
+                                  <a class="btn btn-xs jumbo-1" 
+                                     onclick="ru.cesar.seeker.related_column(this, '.rel-skip');"
+                                     title="Specify which constituents should be skipped">skip</a>
+                                </span>
                               </span>
                             </td>
                           </tr>

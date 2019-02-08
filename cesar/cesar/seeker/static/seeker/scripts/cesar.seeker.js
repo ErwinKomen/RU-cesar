@@ -2290,6 +2290,34 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * related_column
+       *    Switch show/hide a column associated with 'related'
+       *
+       */
+      related_column: function (elStart, sClass) {
+        var elTarget = null,
+            elFirst = null;
+
+        try {
+          // Get the target column
+          elTarget = $("table tr " + sClass);
+          if (elTarget.length > 0) {
+            elFirst = elTarget[0];
+            if ($(elFirst).hasClass("hidden")) {
+              // SHow them
+              $(elTarget).removeClass("hidden");
+            } else {
+              // Hide them
+              $(elTarget).addClass("hidden");
+            }
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("related_column", ex);
+        }
+      },
+
+      /**
        * related_switch
        *    Switch show/hide the 'related constituents' for simple search view
        *

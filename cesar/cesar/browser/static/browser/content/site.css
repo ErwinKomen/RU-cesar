@@ -974,3 +974,22 @@ table.compact-table td:hover {
     font-family: monospace;
     font-size: smaller;
 }
+
+/* Table compact simple */
+table.compact-simple input, 
+table.compact-simple textarea, 
+table.compact-simple .form-row p, 
+table.compact-simple select,
+table.compact-simple form .button {
+    margin: 1px 0;
+    padding: 1px 2px;
+    vertical-align: middle;
+    font-family: "Roboto", "Lucida Grande", Verdana, Arial, sans-serif;
+    font-weight: normal;
+    font-size: 12px;
+}
+
+select {
+    min-height: 21px;
+    height: auto;
+}
