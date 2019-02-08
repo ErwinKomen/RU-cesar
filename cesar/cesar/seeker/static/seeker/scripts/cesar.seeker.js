@@ -3509,6 +3509,8 @@ var ru = (function ($, ru) {
             response = null,
             basket_id = -1,
             frm = null,
+            bChecked = false,
+            i = 0,
             sMsg = "",
             sWord = "",         // For simple search
             sLemma = "",        // For simple search
@@ -3549,11 +3551,26 @@ var ru = (function ($, ru) {
             // pass on the list of possible 'towards' names
             if (loc_towards.length === 0) {
               // Double check this list
-              $("#related_constituents tr .rel-form").not(".empty-form").find("td.rel-name input").each(function (k, el) {
+              bChecked = true;
+              $("#related_constituents tr.rel-form").not(".empty-form").find("td.rel-name input").each(function (k, el) {
                 loc_towards.push($(el).val());
               });
             }
             data.push({"name": "ltowards", "value": JSON.stringify(loc_towards)});
+            // Double check this list
+            bChecked = true;
+            $("#related_constituents tr.rel-form").not(".empty-form").find("td.rel-name input").each(function (k, el) {
+              var relName = $(el).val();
+              // Check this name too
+              if (relName === undefined || relName === "") {
+                bChecked = false;
+                $(el).attr("placeholder","a NAME is needed");
+              }
+            });
+            if (!bChecked) {
+              // SOrry, but we cannot continue
+              return;
+            }
           }
 
           // Start the search

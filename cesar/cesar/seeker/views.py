@@ -4705,9 +4705,11 @@ def research_simple(request):
                 i = 0
                 for form in related_formset:
                     form.fields['towards'].choices = lTowards
-                    sDvar = lSearchRelated[i]['name']
-                    tThis = (sDvar, sDvar)
-                    lTowards.append( tThis )
+                    # Make sure 'name' is in there
+                    if 'name' in lSearchRelated[i]:
+                        sDvar = lSearchRelated[i]['name']
+                        tThis = (sDvar, sDvar)
+                        lTowards.append( tThis )
                     i += 1
 
         intro_message = "Make a simple search"

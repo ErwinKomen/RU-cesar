@@ -20,6 +20,8 @@ SEARCHMAIN_CNS_FUNCTIONS = (
         ('c-m', 'Category matches'),
         ('c--m', 'Child category matches'),
     )
+SEARCHSIMPLE_POS = [('', 'any'), ('1', 'first'), ('2', 'second'), ('last()', 'last')]
+SEARCHSIMPLE_SKIP = [('', 'none'), ('e', 'empty'), ('c', 'conj'), ('e_c', 'empty + conj')]
 
 
 rAlphaNumeric = re.compile(r"^[0-9a-zA-Z_]*$")
@@ -542,9 +544,9 @@ class RelatedForm(forms.Form):
         # Initial default choice for 'towards'
         self.fields['towards'].choices = [ ('search', 'Search Hit') ]
         # Initial choices for 'pos'
-        self.fields['pos'].choices = [('', 'any'), ('1', 'first'), ('2', 'second'), ('last()', 'last')]
+        self.fields['pos'].choices = SEARCHSIMPLE_POS
         # Initial choices for 'skip'
-        self.fields['skip'].choices = [('', 'none'), ('e', 'empty'), ('c', 'conj'), ('e_c', 'empty + conj')]
+        self.fields['skip'].choices = SEARCHSIMPLE_SKIP
 
     
 class UploadFileForm(forms.Form):
