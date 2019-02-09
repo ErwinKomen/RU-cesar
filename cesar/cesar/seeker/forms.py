@@ -20,7 +20,7 @@ SEARCHMAIN_CNS_FUNCTIONS = (
         ('c-m', 'Category matches'),
         ('c--m', 'Child category matches'),
     )
-SEARCHSIMPLE_POS = [('', 'any'), ('1', 'first'), ('2', 'second'), ('last()', 'last')]
+SEARCHSIMPLE_POS = [('', 'first'), ('1', 'first'), ('2', 'second'), ('last()', 'last')]
 SEARCHSIMPLE_SKIP = [('', 'none'), ('e', 'empty'), ('c', 'conj'), ('e_c', 'empty + conj')]
 
 
@@ -548,6 +548,26 @@ class RelatedForm(forms.Form):
         # Initial choices for 'skip'
         self.fields['skip'].choices = SEARCHSIMPLE_SKIP
 
-    
+    def get_raxis_display(self):
+        k = self.initial['raxis']
+        v = next(tp[1] for tp in self.fields['raxis'].choices if str(tp[0]) == k)
+        return v
+
+    def get_towards_display(self):
+        k = self.initial['towards']
+        v = next(tp[1] for tp in self.fields['towards'].choices if str(tp[0]) == k)
+        return v
+
+    def get_pos_display(self):
+        k = self.initial['pos']
+        v = next(tp[1] for tp in self.fields['pos'].choices if str(tp[0]) == k)
+        return v
+
+    def get_skip_display(self):
+        k = self.initial['skip']
+        v = next(tp[1] for tp in self.fields['skip'].choices if str(tp[0]) == k)
+        return v
+
+     
 class UploadFileForm(forms.Form):
     file_source = forms.FileField(label="Specify which file should be loaded")

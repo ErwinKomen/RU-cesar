@@ -3494,6 +3494,34 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * rel_row_edit
+       *   Start or finish editing of this row
+       *
+       */
+      rel_row_edit: function (elStart, sAction) {
+        var elRow = null;
+
+        try {
+          // Get to the row
+          elRow = $(elStart).closest("tr");
+          // Action switching
+          switch (sAction) {
+            case "open":    // Hide summary view and enter edit view
+              $(elRow).find(".rel-view-mode, .rel-edit-open").addClass("hidden");
+              $(elRow).find(".rel-edit-mode, .rel-edit-close").removeClass("hidden");
+              break;
+            case "close":   // Hide edit view and enter summary view
+              $(elRow).find(".rel-view-mode, .rel-edit-open").removeClass("hidden");
+              $(elRow).find(".rel-edit-mode, .rel-edit-close").addClass("hidden");
+              break;
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("post_download", ex);
+        }
+      },
+
+      /**
        * search_start
        *   Check and then start a search
        *

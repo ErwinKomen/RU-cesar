@@ -369,6 +369,9 @@ svg g.lithium-node:hover > text {
   color: red;
   left: 6px;
 }
+.glyphicon-ok {
+  color: green;
+}
 
 .result-part .row {
     margin-right: 20px;
@@ -534,6 +537,21 @@ kw {
   font-family: monospace;
   color: darkblue;
   background-color: whitesmoke;
+}
+
+.kwname {
+  padding: 1px 3px;
+  font-family: monospace;
+  font-size: 90%;
+  color: darkblue;
+  background-color: whitesmoke;
+  border-radius: 2px;
+}
+
+.kwcat {
+  font-family: monospace;
+  font-size: 90%;
+  color: darkblue;
 }
 
 div.explanation {
