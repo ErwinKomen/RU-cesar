@@ -1,0 +1,14 @@
+﻿{% load i18n %}
+
+  {% if rel_form.skip.value %}
+    is the {{rel_form.get_pos_display}} constituent (skipping <b>{{rel_form.get_skip_display}}</b>) 
+    {% if rel_form.cat.value %} with category <span class="kwcat">{{rel_form.cat.value}}</span>{% endif %}
+    that is a <b>{{rel_form.get_raxis_display }}</b> of <span class="kwname">{{rel_form.get_towards_display }}</span>
+  {% elif rel_form.pos.value %}
+    is the {{rel_form.get_pos_display}} constituent 
+    {% if rel_form.cat.value %} with category <span class="kwcat">{{rel_form.cat.value}}</span>{% endif %}
+    that is a <b>{{rel_form.get_raxis_display }}</b> of <span class="kwname">{{rel_form.get_towards_display }}</span>
+  {% else %}
+    is the first constituent {% if rel_form.cat.value %} with category <span class="kwcat">{{rel_form.cat.value}}</span>{% endif %}
+    that is a <b>{{rel_form.get_raxis_display }}</b> of <span class="kwname">{{rel_form.get_towards_display }}</span>
+  {% endif %}

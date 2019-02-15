@@ -85,8 +85,8 @@
                       <table>
                         <thead>
                           <tr>
-                            <th>#</th>
-                            <th>Name</th>
+                            <th colspan="2">#</th>
+                            <th style="min-width: 165px;">Name</th>
                             <th style="width: 100%;">How it is related</th>
                             <!-- Column for button(s)-->
                             <th>
@@ -98,8 +98,10 @@
                           <!-- Copy from the formset -->
                           {% for rel_form in related_formset %}
                           <tr class="form-row rel-form">
-                            <td valign="top" style="min-width: 30px;">
+                            <td valign="top" style="min-width: 20px;">
                               <span>{{forloop.counter}}</span>
+                            </td>
+                            <td valign="top" style="min-width: 20px;">
                               <span class="rel-edit-open">
                                 <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'open');"><span class="glyphicon glyphicon-pencil"></span></a>
                               </span>
@@ -115,23 +117,24 @@
                             <td valign="top">
                               <!-- View mode -->
                               <div class="rel-view-mode">
-                                {% if rel_form.skip.value %}
-                                  the {{rel_form.get_pos_display}} constituent (skipping <b>{{rel_form.get_skip_display}}</b>) 
-                                  {% if rel_form.cat.value %} with category <span class="kwcat">{{rel_form.cat.value}}</span>{% endif %}
-                                  that is a <b>{{rel_form.get_raxis_display }}</b> of <span class="kwname">{{rel_form.get_towards_display }}</span>
-                                {% elif rel_form.pos.value %}
-                                  the {{rel_form.get_pos_display}} constituent 
-                                  {% if rel_form.cat.value %} with category <span class="kwcat">{{rel_form.cat.value}}</span>{% endif %}
-                                  that is a <b>{{rel_form.get_raxis_display }}</b> of <span class="kwname">{{rel_form.get_towards_display }}</span>
-                                {% else %}
-                                  the first constituent {% if rel_form.cat.value %} with category <span class="kwcat">{{rel_form.cat.value}}</span>{% endif %}
-                                  that is a <b>{{rel_form.get_raxis_display }}</b> of <span class="kwname">{{rel_form.get_towards_display }}</span>
-                                {% endif %}
+                                {% include 'seeker/related_row.html' with rel_form=rel_form %}
                               </div>
                               <!-- Edit mode -->
-                              <div class="rel-edit-mode hidden">
-                                <div>This is a constituent that has category {{rel_form.cat}} and that is a {{rel_form.raxis}} of {{rel_form.towards}}</div>
-                                <div>Note: this is occurrance #{{rel_form.pos}}, skipping {{rel_form.skip}}</div>
+                              <div class="rel-edit-mode hidden" >
+                                <table style="width: 100%;">
+                                  <tbody>
+                                    <tr>
+                                      <td style="min-width: 140px; width: 140px;">it is a</td>
+                                      <td>{{rel_form.raxis}} of {{rel_form.towards}}</td>
+                                      <td align="right">
+                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">Category</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">Position</a>
+                                      </td>
+                                    </tr>
+                                    <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{rel_form.cat}}</td></tr>
+                                    <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{rel_form.pos}}, skipping {{rel_form.skip}}</td></tr>
+                                  </tbody>
+                                </table>
                               </div>
                             </td>
                             <td title="Delete this relation" style="vertical-align: middle;">
@@ -142,21 +145,44 @@
 
                           <!-- Empty row with related constituent specification-->
                           <tr class="form-row empty-form rel-form row1">
-                            <td valign="top" style="min-width: 30px;">
+                            <td valign="top" style="min-width: 20px;">
                               <span>__counter__</span>
-                              <span><a href="#"><span class="glyphicon glyphicon-pencil"></span></a></span>
                             </td>
-                            <td valign="top" class="rel-name">{{related_formset.empty_form.name}}</td>
+                            <td valign="top" style="min-width: 20px;">
+                              <span class="rel-edit-open hidden">
+                                <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'open');"><span class="glyphicon glyphicon-pencil"></span></a>
+                              </span>
+                              <span class="rel-edit-close">
+                                <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'close');"><span class="glyphicon glyphicon-ok"></span></a>
+                              </span>
+                            </td>
+                            <td valign="top" class="rel-name">
+                              <div class="rel-view-mode kwname hidden">{{related_formset.empty_form.name.value}}</div>                              
+                              <div class="rel-edit-mode">{{related_formset.empty_form.name}}</div>
+                            </td>
+                            <!-- Definition cell -->
                             <td valign="top">
-                              <div>{{related_formset.empty_form.cat}}</div>
-                              <div class="rel-skip hidden">Skipping: {{related_formset.empty_form.skip}}</div>
-                            </td>
-                            <td valign="top">
-                              <div>{{related_formset.empty_form.raxis}}</div>
-                              <div class="rel-pos hidden">Position: {{related_formset.empty_form.pos}}</div>
-                            </td>
-                            <td valign="top" class="rel-towards">
-                              <div>{{related_formset.empty_form.towards}}</div>
+                              <!-- View mode -->
+                              <div class="rel-view-mode hidden">
+                                <!-- This will be filled in later -->
+                              </div>
+                              <!-- Edit mode -->
+                              <div class="rel-edit-mode" >
+                                <table style="width: 100%;">
+                                  <tbody>
+                                    <tr>
+                                      <td style="min-width: 140px; width: 140px;">it is a</td>
+                                      <td>{{related_formset.empty_form.raxis}} of {{related_formset.empty_form.towards}}</td>
+                                      <td align="right">
+                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">Category</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">Position</a>
+                                      </td>
+                                    </tr>
+                                    <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.cat}}</td></tr>
+                                    <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{related_formset.empty_form.pos}}, skipping {{related_formset.empty_form.skip}}</td></tr>
+                                  </tbody>
+                                </table>
+                              </div>
                             </td>
                             <td title="Delete this relation" style="vertical-align: middle; text-align: center;">
                               <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
@@ -175,7 +201,6 @@
                       </table>
                     </td>
                   </tr>
-                  <!-- Empty row with related constituent specification -->
 
                   <!-- Button row-->
                   <tr>

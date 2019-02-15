@@ -3499,7 +3499,10 @@ var ru = (function ($, ru) {
        *
        */
       rel_row_edit: function (elStart, sAction) {
-        var elRow = null;
+        var elRow = null,
+            elPos = null,
+            elCat = null,
+            bNeedOpen = false;
 
         try {
           // Get to the row
@@ -3509,15 +3512,72 @@ var ru = (function ($, ru) {
             case "open":    // Hide summary view and enter edit view
               $(elRow).find(".rel-view-mode, .rel-edit-open").addClass("hidden");
               $(elRow).find(".rel-edit-mode, .rel-edit-close").removeClass("hidden");
+              // Open up [.rel-cat] if it has a value
+              elCat = $(elRow).find(".rel-cat input").first();
+              if ($(elCat).val() !== "") { $(elRow).find(".rel-cat").removeClass("hidden"); }
+              // Open up [.rel-pos] if it has a value
+              $(elRow).find(".rel-pos select").each( function(idx, el) {
+                if ($(el).val() !== "") { bNeedOpen = true;}
+              });
+              if (bNeedOpen) { $(elRow).find(".rel-pos").removeClass("hidden"); }
               break;
             case "close":   // Hide edit view and enter summary view
               $(elRow).find(".rel-view-mode, .rel-edit-open").removeClass("hidden");
               $(elRow).find(".rel-edit-mode, .rel-edit-close").addClass("hidden");
+              $(elRow).find(".rel-cat, .rel-pos").addClass("hidden");
               break;
           }
 
         } catch (ex) {
-          private_methods.errMsg("post_download", ex);
+          private_methods.errMsg("rel_row_edit", ex);
+        }
+      },
+
+      /**
+       * rel_row_extra
+       *   Start or finish editing of extra information in [sClass]
+       *
+       */
+      rel_row_extra: function (elStart, sClass) {
+        var elRow = null,
+            elTbody = null,
+            elItem = null,
+            bVisible = false;
+
+        try {
+          // Get to the row
+          elRow = $(elStart).closest("tr");
+          elTbody = $(elStart).closest("tbody");
+          // CHeck if the class is visible
+          elItem = $(elTbody).find("." + sClass).first();
+          if (elItem === null) { return; }
+          bVisible =  (! $(elItem).hasClass("hidden"));
+          // Action depends on the class
+          switch (sClass) {
+            case "rel-cat":
+              if (bVisible) {
+                // Need to make it invisible and clear the contents
+                $(elItem).addClass("hidden");
+                $(elItem).find("input").val("");
+              } else {
+                // Need to make sure it is shown
+                $(elItem).removeClass("hidden");
+              }
+              break;
+            case "rel-pos":
+              if (bVisible) {
+                // Need to make it invisible and clear the contents
+                $(elItem).addClass("hidden");
+                $(elItem).find("select").val("");
+              } else {
+                // Need to make sure it is shown
+                $(elItem).removeClass("hidden");
+              }
+              break;
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("rel_row_extra", ex);
         }
       },
 
