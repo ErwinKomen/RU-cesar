@@ -1681,6 +1681,9 @@ var ru = (function ($, ru) {
           // Update names
           ru.cesar.seeker.simple_store_names();
 
+          // Update viewing
+          ru.cesar.seeker.related_view(elRelated);
+
         } catch (ex) {
           private_methods.errMsg("simple_update", ex);
         }
@@ -3620,8 +3623,10 @@ var ru = (function ($, ru) {
                 $(elRow).find(".rel-view-mode, .rel-edit-open").removeClass("hidden");
                 $(elRow).find(".rel-edit-mode, .rel-edit-close").addClass("hidden");
                 $(elRow).find(".rel-cat, .rel-pos").addClass("hidden");
-                // SIgnal that the name should be specified
+                // No errors
                 $(elRow).find(".rel-name-err").addClass("hidden");
+                // Updated related
+                ru.cesar.seeker.simple_update();
               } else {
                 // SIgnal that the name should be specified
                 $(elRow).find(".rel-name-err").removeClass("hidden");
