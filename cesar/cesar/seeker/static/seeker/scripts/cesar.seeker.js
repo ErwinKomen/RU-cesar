@@ -16,6 +16,8 @@ var ru = (function ($, ru) {
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         loc_towards = [],             // Copy of the most updated TOWARDS table
         loc_related = [],             // Which related variable has which towards choice
+        loc_bRelated = true,          // Flag that related is okay
+        loc_sRelatedErr = "",         // Related error
         basket_progress = "",         // URL to get progress
         basket_start = "",            // URL to start Translation + Execution
         basket_stop = "",             // URL to stop the basket
@@ -2203,6 +2205,7 @@ var ru = (function ($, ru) {
             elExtend = "#search_mode_extended",
             elForms = "#id_simplerel-TOTAL_FORMS",
             elTargetType = "#id_targetType",
+            bDoRelated = false,
             iForms = 0;
 
         try {
@@ -2222,6 +2225,7 @@ var ru = (function ($, ru) {
                 // Show related
                 $(elRelated).removeClass("hidden");
                 ru.cesar.seeker.show_related(true);
+                bDoRelated = true;
               } else {
                 ru.cesar.seeker.show_related(false);
               }
@@ -2234,6 +2238,7 @@ var ru = (function ($, ru) {
                 // Show related
                 $(elRelated).removeClass("hidden");
                 ru.cesar.seeker.show_related(true);
+                bDoRelated = true;
               } else {
                 ru.cesar.seeker.show_related(false);
               }
@@ -2248,9 +2253,96 @@ var ru = (function ($, ru) {
               break;
           }
 
+          // Check related
+          if (bDoRelated) { ru.cesar.seeker.related_view(elRelated); }
+
           ru.cesar.seeker.init_simple_events();
         } catch (ex) {
           private_methods.errMsg("init_simple", ex);
+        }
+      },
+
+      /**
+       * related_view
+       *    Try to show related (if all names are okay)
+       *
+       */
+      related_view: function (elRelated) {
+        try {
+          // Treat all rows
+          $(elRelated).find("tr.rel-form").not(".empty-form").each(function (i, el) {
+            var lHtml = [],
+                elForm = null,
+                arName = [],
+                sName = "",
+                oForm = {},     // Key values
+                oDisplay = {},  // Display values
+                elName = $(el).find("td .kwname").first(),
+                elDescr = $(el).find("td .rel-descr").first();
+
+            // Put all the form element values into an array
+            $(el).find("input, select").each(function (idx, elF) {
+              arName = $(elF).attr("name").split("-");
+              sName = arName[arName.length - 1];
+              oForm[sName] = $(elF).val();
+              if (elF.localName === "select") {
+                oDisplay[sName] = $(elF).find("option:selected").text();
+              } else {
+                oDisplay[sName] = $(elF).val();
+              }
+            });
+
+            // Initially we are okay
+            loc_bRelated = true;
+
+            // Check the name
+            if (elName !== null && elName.length > 0) {
+              // Get the value of the name
+              sName = oForm['name'].trim();
+              // Check the name
+              if (sName === "") {
+                // THis is serious business: no name means no go!
+                loc_bRelated = false;
+                loc_sRelatedErr = "GIVE A NAME";
+                return false;
+              }
+              // Show the name
+              $(elName).html(sName);
+            }
+            // Check the description
+            if (elDescr !== null && elDescr.length > 0) {
+              // Check for obligatory 'towards'
+              if (oDisplay['towards'] === "") {
+                // Serious business
+                loc_bRelated = false;
+                loc_sRelatedErr = "RELATED TO?";
+                return false;
+              }
+              // Prepare our message
+              if ('pos' in oForm && oForm['pos'] !== "") {
+                lHtml.push("is the " + oDisplay["pos"]);
+              } else {
+                lHtml.push("is a");
+              }
+              // Obligatory: relation towards another constituent
+              lHtml.push(" <b>" + oDisplay["raxis"] + "</b> of <span class=\"kwname\">" + oDisplay["towards"] + "</span>");
+              // Optionally add syntactic category
+              if (oForm["cat"] !== "") {
+                lHtml.push("with category <span class=\"kwcat\">" + oForm["cat"] + "</span>");
+              }
+              // Optional: skipping something
+              if ('skip' in oForm && oForm['skip'] !== "") {
+                lHtml.push(", skipping <b>" + oDisplay["skip"] + "</b>");
+              }
+
+              // Combine
+              $(elDescr).html(lHtml.join(" "));
+            }
+          });
+          // Make sure all is okay
+          return loc_bRelated;
+        } catch (ex) {
+          private_methods.errMsg("related_view", ex);
         }
       },
 
@@ -3502,6 +3594,7 @@ var ru = (function ($, ru) {
         var elRow = null,
             elPos = null,
             elCat = null,
+            elRelated = "#related_constituents",
             bNeedOpen = false;
 
         try {
@@ -3522,9 +3615,18 @@ var ru = (function ($, ru) {
               if (bNeedOpen) { $(elRow).find(".rel-pos").removeClass("hidden"); }
               break;
             case "close":   // Hide edit view and enter summary view
-              $(elRow).find(".rel-view-mode, .rel-edit-open").removeClass("hidden");
-              $(elRow).find(".rel-edit-mode, .rel-edit-close").addClass("hidden");
-              $(elRow).find(".rel-cat, .rel-pos").addClass("hidden");
+              // Check if all is well
+              if (ru.cesar.seeker.related_view(elRelated)) {
+                $(elRow).find(".rel-view-mode, .rel-edit-open").removeClass("hidden");
+                $(elRow).find(".rel-edit-mode, .rel-edit-close").addClass("hidden");
+                $(elRow).find(".rel-cat, .rel-pos").addClass("hidden");
+                // SIgnal that the name should be specified
+                $(elRow).find(".rel-name-err").addClass("hidden");
+              } else {
+                // SIgnal that the name should be specified
+                $(elRow).find(".rel-name-err").removeClass("hidden");
+                $(elRow).find(".rel-name-err").html(loc_sRelatedErr);
+              }
               break;
           }
 

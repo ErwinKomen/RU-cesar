@@ -82,7 +82,7 @@
                   <!-- Hidden row with a table for related constituent specifications -->
                   <tr id="related_constituents" class="hidden">
                     <td colspan="4">
-                      <table>
+                      <table class="">
                         <thead>
                           <tr>
                             <th colspan="2">#</th>
@@ -112,11 +112,12 @@
                             <td valign="top" class="rel-name">
                               <div class="rel-view-mode kwname">{{rel_form.name.value}}</div>                              
                               <div class="rel-edit-mode hidden">{{rel_form.name}}</div>
+                              <div class="rel-name-err hidden">GIVE A NAME</div>
                             </td>
                             <!-- Definition cell -->
                             <td valign="top">
                               <!-- View mode -->
-                              <div class="rel-view-mode">
+                              <div class="rel-view-mode rel-descr">
                                 {% include 'seeker/related_row.html' with rel_form=rel_form %}
                               </div>
                               <!-- Edit mode -->
@@ -159,11 +160,12 @@
                             <td valign="top" class="rel-name">
                               <div class="rel-view-mode kwname hidden">{{related_formset.empty_form.name.value}}</div>                              
                               <div class="rel-edit-mode">{{related_formset.empty_form.name}}</div>
+                              <div class="rel-name-err hidden">GIVE A NAME</div>
                             </td>
                             <!-- Definition cell -->
                             <td valign="top">
                               <!-- View mode -->
-                              <div class="rel-view-mode hidden">
+                              <div class="rel-view-mode rel-descr hidden">
                                 <!-- This will be filled in later -->
                               </div>
                               <!-- Edit mode -->
@@ -197,6 +199,7 @@
                               </span>
                             </td>
                           </tr>
+
                         </tbody>
                       </table>
                     </td>
