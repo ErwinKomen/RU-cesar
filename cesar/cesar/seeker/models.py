@@ -579,6 +579,8 @@ class Gateway(models.Model):
             cond_order = 0
             feat_order = 0
 
+            bOldSystem = False  # Old translation system
+
             # Evaluate all constructions
             qs = self.constructions.all()
             for construction in qs:
@@ -595,6 +597,15 @@ class Gateway(models.Model):
                             cat = "*"
                         raxis_id = oRel['raxis']    # Value number of the axis
                         towards = oRel['towards']   # Name of the item with which we relate
+                        # Figure out position
+                        position = "1"
+                        if 'pos' in oRel: position = oRel['pos']
+                        # Figure out skipping
+                        skip = ""
+                        if 'skip' in oRel: skip = oRel['skip']
+                        skipcat = ""
+                        if skip == "c" or skip == "e_c": skipcat = "CONJ|CONJP"
+                        # General
                         varType = "calc"
 
                         # Get the correct relation from raxis_id
@@ -621,10 +632,47 @@ class Gateway(models.Model):
 
                         # Add details for function [get_first_relative_cns]
                         arglist = []
-                        arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
-                        arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
-                        arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
-                        lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
+                        if bOldSystem:
+                            arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                            arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                            arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
+                            lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
+                        else:
+                            # Use the new system: function depends on whether a category is specified
+                            position = str(position)
+                            if skip == "":
+                                # No skipping needed
+                                if position == "1":
+                                    # Needed: cat
+                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                    arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
+                                    lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
+                                else:
+                                    # Needed: cat_pos
+                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                    arglist.append({"order": 3, "name": "pos_1", "type":"fixed", "value": position})
+                                    arglist.append({"order": 4, "name": "cat_1", "type":"fixed", "value": cat})
+                                    lFunc = [ {"function": "get_related_cat_pos", "line": 0, "arglist": arglist}]
+                            else:
+                                # Some skipping specified: e, c, e_c
+                                if position == "1":
+                                    # Needed: cat_skip
+                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                    arglist.append({"order": 3, "name": "skip_1", "type":"fixed", "value": skipcat})
+                                    arglist.append({"order": 4, "name": "cat_1", "type":"fixed", "value": cat})
+                                    lFunc = [ {"function": "get_first_cns_cat", "line": 0, "arglist": arglist}]
+                                else:
+                                    # Needed: cat_skip_pos
+                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                    arglist.append({"order": 3, "name": "skip_1", "type":"fixed", "value": skipcat})
+                                    arglist.append({"order": 4, "name": "pos_1", "type":"fixed", "value": position})
+                                    arglist.append({"order": 5, "name": "cat_1", "type":"fixed", "value": cat})
+                                    lFunc = [ {"function": "get_related_cat_skip_pos", "line": 0, "arglist": arglist}]
+                                    pass
                         # Create the function
                         func_main = Function.create_from_list(lFunc, gateway, "cvar", cvar, None, None)
                         func_main.save()
