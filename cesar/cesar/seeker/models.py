@@ -599,7 +599,7 @@ class Gateway(models.Model):
                         towards = oRel['towards']   # Name of the item with which we relate
                         # Figure out position
                         position = "1"
-                        if 'pos' in oRel: position = oRel['pos']
+                        if 'pos' in oRel and oRel['pos'] != "": position = oRel['pos']
                         # Figure out skipping
                         skip = ""
                         if 'skip' in oRel: skip = oRel['skip']
