@@ -563,174 +563,224 @@ class Gateway(models.Model):
     def do_simple_related(self):
         """Evaluate the searches in the list, and expand 'Related' """
 
-        # Is this a SIMPLESEARCH of the correct target type?
-        targetType = self.research.targetType
-        gateway = self
+        oErr = ErrHandle()
+        try:
+            # Is this a SIMPLESEARCH of the correct target type?
+            targetType = self.research.targetType
+            gateway = self
 
-        if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e" or targetType == "w"):
-            # Clear any previous: (a) data-dependant variables, (b) conditions, (c) features
-            if not self.clear_search():
-                # Show error message
-                oErr.DoError("ConvertProjectToXquery error: cannot clear previous search")
-                return
+            if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e" or targetType == "w"):
+                # Clear any previous: (a) data-dependant variables, (b) conditions, (c) features
+                if not self.clear_search():
+                    # Show error message
+                    oErr.DoError("ConvertProjectToXquery error: cannot clear previous search")
+                    return
 
-            # initializing
-            dvar_order = 0
-            cond_order = 0
-            feat_order = 0
+                # initializing
+                dvar_order = 0
+                cond_order = 0
+                feat_order = 0
 
-            bOldSystem = False  # Old translation system
+                bOldSystem = False  # Old translation system
 
-            # Evaluate all constructions
-            qs = self.constructions.all()
-            for construction in qs:
-                # Get the search specification for this construction
-                oSearch = construction.search.get_search_spec(targetType)
-                # Check if this has related
-                if 'related' in oSearch:
-                    # Yes, related criteria: interpret this list
-                    for idx, oRel in enumerate(oSearch['related']):
-                        # Get the characteristics of this construction
-                        sName = oRel['name']        # Name of this variable
-                        cat = oRel['cat']           # Syntactic category of the target
-                        if cat == None or cat == "":
-                            cat = "*"
-                        raxis_id = oRel['raxis']    # Value number of the axis
-                        towards = oRel['towards']   # Name of the item with which we relate
-                        # Figure out position
-                        position = "1"
-                        if 'pos' in oRel and oRel['pos'] != "": position = oRel['pos']
-                        # Figure out skipping
-                        skip = ""
-                        if 'skip' in oRel: skip = oRel['skip']
-                        skipcat = ""
-                        if skip == "c" or skip == "e_c": skipcat = "CONJ|CONJP"
-                        # General
-                        varType = "calc"
+                # Evaluate all constructions
+                qs = self.constructions.all()
+                for construction in qs:
+                    # Get the search specification for this construction
+                    oSearch = construction.search.get_search_spec(targetType)
+                    # Check if this has related
+                    if 'related' in oSearch:
+                        # Yes, related criteria: interpret this list
+                        for idx, oRel in enumerate(oSearch['related']):
+                            # Get the characteristics of this construction
+                            sName = oRel['name']        # Name of this variable
+                            cat = oRel['cat']           # Syntactic category of the target
+                            if cat == None or cat == "":
+                                cat = "*"
+                            raxis_id = oRel['raxis']    # Value number of the axis
+                            towards = oRel['towards']   # Name of the item with which we relate
+                            # text of the related element
+                            reltext = "" if "reltext" not in oRel else oRel['reltext']
+                            # lemma of the related (word)
+                            rellemma = "" if "rellemma" not in oRel else oRel['rellemma']
+                            # Figure out position
+                            position = "1"
+                            if 'pos' in oRel and oRel['pos'] != "": position = oRel['pos']
+                            # Figure out skipping
+                            skip = ""
+                            if 'skip' in oRel: skip = oRel['skip']
+                            skipcat = ""
+                            if skip == "c" or skip == "e_c": skipcat = "CONJ|CONJP"
+                            # General
+                            varType = "calc"
 
-                        # Get the correct relation from raxis_id
-                        raxis = Relation.objects.filter(id=raxis_id).first()
+                            # Get the correct relation from raxis_id
+                            raxis = Relation.objects.filter(id=raxis_id).first()
 
-                        # Get the constituent towards with we are working
-                        cnstype = "hit" if towards == "search" else "dvar"
-                        if cnstype == "hit":
-                            cnsval = "$search"
-                        else:
-                            # Prepend a dollar sign, if it is not there already
-                            cnsval = towards
-                            if cnsval[0] != "$":
-                                cnsval = "$" + cnsval
-                        
-                        # First add a DVAR for this line -- this automatically creates a CVAR
-                        dvar_order += 1
-                        dvar = VarDef(name=sName, order=dvar_order, description="dvar for line #{}".format(idx),
-                                      type=varType, gateway=gateway)
-                        dvar.save()
-                        # Retrieve the CVAR
-                        cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
-                        cvar.type=varType
-
-                        # Add details for function [get_first_relative_cns]
-                        arglist = []
-                        if bOldSystem:
-                            arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
-                            arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
-                            arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
-                            lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
-                        else:
-                            # Use the new system: function depends on whether a category is specified
-                            position = str(position)
-                            if skip == "":
-                                # No skipping needed
-                                if position == "1":
-                                    # Needed: cat
-                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
-                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
-                                    arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
-                                    lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
-                                else:
-                                    # Needed: cat_pos
-                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
-                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
-                                    arglist.append({"order": 3, "name": "pos_1", "type":"fixed", "value": position})
-                                    arglist.append({"order": 4, "name": "cat_1", "type":"fixed", "value": cat})
-                                    lFunc = [ {"function": "get_related_cat_pos", "line": 0, "arglist": arglist}]
+                            # Get the constituent towards with we are working
+                            cnstype = "hit" if towards == "search" else "dvar"
+                            if cnstype == "hit":
+                                cnsval = "$search"
                             else:
-                                # Some skipping specified: e, c, e_c
-                                if position == "1":
-                                    # Needed: cat_skip
-                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
-                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
-                                    arglist.append({"order": 3, "name": "skip_1", "type":"fixed", "value": skipcat})
-                                    arglist.append({"order": 4, "name": "cat_1", "type":"fixed", "value": cat})
-                                    lFunc = [ {"function": "get_first_cns_cat", "line": 0, "arglist": arglist}]
+                                # Prepend a dollar sign, if it is not there already
+                                cnsval = towards
+                                if cnsval[0] != "$":
+                                    cnsval = "$" + cnsval
+                        
+                            # First add a DVAR for this line -- this automatically creates a CVAR
+                            dvar_order += 1
+                            dvar = VarDef(name=sName, order=dvar_order, description="dvar for line #{}".format(idx),
+                                          type=varType, gateway=gateway)
+                            dvar.save()
+                            # Retrieve the CVAR
+                            cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
+                            cvar.type=varType
+
+                            # Add details for function [get_first_relative_cns]
+                            arglist = []
+                            if bOldSystem:
+                                arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
+                                lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
+                            else:
+                                # Use the new system: function depends on whether a category is specified
+                                position = str(position)
+                                if skip == "":
+                                    # No skipping needed
+                                    if position == "1":
+                                        # Needed: cat
+                                        arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                        arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                        arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
+                                        lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
+                                    else:
+                                        # Needed: cat_pos
+                                        arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                        arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                        arglist.append({"order": 3, "name": "pos_1", "type":"fixed", "value": position})
+                                        arglist.append({"order": 4, "name": "cat_1", "type":"fixed", "value": cat})
+                                        lFunc = [ {"function": "get_related_cat_pos", "line": 0, "arglist": arglist}]
                                 else:
-                                    # Needed: cat_skip_pos
-                                    arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
-                                    arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
-                                    arglist.append({"order": 3, "name": "skip_1", "type":"fixed", "value": skipcat})
-                                    arglist.append({"order": 4, "name": "pos_1", "type":"fixed", "value": position})
-                                    arglist.append({"order": 5, "name": "cat_1", "type":"fixed", "value": cat})
-                                    lFunc = [ {"function": "get_related_cat_skip_pos", "line": 0, "arglist": arglist}]
-                                    pass
-                        # Create the function
-                        func_main = Function.create_from_list(lFunc, gateway, "cvar", cvar, None, None)
-                        func_main.save()
-                        cvar.function = func_main
-                        cvar.functiondef = func_main.functiondef
-                        cvar.save()
+                                    # Some skipping specified: e, c, e_c
+                                    if position == "1":
+                                        # Needed: cat_skip
+                                        arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                        arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                        arglist.append({"order": 3, "name": "skip_1", "type":"fixed", "value": skipcat})
+                                        arglist.append({"order": 4, "name": "cat_1", "type":"fixed", "value": cat})
+                                        lFunc = [ {"function": "get_first_cns_cat", "line": 0, "arglist": arglist}]
+                                    else:
+                                        # Needed: cat_skip_pos
+                                        arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
+                                        arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
+                                        arglist.append({"order": 3, "name": "skip_1", "type":"fixed", "value": skipcat})
+                                        arglist.append({"order": 4, "name": "pos_1", "type":"fixed", "value": position})
+                                        arglist.append({"order": 5, "name": "cat_1", "type":"fixed", "value": cat})
+                                        lFunc = [ {"function": "get_related_cat_skip_pos", "line": 0, "arglist": arglist}]
+                            # Create the function
+                            func_main = Function.create_from_list(lFunc, gateway, "cvar", cvar, None, None)
+                            func_main.save()
+                            cvar.function = func_main
+                            cvar.functiondef = func_main.functiondef
+                            cvar.save()
 
-                        # Add a condition to test that this related construction exists
-                        cond_order += 1
-                        cond = Condition(name="exist_{}".format(sName), order=cond_order,
-                                      description="check existence of ${}".format(sName), include="true",
-                                      condtype="func", gateway=gateway)
-                        cond.save()
-                        # Create and add details for the function: exist
-                        arglist = []
-                        arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
-                        lFunc = [ {"function": "exists", "line": 0, "arglist": arglist}]
-                        # Yes, create the functions
-                        func_main = Function.create_from_list(lFunc, gateway, "cond", None, cond, None)
-                        func_main.save()
-                        cond.function = func_main
-                        cond.functiondef = func_main.functiondef
-                        cond.save()
+                            # Add a condition to test that this related construction exists
+                            cond_order += 1
+                            cond = Condition(name="exist_{}".format(sName), order=cond_order,
+                                          description="check existence of ${}".format(sName), include="true",
+                                          condtype="func", gateway=gateway)
+                            cond.save()
+                            # Create and add details for the function: exist
+                            arglist = []
+                            arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                            lFunc = [ {"function": "exists", "line": 0, "arglist": arglist}]
+                            # Yes, create the functions
+                            func_main = Function.create_from_list(lFunc, gateway, "cond", None, cond, None)
+                            func_main.save()
+                            cond.function = func_main
+                            cond.functiondef = func_main.functiondef
+                            cond.save()
 
-                        # Add an output feature to show the TEXT of this related construction
-                        feat_order += 1
-                        feat = Feature(name="text_of_{}".format(sName), order=feat_order,
-                                      description="The text of constituent ${}".format(sName), include="true",
-                                      feattype="func", gateway=gateway)
-                        feat.save()
-                        # Create and add details for the function: exist
-                        arglist = []
-                        arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
-                        lFunc = [ {"function": "get_text", "line": 0, "arglist": arglist}]
-                        # create the functions
-                        func_main = Function.create_from_list(lFunc, gateway, "feat", None, None, feat)
-                        func_main.save()
-                        feat.function = func_main
-                        feat.functiondef = func_main.functiondef
-                        feat.save()
+                            # If there is a reltext specification: add condition to test that the text matches
+                            if reltext != "":
+                                cond_order += 1
+                                cond = Condition(name="hastext_{}".format(sName), order=cond_order,
+                                              description="check text of ${}".format(sName), include="true",
+                                              condtype="func", gateway=gateway)
+                                cond.save()
+                                # Create and add details for the function: exist
+                                arglist = []
+                                arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                                arglist.append({"order": 2, "name": "str_1", "type": "fixed", "value": reltext})
+                                lFunc = [ {"function": "has_text", "line": 0, "arglist": arglist}]
+                                # Yes, create the functions
+                                func_main = Function.create_from_list(lFunc, gateway, "cond", None, cond, None)
+                                func_main.save()
+                                cond.function = func_main
+                                cond.functiondef = func_main.functiondef
+                                cond.save()
+
+                            # If there is a rellemma specification: add condition to test that the lemma is equal
+                            if rellemma != "":
+                                cond_order += 1
+                                cond = Condition(name="haslemma_{}".format(sName), order=cond_order,
+                                              description="check lemma of ${}".format(sName), include="true",
+                                              condtype="func", gateway=gateway)
+                                cond.save()
+                                # Create and add details for the function: exist
+                                arglist = []
+                                arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                                arglist.append({"order": 2, "name": "str_1", "type": "fixed", "value": rellemma})
+                                lFunc = [ {"function": "has_lemma", "line": 0, "arglist": arglist}]
+                                # Yes, create the functions
+                                func_main = Function.create_from_list(lFunc, gateway, "cond", None, cond, None)
+                                func_main.save()
+                                cond.function = func_main
+                                cond.functiondef = func_main.functiondef
+                                cond.save()
 
 
-                        # Add an output feature to show the CATEGORY of this related construction
-                        feat_order += 1
-                        feat = Feature(name="cat_of_{}".format(sName), order=feat_order,
-                                      description="The category of constituent ${}".format(sName), include="true",
-                                      feattype="func", gateway=gateway)
-                        feat.save()
-                        # Create and add details for the function: exist
-                        arglist = []
-                        arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
-                        lFunc = [ {"function": "get_cat", "line": 0, "arglist": arglist}]
-                        # create the functions
-                        func_main = Function.create_from_list(lFunc, gateway, "feat", None, None, feat)
-                        func_main.save()
-                        feat.function = func_main
-                        feat.functiondef = func_main.functiondef
-                        feat.save()
+                            # Add an output feature to show the TEXT of this related construction
+                            feat_order += 1
+                            feat = Feature(name="text_of_{}".format(sName), order=feat_order,
+                                          description="The text of constituent ${}".format(sName), include="true",
+                                          feattype="func", gateway=gateway)
+                            feat.save()
+                            # Create and add details for the function: exist
+                            arglist = []
+                            arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                            lFunc = [ {"function": "get_text", "line": 0, "arglist": arglist}]
+                            # create the functions
+                            func_main = Function.create_from_list(lFunc, gateway, "feat", None, None, feat)
+                            func_main.save()
+                            feat.function = func_main
+                            feat.functiondef = func_main.functiondef
+                            feat.save()
+
+
+                            # Add an output feature to show the CATEGORY of this related construction
+                            feat_order += 1
+                            feat = Feature(name="cat_of_{}".format(sName), order=feat_order,
+                                          description="The category of constituent ${}".format(sName), include="true",
+                                          feattype="func", gateway=gateway)
+                            feat.save()
+                            # Create and add details for the function: exist
+                            arglist = []
+                            arglist.append({"order": 1, "name": "cns_1", "type": "dvar", "value": "${}".format(sName)})
+                            lFunc = [ {"function": "get_cat", "line": 0, "arglist": arglist}]
+                            # create the functions
+                            func_main = Function.create_from_list(lFunc, gateway, "feat", None, None, feat)
+                            func_main.save()
+                            feat.function = func_main
+                            feat.functiondef = func_main.functiondef
+                            feat.save()
+
+            # Return positively
+            return True, "ok"
+        except:
+            sMsg = oErr.get_error_message()
+            return False, sMsg
 
 
     def delete(self, using = None, keep_parents = False):
@@ -1256,6 +1306,8 @@ class Function(models.Model):
         oStatus = {'status': "ok", 'msg': ''}
         myStatus = json.loads(self.status)
         if not 'status' in myStatus or myStatus['status'] != "ok":
+            # Reset the previous status
+            self.status = "{}"
             # Get all the arguments in the argdef order
             arg_list = self.get_arguments()
             # Get all the argument definitions for this functiondef in the argdef order
@@ -2624,6 +2676,8 @@ class Condition(models.Model):
         self.refresh_from_db()
         myStatus = json.loads(self.status)
         if not 'status' in myStatus or myStatus['status'] != "ok":
+            # Reset the previous status
+            self.status = "{}"
             # first check if we have a function or not
             if self.condtype == "func":
                 func_this = self.function
@@ -3486,15 +3540,17 @@ class Research(models.Model):
             self.gateway.error_clear()
 
             # Check the status = the functions and arguments
-            oArgStatus = self.gateway.get_status()
-            if oArgStatus != None and 'status' in oArgStatus and oArgStatus['status'] != "ok":
-                oBack['status'] = "error"
-                oBack['msg'] = oArgStatus['msg']
-                if 'type' in oArgStatus:
-                    oBack['type'] = oArgStatus['type']
-                if 'id' in oArgStatus:
-                    oBack['id'] = oArgStatus['id']
-                return oBack
+            # BUT: skip if it is simplesearch?
+            if self.name != SIMPLENAME:
+                oArgStatus = self.gateway.get_status()
+                if oArgStatus != None and 'status' in oArgStatus and oArgStatus['status'] != "ok":
+                    oBack['status'] = "error"
+                    oBack['msg'] = oArgStatus['msg']
+                    if 'type' in oArgStatus:
+                        oBack['type'] = oArgStatus['type']
+                    if 'id' in oArgStatus:
+                        oBack['id'] = oArgStatus['id']
+                    return oBack
 
             # Check the integrity of the search project
             oCheck = self.integrity()

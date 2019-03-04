@@ -66,103 +66,110 @@ def ConvertProjectToXquery(oData, basket):
             search_list = gateway.get_search_list()
 
             # If there are any related constituents in a simple search, then create the correct variables and things
-            gateway.do_simple_related()
+            bResult, sMsg = gateway.do_simple_related()
+            if not bResult:
+                # Show error message
+                oErr.DoError("ConvertProjectToXquery error: " + sMsg)
+                # REset the values for definitions and query
+                sCodeDef = ""
+                sCodeQry = ""
+            else:
 
-            # The data-dependant variables need to be divided over the search elements
-            basket.set_status("converting data-dependant variables")
-            dvar_list = []
-            for var in gateway.get_vardef_list():
-                cvar_list = []
-                for cons in constructions:
-                    # Determine what the construction variable is
-                    cvar = ConstructionVariable.objects.filter(construction=cons, variable=var).first()
-                    try:
-                        oCode = cvar.get_code(format, method)
-                        oCvarInfo = {'grp': cons.name, 
-                                     'code': oCode['main'],
-                                     'type': cvar.type,
-                                     'dvars': oCode['dvars'],
-                                     'dvarnum': oCode['dvarnum'],
-                                     'fname': "tb:dvar_{}_cons_{}".format(var.name, cons.name)}
+                # The data-dependant variables need to be divided over the search elements
+                basket.set_status("converting data-dependant variables")
+                dvar_list = []
+                for var in gateway.get_vardef_list():
+                    cvar_list = []
+                    for cons in constructions:
+                        # Determine what the construction variable is
+                        cvar = ConstructionVariable.objects.filter(construction=cons, variable=var).first()
+                        try:
+                            oCode = cvar.get_code(format, method)
+                            oCvarInfo = {'grp': cons.name, 
+                                         'code': oCode['main'],
+                                         'type': cvar.type,
+                                         'dvars': oCode['dvars'],
+                                         'dvarnum': oCode['dvarnum'],
+                                         'fname': "tb:dvar_{}_cons_{}".format(var.name, cons.name)}
+                            # Check for coding errors
+                            if 'error' in oCode:
+                                arErr.append("Error in the definition of variable {} for search element {}: {}".format(
+                                    var.name,cons.name, oCode['error']))
+                            # Check for possible error(s)
+                            errors = gateway.get_errors()
+                            if errors != "" and errors != "[]":
+                                return "", ERROR_CODE
+                            else:
+                                cvar_list.append(oCvarInfo)
+                        except:
+                            iStop = True
+                    # Add the cvar_list to the dvar_list
+                    oDvarInfo = {'name': var.name, 'cvar_list': cvar_list}
+                    dvar_list.append(oDvarInfo)
+                dvar_all = ", ".join(["$"+item['name'] for item in dvar_list])
+
+                # Also add the conditions
+                basket.set_status("converting conditions")
+                cond_list = []
+                for cnd in gateway.get_condition_list():
+                    # make sure we have the latest version
+                    cnd.refresh_from_db()
+                    # Double check the include value of this option
+                    if cnd.include == "" or cnd.include == "true":
+                        oCode = cnd.get_code(format, method)
+                        sCode = oCode['main']
+                        if sCode != "":
+                            cond_list.append(sCode)
                         # Check for coding errors
                         if 'error' in oCode:
-                            arErr.append("Error in the definition of variable {} for search element {}: {}".format(
-                                var.name,cons.name, oCode['error']))
-                        # Check for possible error(s)
-                        errors = gateway.get_errors()
-                        if errors != "" and errors != "[]":
-                            return "", ERROR_CODE
-                        else:
-                            cvar_list.append(oCvarInfo)
-                    except:
-                        iStop = True
-                # Add the cvar_list to the dvar_list
-                oDvarInfo = {'name': var.name, 'cvar_list': cvar_list}
-                dvar_list.append(oDvarInfo)
-            dvar_all = ", ".join(["$"+item['name'] for item in dvar_list])
+                            arErr.append("Error in the definition of condition {}: {}".format(
+                                cnd.name, oCode['error']))
+                # Check for an empty condition list
+                if len(cond_list) == 0:
+                    # We still have a 'where' clause, so create one condition that is always true
+                    cond_list.append("true()")
 
-            # Also add the conditions
-            basket.set_status("converting conditions")
-            cond_list = []
-            for cnd in gateway.get_condition_list():
-                # make sure we have the latest version
-                cnd.refresh_from_db()
-                # Double check the include value of this option
-                if cnd.include == "" or cnd.include == "true":
-                    oCode = cnd.get_code(format, method)
-                    sCode = oCode['main']
-                    if sCode != "":
-                        cond_list.append(sCode)
-                    # Check for coding errors
-                    if 'error' in oCode:
-                        arErr.append("Error in the definition of condition {}: {}".format(
-                            cnd.name, oCode['error']))
-            # Check for an empty condition list
-            if len(cond_list) == 0:
-                # We still have a 'where' clause, so create one condition that is always true
-                cond_list.append("true()")
+                # And then we add the features
+                basket.set_status("converting features")
+                feature_list = []
+                for ft in gateway.get_feature_list():
+                    ft.refresh_from_db()
+                    # Double check the include value of this option
+                    if ft.include == "" or ft.include == "true" or ft.include == "yes":
+                        oCode = ft.get_code(format, method)
+                        sCode = oCode['main']
+                        if sCode != "":
+                            feature_list.append({
+                              'name': ft.name, 
+                              'type': ft.feattype, 
+                              'dvar': ft.variable,
+                              'code': sCode,
+                              'fname': "tb:feat_{}".format(ft.name)})
+                        # Check for coding errors
+                        if 'error' in oCode:
+                            arErr.append("Error in the definition of feature {}: {}".format(
+                                ft.name, oCode['error']))
 
-            # And then we add the features
-            basket.set_status("converting features")
-            feature_list = []
-            for ft in gateway.get_feature_list():
-                ft.refresh_from_db()
-                # Double check the include value of this option
-                if ft.include == "" or ft.include == "true" or ft.include == "yes":
-                    oCode = ft.get_code(format, method)
-                    sCode = oCode['main']
-                    if sCode != "":
-                        feature_list.append({
-                          'name': ft.name, 
-                          'type': ft.feattype, 
-                          'dvar': ft.variable,
-                          'code': sCode,
-                          'fname': "tb:feat_{}".format(ft.name)})
-                    # Check for coding errors
-                    if 'error' in oCode:
-                        arErr.append("Error in the definition of feature {}: {}".format(
-                            ft.name, oCode['error']))
+                # Specify the context variable for the Xquery template determination
+                context = dict(gvar_list=gvars, 
+                               cons_list=constructions, 
+                               search_list=search_list,
+                               dvar_list=dvar_list,
+                               dvar_all=dvar_all,
+                               cond_list=cond_list,
+                               feature_list=feature_list,
+                               targetType=targetType)
 
-            # Specify the context variable for the Xquery template determination
-            context = dict(gvar_list=gvars, 
-                           cons_list=constructions, 
-                           search_list=search_list,
-                           dvar_list=dvar_list,
-                           dvar_all=dvar_all,
-                           cond_list=cond_list,
-                           feature_list=feature_list,
-                           targetType=targetType)
+                # The action NO LONGER depends on the target type
+                # Step #1: make the start of the main query
+                basket.set_status("Combining Main query")
+                sCodeQry = loader.get_template(template_main).render(context)
+                sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
 
-            # The action NO LONGER depends on the target type
-            # Step #1: make the start of the main query
-            basket.set_status("Combining Main query")
-            sCodeQry = loader.get_template(template_main).render(context)
-            sCodeQry = re.sub(r'\n\s*\n', '\n', sCodeQry).strip()
-
-            # Step #2: create the definitions part
-            basket.set_status("Combining Definitions")
-            sCodeDef = loader.get_template(template_def).render(context)
-            sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
+                # Step #2: create the definitions part
+                basket.set_status("Combining Definitions")
+                sCodeDef = loader.get_template(template_def).render(context)
+                sCodeDef = re.sub(r'\n\s*\n', '\n', sCodeDef).strip()
 
     except:
         # Show error message

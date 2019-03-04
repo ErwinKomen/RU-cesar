@@ -536,6 +536,10 @@ class RelatedForm(forms.Form):
     towards = forms.ChoiceField(label=_("Towards constituent"), required = True)
     pos = forms.ChoiceField(label=_("Position"), required = False)
     skip = forms.ChoiceField(label=_("Skipping"), required=False)
+    reltext = forms.CharField(label=_("Text like"), required=False,
+                           widget=forms.TextInput(attrs={'placeholder': 'Constituent text', 'style': 'width: 100%;'}))
+    rellemma = forms.CharField(label=_("Lemma"), required=False,
+                           widget=forms.TextInput(attrs={'placeholder': 'Lemma', 'style': 'width: 100%;'}))
 
     def __init__(self, *args, **kwargs):
         super(RelatedForm, self).__init__(*args, **kwargs)

@@ -2333,6 +2333,14 @@ var ru = (function ($, ru) {
               if (oForm["cat"] !== "") {
                 lHtml.push("with category <span class=\"kwcat\">" + oForm["cat"] + "</span>");
               }
+              // Optionally add text
+              if (oForm["reltext"] !== "") {
+                lHtml.push("with text like <span class=\"kwcat\">" + oForm["reltext"] + "</span>");
+              }
+              // Optionally add lemma
+              if (oForm["rellemma"] !== "") {
+                lHtml.push("with lemma <span class=\"kwcat\">" + oForm["rellemma"] + "</span>");
+              }
               // Optional: skipping something
               if ('skip' in oForm && oForm['skip'] !== "") {
                 lHtml.push(", skipping <b>" + oDisplay["skip"] + "</b>");
@@ -3662,6 +3670,8 @@ var ru = (function ($, ru) {
           // Action depends on the class
           switch (sClass) {
             case "rel-cat":
+            case "rel-text":
+            case "rel-lemma":
               if (bVisible) {
                 // Need to make it invisible and clear the contents
                 $(elItem).addClass("hidden");

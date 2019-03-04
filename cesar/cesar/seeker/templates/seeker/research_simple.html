@@ -128,11 +128,15 @@
                                       <td style="min-width: 140px; width: 140px;">it is a</td>
                                       <td>{{rel_form.raxis}} of <span class="rel-towards">{{rel_form.towards}}</span></td>
                                       <td align="right">
-                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">Category</a>
-                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">Position</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Syntactic category" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">C</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Position" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">P</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Text of constituent" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-text');">T</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Lemma" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-lemma');">L</a>
                                       </td>
                                     </tr>
                                     <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{rel_form.cat}}</td></tr>
+                                    <tr class="rel-text hidden"><td>its text is like</td><td colspan="2" style="width: 100%;">{{rel_form.reltext}}</td></tr>
+                                    <tr class="rel-lemma hidden"><td>its lemma is</td><td colspan="2" style="width: 100%;">{{rel_form.rellemma}}</td></tr>
                                     <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{rel_form.pos}}, skipping {{rel_form.skip}}</td></tr>
                                   </tbody>
                                 </table>
@@ -176,11 +180,15 @@
                                       <td style="min-width: 140px; width: 140px;">it is a</td>
                                       <td>{{related_formset.empty_form.raxis}} of <span class="rel-towards">{{related_formset.empty_form.towards}}</span></td>
                                       <td align="right">
-                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">Category</a>
-                                        <a class="btn btn-xs jumbo-1" role="button" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">Position</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Syntactic category" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">C</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Position" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">P</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Text of constituent" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-text');">T</a>
+                                        <a class="btn btn-xs jumbo-1" role="button" title="Lemma" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-lemma');">L</a>
                                       </td>
                                     </tr>
                                     <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.cat}}</td></tr>
+                                    <tr class="rel-text hidden"><td>its text is like</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.reltext}}</td></tr>
+                                    <tr class="rel-lemma hidden"><td>its lemma is</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.rellemma}}</td></tr>
                                     <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{related_formset.empty_form.pos}}, skipping {{related_formset.empty_form.skip}}</td></tr>
                                   </tbody>
                                 </table>
