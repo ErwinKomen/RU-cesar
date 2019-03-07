@@ -1,0 +1,31 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">    
+    <h3>Concreteness</h3>
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- Dashboard to select input file(s) and then allow downloading the results -->
+
+  </div>
+
+<script>
+  ru.cesar.doc.init_events();
+</script>
+
+{% endblock content %}
+
