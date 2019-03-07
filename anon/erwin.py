@@ -55,3 +55,17 @@ with open(os.path.join(output_dir, 'entities.csv'), 'w') as file:
         writer.writerow([replacer, replacement])
 
 print("done")
+
+
+if False:
+    # See: https://github.com/proycon/clam/blob/master/clam/clamclient.py
+    # See: https://clam.readthedocs.io/en/stable/client.html
+    # See: 
+    project = "test_project_01"
+    url = "https://webservices-lst.science.ru.nl/frog"
+    user = ""
+    pw = ""
+    basicauth = True
+    from clam.common.client import *
+    clamclient = CLAMClient(url, user, pw, basicauth)
+    clamclient.create(project)
