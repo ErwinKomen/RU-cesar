@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'cesar.browser',
     'cesar.viewer',
     'cesar.seeker',
+    'cesar.doc'
 ]
 
 MIDDLEWARE_CLASSES = [

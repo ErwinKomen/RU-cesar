@@ -14,6 +14,7 @@ import cesar.browser.views
 from cesar.browser.views import *
 from cesar.browser.forms import *
 from cesar.seeker.views import *
+from cesar.doc.views import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
@@ -49,6 +50,8 @@ urlpatterns = [
     url(r'^text/lines/(?P<pk>\d+)/$', SentenceListView.as_view(), name='text_lines'),
     url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
     url(r'^text/syntax/download/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='syntax_download'),
+
+    url(r'^doc/main/$', cesar.doc.views.doc, name='doc_main'),
 
 
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),

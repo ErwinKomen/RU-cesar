@@ -306,3 +306,4 @@ ModelManifest.xml
 /cesar/cesar/browser/static/browser/content/CesarManual.pdf
 /anon/__pycache__
 /cesar/cesar/doc/migrations
+/cesar/cesar/doc/__pycache__
