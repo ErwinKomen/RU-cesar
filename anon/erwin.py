@@ -67,5 +67,27 @@ if False:
     pw = ""
     basicauth = True
     from clam.common.client import *
-    clamclient = CLAMClient(url, user, pw, basicauth)
-    clamclient.create(project)
+    clamclient = CLAMClient(url, user, pw, basicauth = basicauth)
+    result = clamclient.create(project)
+    data = clamclient.get(project)
+    it = data.inputtemplate('maininput')
+    # Add the file as input to the project
+    f = "./probeersel.txt"
+    result = clamclient.addinputfile(project, it, f, language='nl')
+    # Opstarten
+    result = clamclient.start(project)
+    if result.errors:
+        # Handle errors
+        sys.exit(1)
+    # Otherwise loop until ready
+    while result.status != clam.common.status.DONE:
+        time.sleep(4)			# Wacht 4 seconden
+        result = clamclient.get(project)	# Refresh status
+    # Now we are ready
+    for outputfile in result.output:
+        name = str(outputfile)
+        if ".xml"  in name:
+            # Download the Folia XML file to (current dir)
+            outputfile.copy(os.path.basename(str(outputfile)))
+    # Delete project again
+    clamclient.delete(project)

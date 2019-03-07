@@ -45,6 +45,13 @@
     <Compile Include="cesar\browser\tests.py" />
     <Compile Include="cesar\browser\views.py" />
     <Compile Include="cesar\browser\__init__.py" />
+    <Compile Include="cesar\doc\admin.py" />
+    <Compile Include="cesar\doc\apps.py" />
+    <Compile Include="cesar\doc\migrations\__init__.py" />
+    <Compile Include="cesar\doc\models.py" />
+    <Compile Include="cesar\doc\tests.py" />
+    <Compile Include="cesar\doc\views.py" />
+    <Compile Include="cesar\doc\__init__.py" />
     <Compile Include="cesar\seeker\admin.py" />
     <Compile Include="cesar\seeker\apps.py" />
     <Compile Include="cesar\seeker\convert.py">
@@ -98,6 +105,9 @@
     <Folder Include="cesar\browser\static\browser\scripts\" />
     <Folder Include="cesar\browser\templates\" />
     <Folder Include="cesar\browser\templates\browser\" />
+    <Folder Include="cesar\doc\" />
+    <Folder Include="cesar\doc\migrations\" />
+    <Folder Include="cesar\doc\templates\" />
     <Folder Include="cesar\seeker\" />
     <Folder Include="cesar\seeker\migrations\" />
     <Folder Include="cesar\seeker\static\" />
@@ -146,6 +156,7 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\text_info.html" />
+    <Content Include="cesar\doc\templates\index.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\static\seeker\scripts\xhr2.js" />
     <Content Include="cesar\seeker\templates\seeker\crp.xml" />

@@ -305,3 +305,4 @@ ModelManifest.xml
 /anon/processor/__init__.py
 /cesar/cesar/browser/static/browser/content/CesarManual.pdf
 /anon/__pycache__
+/cesar/cesar/doc/migrations
