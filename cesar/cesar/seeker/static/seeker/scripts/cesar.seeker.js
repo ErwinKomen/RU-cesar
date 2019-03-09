@@ -1338,6 +1338,157 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * sync_process
+       *    Process a synchronisation request
+       * 
+       * @param {type} synctype
+       */
+      sync_process: function (syncurl, synctype, targetdiv) {
+        var syncdata = [{'name': 'synctype', 'value': synctype}];
+        // Start asking for the status
+        $.get(syncurl, syncdata, function (response) {
+          // First leg has been done
+          if (response === undefined || response === null || !("status" in response)) {
+            private_methods.errMsg("No status returned");
+          } else {
+            switch (response.status) {
+              case "ok":
+              case "ready":
+              case "finished":
+                $(targetdiv).html("ready");
+                break;
+              case "error":
+                $(targetdiv).html(response['msg']);
+                break;
+              default:
+                // SHow the status
+                $(targetdiv).html(response['status'] + ": " + response['msg']);
+                // make sure to ask for status again
+                setTimeout(function () { ru.cesar.seeker.sync_process(syncurl, synctype, targetdiv); }, 1000);
+                break;
+            }
+          }
+        });
+      },
+
+      /**
+       * import_post
+       *    Input data from a post form
+       * 
+       */
+      import_post: function (el) {
+        var frm = null,
+            data = [],
+            more = {},
+            synctype = "",
+            idx = 0,
+            filefield = null,
+            elInput = null,   // The <input> element with the files_field
+            elProg = null,    // The progress bar
+            targeturl = "",
+            targetid = "",    // The div where the uploaded reaction comes
+            statusid = "",    // The div where the status in-between appears
+            sSaveDiv = "",    // Where to go if saving is needed
+            syncurl = "",
+            sMsg = "";
+
+        try {
+          private_methods.errClear();
+          // Get information
+          frm = $(el).closest("form")
+          targeturl = $(el).attr("targeturl");
+          targetid = "#" + $(el).attr("targetid");
+          syncurl = $(el).attr("syncurl");
+          idx = syncurl.indexOf("=");
+          if (idx > 0) {synctype = syncurl.split("=")[1];}
+          elProg = $("#" + synctype + "-import_progress");
+          statusid = "#" + synctype + "-import_status";
+
+          // CLear previous stuff
+          $(targetid).html("");
+
+          // Gather data and it needs to be in an object
+          frm = $(el).closest("form");
+          data = frm.serializeArray();
+          for (var i = 0; i < data.length; i++) {
+            more[data[i]['name']] = data[i]['value'];
+          }
+          // The <input> element with the file
+          elInput = $(frm).find("input[type='file']").first();
+
+          // Show progress
+          $(elProg).attr("value", "0");
+          $(elProg).removeClass("hidden");
+
+          if (syncurl !== undefined && syncurl !== "") {
+            // Start off Status reading here
+            setTimeout(function () { ru.cesar.seeker.sync_process(syncurl, synctype, statusid); }, 2000);
+          }
+
+          // Upload file and other (form) data
+          $(elInput).upload(targeturl,
+            more,
+            function (response) {
+              // First leg has been done
+              if (response === undefined || response === null || !("status" in response)) {
+                private_methods.errMsg("No status returned");
+              } else {
+                switch (response.status) {
+                  case "ok":
+                    if ("html" in response) {
+                      $(targetid).html(response['html']);
+                    }
+                    break;
+                  case "error":
+                    if ("html" in response) {
+                      //private_methods.errMsg("error: " + response['html']);
+                      $(targetid).html("<code>" + response['html'] + "</code>");
+                      if ($(targetid).find(".errors").html().trim() === "") {
+                        $(targetid).html("<code>Error</code>");
+                      }
+                    } else {
+                      $(targetid).html("<code>See the error description</code>");
+                    }
+                    break;
+                }
+              }
+            }, function (progress, value) {
+              // Show  progress of uploading to the user
+              console.log(progress);
+              $(elProg).val(value);
+            }
+          );
+          // Hide progress after some time
+          setTimeout(function () { $(elProg).addClass("hidden"); }, 1000);
+              
+ /*             
+          $.post(targeturl, data, function (response) {
+            // First leg has been done
+            if (response === undefined || response === null || !("status" in response)) {
+              private_methods.errMsg("No status returned");
+            } else {
+              switch (response.status) {
+                case "ok":
+                  if ("html" in response) {
+                    $(targetid).html(response['html']);
+                  }
+                  break;
+                case "error":
+                  if ("html" in response) {
+                    private_methods.errMsg("error: " + response['html']);
+                    $(targetid).html(response['html']);
+                  }
+                  break;
+              }
+            }
+          });*/
+
+        } catch (ex) {
+          private_methods.errMsg("import_post", ex);
+        }
+      },
+
+      /**
        * import_data
        *   Allow user to upload a file
        *
@@ -1939,6 +2090,31 @@ var ru = (function ($, ru) {
        */
       init_events: function () {
         try {
+          // file selectors
+          $(".btn-file input").on("change", function (e) {
+            var fileName = '',
+                $label = $(this).parent().next('span'),
+                labelVal = 'Browse...';
+
+            // Can we display the text ??
+            if ($label !== undefined && $label.length > 0) {
+              // Think of a text to display
+              if (this.files && this.files.length > 1) {
+                fileName = this.files.length + " files selected";
+              } else if (e.target.value) {
+                fileName = e.target.value.split('\\').pop();
+              }
+              // Actually display that text (if any)
+              if (fileName) {
+                $label.html(fileName);
+              } else {
+                $label.html(labelVal);
+              }
+            }
+          });
+          // Firefox bug fix
+          $(".btn-file input").on('focus', function () { $(this).addClass('has-focus'); });
+          $(".btn-file input").on('blur', function () { $(this).removeClass('has-focus'); });
           // NOTE: only treat the FIRST <a> within a <tr class='add-row'>
           //$('tr.add-row a').first().click(ru.cesar.seeker.tabular_addrow);
           $("tr.add-row").each(function () {

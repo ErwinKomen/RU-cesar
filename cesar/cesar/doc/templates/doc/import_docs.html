@@ -1,0 +1,83 @@
+﻿{% load i18n %}
+
+  {% if statuscode == "completed" %}
+  <div class="row">
+    <div class='col-md-9 panel panel-default'>
+      <div class="">
+        <div class="row">
+          <div class="col-md-12">A list of {{results|length}} (text) files has been processed.</div>
+        </div>
+        <div class="row">
+          <div class="col-md-12" id="man-list">
+            <table style="width: 100%;">
+              <thead><tr><th>#</th><th>Text</th><th  style="width: 100%;">Concreteness</th></tr></thead>
+              <tbody>
+                {% for item in results %}
+                  <tr>
+                    <td>{{forloop.counter}}</td>
+                    <td>{{item.filename}}</td>
+                    <td>{{item.concreteness}}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-offset-1 col-md-2">
+      <!-- Form with download options for concreteness results -->
+      <form id="concretenessform" action="">
+        {% csrf_token %}
+        <div id="downloadcenter" class="hidden">
+          <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+          <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+        </div>
+        <div class="dropdown">
+          <button class="btn  jumbo-1 btn-sm dropdown-toggle"
+                  type="button" id="downloadmenu"
+                  data-toggle="dropdown" aria-haspopup="true"
+                  aria-expanded="true">download&nbsp;<span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+            <li class="docsdetails_host">
+              <a href="#" id="docs_download_excel"
+                  downloadtype="excel"
+                  contentid="#docsdetails_excel"
+                  ajaxurl="{% url 'docs_download' pk=object.id  %}"
+                  onclick="ru.cesar.seeker.post_download(this);" >Excel</a>
+            </li>
+            <li role="separator" class="divider"></li>
+            <li class="docsdetails_host">
+              <a href="#" id="docs_download_csv"
+                  title="Tab-separated file (can be uploaded in Excel)"
+                  downloadtype="csv"
+                  contentid="#docsdetails_csv"
+                  ajaxurl="{% url 'docs_download' pk=object.id %}"
+                  onclick="ru.cesar.seeker.post_download(this);" >CSV</a>
+            </li>
+            <li class="docsdetails_host">
+              <a href="#" id="docs_download_json"
+                  downloadtype="json"
+                  contentid="#docsdetails_json"
+                  ajaxurl="{% url 'docs_download' pk=object.id %}"
+                  onclick="ru.cesar.seeker.post_download(this);" >json</a>
+            </li>
+          </ul>
+        </div>
+      </form>
+
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Any errors are shown here too-->
+  <div class="errors">
+    {% if error_list and statuscode != "error" %} 
+      <h4>Errors:</h4>
+      <div>statuscode = {{statuscode}}</div>
+      {% for item in error_list %}
+        <div class="error-item">{{item}}</div>
+      {% endfor %}
+    {% endif %}
+  </div>

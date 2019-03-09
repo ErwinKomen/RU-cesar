@@ -52,6 +52,9 @@ urlpatterns = [
     url(r'^text/syntax/download/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='syntax_download'),
 
     url(r'^doc/main/$', cesar.doc.views.doc, name='doc_main'),
+    url(r'^doc/download/(?P<pk>\d+)/$', FoliaDocsDetailView.as_view(), name='docs_download'),
+
+    url(r'^api/import/docs/$', cesar.doc.views.import_docs, name='import_docs'),
 
 
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),

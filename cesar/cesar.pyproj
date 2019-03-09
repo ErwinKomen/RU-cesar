@@ -47,6 +47,9 @@
     <Compile Include="cesar\browser\__init__.py" />
     <Compile Include="cesar\doc\admin.py" />
     <Compile Include="cesar\doc\apps.py" />
+    <Compile Include="cesar\doc\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\doc\migrations\__init__.py" />
     <Compile Include="cesar\doc\models.py" />
     <Compile Include="cesar\doc\tests.py" />
@@ -158,6 +161,8 @@
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\text_info.html" />
     <Content Include="cesar\doc\templates\doc\doc_main.html" />
+    <Content Include="cesar\doc\templates\doc\foliadocs_view.html" />
+    <Content Include="cesar\doc\templates\doc\import_docs.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\static\seeker\scripts\xhr2.js" />
     <Content Include="cesar\seeker\templates\seeker\crp.xml" />

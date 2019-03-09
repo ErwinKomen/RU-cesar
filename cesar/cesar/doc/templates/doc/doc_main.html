@@ -20,11 +20,63 @@
     </div>
 
     <!-- Dashboard to select input file(s) and then allow downloading the results -->
+    <div id="import_docs" class="row" >
+      <div class="col-md-9 panel panel-default">
+      <form action="{% url 'import_docs' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+        {% csrf_token %}
+        <!-- Need username and password for the CLAM client webservice -->
+        <div class="row">
+          <div class="col-md-9">
+            <table>
+              <tbody>
+                <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
+                <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
+                <tr>
+                  <td>File(s) to be processed:</td>
+                  <td>
+                    <span class="input-group-btn">
+                      <span class="btn btn-default btn-xs btn-file">Browse...{{frmUpload.files_field}}</span>
+                      <!-- The files that have been selected-->
+                      <span></span>
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <span id="docs-import_status">&nbsp;</span>
+                    <progress class="hidden" style="width:100%;" id="docs-import_progress" value="0" min="0" max="100"></progress>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" align="right">
+                    <a class="btn btn-sm jumbo-1"
+                       targetid="docs_data_import"
+                       targeturl="{% url 'import_docs' %}"
+                       syncurl="{% url 'sync_progress' %}?synctype=docs" 
+                       onclick="ru.cesar.seeker.import_post(this);"
+                       >Start</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
+
+        <!-- Progress -->
+        <div class="save-warning"></div>
+        <!-- Any error reporting -->
+        <div id="docs-import_error"></div>
+      </form>
+      </div>
+    </div>
+
+    <!-- The normal progress reporting -->
+    <div id="docs_data_import"></div>
   </div>
 
 <script>
-  ru.cesar.doc.init_events();
+  ru.cesar.seeker.init_events();
 </script>
 
 {% endblock content %}
