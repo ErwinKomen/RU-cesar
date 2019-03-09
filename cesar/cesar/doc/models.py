@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import json
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -10,6 +11,7 @@ from cesar.settings import WRITABLE_DIR
 
 # FOlia handling: pynlpl
 import pynlpl
+from pynlpl.formats import folia
 
 # Attempt to input FROG
 try:
@@ -84,26 +86,31 @@ class FrogLink(models.Model):
             if not os.path.exists(dir):
                 os.mkdir(dir)
             # Action depends on the [froglocation]
+            errHandle.Status("froglocation={}".format(froglocation))
             if froglocation == "local":
                 # We can make use of the local frog
-                frog = Frog(FrogOptions(parser=False, xmlout=TRue))
+                # frog = Frog(FrogOptions(parser=False, xmlout=True))
+                frog = Frog(FrogOptions(parser=False))
 
-                # FIrst try: do it all at once
-                if True:
-                    oDoc = frog.process(data_file)
-                    # The output is an instance of [folia.Document]
-                else:
-                    # Read the data into a JSON object -- then each 'line' is one 'paragraph'
-                    oJson = import_data_file(data_file, errHandle)
-                    # Walk through the JSON 
-                    lFolia = []
-                    for sLine in oJson:
-                        # This produces one chunk of FoLiA
-                        output = frog.process(sLine)
-                        # The output is an instance of [folia.Document]
-                        lFolia.append(output)
-                    # TODO: combine lFolia into one oDoc
-                    # oDoc = None
+                # create a folia document with a numbered id
+                docstr = filename
+                doc = folia.Document(id=docstr)
+
+                # Read the data into a JSON object -- then each 'line' is one 'paragraph'
+                oJson = import_data_file(data_file, errHandle)
+                # Walk through the JSON 
+                lFolia = []
+                for sLine in oJson:
+                    # Append a paragraph
+                    para = doc.append(folia.Paragraph)
+                    # This produces one chunk of FoLiA
+                    parsed_output = frog.process(sLine)
+                    ## The output is an instance of [folia.Document]
+                    #lFolia.append(output)
+                    # The output is a list of dictionary objects
+                    errHandle.Status(json.dumps(parsed_output))
+                # TODO: combine lFolia into one oDoc
+                # oDoc = None
             else:
                 # Think of a project name
                 project = self.name
