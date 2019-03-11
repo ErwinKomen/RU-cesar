@@ -90,10 +90,11 @@ class FrogLink(models.Model):
             dir = folProc.dir
 
             # Read and create basis-folia
-            if not folProc.basis_folia(filename, data_file):
+            bResult, sMsg = folProc.basis_folia(filename, data_file)
+            if not bResult:
                 # There was some kind of error
                 oBack['status'] = 'error'
-                oBack['msg'] = "Could not create BasisFolia"
+                oBack['msg'] = "basis_folia load error: {}".format(sMsg)
             else:
                 # DEBUG: show the frog location
                 errHandle.Status("DEBUG: froglocation={}".format(froglocation))
@@ -158,11 +159,13 @@ class FrogLink(models.Model):
                         if ".xml"  in name or ".frog.out" in name:
                             # Download the Folia XML file to (current dir)
                             fout = os.path.abspath(os.path.join(dir, os.path.basename(str(outputfile))))
+                            fout = fout.replace(".basis", ".folia")
                             outputfile.copy(fout)
                             iCount += 1
                         else:
                             # Download the Folia XML file to (current dir)
                             fout = os.path.abspath(os.path.join(dir, os.path.basename(str(outputfile))))
+                            fout = fout.replace(".basis", ".folia")
                             outputfile.copy(fout)
                             iCount += 1
                     # Delete project again
@@ -204,6 +207,7 @@ class FoliaProcessor():
 
         errHandle = ErrHandle()
         bReturn = False
+        sMsg = ""
         try:
             # Read file into array
             lines = []
@@ -231,7 +235,7 @@ class FoliaProcessor():
                     # Append a paragraph
                     para = text.add(folia.Paragraph)
                     # Set the <t> of this paragraph
-                    para.settext(sLine)
+                    # para.settext(sLine)
                     # Split text into sentences
                     sf = StringIO(sLine)
                     for s_list in pynlpl.textprocessors.Tokenizer(sf, splitsentences=True):
@@ -239,6 +243,10 @@ class FoliaProcessor():
                             sentence = para.add(folia.Sentence)
                             for token in s:
                                 sentence.add(folia.Word, token)
+                            # Add text to sentence
+                            sentence.settext(sentence.text())
+                    # Add text to paragraph
+                    para.settext(para.text())
 
             # THink of a correct name for Basic folia
             f =  os.path.abspath(os.path.join(dir, docstr) + ".basis.xml")
@@ -254,4 +262,4 @@ class FoliaProcessor():
             errHandle.DoError("basis_folia")
             bReturn = False
         # Return what has happened
-        return bReturn
+        return bReturn, sMsg
