@@ -108,7 +108,7 @@ def strip_varname(sName):
 
 
 def import_data_file(sContents, arErr):
-    """Turn the contents of [data_file] into a json object"""
+    """Turn the contents of [data_file] into a string array"""
 
     try:
         # Validate
@@ -118,11 +118,14 @@ def import_data_file(sContents, arErr):
         lines = []
         for line in sContents:
             lines.append(line.decode("utf-8").strip())
-        # Combine again
-        sContents = "\n".join(lines)
-        oData = json.loads(sContents)
-        # This is the data
-        return oData
+        ## Combine again
+        #sContents = "\n".join(lines)
+        #oData = json.loads(sContents)
+        ## This is the data
+        #return oData
+
+        # This already is the array of strings
+        return lines
     except:
         sMsg = errHandle.get_error_message()
         arErr.DoError("import_data_file error:")

@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+from io import StringIO 
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -12,6 +13,7 @@ from cesar.settings import WRITABLE_DIR
 # FOlia handling: pynlpl
 import pynlpl
 from pynlpl.formats import folia
+from pynlpl.textprocessors import tokenize, split_sentences
 
 # Attempt to input FROG
 try:
@@ -85,8 +87,13 @@ class FrogLink(models.Model):
             dir = os.path.abspath(os.path.join( WRITABLE_DIR, username))
             if not os.path.exists(dir):
                 os.mkdir(dir)
+
+            # Read the data into a JSON object -- then each 'line' is one 'paragraph'
+            oJson = import_data_file(data_file, errHandle)
+
             # Action depends on the [froglocation]
             errHandle.Status("froglocation={}".format(froglocation))
+
             if froglocation == "local":
                 # We can make use of the local frog
                 # frog = Frog(FrogOptions(parser=False, xmlout=True))
@@ -96,8 +103,6 @@ class FrogLink(models.Model):
                 docstr = filename
                 doc = folia.Document(id=docstr)
 
-                # Read the data into a JSON object -- then each 'line' is one 'paragraph'
-                oJson = import_data_file(data_file, errHandle)
                 # Walk through the JSON 
                 lFolia = []
                 for sLine in oJson:
@@ -112,6 +117,35 @@ class FrogLink(models.Model):
                 # TODO: combine lFolia into one oDoc
                 # oDoc = None
             else:
+                # create a folia document with a numbered id
+                docstr = filename
+                doc = folia.Document(id=docstr)
+                text = doc.add(folia.Text)
+
+                # Walk through the JSON 
+                lFolia = []
+                for sLine in oJson:
+                    # Check for empty
+                    sLine = sLine.strip()
+                    if sLine != "":
+                        # Append a paragraph
+                        para = text.add(folia.Paragraph)
+                        # Set the <t> of this paragraph
+                        para.settext(sLine)
+                        # Split text into sentences
+                        sf = StringIO(sLine)
+                        for s_list in pynlpl.textprocessors.Tokenizer(sf, splitsentences=True):
+                            for s in s_list:
+                                sentence = para.add(folia.Sentence)
+                                for token in s:
+                                    sentence.add(folia.Word, token)
+
+                # THink of a correct name for Basic folia
+                f =  os.path.abspath(os.path.join(dir, filename) + ".xml")
+                # Save the doc
+                doc.save(f)
+
+                    
                 # Think of a project name
                 project = self.name
                 basicauth = True
