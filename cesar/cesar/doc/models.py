@@ -14,8 +14,10 @@ from cesar.settings import WRITABLE_DIR
 import pynlpl
 from pynlpl.formats import folia
 from pynlpl.textprocessors import tokenize, split_sentences
+from pynlpl.clients.frogclient import FrogClient
 
 # Attempt to input FROG
+froglocation = ""
 try:
     from frog import Frog, FrogOptions
     froglocation = "local"
@@ -27,7 +29,7 @@ except:
     from clam.common.client import *
 
 MAXPARAMLEN = 100
-
+FROGPORT = 8020
 
 class FoliaDocs(models.Model):
     """Set of folia-encoded documents"""
@@ -83,9 +85,14 @@ class FrogLink(models.Model):
         oDoc = None
         iCount = 0
         inputType = "folia"
+        frogLoc = froglocation
 
         folProc = FoliaProcessor(username)
         try:
+            # Check if we can use client
+            if frogLoc == "remote" and folProc.client_init():
+                frogLoc = "client"
+
             # Directory: one directory for each user
             dir = folProc.dir
 
@@ -97,10 +104,22 @@ class FrogLink(models.Model):
                 oBack['msg'] = "basis_folia load error: {}".format(sMsg)
             else:
                 # DEBUG: show the frog location
-                errHandle.Status("DEBUG: froglocation={}".format(froglocation))
+                errHandle.Status("DEBUG: frogLoc={}".format(frogLoc))
 
                 # Action depends on the [froglocation]
-                if froglocation == "local":
+                if frogLoc == "client":
+                    doc = folProc.doc
+                    # Iterate over all the sentences
+                    for sentence in doc.sentences():
+                        # Get the text of this sentence
+                        sLine = sentence.text()
+                        # Process it
+                        bOkay, lSent = folProc.client_sentence(sLine)
+                        # Walk the tokens in the sentence and add this information
+                        for oWord in sentence:
+                            # Add to this word: Morph, POS tag, Lemma
+                            pass
+                elif frogLoc == "local":
                     # We can make use of the locally available frog
                     frog = Frog(FrogOptions(parser=False))
 
@@ -193,6 +212,7 @@ class FoliaProcessor():
     username = ""       # The owner of this document
     dir = ""            # Directory for the output
     basicf = ""         # If any: where the basis folis is
+    frogClient = None   
     doc = None
 
     def __init__(self, username):
@@ -263,3 +283,41 @@ class FoliaProcessor():
             bReturn = False
         # Return what has happened
         return bReturn, sMsg
+
+    def client_init(self):
+        """Initialize a frogClient"""
+
+        try:
+            self.frogClient = FrogClient('localhost', FROGPORT, returnall=True)
+            # Send a word
+            tuple = self.frogClient.process("hallo")
+            bResult = True
+        except:
+            # There is no connection
+            bResult = False
+        return bResult
+
+    def client_sentence(self, sSentence):
+        """Process one sentence and return appropriate JSON"""
+
+        if not self.frogClient:
+            return False, []
+        # This produces one chunk of FoLiA
+        tuple = self.frogClient.process(sSentence)
+        parsed_output = []
+        for item in tuple:
+            # Take apart the tuple into an object
+            obj = {}
+            obj['one'] = item[2]
+            obj['token'] = item[0]
+            obj['lemma'] = item[1]
+            obj['morph'] = item[2]
+            obj['postag'] = item[3]
+            obj['ne'] = item[4]
+            obj['base'] = item[5]
+            obj['head'] = item[6]
+            obj['drel'] = item[7]
+            parsed_output.append(obj)
+        # REturn the total parsed output
+        return True, parsed_output
+        
