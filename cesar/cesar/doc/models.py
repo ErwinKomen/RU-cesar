@@ -17,14 +17,11 @@ from pynlpl.textprocessors import tokenize, split_sentences
 from pynlpl.clients.frogclient import FrogClient
 
 # Attempt to input FROG
-froglocation = ""
 try:
     from frog import Frog, FrogOptions
-    froglocation = "local"
     # See: https://frognlp.readthedocs.io/en/latest/pythonfrog.html
 except:
     # It is not there...
-    froglocation = "remote"
     frogurl = "https://webservices-lst.science.ru.nl/frog"
     from clam.common.client import *
 
@@ -58,7 +55,7 @@ class FrogLink(models.Model):
         return self.name
 
     def create(name, username):
-        """Possibly create a new item"""
+        """Possibly create a new item [name] for user [username]"""
 
         # Get the correct user
         owner = User.objects.filter(username=username).first()
@@ -85,13 +82,11 @@ class FrogLink(models.Model):
         oDoc = None
         iCount = 0
         inputType = "folia"
-        frogLoc = froglocation
 
         folProc = FoliaProcessor(username)
         try:
-            # Check if we can use client
-            if frogLoc == "remote" and folProc.client_init():
-                frogLoc = "client"
+            # Check our location
+            frogLoc = folProc.location()
 
             # Directory: one directory for each user
             dir = folProc.dir
@@ -107,36 +102,46 @@ class FrogLink(models.Model):
                 errHandle.Status("DEBUG: frogLoc={}".format(frogLoc))
 
                 # Action depends on the [froglocation]
-                if frogLoc == "client":
+                if frogLoc == "client" or frogLoc == "local":
                     doc = folProc.doc
-                    # Iterate over all the sentences
-                    for sentence in doc.sentences():
-                        # Get the text of this sentence
-                        sLine = sentence.text()
-                        # Process it
-                        bOkay, lSent = folProc.client_sentence(sLine)
-                        # Walk the tokens in the sentence and add this information
-                        for oWord in sentence:
-                            # Add to this word: Morph, POS tag, Lemma
-                            pass
-                elif frogLoc == "local":
-                    # We can make use of the locally available frog
-                    frog = Frog(FrogOptions(parser=False))
-
-                    doc = folProc.doc
-                    # Iterate over all the sentences
-                    for sentence in doc.sentences():
-                        # Get the text of this sentence
-                        sLine = sentence.text()
-                        # This produces one chunk of FoLiA
-                        parsed_output = frog.process(sLine)
-                        ## The output is an instance of [folia.Document]
-                        #lFolia.append(output)
-                        # The output is a list of dictionary objects
-                        errHandle.Status(json.dumps(parsed_output))
-                    # TODO: combine lFolia into one oDoc
-                    # oDoc = None
-                else:
+                    # Add annotation layers
+                    doc.declare(folia.PosAnnotation, 'http://ilk.uvt.nl/folia/sets/frog-mbpos-cgn', 
+                                annotator='frog', annotatortype=folia.AnnotatorType.AUTO)
+                    doc.declare(folia.LemmaAnnotation, 'http://ilk.uvt.nl/folia/sets/frog-mblem-nl', 
+                                annotator='frog', annotatortype=folia.AnnotatorType.AUTO)
+                    doc.declare(folia.MorphologyLayer, 'http://ilk.uvt.nl/folia/sets/frog-mbma-nl', 
+                                annotator='frog', annotatortype=folia.AnnotatorType.AUTO)
+                    # Iterate over paragraphs
+                    for paragraph in doc.paragraphs():
+                        # Iterate over all the sentences
+                        for sentence in paragraph.sentences():
+                            # Get the text of this sentence
+                            sLine = sentence.text()
+                            # Process it
+                            bOkay, lSent = folProc.parse_sentence(sLine, frogLoc)
+                            # Add the annotation to the words in the sentence
+                            # Walk the tokens in the sentence and add this information
+                            for idx, oWord in enumerate(sentence.words()):
+                                # Get the corresponding parse
+                                parse = lSent[idx]
+                                # Add POS annotation
+                                sPosFull = parse['pos']
+                                sPosHead = sPosFull.split("(")[0]
+                                pos = oWord.add(folia.PosAnnotation, cls=sPosFull, head=sPosHead)
+                                # Add lemma
+                                lemma = oWord.add(folia.LemmaAnnotation, cls=parse['lemma'])
+                                # Add morph
+                                mlayer = oWord.add(folia.MorphologyLayer)
+                                # The morphemes are enclosed in [...] brackets
+                                arMorph = parse['morph'].strip("[]").split("][")
+                                for m in arMorph:
+                                    mitem = mlayer.add(folia.Morpheme)
+                                    mitem.settext(m)
+                    # Think of a name to save it
+                    folia_out = folProc.basicf.replace(".basis", ".folia")
+                    # Write it away
+                    doc.save(folia_out)
+                elif frogLoc == "remote":
                     # Think of a project name
                     project = folProc.docstr
                     basicauth = True
@@ -190,6 +195,9 @@ class FrogLink(models.Model):
                     # Delete project again
                     clamclient.delete(project)
   
+                else:
+                    # Don't know this location type
+                    pass
 
 
             # Make sure the requester knows how many have been added
@@ -213,6 +221,7 @@ class FoliaProcessor():
     dir = ""            # Directory for the output
     basicf = ""         # If any: where the basis folis is
     frogClient = None   
+    frog = None
     doc = None
 
     def __init__(self, username):
@@ -222,6 +231,32 @@ class FoliaProcessor():
             os.mkdir(dir)
         # Set the dir locally
         self.dir = dir
+
+        # Check if we can create a client
+        try:
+            self.frogClient = FrogClient('localhost', FROGPORT, returnall=True)
+            # Send a word
+            tuple = self.frogClient.process("hallo")
+        except:
+            # There is no connection
+            pass
+
+        # Check if [Frog] is local
+        try:
+            self.frog = Frog(FrogOptions(parser=False))
+        except:
+            pass
+
+    def location(self):
+        """Give the location we can work from: local, client or remote"""
+
+        if self.frog != None:
+            sBack = "local"
+        elif self.frogClient != None:
+            sBack = "client"
+        else:
+            sBack = "remote"
+        return sBack
 
     def basis_folia(self, filename, data_contents):
 
@@ -254,8 +289,10 @@ class FoliaProcessor():
                 if sLine != "":
                     # Append a paragraph
                     para = text.add(folia.Paragraph)
-                    # Set the <t> of this paragraph
+
+                    # NOTE: do *NOT* Set the <t> of this paragraph -- it will differ from what Folia calculates itself
                     # para.settext(sLine)
+
                     # Split text into sentences
                     sf = StringIO(sLine)
                     for s_list in pynlpl.textprocessors.Tokenizer(sf, splitsentences=True):
@@ -284,40 +321,48 @@ class FoliaProcessor():
         # Return what has happened
         return bReturn, sMsg
 
-    def client_init(self):
-        """Initialize a frogClient"""
-
-        try:
-            self.frogClient = FrogClient('localhost', FROGPORT, returnall=True)
-            # Send a word
-            tuple = self.frogClient.process("hallo")
-            bResult = True
-        except:
-            # There is no connection
-            bResult = False
-        return bResult
-
-    def client_sentence(self, sSentence):
+    def parse_sentence(self, sSentence, sType):
         """Process one sentence and return appropriate JSON"""
 
-        if not self.frogClient:
-            return False, []
-        # This produces one chunk of FoLiA
-        tuple = self.frogClient.process(sSentence)
+        oErr = ErrHandle()
         parsed_output = []
-        for item in tuple:
-            # Take apart the tuple into an object
-            obj = {}
-            obj['one'] = item[2]
-            obj['token'] = item[0]
-            obj['lemma'] = item[1]
-            obj['morph'] = item[2]
-            obj['postag'] = item[3]
-            obj['ne'] = item[4]
-            obj['base'] = item[5]
-            obj['head'] = item[6]
-            obj['drel'] = item[7]
-            parsed_output.append(obj)
-        # REturn the total parsed output
-        return True, parsed_output
+        try:
+            # Action depends on sType
+            if sType == "client":
+                if not self.frogClient:
+                    return False, []
+                # This produces one chunk of FoLiA
+                tuple_list = self.frogClient.process(sSentence)
+                for item in tuple_list:
+                    # Take apart the tuple into an object
+                    obj = {}
+                    if len(item) > 4:
+                        # We have almost all information
+                        obj['text'] = item[0]
+                        obj['lemma'] = item[1]
+                        obj['morph'] = item[2]
+                        obj['pos'] = item[3]
+                        obj['ner'] = item[4]
+                        obj['chunker'] = item[5]
+                        obj['head'] = item[6]
+                        obj['drel'] = item[7]
+                    else:
+                        # We only have: text, lemma, morph, pos
+                        obj['text'] = item[0]
+                        obj['lemma'] = item[1]
+                        obj['morph'] = item[2]
+                        obj['pos'] = item[3]
+                    parsed_output.append(obj)
+            elif sType == "local":
+                token_list = frog.process(sLine)
+                # Copy to parsed_output
+                parsed_output = json.loads(json.dumps(token_list))
+            else:
+                return False, []
+            # REturn the total parsed output
+            return True, parsed_output
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError("parse_sentence")
+            return False, []
         
