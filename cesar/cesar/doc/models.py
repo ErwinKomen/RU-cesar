@@ -213,6 +213,7 @@ class FrogLink(models.Model):
         # Return the object that has been created
         return oBack
 
+
 class FoliaProcessor():
     """Functions to help create or process a folia document"""
 
@@ -366,3 +367,28 @@ class FoliaProcessor():
             oErr.DoError("parse_sentence")
             return False, []
         
+
+class Brysbaert(models.Model):
+    """Information from the Brysbaert list of concreteness
+
+    Fields in the Excel:
+       stimulus, List, Concrete_m, Concrete_sd, Number_of_ratings, Number_of_N-respones, Number_of_subjects
+    """
+
+    # [1] The lemma 
+    stimulus = models.CharField("Lemma of word", max_length=MAXPARAMLEN)
+    # [1] The list number
+    list = models.IntegerField("List number", default=0)
+    # [1] Metric 1: concrete_m
+    m = models.FloatField("Concrete m", default=0.0)
+    # [1] Metric 2: concrete_sd
+    sd = models.FloatField("Concrete sd", default=0.0)
+    # [1] Metric 3: Number_of_ratings
+    ratings = models.FloatField("Number_of_ratings", default=0.0)
+    # [1] Metric 4: Number_of_N-responses
+    responses = models.FloatField("Number_of_N-responses", default=0.0)
+    # [1] Metric 5: Number_of_subjects
+    subjects = models.FloatField("Number_of_subjects", default=0.0)
+
+    def __str__(self):
+        return self.stimulus
