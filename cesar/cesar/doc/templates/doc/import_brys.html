@@ -1,0 +1,22 @@
+﻿{% load i18n %}
+
+  {% if statuscode == "completed" %}
+  <div class="row">
+    <div class='col-md-9 panel panel-default'>
+      A list of {{result_count}} entries has been processed.
+      Number of items skipped: {{result_skip}}.
+    </div>
+  </div>
+
+  {% endif %}
+
+  <!-- Any errors are shown here too-->
+  <div class="errors">
+    {% if error_list and statuscode != "error" %} 
+      <h4>Errors:</h4>
+      <div>statuscode = {{statuscode}}</div>
+      {% for item in error_list %}
+        <div class="error-item">{{item}}</div>
+      {% endfor %}
+    {% endif %}
+  </div>

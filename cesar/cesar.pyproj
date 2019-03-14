@@ -162,6 +162,7 @@
     <Content Include="cesar\browser\templates\browser\text_info.html" />
     <Content Include="cesar\doc\templates\doc\doc_main.html" />
     <Content Include="cesar\doc\templates\doc\foliadocs_view.html" />
+    <Content Include="cesar\doc\templates\doc\import_brys.html" />
     <Content Include="cesar\doc\templates\doc\import_docs.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\static\seeker\scripts\xhr2.js" />

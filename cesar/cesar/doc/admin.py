@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from cesar.doc.models import *
+
+# Registered models
+admin.site.register(FrogLink)
+# admin.site.register(FoliaProcessor)
+admin.site.register(Brysbaert)

@@ -392,3 +392,24 @@ class Brysbaert(models.Model):
 
     def __str__(self):
         return self.stimulus
+
+    def find_or_create(stimulus, listnum, m, sd, ratings, responses, subjects):
+        """Find existing or create new item"""
+        
+        obj = None
+        sMsg = ""
+        oErr = ErrHandle()
+        try:
+            obj = Brysbaert.objects.filter(stimulus=stimulus).first()
+            if obj == None:
+                obj = Brysbaert(stimulus=stimulus, list=listnum, m=m, sd=sd, ratings=ratings, responses=responses, subjects=subjects)
+                obj.save()
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError("find_or_create")
+        # Return the result
+        return obj, sMsg
+
+    def clear():
+        Brysbaert.objects.all().delete()
+        return True

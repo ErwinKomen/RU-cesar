@@ -19,3 +19,8 @@ class UploadFilesForm(forms.Form):
     clamuser = forms.CharField(label="CLAM service user name")
     clampw = forms.CharField(max_length=32, widget=forms.PasswordInput)
 
+class UploadOneFileForm(forms.Form):
+    """This is for uploading one file"""
+
+    file_field = forms.FileField(label="Specify which file should be imported",
+                                  widget=forms.ClearableFileInput())

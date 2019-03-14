@@ -2,7 +2,9 @@
 Definition of views for the DOC app.
 """
 
+import sys
 from django import template
+from django.db import models, transaction
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpRequest
 from django.shortcuts import get_object_or_404, render, redirect
@@ -14,8 +16,9 @@ from datetime import datetime
 from cesar.settings import APP_PREFIX
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
-from cesar.doc.models import FrogLink, FoliaDocs
-from cesar.doc.forms import UploadFilesForm
+from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert
+from cesar.doc.forms import UploadFilesForm, UploadOneFileForm
+from cesar.utils import ErrHandle
 
 
 # Create your views here.
@@ -25,11 +28,154 @@ def doc(request):
     assert isinstance(request, HttpRequest)
     template = 'doc/doc_main.html'
     frmUpload = UploadFilesForm()
+    frmBrysb = UploadOneFileForm()
+    superuser = request.user.is_superuser
     context = {'title': 'Document processing',
                'frmUpload': frmUpload,
+               'frmBrysb': frmBrysb,
+               'superuser': superuser,
                'message': 'Radboud University CESAR',
                'year': datetime.now().year}
     return render(request, template, context)
+
+
+def import_brysbaert(request):
+    """Ad-hoc procedure to allow importing Brysbaert tab-separated file into Model"""
+
+    # Initialisations
+    # NOTE: do ***not*** add a breakpoint until *AFTER* form.is_valid
+    arErr = []
+    error_list = []
+    transactions = []
+    data = {'status': 'ok', 'html': ''}
+    template_name = 'doc/import_brys.html'
+    obj = None
+    data_file = ""
+    bClean = False
+    username = request.user.username
+    statuscode = ""
+    oErr = ErrHandle()
+
+    try:
+        # Check if the user is authenticated and if it is POST
+        if request.user.is_authenticated and request.method == 'POST':
+
+            # Remove previous status object for this user
+            Status.objects.filter(user=username).delete()
+            # Create a status object
+            oStatus = Status(user=username, type="brysb", status="preparing", msg="please wait")
+            oStatus.save()
+        
+            form = UploadOneFileForm(request.POST, request.FILES)
+            lResults = []
+            if form.is_valid():
+                # NOTE: from here a breakpoint may be inserted!
+                print('import_brysb: valid form')
+
+                # Get the contents of the imported file
+                file = request.FILES['file_field']
+
+                # Clear whatever there was in Brysbaert
+                Brysbaert.clear()
+
+                # Read the file into a structure
+                lLines = []
+                bFirst = True
+                for line in file:
+                    if bFirst:
+                        bFirst = False
+                    else:
+                        sLine = line.decode("utf-8-sig").strip()
+                        if sLine != "":
+                            lLines.append(sLine.split("\t"))
+                # Create an iterator for this list
+                lIter = iter(lLines)
+
+                # Now we have it all, so indicate that
+                oStatus.set("phase 2", msg="chunk-adding information")
+
+                # Iterate over the contents in chunks
+                iChunk = 0
+                iChunkSize = 100
+                iChunkLen = len(lLines) // iChunkSize + 1
+                iNum = 0
+
+                iCount = 0
+                iPass = 0
+                # Iterate over the chunks
+                arPart = next(lIter)
+                for chunk_this in range(iChunkLen):
+                    iChunk += 1
+                    # Show where we are
+                    oStatus.set("chunking", msg="processing chunk {} of {}".format(iChunk, iChunkLen))
+                    print("working Brysbaert #{}".format(iCount), file=sys.stderr)
+                    # Treat the items from 
+                    with transaction.atomic():
+                        for idx in range(iChunkSize):
+                            # Check if there is some meat
+                            if arPart != None:
+                                # Double check length
+                                if len(arPart) == 7:
+                                    try:
+                                        # get the different parts
+                                        stimulus = arPart[0]
+                                        listnum = arPart[1]
+                                        m = float( arPart[2].replace(",", "."))
+                                        sd = float(arPart[3].replace(",", "."))
+                                        ratings = float(arPart[4].replace(",", "."))
+                                        responses = float(arPart[5].replace(",", "."))
+                                        subjects = float(arPart[6].replace(",", "."))
+
+                                        # Just add in one go
+                                        obj = Brysbaert(stimulus=stimulus, list=listnum, m=m, sd=sd, ratings=ratings, responses=responses, subjects=subjects)
+                                        obj.save()
+
+                                        # Keep track of where we are
+                                        iCount += 1
+                                    except:
+                                        iPass += 1
+                                # Get to the next text
+                                try:
+                                    arPart = next(lIter)
+                                except StopIteration as e:
+                                    break
+
+                if statuscode == "error":
+                    data['status'] = "error"
+                    print("error import_brysbaert #1", file=sys.stderr)
+                else:
+                    oStatus.set("ready", msg="Read all of Brysbaert: {}, skipped {}".format(iCount, iPass))
+                # Get a list of errors
+                error_list = [str(item) for item in arErr]
+
+                # Create the context
+                context = dict(
+                    statuscode=statuscode,
+                    result_count=iCount,
+                    result_skip =iPass,
+                    error_list=error_list
+                    )
+
+                if len(arErr) == 0:
+                    # Get the HTML response
+                    data['html'] = render_to_string(template_name, context, request)
+                else:
+                    data['html'] = "Please log in before continuing"
+
+
+            else:
+                data['html'] = 'invalid form: {}'.format(form.errors)
+                data['status'] = "error"
+        else:
+            data['html'] = 'Only use POST and make sure you are logged in'
+            data['status'] = "error"
+    except:
+        msg = oErr.get_error_message()
+        data['status'] = "error"
+        data['html'] = "Import Brysbaert error: {}".format(msg)
+ 
+    # Return the information
+    return JsonResponse(data)
 
 
 def import_docs(request):

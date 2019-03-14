@@ -73,6 +73,62 @@
 
     <!-- The normal progress reporting -->
     <div id="docs_data_import"></div>
+
+    <!-- Brysbaert uploading, if allowed -->
+    {% if superuser %}
+      <!-- Dashboard to select input file(s) and then allow downloading the results -->
+      <div id="import_brysb" class="row" >
+        <div class="col-md-9 panel panel-default">
+        <form action="{% url 'import_brysb' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+          {% csrf_token %}
+
+          <div class="row">
+            <div class="col-md-9">
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Tab-separated file to be processed:</td>
+                    <td>
+                      <span class="input-group-btn">
+                        <span class="btn btn-default btn-xs btn-file">Browse...{{frmBrysb.file_field}}</span>
+                        <!-- The file that have been selected-->
+                        <span></span>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2">
+                      <span id="brysb-import_status">&nbsp;</span>
+                      <progress class="hidden" style="width:100%;" id="brysb-import_progress" value="0" min="0" max="100"></progress>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" align="right">
+                      <a class="btn btn-sm jumbo-1"
+                         targetid="brysb_data_import"
+                         targeturl="{% url 'import_brysb' %}"
+                         syncurl="{% url 'sync_progress' %}?synctype=brysb" 
+                         onclick="ru.cesar.seeker.import_post(this);"
+                         >Start</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+          <!-- Progress -->
+          <div class="save-warning"></div>
+          <!-- Any error reporting -->
+          <div id="brysb-import_error"></div>
+        </form>
+        </div>
+      </div>
+
+      <!-- The normal progress reporting -->
+      <div id="brysb_data_import"></div>
+    {% endif %}
   </div>
 
 <script>

@@ -55,6 +55,7 @@ urlpatterns = [
     url(r'^doc/download/(?P<pk>\d+)/$', FoliaDocsDetailView.as_view(), name='docs_download'),
 
     url(r'^api/import/docs/$', cesar.doc.views.import_docs, name='import_docs'),
+    url(r'^api/import/brysb/$', cesar.doc.views.import_brysbaert, name='import_brysb'),
 
 
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),
