@@ -324,6 +324,8 @@ class FrogLink(models.Model):
                             n -= 1
                         else:
                             score += float(obj['concr'])
+                    if n < 1:
+                        n = 1
                     avg = score / n
                     sent_scores.append({'score': avg, 'n': n, 'sentence': sent.text(), 'list': word_scores})
                 # Process the results of this paragraph
@@ -452,8 +454,12 @@ class FoliaProcessor():
         try:
             # Read file into array
             lines = []
+            bFirst = True
             for line in data_contents:
                 sLine = line.decode("utf-8").strip()
+                if bFirst:
+                    sLine = sLine.replace(u'\ufeff', '')
+                    bFirst = False
                 # Change curly quotes
                 sLine = self.re_single.sub("'", sLine)
                 sLine = self.re_double.sub('"', sLine)
@@ -463,7 +469,7 @@ class FoliaProcessor():
             dir = self.dir
 
             # create a folia document with a numbered id
-            docstr = os.path.splitext( os.path.basename(filename))[0]
+            docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
             # Make sure we remember the docstr
             self.docstr = docstr
 

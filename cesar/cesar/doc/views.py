@@ -4,6 +4,7 @@ Definition of views for the DOC app.
 
 import sys
 import json
+import re
 from django import template
 from django.db import models, transaction
 from django.db.models import Q
@@ -204,6 +205,7 @@ def import_docs(request):
     data_file = ""
     bClean = False
     username = request.user.username
+    re_number = re.compile( r"^\d[.,\d]*$")
 
     # Check if the user is authenticated and if it is POST
     if request.user.is_authenticated and request.method == 'POST':
@@ -246,50 +248,59 @@ def import_docs(request):
                         # Check the extension
                         arFile = filename.split(".")
                         extension = arFile[len(arFile)-1]
-                        sBare = arFile[0]
+                        sBare = arFile[0].strip().replace(" ", "_")
 
-                        # Further processing depends on the extension
-                        oResult = None
-                        if extension == "doc" or extension == "docx" or extension == "xml":
-                            # Cannot process these
-                            oResult = {'status': 'error', 'msg': 'cannot process non-text files'}
+                        # Check the bare file name
+                        if re_number.match(sBare):
+                            # Invalid filename
+                            statuscode = "error"
+                            msg = "Please change the filename. It should start with a character."
+                            arErr.append(msg)
+                            oResult = {'status': 'error', 'msg': msg}
                         else:
-                            # Assume this is a text file: create a froglink
-                            fl, msg = FrogLink.create(name=sBare, username=username)
-                            if fl == None:
-                                # Some error occurred
+
+                            # Further processing depends on the extension
+                            oResult = None
+                            if extension == "doc" or extension == "docx" or extension == "xml":
+                                # Cannot process these
+                                oResult = {'status': 'error', 'msg': 'cannot process non-text files'}
+                            else:
+                                # Assume this is a text file: create a froglink
+                                fl, msg = FrogLink.create(name=sBare, username=username)
+                                if fl == None:
+                                    # Some error occurred
+                                    statuscode = "error"
+                                    oStatus.set("error", msg=msg)
+                                    # Break out of the for-loop
+                                    break
+                                # Read and convert into folia.xml
+                                oResult = fl.read_doc(username, data_file, filename, clamuser, clampw, arErr, oStatus=oStatus)
+                                # Possibly get the link to the owner's FoliaDocs
+                                if fd == None:
+                                    # Get the foliadocs link
+                                    fd = fl.fdocs
+
+                            # Determine a status code
+                            if oResult == None or oResult['status'] == "error" :
                                 statuscode = "error"
+                                msg = "" if oResult == None or 'msg' not in oResult else oResult['msg']
                                 oStatus.set("error", msg=msg)
                                 # Break out of the for-loop
                                 break
-                            # Read and convert into folia.xml
-                            oResult = fl.read_doc(username, data_file, filename, clamuser, clampw, arErr, oStatus=oStatus)
-                            # Possibly get the link to the owner's FoliaDocs
-                            if fd == None:
-                                # Get the foliadocs link
-                                fd = fl.fdocs
-
-                        # Determine a status code
-                        if oResult == None or oResult['status'] == "error" :
-                            statuscode = "error"
-                            msg = "" if oResult == None or 'msg' not in oResult else oResult['msg']
-                            oStatus.set("error", msg=msg)
-                            # Break out of the for-loop
-                            break
-                        else:
-                            # Indicate that the folia.xml has been created
-                            oStatus.set("working", msg="Created folia.xml file")
-                            # Next step: determine concreteness for this file
-                            bResult, msg = fl.do_concreteness()
-                            if bResult == False:
-                                arErr.append(msg)
-                                oStatus.set("error", msg=msg)
-                                statuscode = "error"
                             else:
-                                # Make sure we return the concreteness
-                                concretes.append(json.loads(fl.concr))
-                                # Show where we are
-                                statuscode = "completed"
+                                # Indicate that the folia.xml has been created
+                                oStatus.set("working", msg="Created folia.xml file")
+                                # Next step: determine concreteness for this file
+                                bResult, msg = fl.do_concreteness()
+                                if bResult == False:
+                                    arErr.append(msg)
+                                    oStatus.set("error", msg=msg)
+                                    statuscode = "error"
+                                else:
+                                    # Make sure we return the concreteness
+                                    concretes.append(json.loads(fl.concr))
+                                    # Show where we are
+                                    statuscode = "completed"
                         if oResult == None:
                             arErr.append("There was an error. No manuscripts have been added")
                         else:
