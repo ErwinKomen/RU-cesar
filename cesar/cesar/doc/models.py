@@ -2,6 +2,8 @@ import os
 import sys
 import time
 import json
+import re
+import copy
 from io import StringIO 
 from django.db import models
 from django.utils import timezone
@@ -25,7 +27,9 @@ except:
     frogurl = "https://webservices-lst.science.ru.nl/frog"
     from clam.common.client import *
 
+
 MAXPARAMLEN = 100
+MAXPATH = 256
 FROGPORT = 8020
 
 class FoliaDocs(models.Model):
@@ -47,7 +51,11 @@ class FrogLink(models.Model):
     # [1] Each froglink centers around a file that is uploaded, processed and made available
     name = models.CharField("Name to be used for this file", max_length=MAXPARAMLEN)
     # [1] Each link belongs to a set of docs (that belong to an owner)
-    docs = models.ForeignKey(FoliaDocs)
+    fdocs = models.ForeignKey(FoliaDocs, related_name="documents")
+    # [0-1] Full name is the full path of the folia.xml document on the server
+    fullname = models.CharField("Full path of this file", max_length=MAXPATH, null=True, blank=True)
+    # [0-1] Concreteness as stringified JSON object
+    concr = models.TextField("Concreteness scores", null=True, blank=True)
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
 
@@ -57,22 +65,28 @@ class FrogLink(models.Model):
     def create(name, username):
         """Possibly create a new item [name] for user [username]"""
 
-        # Get the correct user
-        owner = User.objects.filter(username=username).first()
+        errHandle = ErrHandle()
 
-        # Find a FoliaDocs instance for this user
-        fd = FoliaDocs.objects.filter(owner=owner).first()
-        if fd == None:
-            fd = FoliaDocs(owner=owner)
-            fd.save()
+        try:
+            # Get the correct user
+            owner = User.objects.filter(username=username).first()
 
-        obj = FrogLink.objects.filter(name=name).first()
-        if obj == None:
-            # Create it
-            obj = FrogLink(name=name, docs=fd)
-            obj.save()
-        # Return the result 
-        return obj
+            # Find a FoliaDocs instance for this user
+            fd = FoliaDocs.objects.filter(owner=owner).first()
+            if fd == None:
+                fd = FoliaDocs(owner=owner)
+                fd.save()
+
+            obj = FrogLink.objects.filter(name=name).first()
+            if obj == None:
+                # Create it
+                obj = FrogLink(name=name, fdocs=fd)
+                obj.save()
+            # Return the result 
+            return obj, ""
+        except:
+            errHandle.DoError("FrogLink/create")
+            return None, errHandle.get_error_message()
 
     def read_doc(self, username, data_file, filename, clamuser, clampw, arErr, xmldoc=None, sName = None, oStatus = None):
         """Import a text file, parse it through the frogger, and create a Folia.xml file"""
@@ -82,11 +96,12 @@ class FrogLink(models.Model):
         oDoc = None
         iCount = 0
         inputType = "folia"
+        frogType = "remote"     # Fix to remote -- or put to None if automatically choosing
 
         folProc = FoliaProcessor(username)
         try:
             # Check our location
-            frogLoc = folProc.location()
+            frogLoc = frogType if frogType != None else folProc.location()
 
             # Directory: one directory for each user
             dir = folProc.dir
@@ -119,6 +134,15 @@ class FrogLink(models.Model):
                             sLine = sentence.text()
                             # Process it
                             bOkay, lSent = folProc.parse_sentence(sLine, frogLoc)
+                            if not bOkay:
+                                if len(lSent) == 0:
+                                    sError = "FrogLink read_doc: unknown error"
+                                else:
+                                    sError = lSent[0]
+                                oBack['status'] = 'error'
+                                oBack['msg'] = sError
+                                return oBack
+
                             # Add the annotation to the words in the sentence
                             # Walk the tokens in the sentence and add this information
                             for idx, oWord in enumerate(sentence.words()):
@@ -141,6 +165,9 @@ class FrogLink(models.Model):
                     folia_out = folProc.basicf.replace(".basis", ".folia")
                     # Write it away
                     doc.save(folia_out)
+                    # Note where it is
+                    self.fullname = folia_out
+                    self.save()
                 elif frogLoc == "remote":
                     # Think of a project name
                     project = folProc.docstr
@@ -180,15 +207,26 @@ class FrogLink(models.Model):
                     # Now we are ready
                     for outputfile in result.output:
                         name = str(outputfile)
-                        if ".xml"  in name or ".frog.out" in name:
-                            # Download the Folia XML file to (current dir)
+                        if ".xml"  in name:
+                            # Download the Folia XML file to the user's dir
                             fout = os.path.abspath(os.path.join(dir, os.path.basename(str(outputfile))))
                             fout = fout.replace(".basis", ".folia")
                             outputfile.copy(fout)
                             iCount += 1
+
+                            # Note where it is
+                            self.fullname = fout
+                            self.save()
+
                         else:
-                            # Download the Folia XML file to (current dir)
-                            fout = os.path.abspath(os.path.join(dir, os.path.basename(str(outputfile))))
+                            # Download the other files to a log dir
+                            logdir = os.path.abspath(os.path.join(dir, "log"))
+                            if not os.path.exists(logdir):
+                                os.mkdir(logdir)
+                            elif not os.path.isdir(logdir):
+                                os.remove(logdir)
+                                os.mkdir(logdir)
+                            fout = os.path.abspath(os.path.join(logdir, os.path.basename(str(outputfile))))
                             fout = fout.replace(".basis", ".folia")
                             outputfile.copy(fout)
                             iCount += 1
@@ -213,6 +251,148 @@ class FrogLink(models.Model):
         # Return the object that has been created
         return oBack
 
+    def do_concreteness(self):
+        bResult = False
+        sMsg = ""
+        oErr = ErrHandle()
+        try:
+            # Create a regular expression to detect a content word
+            re_content = re.compile(r'^(VNW|N)$')
+            # Read the file into a doc
+            doc = folia.Document(file=self.fullname)
+            # Read through paragraphs
+            para_scores = []
+            for para in doc.paragraphs():
+                # Read sentences
+                sent_scores = []
+                for sent in para.sentences():
+                    # Read through the words
+                    word_scores = []
+                    for word in sent.words():
+                        # Get to the POS and the lemma of this word
+                        pos = word.annotation(folia.PosAnnotation)
+                        postag = pos.cls.split("(")[0]
+                        lemma = word.annotation(folia.LemmaAnnotation)                     
+                        lemmatag = lemma.cls
+                        # Check if we need to process this word (if it is a 'content' word)
+                        if re_content.match(postag):
+                            # Get the *FIRST* brysbaert equivalent if existing
+                            brys = Brysbaert.objects.filter(stimulus=lemmatag).first()
+                            if brys == None:
+                                if word.text() == "pensioenregeling":
+                                    bStop = True
+                                # Check if there are multiple morph parts
+                                morph_parts = [m.text() for m in word.morphemes()]
+                                score = -1
+                                if len(morph_parts)>0:
+                                    # There are multiple morphemes
+                                    brysb_parts = []
+                                    score = 0
+                                    for idx, m in enumerate(morph_parts):
+                                        brys = Brysbaert.objects.filter(stimulus=m).first()
+                                        if brys == None:
+                                            score = -1
+                                            break
+                                        # Add the score to the list
+                                        brysb_parts.append(brys.get_concreteness())
+                                    if score == 0:
+                                        # Determine the average
+                                        for m in brysb_parts:
+                                            score += m
+                                        score = score / len(brysb_parts)
+                                    else:
+                                        # change the 'lemmatag' to reflect the breaking up of this word into morphemes
+                                        lemmatag = "{} (={})".format(lemmatag, "-".join(morph_parts))
+                            else:
+                                # The concreteness of this word is in brys
+                                score = brys.get_concreteness()
+                            # Process the score of this content word
+                            oScore = {}
+                            oScore['word'] = word.text()
+                            oScore['pos'] = postag
+                            oScore['pos_full'] = pos.cls
+                            oScore['lemma'] = lemmatag
+                            oScore['concr'] = "NiB" if score < 0 else str(score)
+                            # Add it in all lists
+                            word_scores.append(oScore)
+
+                    # Process the results of this sentence
+                    score = 0
+                    n = len(word_scores)
+                    for obj in word_scores:
+                        if obj['concr'] == "NiB":
+                            n -= 1
+                        else:
+                            score += float(obj['concr'])
+                    avg = score / n
+                    sent_scores.append({'score': avg, 'n': n, 'sentence': sent.text(), 'list': word_scores})
+                # Process the results of this paragraph
+                score = 0
+                n = 0
+                for obj in sent_scores:
+                    score += obj['score']
+                    n += obj['n']
+                avg = score / len(sent_scores)
+                para_scores.append({'score': avg, 'n': n, 'paragraph': para.text(), 'list': sent_scores})
+
+            # Process the results of this text
+            score = 0
+            n = 0
+            for obj in para_scores:
+                score += obj['score']
+                n += obj['n']
+            avg = score / len(para_scores)
+            oText = {'text': self.name, 'score': avg, 'n': n, 'list': para_scores}
+
+            # Add the concreteness as string
+            self.concr = json.dumps(oText)
+            self.save()
+            bResult = True
+            return bResult, sMsg
+        except:
+            bResult = False
+            sMsg = oErr.get_error_message()
+            return bResult, sMsg
+
+    def get_csv(self):
+        """Convert [concr] to CSV-string with header row""" 
+
+        lCsv = []
+        oErr = ErrHandle()
+        try:
+            # Start with the header
+            oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format("par", "snt", "wrd", "text", "score", "n", "pos")
+            lCsv.append(oLine)
+            # Get the concr object
+            oConcr = json.loads(self.concr)
+            # Do paragraphs
+            for idx_p, para in enumerate(oConcr['list']):
+                # Output a line for the paragraph
+                score = "NiB" if para['score'] == "NiB" else float(para['score'])
+                oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                    idx_p+1, "(para)", "(para)", para['paragraph'], score, para['n'], "")
+                lCsv.append(oLine)
+                # Do sentences
+                for idx_s, sent in enumerate(para['list']):
+                    # Output a line for the sentence
+                    score = "NiB" if sent['score'] == "NiB" else float(sent['score'])
+                    oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                        idx_p+1, idx_s+1, "(sent)", sent['sentence'], score, sent['n'], "")
+                    lCsv.append(oLine)
+                    # Do words
+                    for idx_w, word in enumerate(sent['list']):
+                        # Output a line for the paragraph
+                        score = "NiB" if word['concr'] == "NiB" else float(word['concr'])
+                        oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                            idx_p+1, idx_s+1, idx_w+1, word['lemma'], score, 1, word['pos_full'])
+                        lCsv.append(oLine)
+            # REturn the whole
+            return "\n".join(lCsv)
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError("FrogLink get_csv")
+            return ""
+
 
 class FoliaProcessor():
     """Functions to help create or process a folia document"""
@@ -224,6 +404,8 @@ class FoliaProcessor():
     frogClient = None   
     frog = None
     doc = None
+    re_single = None
+    re_double = None
 
     def __init__(self, username):
         # Check and/or create the appropriate directory for the user
@@ -232,6 +414,9 @@ class FoliaProcessor():
             os.mkdir(dir)
         # Set the dir locally
         self.dir = dir
+        # Set regex
+        self.re_single = re.compile(u"[‘’´]")
+        self.re_double = re.compile(u"[“”]")
 
         # Check if we can create a client
         try:
@@ -268,7 +453,11 @@ class FoliaProcessor():
             # Read file into array
             lines = []
             for line in data_contents:
-                lines.append(line.decode("utf-8").strip())
+                sLine = line.decode("utf-8").strip()
+                # Change curly quotes
+                sLine = self.re_single.sub("'", sLine)
+                sLine = self.re_double.sub('"', sLine)
+                lines.append(sLine)
 
             # Check and/or create the appropriate directory for the user
             dir = self.dir
@@ -365,7 +554,7 @@ class FoliaProcessor():
         except:
             sMsg = oErr.get_error_message()
             oErr.DoError("parse_sentence")
-            return False, []
+            return False, [sMsg]
         
 
 class Brysbaert(models.Model):
@@ -392,6 +581,9 @@ class Brysbaert(models.Model):
 
     def __str__(self):
         return self.stimulus
+
+    def get_concreteness(self):
+        return self.m
 
     def find_or_create(stimulus, listnum, m, sd, ratings, responses, subjects):
         """Find existing or create new item"""

@@ -3,6 +3,7 @@ Definition of views for the DOC app.
 """
 
 import sys
+import json
 from django import template
 from django.db import models, transaction
 from django.db.models import Q
@@ -16,13 +17,14 @@ from datetime import datetime
 from cesar.settings import APP_PREFIX
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
+from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert
 from cesar.doc.forms import UploadFilesForm, UploadOneFileForm
 from cesar.utils import ErrHandle
 
 
-# Create your views here.
-def doc(request):
+# Views belonging to the Cesar Document Processing app.
+def docmain(request):
     """The main page of working with documents."""
 
     assert isinstance(request, HttpRequest)
@@ -30,11 +32,22 @@ def doc(request):
     frmUpload = UploadFilesForm()
     frmBrysb = UploadOneFileForm()
     superuser = request.user.is_superuser
+    # Get a list of already uploaded files too
+    text_list = []
+    for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)):
+        if item.concr == None or item.concr == "":
+            text_list.append(None)
+        else:
+            obj = json.loads(item.concr)
+            obj['id'] = item.id
+            # obj['download'] = reverse('docs_download', kwargs={'pk': item.id})
+            text_list.append(obj)
     context = {'title': 'Document processing',
                'frmUpload': frmUpload,
                'frmBrysb': frmBrysb,
                'superuser': superuser,
                'message': 'Radboud University CESAR',
+               'textlist': text_list,
                'year': datetime.now().year}
     return render(request, template, context)
 
@@ -160,7 +173,7 @@ def import_brysbaert(request):
                     # Get the HTML response
                     data['html'] = render_to_string(template_name, context, request)
                 else:
-                    data['html'] = "Please log in before continuing"
+                    data['html'] = "There are errors in importing Brysbaert"
 
 
             else:
@@ -176,7 +189,6 @@ def import_brysbaert(request):
  
     # Return the information
     return JsonResponse(data)
-
 
 def import_docs(request):
     """Import one or more TEXT (utf8) files that need to be transformed into FoLiA with FROG"""
@@ -201,6 +213,9 @@ def import_docs(request):
         # Create a status object
         oStatus = Status(user=username, type="docs", status="preparing", msg="please wait")
         oStatus.save()
+
+        # Other initialisations
+        concretes = []
         
         form = UploadFilesForm(request.POST, request.FILES)
         lResults = []
@@ -239,12 +254,20 @@ def import_docs(request):
                             # Cannot process these
                             oResult = {'status': 'error', 'msg': 'cannot process non-text files'}
                         else:
-                            # Assume this is a text file
-                            fl = FrogLink.create(name=sBare, username=username)
+                            # Assume this is a text file: create a froglink
+                            fl, msg = FrogLink.create(name=sBare, username=username)
+                            if fl == None:
+                                # Some error occurred
+                                statuscode = "error"
+                                oStatus.set("error", msg=msg)
+                                # Break out of the for-loop
+                                break
+                            # Read and convert into folia.xml
                             oResult = fl.read_doc(username, data_file, filename, clamuser, clampw, arErr, oStatus=oStatus)
-                            # Possibly get the FD
+                            # Possibly get the link to the owner's FoliaDocs
                             if fd == None:
-                                fd = fl.docs
+                                # Get the foliadocs link
+                                fd = fl.fdocs
 
                         # Determine a status code
                         if oResult == None or oResult['status'] == "error" :
@@ -254,7 +277,19 @@ def import_docs(request):
                             # Break out of the for-loop
                             break
                         else:
-                            statuscode = "completed"
+                            # Indicate that the folia.xml has been created
+                            oStatus.set("working", msg="Created folia.xml file")
+                            # Next step: determine concreteness for this file
+                            bResult, msg = fl.do_concreteness()
+                            if bResult == False:
+                                arErr.append(msg)
+                                oStatus.set("error", msg=msg)
+                                statuscode = "error"
+                            else:
+                                # Make sure we return the concreteness
+                                concretes.append(json.loads(fl.concr))
+                                # Show where we are
+                                statuscode = "completed"
                         if oResult == None:
                             arErr.append("There was an error. No manuscripts have been added")
                         else:
@@ -264,21 +299,26 @@ def import_docs(request):
             else:
                 oStatus.set("ready", msg="Read all files")
             # Get a list of errors
-            error_list = [str(item) for item in arErr]
+            error_list = [str(item) for item in arErr if len(str(item)) > 0]
 
             # Create the context
             context = dict(
                 statuscode=statuscode,
                 results=lResults,
                 object=fd,
+                concretes=concretes,
                 error_list=error_list
                 )
 
-            if len(arErr) == 0:
+            if len(arErr) == 0 or len(arErr[0]) == 0:
                 # Get the HTML response
                 data['html'] = render_to_string(template_name, context, request)
             else:
-                data['html'] = "Please log in before continuing"
+                lHtml = []
+                lHtml.append("There are errors in importing this doc")
+                for item in arErr:
+                    lHtml.append("<br />- {}".format(str(item)))
+                data['html'] = "\n".join(lHtml)
 
 
         else:
@@ -291,8 +331,8 @@ def import_docs(request):
     # Return the information
     return JsonResponse(data)
 
-class FoliaDocsDetailView(DetailView):
-    model = FoliaDocs
+class FoliaDocumentDetailView(DetailView):
+    model = FrogLink
     template_name = 'doc/foliadocs_view.html'
 
     def get(self, request, *args, **kwargs):
@@ -317,43 +357,39 @@ class FoliaDocsDetailView(DetailView):
             context = self.get_context_data(object=self.object)
             # Get the download type
             self.qd = request.POST
-            if 'downloadtype' in self.qd and 'downloaddata' in self.qd:
+            if 'downloadtype' in self.qd:
                 # Get the download type and the data itself
                 dtype = self.qd['downloadtype']
-                ddata = self.qd['downloaddata']
             
-                if dtype == "tree":
-                    dext = ".svg"
-                    sContentType = "application/svg"
-                elif dtype == "htable":
-                    dext = ".html"
-                    sContentType = "application/html"
-                elif (dtype == "htable-png" or dtype == "tree-png"):
-                    dext = ".png"
-                    # sContentType = "application/octet-stream"
-                    sContentType = "image/png"
-                    # Read base64 encoded part
-                    arPart = ddata.split(";")
-                    dSecond = arPart[1]
-                    # Strip off the preceding "base64," part
-                    ddata = dSecond.replace("base64,", "")
-                    # Convert string to bytestring
-                    ddata = ddata.encode()
-                    # Decode base64 into binary
-                    ddata = base64.decodestring(ddata)
-                    # Strip -png off
-                    dtype = dtype.replace("-png", "")
-
+                if dtype == "json":
+                    dext = ".json"
+                    sContentType = "application/json"
+                    # Get the ddata
+                    ddata = json.dumps(json.loads( self.object.concr), indent=2)
+                elif dtype == "tsv":
+                    dext = ".tsv"
+                    sContentType = "text/tab-separated-values"
+                    # Get the data as a CSV string
+                    ddata = self.object.get_csv()
+                elif dtype == "excel":
+                    dext = ".xlsx"
+                    sContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    # Get the data as a CSV string
+                    ddata = self.object.get_csv()
 
                 # Determine a file name
-                sBase = self.object.text.fileName
-                sIdt = self.object.identifier
-                if not sBase in sIdt:
-                    sIdt = "{}_{}".format( sBase, sIdt)
-                sFileName = "{}_{}{}".format(sIdt, dtype, dext)
+                sBase = self.object.name
+                sFileName = "{}_concreet{}".format(sBase, dext)
 
-                response = HttpResponse(ddata, content_type=sContentType)
-                response['Content-Disposition'] = 'attachment; filename="{}"'.format(sFileName)    
+                # Excel needs additional conversion
+                if dtype == "xlsx" or dtype == "excel":
+                    # Convert 'compressed_content' to an Excel worksheet
+                    response = HttpResponse(content_type=sContentType)
+                    response['Content-Disposition'] = 'attachment; filename="{}"'.format(sFileName)    
+                    response = csv_to_excel(ddata, response, delimiter="\t")
+                else:
+                    response = HttpResponse(ddata, content_type=sContentType)
+                    response['Content-Disposition'] = 'attachment; filename="{}"'.format(sFileName)    
 
             else:
                 response = self.render_to_response(context)
@@ -362,7 +398,7 @@ class FoliaDocsDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
-        context = super(FoliaDocsDetailView, self).get_context_data(**kwargs)
+        context = super(FoliaDocumentDetailView, self).get_context_data(**kwargs)
 
         # Get parameters for the search (if it is GET)
         initial = self.request.GET

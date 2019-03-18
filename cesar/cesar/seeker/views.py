@@ -193,7 +193,7 @@ def treat_bom(sHtml):
     return sHtml
 
 
-def csv_to_excel(sCsvData, response):
+def csv_to_excel(sCsvData, response, delimiter=","):
     """Convert CSV data to an Excel worksheet"""
 
     # Start workbook
@@ -203,7 +203,7 @@ def csv_to_excel(sCsvData, response):
 
     # Start accessing the string data 
     f = StringIO(sCsvData)
-    reader = csv.reader(f, delimiter=",")
+    reader = csv.reader(f, delimiter=delimiter)
 
     # Read the header cells and make a header row in the worksheet
     headers = next(reader)
@@ -212,7 +212,7 @@ def csv_to_excel(sCsvData, response):
         c.value = headers[col_num]
         c.font = openpyxl.styles.Font(bold=True)
         # Set width to a fixed size
-        ws.column_dimensions[get_column_letter(col_num+1)].width = 5.0        
+        ws.column_dimensions[get_column_letter(col_num+1)].width = 8.0        
 
     row_num = 1
     lCsv = []
@@ -223,8 +223,15 @@ def csv_to_excel(sCsvData, response):
         # oRow = {}
         for idx, cell in enumerate(row):
             c = ws.cell(row=row_num, column=idx+1)
-            c.value = row[idx]
+            # attempt to see this as a float
+            cell_value = row[idx]
+            try:
+                cell_value = float(cell_value)
+            except ValueError:
+                pass
+            c.value = cell_value
             c.alignment = openpyxl.styles.Alignment(wrap_text=False)
+
     # Save the result in the response
     wb.save(response)
     return response

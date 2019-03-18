@@ -51,8 +51,8 @@ urlpatterns = [
     url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
     url(r'^text/syntax/download/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='syntax_download'),
 
-    url(r'^doc/main/$', cesar.doc.views.doc, name='doc_main'),
-    url(r'^doc/download/(?P<pk>\d+)/$', FoliaDocsDetailView.as_view(), name='docs_download'),
+    url(r'^doc/main/$', cesar.doc.views.docmain, name='doc_main'),
+    url(r'^doc/download/(?P<pk>\d+)/$', FoliaDocumentDetailView.as_view(), name='docs_download'),
 
     url(r'^api/import/docs/$', cesar.doc.views.import_docs, name='import_docs'),
     url(r'^api/import/brysb/$', cesar.doc.views.import_brysbaert, name='import_brysb'),
