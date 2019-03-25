@@ -367,6 +367,11 @@ class FrogLink(models.Model):
             lCsv.append(oLine)
             # Get the concr object
             oConcr = json.loads(self.concr)
+            # Process measures for the text as a whole
+            score = "NiB" if oConcr['score'] == "NiB" else float(oConcr['score'])
+            oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                "(text)", "(text)", "(text)", "(the whole text)", score, oConcr['n'], "")
+            lCsv.append(oLine)
             # Do paragraphs
             for idx_p, para in enumerate(oConcr['list']):
                 # Output a line for the paragraph
