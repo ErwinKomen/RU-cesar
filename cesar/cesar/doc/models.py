@@ -252,12 +252,30 @@ class FrogLink(models.Model):
         return oBack
 
     def do_concreteness(self):
+        rules = [   {'pos': 'ADJ'},
+                    {'pos': 'N'},
+                    {'pos': 'WW', 'lemma_excl': ['hebben', 'zijn', 'zullen', 'willen', 'worden', 'moeten', 'mogen', 'kunnen', 'laten', 'doen']} ]
         bResult = False
         sMsg = ""
         oErr = ErrHandle()
+
+        def treat_word(posonly, posfull, lemma):
+            """Check if this category must be included"""
+            bFound = False
+            for rule in rules:
+                if 'pos' in rule and rule['pos'] == posonly:
+                    # Continue
+                    if 'lemma_excl' in rule:
+                        bFound = lemma not in rule['lemma_excl']
+                    else:
+                        bFound = True
+                    # Whatever the outcome, we have found our result now
+                    break
+            return bFound
+
         try:
             # Create a regular expression to detect a content word
-            re_content = re.compile(r'^(VNW|N)$')
+            # re_content = re.compile(r'^(VNW|N)$')
             # Read the file into a doc
             doc = folia.Document(file=self.fullname)
             # Read through paragraphs
@@ -275,7 +293,8 @@ class FrogLink(models.Model):
                         lemma = word.annotation(folia.LemmaAnnotation)                     
                         lemmatag = lemma.cls
                         # Check if we need to process this word (if it is a 'content' word)
-                        if re_content.match(postag):
+                        # OLD: if re_content.match(postag):
+                        if treat_word(postag, pos, lemmatag):
                             # Get the *FIRST* brysbaert equivalent if existing
                             brys = Brysbaert.objects.filter(stimulus=lemmatag).first()
                             if brys == None:
