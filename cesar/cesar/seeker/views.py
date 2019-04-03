@@ -35,7 +35,7 @@ from cesar.seeker.models import *
 from cesar.seeker.models import SIMPLENAME
 from cesar.seeker.convert import decompressSafe, get_crpp_date
 from cesar.browser.models import Part, Corpus, Sentence
-from cesar.browser.views import get_item_list, adapt_search
+from cesar.browser.views import get_item_list, adapt_search, user_is_ingroup
 from cesar.browser.services import get_crpp_sent_info
 from cesar.seeker.services import crpp_dbget
 from cesar.settings import APP_PREFIX
@@ -4539,11 +4539,17 @@ def research_oview(request, object_id=None):
     #   or editing the existing project
     return render(request, template, context)
 
-def get_partlist():
+def get_partlist(request):
     """Get a list of Part elements + first/last information"""
 
+    # Longdale check
+    longdale_user = user_is_ingroup(request, "longdale_user")
     # REtrieve the correct queryset, sorted on the correct levels
-    qs = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
+    if longdale_user:
+        qs = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
+    else:
+        longdale = "Longdale"
+        qs = [prt for prt in Part.objects.exclude(Q(name__istartswith=longdale)).order_by('corpus__lng', 'corpus__name', 'name')]
     # Start the output
     html = []
     # Initialize the variables whose changes are important
@@ -4583,7 +4589,7 @@ def research_edit(request, object_id=None):
         intro_breadcrumb = "[{}]".format(obj.name)
         sTargetType = obj.targetType
         # Since this has gone well, provide the context to the user with a list of corpora to explore
-        part_list = get_partlist()
+        part_list = get_partlist(request)
         # Also provide a set of search options
         # search_type = ['all', 'first n', 'random n']
         search_type = [ {'name': 'all', 'value': 'all'},
@@ -4747,7 +4753,7 @@ def research_simple(request):
             targettype=sTargetType,
             search_type = search_type,
             search_count = search_count,
-            part_list=get_partlist(),
+            part_list=get_partlist(request),
             partchoice = partchoice,
             error_list=error_list
             )

@@ -34,6 +34,7 @@ paginateSize = 10
 paginateEntries = 20
 paginateSentences = 30
 paginateValues = (1000, 500, 250, 100, 50, 40, 30, 20, 10, )
+bDebug = True
 
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
@@ -140,6 +141,30 @@ def adapt_htable(oHtable):
     # Return the result
     return oHtable
 
+def user_is_authenticated(request):
+    # Is this user authenticated?
+    username = request.user.username
+    user = User.objects.filter(username=username).first()
+    return user.is_authenticated()
+
+def user_is_ingroup(request, sGroup):
+    # Is this user part of the indicated group?
+    username = request.user.username
+    user = User.objects.filter(username=username).first()
+    # glist = user.groups.values_list('name', flat=True)
+
+    # Only look at group if the user is known
+    if user == None:
+        glist = []
+    else:
+        glist = [x.name for x in user.groups.all()]
+
+        # Only needed for debugging
+        if bDebug:
+            ErrHandle().Status("User [{}] is in groups: {}".format(user, glist))
+    # Evaluate the list
+    bIsInGroup = (sGroup in glist)
+    return bIsInGroup
 
 def home(request):
     """Renders the home page."""
@@ -149,7 +174,8 @@ def home(request):
     template_name = 'index.html'
     # Define the initial context
     context =  {'title':'RU-Cesar','year':datetime.now().year,
-            'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+                'is_longdale_user': user_is_ingroup(request, 'longdale_user'),
+                'pfx': APP_PREFIX,'site_url': admin.site.site_url}
     # Create the list of news-items
     lstQ = []
     lstQ.append(Q(status='val'))
@@ -164,7 +190,7 @@ def contact(request):
     return render(
         request,
         'contact.html',
-        {
+        {   'is_longdale_user': user_is_ingroup(request, 'longdale_user'),
             'title':'Contact',
             'message':'Henk van den Heuvel',
             'year':datetime.now().year,
@@ -177,7 +203,7 @@ def more(request):
     return render(
         request,
         'more.html',
-        {
+        {   'is_longdale_user': user_is_ingroup(request, 'longdale_user'),
             'title':'More',
             'year':datetime.now().year,
         }
@@ -189,7 +215,7 @@ def about(request):
     return render(
         request,
         'about.html',
-        {
+        {   'is_longdale_user': user_is_ingroup(request, 'longdale_user'),
             'title':'About',
             'message':'Radboud University CESAR utility.',
             'year':datetime.now().year,
@@ -202,6 +228,7 @@ def short(request):
     assert isinstance(request, HttpRequest)
     template = 'short.html'
     context = {'title': 'Short overview',
+               'is_longdale_user': user_is_ingroup(request, 'longdale_user'),
                'message': 'Radboud University CESAR short intro',
                'year': datetime.now().year}
     return render(request, template, context)
@@ -248,6 +275,7 @@ def sync_crpp(request):
     """Synchronize information FROM /crpp"""
 
     assert isinstance(request, HttpRequest)
+
     # Gather info
     context =  { 'title':'Sync-Crpp',
             'message':'Radboud University CESAR utility.',
@@ -1106,8 +1134,16 @@ class TextListView(ListView):
     def get_partlist(self):
         """Get a list of Part elements + first/last information"""
 
+        # Longdale check
+        longdale_user = user_is_ingroup(self.request, "longdale_user")
         # REtrieve the correct queryset, sorted on the correct levels
-        qs = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
+        if longdale_user:
+            qs = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
+        else:
+            longdale = "Longdale"
+            qs = [prt for prt in Part.objects.exclude(Q(name__istartswith=longdale)).order_by('corpus__lng', 'corpus__name', 'name')]
+        # REtrieve the correct queryset, sorted on the correct levels
+        # qs = [prt for prt in Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')]
         # Start the output
         html = []
         # Initialize the variables whose changes are important

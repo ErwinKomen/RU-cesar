@@ -112,6 +112,10 @@
                               <li><a href="{% url 'text_list' %}?part=2&format=80">ICLE-CZ</a></li>
                               <li><a href="{% url 'text_list' %}?part=3&format=81">ICLE-NL</a></li>
                               <li><a href="{% url 'text_list' %}?part=4&format=82">ICLE-EN</a></li>
+                              {% if is_longdale_user %}
+                                <li role="separator" class="divider"></li>
+                                <li><a href="{% url 'text_list' %}?part=4&format=82">ICLE-EN</a></li>
+                              {% endif %}
                             </ul>
                           </li>
                           <li role="separator" class="divider"></li>
