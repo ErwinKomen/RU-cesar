@@ -133,7 +133,9 @@ def process_cmdi_directory(oArgs):
     # Defaults
     dirInput = ""
     flOutput = ""
+    col_offset = 3          # Number of columns that are not used for text file information
     path_list = []
+    stat_list = []          # Number of occurrances per path
     text_list_list = []
 
     try:
@@ -153,6 +155,7 @@ def process_cmdi_directory(oArgs):
 
         # Signal the first file to be processed, which takes care of the list of paths
         bIsFirst = True
+        count = 0
         # Process all cmdi.xml files in this directory
         for file in os.listdir(base_dir):
             # Check the ending of this file
@@ -163,6 +166,8 @@ def process_cmdi_directory(oArgs):
                     input_file = os.path.abspath( os.path.join(base_dir, file))
 
                     cmdi_xml = open_xml(input_file)
+                    # Keep track of the count of files
+                    count += 1
 
                     # Process this CMDI file into two lists
                     tags, texts = parse_node(cmdi_xml)
@@ -178,11 +183,21 @@ def process_cmdi_directory(oArgs):
                         path_list = copy.copy(tags)
                         text_list = copy.copy(texts)
                         # Fill the first column
+                        # - And also: Initialize the statistics (counts) for the paths
                         column = 1
                         for idx, path in enumerate(path_list):
                             row = 2 + idx
                             cell_this = ws.cell(row=row, column=column)
                             cell_this.value = path
+                            stat_list.append(0)
+
+                        # Set headers for special columns 1,2,3
+                        ws.cell(row=1, column=1).value = "Path"
+                        ws.cell(row=1, column=2).value = "Count"
+                        ws.cell(row=1, column=3).value = "OfTotal"
+
+                        # Now initialize the column to the offset
+                        column = col_offset
 
                     else:
                         # This is not the first file, so process all paths and values
@@ -197,6 +212,13 @@ def process_cmdi_directory(oArgs):
                             else:
                                 # Add the corresponding text
                                 text_list.append(texts[idx])
+                        # Now check if there are any paths in [tags] that do not occur in [path_list]
+                        for idx, path in enumerate(tags):
+                            if not path in path_list:
+                                # Add the path in that list
+                                path_list.append(path)
+                                # Add the text
+                                text_list.append(texts[idx])
                     # In all instances: add the values of this file to a new column
                     column += 1
                     row = 1 
@@ -206,7 +228,12 @@ def process_cmdi_directory(oArgs):
                         row = 2 + idx
                         cell_this = ws.cell(row=row, column=column)
                         cell_this.value = value
-                    # Adapt the grand total
+                        # If this value is not an empty string "", then adapt the statistics for this path
+                        if value != "":
+                            stat_list[idx] += 1
+
+                    # Adapt the list of text_list instances
+                    # TODO: this may be deleted in future
                     text_list_list.append(text_list)
 
 
@@ -217,22 +244,15 @@ def process_cmdi_directory(oArgs):
                         print("The program has been aborted")
                         break
 
+        # Perform statistics for the whole file
+        for idx, value in enumerate(path_list):
+            row = 2 + idx
+            ws.cell(row=row, column=2).value = stat_list[idx]
+            ws.cell(row=row, column=3).value =count
+
         # Save it
         wb.save(flOutput)
-        ## Create the output CSV
-        #lines = []
-        #for idx, value in enumerate(path_list):
-        #    line = []
-        #    line.append(value)
-        #    for item in text_list_list:
-        #        line.append(item[idx])
-        #    linestring = "{}\n".format( "\t".join(line))
-        #    lines.append(linestring)
 
-        ## Save the output XLSX file
-        #with open(flOutput, 'wb') as output:
-        #    for line in lines:
-        #        output.write(line.encode('utf-8'))
         print("Ready")
         return True
     except:
@@ -256,7 +276,7 @@ def main(prgName, argv) :
         # get all the arguments
         try:
             # Get arguments and options
-            opts, args = getopt.getopt(argv, "hi:o:", ["-idir="])
+            opts, args = getopt.getopt(argv, "hi:o:l:", ["-idir=", "-odir="])
         except getopt.GetoptError:
             print(sSyntax)
             sys.exit(2)
@@ -283,6 +303,7 @@ def main(prgName, argv) :
         # Continue with the program
         errHandle.Status('Input directory is "' + dirInput + '"')
         errHandle.Status('Output file is "' + flOutput + '"')
+        errHandle.Status("Local is {}".format(bLocal))
 
         # Call the function that does the job
         oArgs = {'input': dirInput,
