@@ -2119,7 +2119,7 @@ var ru = (function ($, ru) {
           //$('tr.add-row a').first().click(ru.cesar.seeker.tabular_addrow);
           $("tr.add-row").each(function () {
             $(this).find("a").first().unbind('click').click(ru.cesar.seeker.tabular_addrow);
-          });
+          }); 
           $(".delete-row").unbind("click");
           $('tr td a.delete-row').click(ru.cesar.seeker.tabular_deleterow);
           $('.inline-group > div > a.btn').click(function () {
