@@ -157,13 +157,13 @@ def process_cmdi_directory(oArgs):
         bIsFirst = True
         count = 0
         # Process all cmdi.xml files in this directory
-        for file in os.listdir(base_dir):
+        for file in os.listdir(dirInput):
             # Check the ending of this file
             if ".cmdi.xml" in file:
 
                 # Try to open the file
                 try:
-                    input_file = os.path.abspath( os.path.join(base_dir, file))
+                    input_file = os.path.abspath( os.path.join(dirInput, file))
 
                     cmdi_xml = open_xml(input_file)
                     # Keep track of the count of files
