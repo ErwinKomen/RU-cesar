@@ -10,11 +10,13 @@
 
                 {% for p in page_obj.paginator.page_range %}
           
-                   {% if p < page_obj.number|add:"6" and  p > page_obj.number|add:"-6" %}
-                   <li {% ifequal p page_obj.number %}class='active'{% endifequal %}>
-                   <a onclick="{{page_function}}( {{ p }}, '{{formdiv}}');">{{p}}</a>
-                   </li>
-                   {% endif %}
+                  {% if not page_obj.has_previous or p != 1 %}
+                    {% if p < page_obj.number|add:"6" and  p > page_obj.number|add:"-6" %}
+                    <li {% ifequal p page_obj.number %}class='active'{% endifequal %}>
+                    <a onclick="{{page_function}}( {{ p }}, '{{formdiv}}');">{{p}}</a>
+                    </li>
+                    {% endif %}
+                  {% endif %}
          
                 {% endfor %}
   
