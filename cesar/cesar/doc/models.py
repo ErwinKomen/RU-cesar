@@ -17,9 +17,13 @@ from xml.dom import minidom
 
 # FOlia handling: pynlpl
 import pynlpl
-from pynlpl.formats import folia
+# from pynlpl.formats import folia
 from pynlpl.textprocessors import tokenize, split_sentences
 from pynlpl.clients.frogclient import FrogClient
+
+# New folia: FOliaPy
+import folia.main as folia
+
 
 # Attempt to input FROG
 try:
@@ -222,7 +226,7 @@ class FrogLink(models.Model):
                             self.save()
 
                             # Bugfix because of new libfolia version
-                            self.folia_annotation_reduction()
+                            # self.folia_annotation_reduction()
 
                         else:
                             # Download the other files to a log dir
