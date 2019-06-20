@@ -12,6 +12,9 @@ from cesar.utils import ErrHandle
 from cesar.seeker.models import import_data_file
 from cesar.settings import WRITABLE_DIR
 
+# XML processing
+from xml.dom import minidom
+
 # FOlia handling: pynlpl
 import pynlpl
 from pynlpl.formats import folia
@@ -218,6 +221,9 @@ class FrogLink(models.Model):
                             self.fullname = fout
                             self.save()
 
+                            # Bugfix because of new libfolia version
+                            self.folia_annotation_reduction()
+
                         else:
                             # Download the other files to a log dir
                             logdir = os.path.abspath(os.path.join(dir, "log"))
@@ -250,6 +256,38 @@ class FrogLink(models.Model):
 
         # Return the object that has been created
         return oBack
+
+    def folia_annotation_reduction(self):
+        """Remove annotation layers that are not recognized by the current FoLiA"""
+
+        oErr = ErrHandle()
+        bOkay = True
+        try:
+            # (1) Read the file as XML
+            fullname = self.fullname
+            xmldoc = minidom.parse(fullname)
+            # (2) find the <annotations>
+            ndAnnot_list = xmldoc.getElementsByTagName("annotations")
+            remove_list = []
+            if ndAnnot_list.length > 0:
+                annotations = ndAnnot_list[0]
+                for annotation in annotations.childNodes:
+                    if annotation.nodeType == minidom.Node.ELEMENT_NODE:
+                        if annotation.tagName == "quote-annotation" or annotation.tagName == "alternative-annotation":
+                            # Mark this one as one to be removed
+                            remove_list.append(annotation)
+            for item in reversed(remove_list):
+                annotations.removeChild(item)
+            # Save the result
+            with open(fullname, "w", encoding="utf-8") as f:
+                xmldoc.writexml(f)
+        except:
+            sError = oErr.get_error_message()
+            oErr.DoError("folia_annotation_reduction")
+            bOkay = False
+
+        # Return okay
+        return bOkay
 
     def do_concreteness(self):
         rules = [   {'pos': 'ADJ'},
