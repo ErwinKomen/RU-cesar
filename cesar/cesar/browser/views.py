@@ -181,6 +181,8 @@ def home(request):
     lstQ.append(Q(status='val'))
     newsitem_list = NewsItem.objects.filter(*lstQ).order_by('-saved', '-created')
     context['newsitem_list'] = newsitem_list
+    # Make sure we add special group permission(s)
+    context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
     # Render and return the page
     return render(request, template_name, context)
 

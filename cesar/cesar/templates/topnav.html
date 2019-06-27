@@ -147,6 +147,11 @@
                         <li><a href="{% url 'crpp' %}">Update from /crpp</a></li>
                         <li role="separator" class="divider"></li>
                         <li><a href="{% url 'doc_main' %}">Documents</a></li>
+                        {% if is_in_tsg %}
+                        <!-- Specific TSG matters -->
+                          <li role="separator" class="divider"></li>
+                          <li><a href="{% url 'tsg_list' %}">TSG</a></li>
+                        {% endif %}
                       </ul>
                     </li>
                 </ul>

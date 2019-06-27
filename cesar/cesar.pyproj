@@ -79,6 +79,13 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="cesar\seeker\__init__.py" />
+    <Compile Include="cesar\tsg\admin.py" />
+    <Compile Include="cesar\tsg\apps.py" />
+    <Compile Include="cesar\tsg\migrations\__init__.py" />
+    <Compile Include="cesar\tsg\models.py" />
+    <Compile Include="cesar\tsg\tests.py" />
+    <Compile Include="cesar\tsg\views.py" />
+    <Compile Include="cesar\tsg\__init__.py" />
     <Compile Include="cesar\utils.py" />
     <Compile Include="cesar\viewer\admin.py" />
     <Compile Include="cesar\viewer\apps.py" />
@@ -121,6 +128,10 @@
     <Folder Include="cesar\seeker\templates\seeker\" />
     <Folder Include="cesar\templates\" />
     <Folder Include="cesar\templates\admin\" />
+    <Folder Include="cesar\tsg\" />
+    <Folder Include="cesar\tsg\migrations\" />
+    <Folder Include="cesar\tsg\templates\" />
+    <Folder Include="cesar\tsg\templates\tsg\" />
     <Folder Include="cesar\viewer\" />
     <Folder Include="cesar\viewer\templates\" />
     <Folder Include="cesar\viewer\templates\viewer\" />
@@ -254,6 +265,8 @@
     <Content Include="cesar\templates\topnav.html" />
     <Content Include="cesar\seeker\templates\index.html" />
     <Content Include="cesar\templates\admin\base.html" />
+    <Content Include="cesar\tsg\templates\tsg\tsghandle_list.html" />
+    <Content Include="cesar\tsg\templates\tsg\tsg_main.html" />
     <Content Include="cesar\viewer\templates\index.html" />
     <Content Include="codemeta.json" />
     <Content Include="requirements.txt" />

@@ -1,0 +1,66 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">    
+    <h3>Handles used by TSG-Radboud</h3>
+
+    <div>
+      <p>For information on the API, see the <a href="https://doc.pidconsortium.eu/guides/overview/" target="_blank">European Persistent Identifier Consortium</a></p>
+    </div>
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- TSG-Handles overview -->
+    <div id="tsg_handles" class="row">
+      <div class="panel panel-default">
+        <table class="func-view" style="width: 100%;">
+          <thead>
+            <tr>
+              <th>#</th>
+              {% for hd in order_heads %}
+                <th class="sortable" scope="col">
+                  <div class="text">
+                    {% if hd.order == "" %}{{hd.name}}
+                    {% else %}
+                    <a href=?{{hd.order}}>{{hd.name}}</a>
+                    {% endif %}
+                  </div>
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in object_list %}
+              <tr>
+                <td valign="top">{{forloop.counter}}</td>
+                <td valign="top" title="{{item.full_handle}}" class="tdnowrap"><a href="{{item.full_handle}}" target="_blank">{{item.code}}</a></td>
+                <td valign="top" style="width: 100%;"><a href="{{item.url}}" target="_blank">{{item.url}}</a></td>
+                <td valign="top" class="tdnowrap">{{item.created|date:"j/b/o G:i"}}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  ru.cesar.seeker.init_events();
+</script>
+
+{% endblock content %}
+

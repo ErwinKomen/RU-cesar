@@ -307,3 +307,6 @@ ModelManifest.xml
 /anon/__pycache__
 /cesar/cesar/doc/migrations
 /cesar/cesar/doc/__pycache__
+/cesar/cesar/tsg/migrations/__pycache__
+/cesar/cesar/tsg/migrations
+/cesar/cesar/tsg/__pycache__
