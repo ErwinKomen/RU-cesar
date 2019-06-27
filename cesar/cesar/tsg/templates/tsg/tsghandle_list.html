@@ -22,7 +22,15 @@
         </span>
       </div>
       <div class="col-sm-4 right">
-        <span class="pull-right"><a role="button" class="btn jumbo-3" onclick="ru.cesar.seeker.main_show_hide({ 'recalculate': true });" href="{% url 'tsg_sync' %}">Re-calculate</a></span>
+        <!-- Adding a handle-->
+        <span id="add_tsg_handle">
+          <a class="btn btn-xs jumbo-1" role="button"><span class="glyphicon glyphicon-plus"></span>Add a handle</a>
+        </span>
+
+        <!-- Synchronization -->
+        <span class="pull-right">
+          <a role="button" class="btn btn-xs jumbo-3" onclick="ru.cesar.seeker.main_show_hide({ 'recalculate': true });" href="{% url 'tsg_sync' %}">Re-calculate</a>
+        </span>
       </div>
     </div>
     <div class="row">&nbsp;</div>
@@ -65,14 +73,22 @@
                     </div>
                   </th>
                 {% endfor %}
+                <!-- Action button(s) -->
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {% for item in object_list %}
                 <tr>
                   <td valign="top" title="{{item.full_handle}}" class="tdnowrap"><a href="{{item.full_handle}}" target="_blank">{{item.code}}</a></td>
-                  <td valign="top" style="width: 100%;"><a href="{{item.url}}" target="_blank">{{item.url}}</a></td>
-                  <td valign="top" class="tdnowrap">{{item.created|date:"j/b/o G:i"}}</td>
+                  <td valign="top" style="width: 100%;" class="clickable"><a href="{{item.url}}" target="_blank">{{item.url}}</a></td>
+                  <td valign="top" class="tdnowrap" align="right">{{item.created|date:"j/b/o G:i"}}</td>
+                  <!-- Room for action buttons -->
+                  <td>
+                    <a class="view-mode btn btn-xs jumbo-1" href="{% url 'tsg_details' item.id %}">
+                      <span class="glyphicon glyphicon-pencil" title="Edit this handle definition"></span>
+                    </a>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>

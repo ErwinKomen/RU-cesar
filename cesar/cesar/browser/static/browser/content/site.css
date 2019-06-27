@@ -1011,3 +1011,10 @@ select {
     min-height: 21px;
     height: auto;
 }
+
+table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, div.clickable:hover {
+  cursor: pointer;
+}
+table tbody tr td.clickable:hover, table tbody tr.clickable td:hover {
+  background-color: lightgoldenrodyellow ;
+}

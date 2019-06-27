@@ -223,3 +223,8 @@ class TsgHandleListView(ListView):
 
         # Return what we found
         return qs
+
+
+class TsgHandleDetails(DetailView):
+    model = TsgHandle
+    template_name = 'tsg/tsghandle_details.html'
