@@ -61,6 +61,7 @@ urlpatterns = [
     url(r'^tsg/handle/sync', cesar.tsg.views.tsgsync, name='tsg_sync'),
     url(r'^tsg/handle/list', TsgHandleListView.as_view(), name='tsg_list'),
     url(r'^tsg/handle/details(?:/(?P<pk>\d+))?/$', TsgHandleDetails.as_view(), name='tsg_details'),
+    url(r'^tsg/handle/edit(?:/(?P<pk>\d+))?/$', TsgHandleEdit.as_view(), name='tsg_edit'),
 
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),
     url(r'^seek/wizard/new/$', cesar.seeker.views.research_edit, name='seeker_define'),

@@ -1018,3 +1018,12 @@ table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, div.clicka
 table tbody tr td.clickable:hover, table tbody tr.clickable td:hover {
   background-color: lightgoldenrodyellow ;
 }
+
+/* TSG specific */
+td.editable, span.editable {
+  cursor: pointer;
+}
+td.editable:hover, span.editable:hover {
+  background-color: lightyellow;
+  color: darkgreen;
+}

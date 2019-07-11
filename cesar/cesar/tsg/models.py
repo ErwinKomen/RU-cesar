@@ -5,6 +5,13 @@ from cesar.utils import ErrHandle
 
 MAXPARAMLEN = 100
 
+def get_crpp_date(dtThis):
+    """Convert datetime to string"""
+
+    # Model: yyyy-MM-dd'T'HH:mm:ss
+    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+    return sDate
+
 class TsgInfo(models.Model):
     """Each instance contains a bit of information that can be used by the TSG"""
 
@@ -50,6 +57,8 @@ class TsgHandle(models.Model):
     created = models.DateTimeField(default=timezone.now)
     # [1] Handle history as stringified JSON object
     history = models.TextField("History", default = "[]")
+    # [0-1] Notes on this particular handle (if needed)
+    notes = models.TextField("Notes", blank=True, null=True)
 
     def __str__(self):
         return self.code
@@ -79,3 +88,80 @@ class TsgHandle(models.Model):
     def exists(code):
         obj = TsgHandle.objects.filter(code=code).first()
         return (obj != None)
+
+    def get_info(self, section = None):
+        oResponse = {}
+        method = "new"
+        if section == None:
+            oResponse['section'] = 'plain'
+            oResponse['data'] = json.loads(self.info)
+        else:
+            lst_info = json.loads(self.info)
+            section = section.lower()
+            for obj_info in lst_info:
+                if obj_info['type'].lower() == section:
+                    if method == "old":
+                        # We have the right section
+                        if section == "url" or section == "inst":
+                            response = "{}, {}, privs={}: {}".format(
+                                 obj_info['idx'], obj_info['timestamp'], obj_info['privs'], obj_info['parsed_data'])
+                        elif section == "hs_admin":
+                            # Process the parsed data
+                            parsed = obj_info['parsed_data']
+                            lData = []
+                            for k,v in parsed.items():
+                                if k == "perms": 
+                                    for k2, v2 in v.items():
+                                        lData.append("{}={}".format(k2,v2))
+                                else:
+                                    lData.append("{}={}".format(k,v))
+                            sData = ", ".join(lData)
+                            response = "{}, idx {}, privs={}: {}".format(
+                                 obj_info['timestamp'], obj_info['idx'], obj_info['privs'], sData)
+                    else:
+                        # Get basic information
+                        oResponse['section'] = section
+                        oResponse['idx'] = obj_info['idx']
+                        oResponse['privs'] = obj_info['privs']
+                        oResponse['timestamp'] = obj_info['timestamp']
+                        if section == "url" or section == "inst":
+                            oResponse['data'] = obj_info['parsed_data']
+                        elif section == "hs_admin":
+                            # Process the parsed data
+                            parsed = obj_info['parsed_data']
+                            lData = []
+                            for k,v in parsed.items():
+                                if k == "perms": 
+                                    for k2, v2 in v.items():
+                                        lData.append("{}={}".format(k2,v2))
+                                else:
+                                    lData.append("{}={}".format(k,v))
+                            sData = ", ".join(lData)
+                            oResponse['data'] = sData
+
+                    # Now break away
+                    break
+        return oResponse
+
+    def get_info_all(self):
+        """Get the information from all three sections"""
+        sections = ["URL", "INST", "HS_ADMIN"]
+        lResponse = []
+        for section in sections:
+            lResponse.append(self.get_info(section))
+        return lResponse
+
+    def get_info_url(self):
+        """Get the [URL] section of the information"""
+        return self.get_info("URL")
+
+    def get_info_inst(self):
+        """Get the [INST] section of the information"""
+        return self.get_info("INST")
+
+    def get_info_admin(self):
+        """Get the [HS_ADMIN] section of the information"""
+        return self.get_info("HS_ADMIN")
+
+    def get_history(self):
+        return json.loads(self.history)
