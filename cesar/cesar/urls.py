@@ -16,6 +16,8 @@ from cesar.browser.forms import *
 from cesar.seeker.views import *
 from cesar.doc.views import *
 from cesar.tsg.views import *
+# The CesarLingo application
+from cesar.lingo.views import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
@@ -36,7 +38,15 @@ admin.site.site_title = "CESAR Admin"
 pfx = APP_PREFIX
 
 urlpatterns = [
-    # Examples:
+    # Cesar lingo:
+    url(r'^lingo$', cesar.lingo.views.home, name='lingo_home'),
+    url(r'^lingo/about', cesar.lingo.views.about, name='lingo_about'),
+    url(r'^lingo/experiment/list', ExperimentListView.as_view(), name='exp_list'),
+    url(r'^lingo/experiment/details(?:/(?P<pk>\d+))?/$', ExperimentDetails.as_view(), name='exp_details'),
+    url(r'^lingo/experiment/edit(?:/(?P<pk>\d+))?/$', ExperimentEdit.as_view(), name='exp_edit'),
+    url(r'^lingo/experiment/do/(?P<pk>\d+)', ExperimentDo.as_view(), name='exp_do'),
+
+    # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),
     url(r'^contact$', cesar.browser.views.contact, name='contact'),
     url(r'^more$', cesar.browser.views.more, name='more'),

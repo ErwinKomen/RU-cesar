@@ -1,0 +1,127 @@
+﻿{% extends "lingo/layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'lingo_home' %}">Home</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">    
+    <h3>Linguistic experiments</h3>
+
+    <div class="row">
+      <div class="col-sm-6">For information on the experiments, contact the Dutch department.</div>
+      <div class="col-sm-2">
+        <span id="recalculate" class="hidden">
+          <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+        </span>
+      </div>
+      <div class="col-sm-4 right">
+        <!-- Adding an experiment -->
+        <span id="add_experiment" class="pull-right">
+          <a class="btn btn-xs jumbo-3" role="button"><span class="glyphicon glyphicon-plus"></span>Add an experiment</a>
+        </span>
+      </div>
+    </div>
+    <div class="row">&nbsp;</div>
+
+    <!-- Room for errors -->
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    {% if object_list %}
+      {% if is_paginated > 0 %}
+        <!-- Top pagination-->
+        <div class="row">
+          <div class="col-sm-4"><span>Number of experiments: </span><b>{{entrycount}}</b></div>
+          <div class="col-sm-8 right">
+          <span class="step-links pull-right">
+
+          {% include 'pagination.html' %}
+
+          </span>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- TSG-Handles overview -->
+      <div id="tsg_handles">
+        <div class="panel panel-default">
+          <table class="table table-hover" style="width: 100%;">
+            <thead>
+              <tr>
+                {% for hd in order_heads %}
+                  <th class="sortable" scope="col">
+                    <div class="text">
+                      {% if hd.order == "" %}{{hd.name}}
+                      {% else %}
+                      <a href=?{{hd.order}}>{{hd.name}}</a>
+                      {% endif %}
+                    </div>
+                  </th>
+                {% endfor %}
+                <!-- Action button(s) -->
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in object_list %}
+                <tr>
+                  <td valign="top" class="clickable tdnowrap">{{item.home}}</td>
+                  <td valign="top" title="{{item.msg}}" style="width: 100%;">{{item.title}}</td>
+                  <td valign="top" class="tdnowrap" align="right">{{item.created|date:"j/b/o G:i"}}</td>
+                  <!-- Room for action buttons -->
+                  <td class="tdnowrap">
+                    <a class="view-mode btn btn-xs jumbo-1" href="{% url 'exp_details' item.id %}">
+                      <span class="glyphicon glyphicon-pencil" title="Edit this experiment"></span>
+                    </a>
+                    <a class="view-mode btn btn-xs jumbo-3" href="{% url 'exp_do' item.id %}">
+                      <span class="glyphicon glyphicon-play-circle" title="Start this experiment"></span>
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+      {% if is_paginated %}
+        <!-- Bottom pagination -->
+        <div class="row">
+          <div class="col-sm-4"></div>
+          <div class="col-sm-8">
+            <span class="step-links pull-right">
+
+            {% include 'pagination.html' %}
+
+            </span>
+            </div>
+        </div>
+      {% endif %}
+    {% else %}
+      <p>No current experiments are available.</p>
+      {% if error_msg %}
+      <p>There are no experiments, because there is an error:</p>
+      <code>{{error_msg}}</code>
+      {% endif %}
+    {% endif %}
+
+
+  </div>
+
+<script>
+  ru.cesar.lingo.init_events();
+</script>
+
+{% endblock content %}
+

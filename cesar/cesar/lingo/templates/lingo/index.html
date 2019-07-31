@@ -1,0 +1,62 @@
+{% extends "lingo/layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<div class="container body-content">
+  <div class="jumbotron" style="max-height: 180px;">
+      <h1>
+        <span>CESAR-LINGO</span>
+        <span class="pull-right">
+          <a href="{% url 'lingo_about' %}" class="btn btn-primary btn-large">Learn more &raquo;</a>
+        </span>
+      </h1>
+      <p class="lead">
+        <span>The Cesar-Lingo web application is a platform that facilitates language experiments using questionnaires.</span>
+        
+      </p>
+  </div>
+
+  <div class="row">
+      <div class="col-md-6 bgimg">
+          <h2>Current experiments</h2>
+          {% for item in experiment_list %}
+            <div class="panel panel-default">
+              <div class="panel-heading collapsed" data-toggle="collapse" data-target="#news-item-{{item.id}}">
+                <span>{{item.title}}</span>
+                <span>
+                  <a class="btn btn-sm jumbo-2"
+                     role="button"
+                     title="Go to the experiment"
+                     href="{% url 'exp_do' item.id %}">
+                     <span class="glyphicon glyphicon-play-circle" aria-hidden="true"></span></a>
+                </span>
+                <span class="pull-right" style="font-size: smaller;">
+                  {% if item.saved %}
+                    <i>{{item.saved|date:"j/b/o"}}</i>
+                  {% else %}
+                    <i>{{item.created|date:"j/b/o"}}</i>
+                  {% endif %}
+                </span>
+              </div>
+              <div class="collapse newsitem" id="news-item-{{item.id}}">
+                {{item.msg|safe}}
+              </div>
+            </div>
+          {% endfor %}
+      </div>
+      <div class="col-md-6">
+        <h2>Getting started</h2>
+        <p>
+          The CESAR-LINGO application has been designed by the Technical Service Group of the Humanities Lab at the Radboud University Nijmegen.
+          Users directed to this page are not required to sign up or sign in. They can freely join in any experiment that has been 'released' by the makers.
+        </p>
+        <p>
+          {% if user.is_authenticated %}
+          (See the <b>Extra</b> menu for logout and other options)
+          {% endif %}
+        </p>
+      </div>
+  </div>
+</div>
+{% endblock %}

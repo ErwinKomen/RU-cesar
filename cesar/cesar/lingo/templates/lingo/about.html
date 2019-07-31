@@ -1,0 +1,44 @@
+﻿{% extends "layout.html" %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+<div class="container body-content">
+  <div class="row">
+
+    <h2>{{ title }}</h2>
+
+    <div class="col-md-6">
+      <p>The CESAR-LINGO program has been developed by the Technical Service Group of the Radboud University's Humanities Lab</p>
+    </div>
+    <div class="col-md-6">
+      <p>
+      </p>
+      <p>
+        The source code of CesarLingo is available at <a href="https://github.com/ErwinKomen/RU-cesar">github</a>.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <h4>References</h4>
+      <div class="citation">
+        Komen, Erwin R. 2013. “Corpus Databases with Feature Pre-Calculation.” 
+        The Twelfth Workshop on Treebanks and Linguistic Theories (TLT12). 
+        Bulgary. <a href="http://erwinkomen.ruhosting.nl/doc/2013_CorpusDbases_TLT12.pdf">pdf</a>.
+      </div>
+      <div class="citation">
+        Komen, Erwin R. 2017. “Beyond Counting Syntactic Hits.” 
+        In <i>CLARIN in the Low Countries</i>, edited by J. Odijk and Hessen, A. van. Netherlands: Ubiquity press.
+        <a href="https://www.ubiquitypress.com/site/chapters/10.5334/bbi.21/download/1037/">pdf</a>.
+      </div>
+      <div class="citation">
+          Komen, Erwin R., and Jet Hoek. 2018. <i>Automatic Coherence Analysis for the Computationally Challenged</i>. http://clin28.cls.ru.nl.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

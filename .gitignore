@@ -310,3 +310,10 @@ ModelManifest.xml
 /cesar/cesar/tsg/migrations/__pycache__
 /cesar/cesar/tsg/migrations
 /cesar/cesar/tsg/__pycache__
+/cesar/cesar/lingo/migrations
+/cesar/cesar/lingo/static/lingo/content/bootstrap.min.css
+/cesar/cesar/lingo/static/lingo/scripts/respond.js
+/cesar/cesar/lingo/static/lingo/scripts/modernizr-2.6.2.js
+/cesar/cesar/lingo/static/lingo/scripts/jquery-1.10.2.js
+/cesar/cesar/lingo/static/lingo/scripts/bootstrap.js
+/cesar/cesar/lingo/__pycache__

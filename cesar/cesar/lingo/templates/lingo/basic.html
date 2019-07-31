@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'lingo/content/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'lingo/content/ru-base.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'lingo/content/ru-form.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'lingo/content/ru-widgets.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'lingo/content/site.css' %}" />
+    <script src="{% static 'lingo/scripts/modernizr-2.6.2.js' %}"></script>
+    <script src="{% static 'lingo/scripts/jquery-1.10.2.js' %}"></script>
+    <script src="{% static 'lingo/scripts/bootstrap.js' %}"></script>
+    <script src="{% static 'lingo/scripts/respond.js' %}"></script>
+    <script src="{% static 'browser/scripts/cesar.js' %}"></script>
+    <script src="{% static 'lingo/scripts/cesar.lingo.js' %}"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-108165780-4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-108165780-4');
+    </script>
+{% block scripts %}{% endblock %}
+</head>
+
+<body>
+{% load i18n %}
+{% block topnav %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+    <div class="container-fluid body-content">
+
+{% block content %}{% endblock %}
+
+        <hr/>
+    </div>
+  <div>
+        <footer>
+            <span>CESAR-LINGO v1.0.0 &copy; 2019 </span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <span>Developed at: <a href="http://cls.ru.nl">Radboud University Nijmegen</a></span>
+        </footer>
+
+  </div>
+
+</body>
+</html>

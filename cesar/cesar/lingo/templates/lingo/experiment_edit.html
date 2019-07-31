@@ -1,0 +1,96 @@
+﻿{% load i18n %}
+
+<!-- Information on this specific handle -->
+<form>
+  {% csrf_token %}
+  <table class="experiment-details">
+    <!-- Row to indicate editing, if possible -->
+    {% if is_in_tsg %}
+      <tr>
+        <td colspan="2"  class="ms editable table">
+          <!-- Provide the necessary buttons: edit, cancel and save -->
+          <a mode="edit" class="view-mode btn btn-xs jumbo-1">
+            <span class="glyphicon glyphicon-pencil" title="Edit these data"></span>
+          </a>
+          <a mode="cancel" class="edit-mode btn btn-xs jumbo-2 hidden">
+            <span class="glyphicon glyphicon-arrow-left" title="Cancel (do *NOT* save)"></span>
+          </a>
+          <a mode="save" class="edit-mode btn btn-xs jumbo-1 hidden" targetid="" oldtargetid="exp_edit"
+              targeturl="{% if expForm.instance.id %}{% url 'exp_edit' expForm.instance.id %}{% else %}{% url 'exp_edit' %}{% endif %}" >
+            <span class="glyphicon glyphicon-ok" title="Save these data">&nbsp;Save</span>
+          </a>
+
+          <!-- Waiting symbol-->
+          <span class="waiting glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+
+          <!-- Little error message room -->
+          <span id="experiment_err_msg" class="err-msg"></span>
+
+          <!-- Put the delete button completely to the right-->
+          <a mode="delete" class="edit-mode btn btn-xs jumbo-3 pull-right" 
+              targetid="" oldtargetid="exp_edit"
+              targeturl="{% if expForm.instance.id %}{% url 'exp_edit' expForm.instance.id %}{% endif %}">
+            <span class="glyphicon glyphicon-remove" title="Delete this Experiment"></span>
+          </a>
+        </td>
+      </tr>
+    {% endif %}
+
+    <!-- The title of this experiment-->
+    <tr class="form-row">
+      <td class="hoverable" valign="top"  style="min-width: 150px;">Title</td>
+      <td  style="width: 100%;">
+        <div class="view-mode">{{expForm.title.value}}</div>
+        {% if is_in_tsg %}
+          <div class="edit-mode hidden">{{expForm.title}}</div>
+        {% endif %}
+      </td>
+    </tr>
+    <!-- The home 'page' of this experiment-->
+    <tr class="form-row">
+      <td class="hoverable" valign="top"  style="min-width: 150px;">Home</td>
+      <td  style="width: 100%;">
+        <div class="view-mode">{{expForm.home.value}}</div>
+        {% if is_in_tsg %}
+          <div class="edit-mode hidden">{{expForm.home}}</div>
+        {% endif %}
+      </td>
+    </tr>
+    <!-- The explanatory message of this experiment -->
+    <tr class="form-row">
+      <td class="hoverable" valign="top"  style="min-width: 150px;">Message</td>
+      <td  style="width: 100%;">
+        <div class="view-mode">{% if expForm.instance.msg %}{{expForm.instance.get_msg_markdown|safe}}{% else %}-{% endif %}</div>
+        {% if is_in_tsg %}
+          <div class="edit-mode hidden">{{expForm.msg}}</div>
+        {% endif %}
+      </td>
+    </tr>
+
+    <!-- Informed consent for this experiment -->
+    <tr class="form-row">
+      <td class="hoverable" valign="top"  style="min-width: 150px;">Informed consent</td>
+      <td  style="width: 100%;">
+        <div class="view-mode">{% if expForm.instance.consent %}{{expForm.instance.get_consent_markdown|safe}}{% else %}-{% endif %}</div>
+        {% if is_in_tsg %}
+          <div class="edit-mode hidden">{{expForm.consent}}</div>
+        {% endif %}
+      </td>
+    </tr>
+
+    <!-- Only show the Created and the Status when it is not a new instance -->
+    <tr class="form-row edit-notnew">
+      <td class="hoverable" valign="top" style="min-width: 150px;">Created</td>
+      <td  style="width: 100%;">
+        <div class="any-mode">{{expForm.instance.created|date:"j/b/o G:i"}}</div>
+      </td>
+    </tr>
+    <tr class="form-row edit-notnew">
+      <td class="hoverable" valign="top" style="min-width: 150px;">Status</td>
+      <td  style="width: 100%;">
+        <div class="any-mode">{{expForm.instance.get_status_display}}</div>
+      </td>
+    </tr>
+
+  </table>
+</form>

@@ -1,0 +1,54 @@
+﻿{% load staticfiles %}
+
+    <div class="navbar navbar-custom navbar-fixed-top">
+        <div class="container" url_home="{% url 'lingo_home' %}">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="{% url 'lingo_home' %}" class="navbar-brand">CesarLingo
+                [{% if user.is_authenticated %} {{user.username}} {% else %} (not logged in) {% endif %}]                
+                </a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    {% if is_in_tsg %}
+                      <li><a href="{% url 'definitions' %}">Definitions</a></li>
+                    {% endif %}
+
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
+                         aria-haspopup="true" aria-expanded="false">Experiment<span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                          <li><a href="{% url 'exp_list' %}">List</a></li>
+                      </ul>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
+                         aria-haspopup="true" aria-expanded="false">Extra... <span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        <li><a href="{% url 'lingo_about' %}">About</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                        <li><a href="{% static 'browser/content/CesarManual.pdf' %}" target="_blank">Manual (pdf)</a></li>
+                        {% if user.is_authenticated %}
+                          <form id="logoutForm" action="{% url 'logout' %}" method="post" class="navbar-right">
+                              {% csrf_token %}
+                          </form>
+                          <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
+                          <li><a href="{% url 'admin:password_change' %}">Change password</a></li>
+                        {% else %}
+                          <li><a href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a></li>
+                          <li><a href="{% url 'signup' %}">Sign up</a></li>
+                        {% endif %}
+                      </ul>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+    </div>

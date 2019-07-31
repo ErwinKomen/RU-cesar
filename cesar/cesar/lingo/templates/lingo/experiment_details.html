@@ -1,0 +1,55 @@
+﻿{% extends "lingo/layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'lingo_home' %}">Home</a>
+      &rsaquo; <a href="{% url 'exp_list' %}">Experiment List</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <div>
+
+    {% if authenticated %}
+      <!-- Upper part of the Experiment details interface -->
+      <div class="panel panel-default">
+        <div class="row">&nbsp;</div>
+        <div class="row">
+          <!-- Possibility to go back-->
+          <div class="col-md-1">
+            <a class="btn jumbo-1" 
+               href="{{prevpage}}"
+               title="Return to the list of Experiments">&lt;&lt;</a>
+          </div>
+
+          <!-- Actual contents -->
+          <div class="col-md-10">
+
+            <h3>General information</h3>
+
+            <!-- Experiment Main information -->
+            <div id="tsghandle_edit">
+              <!-- Note: the correct 'pk' is available in [expForm] -->
+              {% include 'lingo/experiment_edit.html' %}
+            </div>
+
+          </div>
+
+        </div>
+        <!-- Empty row -->
+        <div class="row">&nbsp;</div>
+      </div>
+    {% else %}
+      <div class="explanation">
+        <p>Dear user, you are <b>not</b> logged in.</p>
+        <p>Unfortunately this means that you will not be able to see Lingo Experiment details.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    ru.cesar.lingo.init_events();
+  </script>
+{% endblock content %}
