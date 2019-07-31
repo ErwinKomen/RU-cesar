@@ -18,3 +18,18 @@ class ExperimentForm(ModelForm):
                  'msg':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;'}),
                  'consent':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;'})
                  }
+
+
+class ParticipantForm(ModelForm):
+
+    class Meta:
+        model = Participant
+        fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'edu']
+        widgets={'ptcpid':      forms.TextInput(attrs={'style': 'width: 20%;', 'placeholder':'Your participant ID'}),
+                 'age':         forms.TextInput(attrs={'style': 'width: 20%;', 'placeholder':'Age (number)'}),
+                 'gender':      forms.Select(),
+                 'engfirst':    forms.Select(),
+                 'lngfirst':    forms.TextInput(attrs={'style': 'width: 50%;', 'placeholder':'Your first language'}),
+                 'lngother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'List other languages you know'}),
+                 'edu':         forms.Select()
+                 }

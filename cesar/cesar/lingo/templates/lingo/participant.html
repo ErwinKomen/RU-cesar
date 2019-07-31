@@ -1,0 +1,61 @@
+﻿{% load i18n %}
+
+<!-- storage place for the participant ID -->
+<div class="hidden">
+  <input id="participant_id" name="participant_id" value="{{participant_id}}" />  
+</div>
+
+<form id="surveyForm" class="survey-form qpart" action="">
+  {% csrf_token %}
+
+	<h3>Please answer the following questions</h3>
+
+  <!-- participant detail: ptcpid-->
+  <div class="form-group row">
+    <div class="col-md-4" align="right">What is your Participant ID?</div>
+    <div class="col-md-8" align="left">{{ptcpForm.ptcpid}}</div>
+  </div>
+
+  <!-- participant detail: age -->
+  <div class="form-group row">
+    <div class="col-md-4" align="right">What is your age?</div>
+    <div class="col-md-8" align="left">{{ptcpForm.age}}</div>
+  </div>
+
+  <!-- participant detail: gender -->
+  <div class="form-group row">
+    <div class="col-md-4" align="right">Your gender</div>
+    <div class="col-md-8" align="left">{{ptcpForm.gender}}</div>
+  </div>
+
+  <!-- participant detail: English first -->
+  <div class="form-group row">
+    <div class="col-md-4" align="right">Is English your first language?</div>
+    <div class="col-md-8" align="left">{{ptcpForm.engfirst}}</div>
+  </div>
+
+  <!-- participant detail: First language -->
+  <div class="form-group row">
+    <div class="col-md-4" align="right">What is your first language?</div>
+    <div class="col-md-8" align="left">{{ptcpForm.lngfirst}}</div>
+  </div>
+
+  <!-- participant detail: Other L -->
+  <div class="form-group row">
+    <div class="col-md-4" align="right">Which other languages do you know?</div>
+    <div class="col-md-8" align="left">{{ptcpForm.lngother}}</div>
+  </div>
+
+  <!-- participant detail: education -->
+  <div class="form-group row">
+    <div class="col-md-4" align="right">What is your highest level of education?</div>
+    <div class="col-md-8" align="left">{{ptcpForm.edu}}</div>
+  </div>
+
+	<div id="warning" style="color: darkred;" class="warning"></div>
+	<a role="button" id="surveyButton" 
+          class="btn qpart surveyButton post-submit"
+          button_action="questions"
+          targeturl="{% url 'participant' %}"
+          targetid="participant_form">Continue</a>
+</form>

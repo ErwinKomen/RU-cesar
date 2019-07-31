@@ -2192,11 +2192,130 @@ var ru = (function ($, ru) {
           // Action after declining
           $(".declineButton").unbind("click").click(function () { ru.cesar.lingo.exp_button_action("decline"); });
 
-          // What to do when the user presses the 'surveyButton': the button 
-          $(".surveyButton").unbind("click").click(function () { ru.cesar.lingo.exp_button_action("participant_info"); });
+
+
+          // See if there are any post-loads to do
+          $(".post-load").each(function (idx, value) {
+            var targetid = $(this),
+                data = [],
+                targeturl = $(targetid).attr("targeturl");
+
+            // Only do this on the first one
+            if (idx === 0) {
+              // Load this one with a GET action
+              $.get(targeturl, data, function (response) {
+                // Remove the class
+                $(targetid).removeClass("post-load");
+
+                // Action depends on the response
+                if (response === undefined || response === null || !("status" in response)) {
+                  private_methods.errMsg("No status returned");
+                } else {
+                  switch (response.status) {
+                    case "ok":
+                      // Show the result
+                      $(targetid).html(response['html']);
+                      // Call initialisation again
+                      ru.cesar.lingo.init_lingo();
+                      break;
+                    case "error":
+                      // Show the error
+                      if ('msg' in response) {
+                        $(targetid).html(response.msg);
+                      } else {
+                        $(targetid).html("An error has occurred");
+                      }
+                      break;
+                  }
+                }
+
+              });
+            }
+          });
+
+          // Prepare any post-submit buttons
+          $(".post-submit").unbind("click").click(ru.cesar.lingo.submit_post);
 
         } catch (ex) {
           private_methods.errMsg("init_lingo", ex);
+        }
+      },
+
+      /**
+       * submit_post
+       *    submit a form
+       * 
+       * @param {type} el
+       */
+      submit_post: function (el) {
+        var targetid = "",
+            frm = null,
+            data = [],
+            lHtml = [],
+            i = 0,
+            warning = null,
+            button_action = "",
+            targeturl = null;
+
+
+        try {
+          // Possibly correct [el]
+          if (el !== undefined && "currentTarget" in el) { el = el.currentTarget; }
+
+          // Get the targetid and targeturl
+          targetid = $(el).attr("targetid");
+          targeturl = $(el).attr("targeturl");
+          button_action = $(el).attr("button_action");
+
+          // Get the form
+          frm = $(el).closest("form");
+          // Get the data
+          data = frm.serializeArray();
+
+          // Only do this on the first one
+          if (targetid !== undefined && targetid !== "") {
+            // Try to get the form with data
+            targetid = "#" + targetid;
+            // Try to locate the warning
+            warning = $(targetid).find(".warning").first();
+            // Load this one with a POST action
+            $.post(targeturl, data, function (response) {
+
+              // Action depends on the response
+              if (response === undefined || response === null || !("status" in response)) {
+                private_methods.errMsg("No status returned");
+              } else {
+                switch (response.status) {
+                  case "ok":
+                    // Show the result
+                    $(targetid).html(response['html']);
+                    // Call initialisation again
+                    ru.cesar.lingo.init_lingo();
+                    // Continue with a following action, if that is defined
+                    if (button_action !== "") {
+                      ru.cesar.lingo.exp_button_action(button_action);
+                    }
+                    break;
+                  case "error":
+                    // Show the error
+                    if ('msg' in response) {
+                      $(warning).html(response.msg);
+                    } else if ('error_list' in response) {
+                      lHtml.push("Errors: ");
+                      lHtml.push(response.error_list[0]);
+                      $(warning).html(lHtml.join("\n"));
+                    } else {
+                      $(warning).html("An error has occurred");
+                    }
+                    break;
+                }
+              }
+
+            });
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("submit_post", ex);
         }
       },
 
@@ -2207,6 +2326,8 @@ var ru = (function ($, ru) {
        * @param {type} button_name
        */
       exp_button_action: function (button_name) {
+        var participant_id = "";
+
         try {
           if (button_name !== undefined && button_name != "") {
             switch (button_name) {
@@ -2218,7 +2339,18 @@ var ru = (function ($, ru) {
               case "decline":
                 alert("You have decided to not participate in this experiment. Should you change your mind and decide to participate, you can reload this page or click the link from Amazon Mechanical Turk again.");
                 break;
-              case "participant_info":
+              case "questions":
+                // Start with the questions
+                $(".qpart").addClass("hidden");
+                // Show the first of the text questions
+                $(".tpart").removeClass("hidden");
+
+                // Get the participant id
+                participant_id = $("#participant_id").val();
+
+                window.scroll(0, 0);
+                break;
+              case "participant_info_old":
                 var mQ = $("[name=mTurkID]").val();
                 var ageQ = $("input[name=age]").val();
                 var genderQ = $("[name=gender]:checked").length;

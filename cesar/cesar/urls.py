@@ -45,6 +45,7 @@ urlpatterns = [
     url(r'^lingo/experiment/details(?:/(?P<pk>\d+))?/$', ExperimentDetails.as_view(), name='exp_details'),
     url(r'^lingo/experiment/edit(?:/(?P<pk>\d+))?/$', ExperimentEdit.as_view(), name='exp_edit'),
     url(r'^lingo/experiment/do/(?P<pk>\d+)', ExperimentDo.as_view(), name='exp_do'),
+    url(r'^lingo/experiment/participant(?:/(?P<pk>\d+))?/$', ParticipantDetails.as_view(), name='participant'),
 
     # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),

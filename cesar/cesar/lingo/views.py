@@ -23,7 +23,7 @@ from django.utils import timezone
 from cesar.settings import APP_PREFIX
 from cesar.utils import ErrHandle
 from cesar.lingo.models import *
-from cesar.lingo.forms import ExperimentForm
+from cesar.lingo.forms import ExperimentForm, ParticipantForm
 
 # Debugging for certain functions in this views.py
 bDebug = True
@@ -978,6 +978,7 @@ class ExperimentDo(LingoDetails):
         instance = self.object
         context['consent'] = instance.get_consent_markdown()
 
+
         # The page to return to
         context['prevpage'] = reverse("exp_list")
 
@@ -1042,3 +1043,19 @@ class ExperimentEdit(BasicLingo):
 
             # Signal that saving is needed
             return False    # Change into "TRUE" if changes are made
+
+
+class ParticipantDetails(BasicLingo):
+    MainModel = Participant
+    template_name = 'lingo/participant.html'
+    title = "Participant"
+    form_objects = [{'form': ParticipantForm, 'prefix': 'ptcp', 'readonly': False}]
+
+    def add_to_context(self, context):
+        # make sure to add the ID for this participant to what we return
+        context['participant_id'] = ""
+        if 'instance' in self.form_objects[0]:
+            instance = self.form_objects[0]['instance']
+            if instance != None:
+                context['participant_id'] = instance.id
+        return context
