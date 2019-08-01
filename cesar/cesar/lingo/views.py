@@ -49,7 +49,10 @@ def user_is_authenticated(request):
     # Is this user authenticated?
     username = request.user.username
     user = User.objects.filter(username=username).first()
-    return user.is_authenticated()
+    if user == None:
+        return False
+    else:
+        return user.is_authenticated()
 
 def user_is_ingroup(request, sGroup):
     # Is this user part of the indicated group?
@@ -630,7 +633,9 @@ class LingoDetails(DetailView):
         data = {'status': 'ok', 'html': '', 'statuscode': ''}
         # always do this initialisation to get the object
         self.initializations(request, pk)
-        if not request.user.is_authenticated:
+        okay = request.user.is_authenticated
+        okay = True
+        if not okay:
             # Do not allow to get a good response
             if self.rtype == "json":
                 data['html'] = "(No authorization)"
@@ -886,7 +891,10 @@ class ExperimentListView(ListView):
 
     def render_to_response(self, context, **response_kwargs):
 
-        if not self.request.user.is_authenticated:
+        authenticated = self.request.user.is_authenticated
+        criterion = True    
+        # criterion = authenticated
+        if not criterion:
             # Do not allow to get a good response
             return nlogin(self.request)
         # Make sure the correct URL is being displayed

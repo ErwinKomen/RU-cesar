@@ -12,7 +12,7 @@
 {% block content %}
   <div>
 
-    {% if authenticated %}
+    {% if authenticated %} {% endif %}
       <!-- Upper part of the Experiment details interface -->
       <div class="panel panel-default">
         <div class="row">&nbsp;</div>
@@ -41,6 +41,8 @@
         <!-- Empty row -->
         <div class="row">&nbsp;</div>
       </div>
+
+    {% if authenticated %}
     {% else %}
       <div class="explanation">
         <p>Dear user, you are <b>not</b> logged in.</p>

@@ -22,10 +22,12 @@
         </span>
       </div>
       <div class="col-sm-4 right">
+        {% if is_in_tsg %}
         <!-- Adding an experiment -->
         <span id="add_experiment" class="pull-right">
           <a class="btn btn-xs jumbo-3" role="button"><span class="glyphicon glyphicon-plus"></span>Add an experiment</a>
         </span>
+        {% endif %}
       </div>
     </div>
     <div class="row">&nbsp;</div>
@@ -80,9 +82,11 @@
                   <td valign="top" class="tdnowrap" align="right">{{item.created|date:"j/b/o G:i"}}</td>
                   <!-- Room for action buttons -->
                   <td class="tdnowrap">
+                    {% if is_in_tsg %}
                     <a class="view-mode btn btn-xs jumbo-1" href="{% url 'exp_details' item.id %}">
                       <span class="glyphicon glyphicon-pencil" title="Edit this experiment"></span>
                     </a>
+                    {% endif %}
                     <a class="view-mode btn btn-xs jumbo-3" href="{% url 'exp_do' item.id %}">
                       <span class="glyphicon glyphicon-play-circle" title="Start this experiment"></span>
                     </a>
