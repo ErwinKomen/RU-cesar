@@ -203,6 +203,7 @@ class BasicLingo(View):
     formset_objects = []    # List of formsets to be processed
     previous = None         # Return to this
     bDebug = False          # Debugging information
+    need_authentication = True
     data = {'status': 'ok', 'html': ''}       # Create data to be returned    
     
     def post(self, request, pk=None):
@@ -211,7 +212,7 @@ class BasicLingo(View):
 
         # Explicitly set the status to OK
         self.data['status'] = "ok"
-        
+
         if self.checkAuthentication(request):
             # Build the context
             context = dict(object_id = pk, savedate=None)
@@ -536,7 +537,7 @@ class BasicLingo(View):
       
     def checkAuthentication(self,request):
         # first check for authentication
-        if not request.user.is_authenticated:
+        if self.need_authentication and not request.user.is_authenticated:
             # Simply redirect to the home page
             self.data['html'] = "Please log in to work on this project"
             return False
@@ -1029,6 +1030,7 @@ class ExperimentEdit(BasicLingo):
     title = "Experiment"
     afternewurl = ""
     prefix = "exp"
+    need_authentication = False
     form_objects = [{'form': ExperimentForm, 'prefix': prefix, 'readonly': False}]
 
     def add_to_context(self, context):
@@ -1057,6 +1059,7 @@ class ParticipantDetails(BasicLingo):
     MainModel = Participant
     template_name = 'lingo/participant.html'
     title = "Participant"
+    need_authentication = False
     form_objects = [{'form': ParticipantForm, 'prefix': 'ptcp', 'readonly': False}]
 
     def add_to_context(self, context):
