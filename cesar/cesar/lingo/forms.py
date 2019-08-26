@@ -33,3 +33,18 @@ class ParticipantForm(ModelForm):
                  'lngother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'List other languages you know'}),
                  'edu':         forms.Select()
                  }
+
+
+class AnswerForm(forms.Form):
+    # The ID of the Participant (assigned by the Django system)
+    ptcp_id = forms.CharField(label="Participant id", max_length=100)
+    # A number of different answers
+    answer1 = forms.CharField(label="Answer1", max_length=255)
+    answer2 = forms.CharField(label="Answer2", max_length=255)
+    answer3 = forms.CharField(label="Answer3", max_length=255)
+    answer4 = forms.CharField(label="Answer4", max_length=255)
+    answer5 = forms.CharField(label="Answer5", max_length=255)
+    answer6 = forms.CharField(label="Answer6", max_length=255)
+    answer7 = forms.CharField(label="Answer7", max_length=255)
+    answer8 = forms.CharField(label="Answer8", max_length=255)
+    answer9 = forms.CharField(label="Answer9", max_length=255)

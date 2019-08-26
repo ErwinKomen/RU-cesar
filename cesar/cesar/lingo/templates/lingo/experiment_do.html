@@ -35,17 +35,97 @@
 <div class="participantArea qpart {% if consent %}hidden{% endif %}">
 
   <!-- This is where the participant form will be loaded-->
-  <div id="participant_form" class="post-load" targeturl="{% url 'participant' %}"></div>
+  <div id="participant_form" class="post-load" targeturl="{% url 'participant' participant_id %}"></div>
 
 </div>
 
 <!-- Include all experiment parts -->
 <div class="questionArea tpart hidden">
   Questions...
-  {% for exp_part in exp_parts %}
+  <form>
+    {% for exp_part in exp_parts %}
+      <div class="questionItem hidden">
+        <!-- The two texts-->
+        <div class="row">
+          <!-- Left text -->
+          <div class="col-md-6" style="background-color: lightyellow;">
+            <h3>Tekst 1</h3>
+            <p>{{exp_part.left}}</p>
+          </div>
+          <!-- Right text -->
+          <div class="col-md-6" style="background-color: lightyellow;">
+            <h3>Tekst 2</h3>
+            <p>{{exp_part.right}}</p>
+          </div>
+        </div>
 
+        <!-- The response form-->
+        <div class="col-row">
+          <div class="col-md-8 col-md-offset-2" style="background-color: lightgreen;">
+            <!-- Instructions -->
+            <h4>(1) Lees beide teksten, (2) Beantwoord de vragen, (3) Druk op 'Volgende tekst'</h4>
 
-  {% endfor %}
+            <!-- Status -->
+            <p>{{forloop.counter0}} van de {{exp_parts|length}} vragen beantwoord.</p>
+
+            <!-- For this particular answer -->
+            <div class="hidden">
+              <input type="text" name="qans-{{forloop.counter0}}-answer1" value="{{participant_id}}" />
+            </div>
+
+            <!-- Vragen over de teksten -->
+            <table>
+              <!-- Topic of text #1 -->
+              <tr>
+                <td>Tekst 1 ging over {{exp_part.left_topic}}</td>
+                <td>
+                  <div class="radio">
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="Yes" />Ja</label>
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="No" />Nee</label>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Topic of text #2 -->
+              <tr>
+                <td>Tekst 2 ging over {{exp_part.right_topic}}</td>
+                <td>
+                  <div class="radio">
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="Yes" />Ja</label>
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="No" />Nee</label>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Which text is better -->
+              <tr>
+                <td>Welke tekst is beter te begrijpen?</td>
+                <td>
+                  <div class="radio">
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text1" />Tekst 1 (links)</label>
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text2" />Tekst 2 (richts)</label>
+                  </div>
+                </td>
+              </tr>
+            </table>
+            <p></p>
+
+          </div>
+        </div>
+
+      </div>
+    {% endfor %}
+
+    <!-- The submit button for all of the answers -->
+    <div class="questionSubmit hidden">
+      <button type="button" title="Alle antwoorden inleveren en laten verwerken">Inleveren</button>
+    </div>
+  </form>
+
+  <!-- Response area when the answers are handed in correctly -->
+  <div class="questionConfirm hidden">
+    <p>Hartelijk dank! Uw antwoorden zijn verwerkt.</p>
+  </div>
 </div>
 
 

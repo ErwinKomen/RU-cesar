@@ -40,9 +40,20 @@ class ExperimentAdmin(admin.ModelAdmin):
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
         }
 
+class QdataAdmin(admin.ModelAdmin):
+    """Display and edit [Question Data] definitions"""
+
+    fields = ['experiment', 'qmeta', 'qtext']
+    list_display = ['experiment', 'qmeta']
+    search_fields = ['qmeta']
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
+        }
+
 
 # Models that serve others
 admin.site.register(FieldChoice, FieldChoiceAdmin)
 
 # Models for Cesar Lingo
 admin.site.register(Experiment, ExperimentAdmin)
+admin.site.register(Qdata, QdataAdmin)

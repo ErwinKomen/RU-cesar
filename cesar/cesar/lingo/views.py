@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.db.models.functions import Lower
+from django.forms import formset_factory, inlineformset_factory
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -18,12 +19,13 @@ from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
 from datetime import datetime
 import pytz
+import random
 from django.utils import timezone
 
 from cesar.settings import APP_PREFIX
 from cesar.utils import ErrHandle
 from cesar.lingo.models import *
-from cesar.lingo.forms import ExperimentForm, ParticipantForm
+from cesar.lingo.forms import ExperimentForm, ParticipantForm, AnswerForm
 
 # Debugging for certain functions in this views.py
 bDebug = True
@@ -966,6 +968,8 @@ class ExperimentDo(LingoDetails):
     prefix_type = "simple"
     title = "ExperimentDo"
     rtype = "html"
+    NUM_RESPONSES = 10
+    AnswerFormset = formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
 
     def get_context_data(self, **kwargs):
         # Get the initial context
@@ -987,6 +991,45 @@ class ExperimentDo(LingoDetails):
         instance = self.object
         context['consent'] = instance.get_consent_markdown()
 
+        # Make sure the participant id is passed on
+        participant = Participant()
+        participant.save()
+        context['participant_id'] = participant.id
+
+        context['exp_data'] = None
+        # Provide data based on 'home' field of experiment
+        if instance.home == "tcpf":
+            # Create a formset for the answer forms
+            formset = AnswerFormset()
+            context['answer_formset'] = formset
+            # Get a list of texts
+            qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext' )
+            if len(qs_texts) == 25:
+                # Create data: 20 random texts from the 25
+                text_selection = random.sample(list(qs_texts), 20)
+                # NOTE: compare the first ten with the second ten
+                # Create a list of text combinations
+                combi_list = []
+                for idx in range(NUM_RESPONSES):
+                    left = text_selection[idx]
+                    right = text_selection[idx+10]
+                    # Create and fill a combi object
+                    combi = {}
+                    # 1: left part
+                    combi['left_id'] = left['id']
+                    combi['left'] = left['qtext']
+                    combi['left_topic'] = left['qtopic']
+                    # 2: right part
+                    combi['right_id'] = right['id']
+                    combi['right'] = right['qtext']
+                    combi['right_topic'] = left['qtopic']
+                    # 3: Add the form from the formset
+                    form = formset[idx]
+                    combi['form'] = form
+                    # Add this to the combi=list
+                    combi_list.append(combi)
+                # Make the combi list available
+                context['exp_parts'] = combi_list
 
         # The page to return to
         context['prevpage'] = reverse("exp_list")

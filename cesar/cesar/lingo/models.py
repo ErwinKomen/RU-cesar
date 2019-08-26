@@ -233,23 +233,43 @@ class Experiment(models.Model):
         return response
 
 
+class Qdata(models.Model):
+    """Question data for a particular experiment"""
+
+    # [0-1] Metadata (e.g. text name or question number)
+    qmeta = models.TextField("Question metadata", blank=True, default = "")
+    # [0-1] The question data
+    qtext = models.TextField("Question data", blank=True, default = "")
+    # [0-1] Topic of the text
+    qtopic = models.CharField("Topic", max_length=255, blank=True, default = "")
+    # [0-1] Correct response for this topic
+    qcorr = models.CharField("Topic response", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "")
+    # [1] The experiment
+    experiment = models.ForeignKey(Experiment)
+
+    def __str__(self):
+        return self.qmeta
+
+
 class Participant(models.Model):
     """A participant to the survey"""
 
     # [1] A unique ID that has been given to the participant
-    ptcpid = models.CharField("Survey participant ID", max_length=MAX_TEXT_LEN)
+    ptcpid = models.CharField("Survey participant ID", max_length=MAX_TEXT_LEN, blank=True, default = "")
     # [1] Age (as a number)
-    age = models.IntegerField("Age (number)")
+    age = models.IntegerField("Age (number)", blank=True, null=True)
     # [1] Gender
-    gender = models.CharField("Gender", choices=build_abbr_list(EXPERIMENT_GENDER), max_length=5)
+    gender = models.CharField("Gender", choices=build_abbr_list(EXPERIMENT_GENDER), max_length=5, blank=True, default = "")
     # [1] English first language
-    engfirst = models.CharField("English L1", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5)
+    engfirst = models.CharField("English L1", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "")
     # [0-1] First language
-    lngfirst = models.CharField("First language", blank=True, null=True, max_length=MAX_TEXT_LEN)
+    lngfirst = models.CharField("First language", blank=True, null=True, max_length=MAX_TEXT_LEN, default = "")
     # [0-1] Additional languages
-    lngother = models.CharField("Other languages", blank=True, null=True, max_length=MAX_TEXT_LEN)
+    lngother = models.CharField("Other languages", blank=True, null=True, max_length=MAX_TEXT_LEN, default = "")
     # [1] Highest education degree
-    edu = models.CharField("Gender", choices=build_abbr_list(EXPERIMENT_EDU), max_length=5)
+    edu = models.CharField("Gender", choices=build_abbr_list(EXPERIMENT_EDU), max_length=5, blank=True, default = "")
+    # [1] Record when it was created
+    created = models.DateTimeField(default=datetime.now)
 
     def __str__(self):
         return self.ptcpid
