@@ -62,7 +62,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -74,7 +73,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'formtools',
+    'corsheaders',
     'cesar.browser',
     'cesar.viewer',
     'cesar.seeker',
@@ -83,17 +82,22 @@ INSTALLED_APPS = [
     'cesar.lingo'
 ]
 
-MIDDLEWARE_CLASSES = [
+# MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
+    # Doesn't work on the server: 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ALLOW_CREDENTIALS = False
 
 ROOT_URLCONF = 'cesar.urls'
 

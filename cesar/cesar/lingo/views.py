@@ -5,7 +5,7 @@ Definition of views for the LINGO app.
 from django.contrib import admin
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import Group
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -14,6 +14,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import DetailView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
@@ -183,6 +184,25 @@ def signup(request):
     else:
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
+
+@csrf_exempt
+def crm_contacts(request):
+    """Ad-hoc CRM/contacts"""
+
+    contact_list = [
+        {'account': 2, 'address': 'Bla', 'createdBy': 2, 'description': 'Test 1', 'email': 'a@b.nl', 'first_name': 'Kaya', 'isActive': True, 'last_name': 'Abbess', 'phone': '0012121212101'},
+        {'account': 2, 'address': 'Lievensweg 21', 'createdBy': 2, 'description': 'Test 2', 'email': 'e.komen@ru.nl', 'first_name': 'Erwin', 'isActive': True, 'last_name': 'Komen', 'phone': '0123456789'}
+        ]
+    data = {}
+
+    if request.method == 'POST':
+        pass
+    elif request.method == 'GET':
+        # List the contacts we have
+        data = { 'data':  contact_list }
+    # Return the information
+    # return JsonResponse(data, safe=False)
+    return JsonResponse(data)
 
 
 class BasicLingo(View):
