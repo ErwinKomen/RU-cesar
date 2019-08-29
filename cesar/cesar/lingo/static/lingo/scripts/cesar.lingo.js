@@ -2192,6 +2192,11 @@ var ru = (function ($, ru) {
           // Action after declining
           $(".declineButton").unbind("click").click(function () { ru.cesar.lingo.exp_button_action("decline"); });
 
+          // Next question
+          $(".nextButton").unbind("click").click(function () { ru.cesar.lingo.exp_button_action("nextq", this); });
+
+          // Submit
+          $(".submitButton").unbind("click").click(function () { ru.cesar.lingo.exp_button_action("submitq", this); });
 
 
           // See if there are any post-loads to do
@@ -2325,8 +2330,10 @@ var ru = (function ($, ru) {
        * 
        * @param {type} button_name
        */
-      exp_button_action: function (button_name) {
-        var participant_id = "";
+      exp_button_action: function (button_name, el) {
+        var participant_id = "",
+            elQitem = null,
+            elNext = null;
 
         try {
           if (button_name !== undefined && button_name != "") {
@@ -2348,7 +2355,36 @@ var ru = (function ($, ru) {
                 // Get the participant id
                 participant_id = $("#participant_id").val();
 
+                // Open the *FIRST* question 
+                $(".questionItem").first().removeClass("hidden");
+
                 window.scroll(0, 0);
+                break;
+              case "nextq":
+                // Hide current questions
+                $(".questionItem").addClass("hidden");
+                // If all is well [el] points to the button
+                // Check if this is the last text pair (the last .questionItem)
+                elQitem = $(el).closest(".questionItem");
+                if ($(elQitem).closest("form").find(".questionItem").last().index() === $(elQitem).index()) {
+                  // This is the last questionItem: go to submit
+                  $(".questionSubmit").removeClass("hidden");
+                } else {
+                  // Just go to the next question item
+                  $(elQitem).next().removeClass("hidden");
+                }
+                break;
+              case "submitq":
+                // Submit the answers to all the questions
+                $(".questionSubmit").addClass("hidden");
+                $(".questionProgress").removeClass("hidden");
+                // Send the material with a POST request
+
+                break;
+              case "confirm":
+                $(".questionSubmit").addClass("hidden");
+                $(".questionProgress").addClass("hidden");
+                $(".questionConfirm").removeClass("hidden");
                 break;
               case "participant_info_old":
                 var mQ = $("[name=mTurkID]").val();

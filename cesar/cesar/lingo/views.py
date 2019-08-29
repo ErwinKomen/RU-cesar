@@ -55,7 +55,7 @@ def user_is_authenticated(request):
     if user == None:
         return False
     else:
-        return user.is_authenticated()
+        return user.is_authenticated
 
 def user_is_ingroup(request, sGroup):
     # Is this user part of the indicated group?
@@ -648,6 +648,7 @@ class LingoDetails(DetailView):
     title = ""              # The title to be passedon with the context
     rtype = "json"          # JSON response (alternative: html)
     prefix_type = ""        # Whether the adapt the prefix or not ('simple')
+    read_only = False
     mForm = None            # Model form
     add = False             # Are we adding a new record or editing an existing one?
 
@@ -694,7 +695,7 @@ class LingoDetails(DetailView):
         # always do this initialisation to get the object
         self.initializations(request, pk)
         # Make sure only POSTS get through that are authorized
-        if request.user.is_authenticated:
+        if request.user.is_authenticated or self.read_only:
             context = self.get_context_data(object=self.object)
             # Check if 'afternewurl' needs adding
             if 'afternewurl' in context:
@@ -830,20 +831,22 @@ class LingoDetails(DetailView):
             else:
                 # Editing an existing one
                 frm = mForm(initial, prefix=prefix, instance=instance)
-            # Both cases: validation and saving
-            if frm.is_valid():
-                # The form is valid - do a preliminary saving
-                instance = frm.save(commit=False)
-                # Any checks go here...
-                bResult, msg = self.before_save(instance)
-                if bResult:
-                    # Now save it for real
-                    instance.save()
+
+            if not self.read_only: 
+                # Both cases: validation and saving
+                if frm.is_valid():
+                    # The form is valid - do a preliminary saving
+                    instance = frm.save(commit=False)
+                    # Any checks go here...
+                    bResult, msg = self.before_save(instance)
+                    if bResult:
+                        # Now save it for real
+                        instance.save()
+                    else:
+                        context['errors'] = {'save': msg }
                 else:
-                    context['errors'] = {'save': msg }
-            else:
-                # We need to pass on to the user that there are errors
-                context['errors'] = frm.errors
+                    # We need to pass on to the user that there are errors
+                    context['errors'] = frm.errors
             # Check if this is a new one
             if bNew:
                 # Any code that should be added when creating a new [SermonGold] instance
@@ -932,7 +935,7 @@ class ExperimentListView(ListView):
 
         # Add some information
         context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
-        context['authenticated'] = currentuser.is_authenticated()
+        context['authenticated'] = currentuser.is_authenticated
 
         # Add to the context
         context['order_heads'] = self.order_heads
@@ -984,16 +987,23 @@ class ExperimentDo(LingoDetails):
     model = Experiment
     mForm = ExperimentForm
     template_name = 'lingo/experiment_do.html'
+    template_post = 'lingo/experiment_done.html'
     prefix = "exp"
     prefix_type = "simple"
     title = "ExperimentDo"
     rtype = "html"
+    read_only = True
+    correct = ["ja", "yes", "true"]
     NUM_RESPONSES = 10
+    NUM_TEXTS = 25
     AnswerFormset = formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
 
     def get_context_data(self, **kwargs):
         # Get the initial context
         context = super(ExperimentDo, self).get_context_data(**kwargs)
+
+        # Set the default response type
+        self.rtype = "html"
 
         # Who am I?
         currentuser = self.request.user
@@ -1011,45 +1021,100 @@ class ExperimentDo(LingoDetails):
         instance = self.object
         context['consent'] = instance.get_consent_markdown()
 
-        # Make sure the participant id is passed on
-        participant = Participant()
-        participant.save()
-        context['participant_id'] = participant.id
-
         context['exp_data'] = None
         # Provide data based on 'home' field of experiment
         if instance.home == "tcpf":
-            # Create a formset for the answer forms
-            formset = AnswerFormset()
-            context['answer_formset'] = formset
-            # Get a list of texts
-            qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext' )
-            if len(qs_texts) == 25:
-                # Create data: 20 random texts from the 25
-                text_selection = random.sample(list(qs_texts), 20)
-                # NOTE: compare the first ten with the second ten
-                # Create a list of text combinations
-                combi_list = []
-                for idx in range(NUM_RESPONSES):
-                    left = text_selection[idx]
-                    right = text_selection[idx+10]
-                    # Create and fill a combi object
-                    combi = {}
-                    # 1: left part
-                    combi['left_id'] = left['id']
-                    combi['left'] = left['qtext']
-                    combi['left_topic'] = left['qtopic']
-                    # 2: right part
-                    combi['right_id'] = right['id']
-                    combi['right'] = right['qtext']
-                    combi['right_topic'] = left['qtopic']
-                    # 3: Add the form from the formset
-                    form = formset[idx]
-                    combi['form'] = form
-                    # Add this to the combi=list
-                    combi_list.append(combi)
-                # Make the combi list available
-                context['exp_parts'] = combi_list
+            pfx = "qans"
+            # Check: are we receiving answers or is this a request to start?
+            if self.request.method == "POST":
+                # Change the response type
+                self.rtype = "json"
+                # Process the answers
+                formset = self.AnswerFormset(self.request.POST, prefix=pfx)
+
+                # Walk the formset and process each form
+                for form in formset:
+                    # Check if there are errors
+                    if len(form.errors) == 0:
+                        # Process the answers of this form
+                        ptcpid = form.cleaned_data['ptcp_id']
+                        text1_ans = (form.cleaned_data['answer2'].lower() in self.correct )
+                        text2_ans = (form.cleaned_data['answer3'].lower() in self.correct )
+                        best_text = form.cleaned_data['answer4']
+                        text1_id = form.cleaned_data['answer5']
+                        text2_id = form.cleaned_data['answer6']
+                        # Get the correct participant
+                        participant = Participant.objects.filter(id=ptcpid).first()
+                        if participant != None:
+                            # It is the correct participant: Get the text objects
+                            text1 = Qdata.objects.filter(id=text1_id).first()
+                            text2 = Qdata.objects.filter(id=text2_id).first()
+                            if text1 != None and text2 != None:
+                                # Check if the answers were given correctly
+                                text1_corr = (text1.qcorr.lower()  in self.correct)
+                                text2_corr = (text2.qcorr.lower()  in self.correct)
+                                identified = (text1_ans == text1_corr and text2_ans == text2_corr)
+                                # Find out what the preference was
+                                preference_id = text1.id if best_text.lower() == "text1" else text2.id
+                                preference = text1.qmeta if best_text.lower() == "text1" else text2.qmeta
+                            
+                                # combine answer into JSON
+                                answer = {}
+                                answer['identified'] = identified
+                                answer['preference'] = preference
+                                answer['text1'] = text1.qmeta
+                                answer['text2'] = text2.qmeta
+                                answer['preference_id'] = preference_id
+                                answer['text1_id'] = text1.id
+                                answer['text2_id'] = text2_id
+                                # Create a response object
+                                response = Response(experiment=self.object, participant=participant, answer= json.dumps(answer))
+                                response.save()
+                    else:
+                        # Pass on the fact that there are errors
+                        context['errors'] = form.errors
+                        # Break away
+                        break
+
+                # Finished preparing POST data
+                post_finished = True
+            elif self.request.method == "GET":
+                # Make sure the participant id is passed on
+                participant = Participant()
+                participant.save()
+                context['participant_id'] = participant.id
+
+                # Create a formset for the answer forms
+                formset = self.AnswerFormset(prefix=pfx)
+                context['answer_formset'] = formset
+                # Get a list of texts
+                qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic' )
+                if len(qs_texts) == self.NUM_TEXTS:
+                    # Create data: 20 random texts from the 25
+                    text_selection = random.sample(list(qs_texts), 2 * self.NUM_RESPONSES)
+                    # NOTE: compare the first ten with the second ten
+                    # Create a list of text combinations
+                    combi_list = []
+                    for idx in range(self.NUM_RESPONSES):
+                        left = text_selection[idx]
+                        right = text_selection[idx+10]
+                        # Create and fill a combi object
+                        combi = {}
+                        # 1: left part
+                        combi['left_id'] = left['id']
+                        combi['left'] = left['qtext']
+                        combi['left_topic'] = left['qtopic']
+                        # 2: right part
+                        combi['right_id'] = right['id']
+                        combi['right'] = right['qtext']
+                        combi['right_topic'] = left['qtopic']
+                        # 3: Add the form from the formset
+                        form = formset[idx]
+                        combi['form'] = form
+                        # Add this to the combi=list
+                        combi_list.append(combi)
+                    # Make the combi list available
+                    context['exp_parts'] = combi_list
 
         # The page to return to
         context['prevpage'] = reverse("exp_list")

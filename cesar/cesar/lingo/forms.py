@@ -19,6 +19,12 @@ class ExperimentForm(ModelForm):
                  'consent':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;'})
                  }
 
+    def __init__(self, *args, **kwargs):
+        super(ExperimentForm, self).__init__(*args, **kwargs)
+        #self.fields['title'].required = False
+        #self.fields['home'].required = False
+        #self.fields['msg'].required = False
+
 
 class ParticipantForm(ModelForm):
 
@@ -39,12 +45,12 @@ class AnswerForm(forms.Form):
     # The ID of the Participant (assigned by the Django system)
     ptcp_id = forms.CharField(label="Participant id", max_length=100)
     # A number of different answers
-    answer1 = forms.CharField(label="Answer1", max_length=255)
-    answer2 = forms.CharField(label="Answer2", max_length=255)
-    answer3 = forms.CharField(label="Answer3", max_length=255)
-    answer4 = forms.CharField(label="Answer4", max_length=255)
-    answer5 = forms.CharField(label="Answer5", max_length=255)
-    answer6 = forms.CharField(label="Answer6", max_length=255)
-    answer7 = forms.CharField(label="Answer7", max_length=255)
-    answer8 = forms.CharField(label="Answer8", max_length=255)
-    answer9 = forms.CharField(label="Answer9", max_length=255)
+    answer1 = forms.CharField(label="Answer1", max_length=255, required=False)
+    answer2 = forms.CharField(label="Answer2", max_length=255, required=False)
+    answer3 = forms.CharField(label="Answer3", max_length=255, required=False)
+    answer4 = forms.CharField(label="Answer4", max_length=255, required=False)
+    answer5 = forms.CharField(label="Answer5", max_length=255, required=False)
+    answer6 = forms.CharField(label="Answer6", max_length=255, required=False)
+    answer7 = forms.CharField(label="Answer7", max_length=255, required=False)
+    answer8 = forms.CharField(label="Answer8", max_length=255, required=False)
+    answer9 = forms.CharField(label="Answer9", max_length=255, required=False)

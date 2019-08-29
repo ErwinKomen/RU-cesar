@@ -1031,7 +1031,7 @@ class TsgHandleListView(ListView):
 
         # Add some information
         context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
-        context['authenticated'] = currentuser.is_authenticated()
+        context['authenticated'] = currentuser.is_authenticated
 
         # Add to the context
         context['order_heads'] = self.order_heads

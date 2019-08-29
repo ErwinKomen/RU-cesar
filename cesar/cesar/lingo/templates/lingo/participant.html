@@ -56,6 +56,6 @@
 	<a role="button" id="surveyButton" 
           class="btn qpart surveyButton post-submit"
           button_action="questions"
-          targeturl="{% url 'participant' %}"
+          targeturl="{% if object_id %}{% url 'participant' object_id %}{% else %}{% url 'participant' %}{% endif %}"
           targetid="participant_form">Continue</a>
 </form>

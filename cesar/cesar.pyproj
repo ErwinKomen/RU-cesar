@@ -55,6 +55,16 @@
     <Compile Include="cesar\doc\tests.py" />
     <Compile Include="cesar\doc\views.py" />
     <Compile Include="cesar\doc\__init__.py" />
+    <Compile Include="cesar\lingo\admin.py" />
+    <Compile Include="cesar\lingo\apps.py" />
+    <Compile Include="cesar\lingo\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cesar\lingo\migrations\__init__.py" />
+    <Compile Include="cesar\lingo\models.py" />
+    <Compile Include="cesar\lingo\tests.py" />
+    <Compile Include="cesar\lingo\views.py" />
+    <Compile Include="cesar\lingo\__init__.py" />
     <Compile Include="cesar\seeker\admin.py" />
     <Compile Include="cesar\seeker\apps.py" />
     <Compile Include="cesar\seeker\convert.py">
@@ -81,6 +91,9 @@
     <Compile Include="cesar\seeker\__init__.py" />
     <Compile Include="cesar\tsg\admin.py" />
     <Compile Include="cesar\tsg\apps.py" />
+    <Compile Include="cesar\tsg\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="cesar\tsg\migrations\__init__.py" />
     <Compile Include="cesar\tsg\models.py" />
     <Compile Include="cesar\tsg\tests.py" />
@@ -119,6 +132,15 @@
     <Folder Include="cesar\doc\migrations\" />
     <Folder Include="cesar\doc\templates\" />
     <Folder Include="cesar\doc\templates\doc\" />
+    <Folder Include="cesar\lingo\" />
+    <Folder Include="cesar\lingo\migrations\" />
+    <Folder Include="cesar\lingo\static\" />
+    <Folder Include="cesar\lingo\static\lingo\" />
+    <Folder Include="cesar\lingo\static\lingo\content\" />
+    <Folder Include="cesar\lingo\static\lingo\fonts\" />
+    <Folder Include="cesar\lingo\static\lingo\scripts\" />
+    <Folder Include="cesar\lingo\templates\" />
+    <Folder Include="cesar\lingo\templates\lingo\" />
     <Folder Include="cesar\seeker\" />
     <Folder Include="cesar\seeker\migrations\" />
     <Folder Include="cesar\seeker\static\" />
@@ -175,6 +197,29 @@
     <Content Include="cesar\doc\templates\doc\foliadocs_view.html" />
     <Content Include="cesar\doc\templates\doc\import_brys.html" />
     <Content Include="cesar\doc\templates\doc\import_docs.html" />
+    <Content Include="cesar\lingo\static\lingo\content\bootstrap.min.css" />
+    <Content Include="cesar\lingo\static\lingo\content\lingo.css" />
+    <Content Include="cesar\lingo\static\lingo\content\ru-base.css" />
+    <Content Include="cesar\lingo\static\lingo\content\ru-form.css" />
+    <Content Include="cesar\lingo\static\lingo\content\ru-widgets.css" />
+    <Content Include="cesar\lingo\static\lingo\content\site.css" />
+    <Content Include="cesar\lingo\static\lingo\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="cesar\lingo\static\lingo\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="cesar\lingo\static\lingo\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="cesar\lingo\static\lingo\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="cesar\lingo\static\lingo\scripts\bootstrap.js" />
+    <Content Include="cesar\lingo\static\lingo\scripts\cesar.lingo.js" />
+    <Content Include="cesar\lingo\static\lingo\scripts\jquery-1.10.2.js" />
+    <Content Include="cesar\lingo\static\lingo\scripts\modernizr-2.6.2.js" />
+    <Content Include="cesar\lingo\static\lingo\scripts\respond.js" />
+    <Content Include="cesar\lingo\templates\lingo\about.html" />
+    <Content Include="cesar\lingo\templates\lingo\basic.html" />
+    <Content Include="cesar\lingo\templates\lingo\experiment_done.html" />
+    <Content Include="cesar\lingo\templates\lingo\experiment_edit.html" />
+    <Content Include="cesar\lingo\templates\lingo\index.html" />
+    <Content Include="cesar\lingo\templates\lingo\layout.html" />
+    <Content Include="cesar\lingo\templates\lingo\participant.html" />
+    <Content Include="cesar\lingo\templates\lingo\topnav.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\static\seeker\scripts\xhr2.js" />
     <Content Include="cesar\seeker\templates\seeker\crp.xml" />
@@ -265,6 +310,11 @@
     <Content Include="cesar\templates\topnav.html" />
     <Content Include="cesar\seeker\templates\index.html" />
     <Content Include="cesar\templates\admin\base.html" />
+    <Content Include="cesar\lingo\templates\lingo\experiment_details.html" />
+    <Content Include="cesar\lingo\templates\lingo\experiment_do.html" />
+    <Content Include="cesar\lingo\templates\lingo\experiment_list.html" />
+    <Content Include="cesar\tsg\templates\tsg\tsghandle_details.html" />
+    <Content Include="cesar\tsg\templates\tsg\tsghandle_edit.html" />
     <Content Include="cesar\tsg\templates\tsg\tsghandle_list.html" />
     <Content Include="cesar\tsg\templates\tsg\tsg_main.html" />
     <Content Include="cesar\viewer\templates\index.html" />
