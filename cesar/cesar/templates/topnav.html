@@ -108,13 +108,14 @@
                           <li class="dropdown-submenu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">English: sla</a>
                             <ul class="dropdown-menu">
-                              <li><a href="{% url 'text_list' %}?part=85&format=1">ICLE (nl, cz, en)</a></li>
-                              <li><a href="{% url 'text_list' %}?part=2&format=80">ICLE-CZ</a></li>
-                              <li><a href="{% url 'text_list' %}?part=3&format=81">ICLE-NL</a></li>
-                              <li><a href="{% url 'text_list' %}?part=4&format=82">ICLE-EN</a></li>
+                              <li><a href="{% url 'text_list' %}?part=85&format=1">ICLE (nl, cz, br, en)</a></li>
+                              <li><a href="{% url 'text_list' %}?part=123&format=1">ICLE-BR</a></li>
+                              <li><a href="{% url 'text_list' %}?part=80&format=1">ICLE-CZ</a></li>
+                              <li><a href="{% url 'text_list' %}?part=81&format=1">ICLE-NL</a></li>
+                              <li><a href="{% url 'text_list' %}?part=82&format=1">ICLE-EN</a></li>
                               {% if is_longdale_user %}
                                 <li role="separator" class="divider"></li>
-                                <li><a href="{% url 'text_list' %}?part=4&format=82">ICLE-EN</a></li>
+                                <li><a href="{% url 'text_list' %}?part=122&format=1">Longdale</a></li>
                               {% endif %}
                             </ul>
                           </li>

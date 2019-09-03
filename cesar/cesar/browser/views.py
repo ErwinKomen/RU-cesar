@@ -5,7 +5,7 @@ Definition of views for the BROWSER app.
 from django.contrib import admin
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import Group
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -145,7 +145,7 @@ def user_is_authenticated(request):
     # Is this user authenticated?
     username = request.user.username
     user = User.objects.filter(username=username).first()
-    return user.is_authenticated()
+    return user.is_authenticated
 
 def user_is_ingroup(request, sGroup):
     # Is this user part of the indicated group?

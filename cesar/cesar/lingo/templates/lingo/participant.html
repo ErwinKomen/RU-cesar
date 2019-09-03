@@ -8,54 +8,83 @@
 <form id="surveyForm" class="survey-form qpart" action="">
   {% csrf_token %}
 
+  <div class="hidden">
+    <input id="experiment_id" name="experiment_id" value="{{experiment_id}}" />
+  </div>
+
 	<h3>Please answer the following questions</h3>
 
   <!-- participant detail: ptcpid-->
+  {% if 'ptcp' in ptcpfields %}
   <div class="form-group row">
     <div class="col-md-4" align="right">What is your Participant ID?</div>
     <div class="col-md-8" align="left">{{ptcpForm.ptcpid}}</div>
   </div>
+  {% endif %}
 
   <!-- participant detail: age -->
+  {% if 'age' in ptcpfields %}
   <div class="form-group row">
-    <div class="col-md-4" align="right">What is your age?</div>
+    <div class="col-md-4" align="right">Wat is uw leeftijd?</div>
     <div class="col-md-8" align="left">{{ptcpForm.age}}</div>
   </div>
+  {% endif %}
 
   <!-- participant detail: gender -->
+  {% if 'gender' in ptcpfields %}
   <div class="form-group row">
-    <div class="col-md-4" align="right">Your gender</div>
+    <div class="col-md-4" align="right">Wat is uw geslacht?</div>
     <div class="col-md-8" align="left">{{ptcpForm.gender}}</div>
   </div>
+  {% endif %}
 
   <!-- participant detail: English first -->
+  {% if 'engfirst' in ptcpfields %}
   <div class="form-group row">
-    <div class="col-md-4" align="right">Is English your first language?</div>
+    <div class="col-md-4" align="right">Is Engels uw moedertaal?</div>
     <div class="col-md-8" align="left">{{ptcpForm.engfirst}}</div>
   </div>
+  {% endif %}
 
   <!-- participant detail: First language -->
+  {% if 'lngfirst' in ptcpfields %}
   <div class="form-group row">
-    <div class="col-md-4" align="right">What is your first language?</div>
+    <div class="col-md-4" align="right">Wat is uw moedertaal?</div>
     <div class="col-md-8" align="left">{{ptcpForm.lngfirst}}</div>
   </div>
+  {% endif %}
 
   <!-- participant detail: Other L -->
+  {% if 'lngother' in ptcpfields %}
   <div class="form-group row">
-    <div class="col-md-4" align="right">Which other languages do you know?</div>
+    <div class="col-md-4" align="right">Welke andere talen spreekt u?</div>
     <div class="col-md-8" align="left">{{ptcpForm.lngother}}</div>
   </div>
+  {% endif %}
 
   <!-- participant detail: education -->
+  {% if 'edu' in ptcpfields %}
   <div class="form-group row">
-    <div class="col-md-4" align="right">What is your highest level of education?</div>
-    <div class="col-md-8" align="left">{{ptcpForm.edu}}</div>
+    <div class="col-md-4" align="right">Op welk schooltype geeft u les?</div>
+    <div class="col-md-8" align="left">
+      <!-- Usual list of education -->
+      <div class="edu-list" onchange="ru.cesar.lingo.edu_check(this);">{{ptcpForm.edu}}</div>
+      <!-- Alternative specification of education -->
+      <div class="edu-spec hidden">{{ptcpForm.eduother}}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Room for a warning message -->
+	<div id="warning" style="color: red;" class="warning">
+    <!-- This is where a possible warning message will appear-->
+    {{warningmsg}}
   </div>
 
-	<div id="warning" style="color: darkred;" class="warning"></div>
+  <!-- The continue button-->
 	<a role="button" id="surveyButton" 
           class="btn qpart surveyButton post-submit"
           button_action="questions"
-          targeturl="{% url 'participant' %}"
+          targeturl="{% if object_id %}{% url 'participant' object_id %}{% else %}{% url 'participant' %}{% endif %}?experiment_id={{experiment_id}}"
           targetid="participant_form">Continue</a>
 </form>

@@ -23,9 +23,9 @@ from cesar.lingo.views import *
 from cesar.settings import APP_PREFIX
 
 # Other Django stuff
-from django.core import urlresolvers
+# EXTINCT from django.core import urlresolvers
 from django.shortcuts import redirect
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic.base import RedirectView
 
 admin.autodiscover()
@@ -45,7 +45,11 @@ urlpatterns = [
     url(r'^lingo/experiment/details(?:/(?P<pk>\d+))?/$', ExperimentDetails.as_view(), name='exp_details'),
     url(r'^lingo/experiment/edit(?:/(?P<pk>\d+))?/$', ExperimentEdit.as_view(), name='exp_edit'),
     url(r'^lingo/experiment/do/(?P<pk>\d+)', ExperimentDo.as_view(), name='exp_do'),
+    url(r'^lingo/experiment/download/(?P<pk>\d+)', ExperimentDownload.as_view(), name='exp_download'),
     url(r'^lingo/experiment/participant(?:/(?P<pk>\d+))?/$', ParticipantDetails.as_view(), name='participant'),
+
+
+    url(r'^crm/contacts', cesar.lingo.views.crm_contacts, name='crm_contacts'),
 
     # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),
@@ -164,5 +168,5 @@ urlpatterns = [
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
-    url(r'^admin/', include(admin.site.urls), name='admin_base'),
+    url(r'^admin/', admin.site.urls, name='admin_base'),
 ]

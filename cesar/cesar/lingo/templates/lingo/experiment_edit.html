@@ -78,6 +78,17 @@
       </td>
     </tr>
 
+    <!-- Participant fields to be included for this experiment -->
+    <tr class="form-row">
+      <td class="hoverable" valign="top"  style="min-width: 150px;">Participant fields to be included</td>
+      <td  style="width: 100%;">
+        <div class="view-mode">{% if expForm.instance.ptcpfields %}{{expForm.instance.ptcpfields}}{% else %}-{% endif %}</div>
+        {% if is_in_tsg %}
+          <div class="edit-mode hidden">{{expForm.ptcpfields}}</div>
+        {% endif %}
+      </td>
+    </tr>
+
     <!-- Only show the Created and the Status when it is not a new instance -->
     <tr class="form-row edit-notnew">
       <td class="hoverable" valign="top" style="min-width: 150px;">Created</td>

@@ -284,7 +284,7 @@ class FunctionListView(ListView):
         currentuser = self.request.user
 
         context['object_list'] = FunctionDef.objects.all().order_by('name')
-        context['authenticated'] = currentuser.is_authenticated()
+        context['authenticated'] = currentuser.is_authenticated
         # Make sure the correct URL is being displayed
         return super(FunctionListView, self).render_to_response(context, **response_kwargs)
 
@@ -307,7 +307,7 @@ class ResultListView(ListView):
     def render_to_response(self, context, **response_kwargs):
         # Make sure we get the user and check the authentication
         currentuser = self.request.user
-        context['authenticated'] = currentuser.is_authenticated()
+        context['authenticated'] = currentuser.is_authenticated
 
         # Make sure the correct URL is being displayed
         return super(ResultListView, self).render_to_response(context, **response_kwargs)
@@ -319,7 +319,7 @@ class ResultListView(ListView):
 
         # Make sure we get the user and check the authentication
         currentuser = self.request.user
-        context['authenticated'] = currentuser.is_authenticated()
+        context['authenticated'] = currentuser.is_authenticated
 
         # Initialise the list conditions: restrict results to current user
         lCombi = []
@@ -452,7 +452,7 @@ class SeekerListView(ListView):
 
         currentuser = self.request.user
         # Is this user logged in?
-        if currentuser.is_authenticated():
+        if currentuser.is_authenticated:
             # make sure we pass this on
             authenticated = True
             # Get the correct list of research projects:
@@ -1611,7 +1611,7 @@ class ResGroupList(ListView):
 
     def render_to_response(self, context, **response_kwargs):
         currentuser = self.request.user
-        context['authenticated'] = currentuser.is_authenticated()
+        context['authenticated'] = currentuser.is_authenticated
 
         # Create a well ordered list of search groups
         sgroup_list = ResGroup.objects.filter(Q(owner=currentuser)).order_by(Lower('parent__name'), Lower('name'), )

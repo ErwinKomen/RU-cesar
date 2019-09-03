@@ -35,17 +35,150 @@
 <div class="participantArea qpart {% if consent %}hidden{% endif %}">
 
   <!-- This is where the participant form will be loaded-->
-  <div id="participant_form" class="post-load" targeturl="{% url 'participant' %}"></div>
+  <div id="participant_form" class="post-load" targeturl="{% url 'participant' participant_id %}?experiment_id={{object.id}}"></div>
 
 </div>
 
 <!-- Include all experiment parts -->
 <div class="questionArea tpart hidden">
-  Questions...
-  {% for exp_part in exp_parts %}
+  <form>
+    <!-- This is necessary for submitting the form-->
+    {% csrf_token %}
 
+    <!-- Get the management form information -->
+    {{answer_formset.management_form}}
 
-  {% endfor %}
+    <!-- Walk all questions -->
+    {% for exp_part in exp_parts %}
+      <div class="questionItem hidden">
+        <span style="font-size: small;">Pagina {{forloop.counter}} / {{exp_parts|length}} </span>
+        <!-- The two texts-->
+        <div class="row">
+          <!-- Left text -->
+          <div class="col-md-6 qtextView">
+            <h3>Tekst 1</h3>
+            <div class="hidden">
+              <input type="text" name="qans-{{forloop.counter0}}-answer5" value="{{exp_part.left_id}}" />
+            </div>
+            <div class="qtext">{{exp_part.left|linebreaks}}</div>
+          </div>
+          <!-- Right text -->
+          <div class="col-md-6 qtextView">
+            <h3>Tekst 2</h3>
+            <div class="hidden">
+              <input type="text" name="qans-{{forloop.counter0}}-answer6" value="{{exp_part.right_id}}" />
+            </div>
+            <div class="qtext">{{exp_part.right|linebreaks}}</div>
+          </div>
+        </div>
+
+        <!-- The response form-->
+        <div class="col-row">
+          <div class="col-md-8 col-md-offset-2 qanswerView" >
+            <!-- Instructions -->
+            <h3><b>(1) Lees beide teksten, (2) doe de vragen, (3) kies 'Volgende'</b></h3>
+
+            <!-- Status -->
+            <!--
+            <p>{{forloop.counter0}} van de {{exp_parts|length}} vragen beantwoord.</p>
+              -->
+
+            <!-- For this particular answer -->
+            <div class="hidden">
+              <input type="text" name="qans-{{forloop.counter0}}-ptcp_id" value="{{participant_id}}" />
+            </div>
+
+            <!-- Vragen over de teksten -->
+            <table style="width: 100%;">
+              <!-- Topic of text #1 -->
+              <tr>
+                <td align="right">Tekst 1 ging over {{exp_part.left_topic}}</td>
+                <td align="left">
+                  <div class="btn-group">
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="Yes" />Ja</label>
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="No" />Nee</label>
+                  </div>
+                  <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
+                    Antwoord??
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Topic of text #2 -->
+              <tr>
+                <td align="right">Tekst 2 ging over {{exp_part.right_topic}}</td>
+                <td align="left">
+                  <div class="btn-group">
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="Yes" />Ja</label>
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="No" />Nee</label>
+                  </div>
+                  <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
+                    Antwoord??
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Which text is better -->
+              <tr>
+                <td align="right">Welke tekst is beter te begrijpen?</td>
+                <td align="left">
+                  <div class="btn-group">
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text1" />Tekst 1 (links)</label>
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text2" />Tekst 2 (richts)</label>
+                  </div>
+                  <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
+                    Antwoord??
+                  </div>
+                </td>
+              </tr>
+            </table>
+            <p></p>
+
+          </div>
+
+          <div class="col-md-1 col-md-offset-1">
+            <button type="button"  class="nextButton" title="Volgende vraag tonen">VOLGENDE</button>
+          </div>
+        </div>
+
+      </div>
+    {% endfor %}
+
+    <!-- The submit button for all of the answers -->
+    <div class="questionSubmit hidden">
+      <div>
+        Gefeliciteerd, u heeft alle teksten beoordeeld.
+      </div>
+      <button type="button" class="submitButton post-submit" 
+              targeturl="{% url 'exp_do' experiment.id %}"
+              targetid="submitMessage"
+              button_action="confirm"
+              title="Alle antwoorden inleveren en laten verwerken">Inleveren</button>
+    </div>
+  </form>
+
+  <!-- Show progress in submitting -->
+  <div class="questionProgress hidden">
+    <div>De antwoorden worden opgestuurd...</div>
+    <div id="submitMessage">
+      <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+    </div>
+  </div>
+
+  <!-- Response area when the answers are handed in correctly -->
+  <div class="questionConfirm hidden">
+    <!-- Message after confirming-->
+    <div>Hartelijk dank! Uw antwoorden zijn verwerkt.</div>
+
+    <div>&nbsp;</div>
+
+    <!-- Mogelijkheden om terug te gaan -->
+    <div>
+      <span>
+        <a class="view-mode btn jumbo-3" href="{% url 'exp_list' %}" title="List all experiments">Experimenten</a>
+      </span>
+    </div>
+  </div>
 </div>
 
 

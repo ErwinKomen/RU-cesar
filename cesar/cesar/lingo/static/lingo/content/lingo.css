@@ -32,7 +32,7 @@
   padding-right:10px;
 }
 
-.continueButton {
+.continueButton, .nextButton {
   font-size:20px;
   text-align:center;
   border-radius:25px;
@@ -70,6 +70,28 @@
   padding: 10px;
 }
 
+.qtextView {
+  background-color: lightyellow; 
+  border-width: 10px; 
+  border-color: #D3E4ED; 
+  border-style:solid; 
+  border-radius: 30px;
+}
+
+.qtext {
+  /*font-size: smaller; */
+  font-family: 'Times New Roman';
+  text-align: justify;
+}
+
+.qanswerView {
+  background-color: lightgreen; 
+  border-width: 10px; 
+  border-color: #D3E4ED; 
+  border-style:solid; 
+  border-radius: 30px;
+}
+
 .qpart label {
     font-weight: normal !important;
 }
@@ -85,7 +107,7 @@
   margin-right: auto;
 }
 
-.surveyButton {
+.surveyButton, .submitButton {
   background-color: #427eb2;
   border-color: #2e6da4;
   border: 1px solid transparent;
@@ -103,6 +125,6 @@
   white-space: nowrap;		
 }
 		
-.surveyButton:hover {
+.surveyButton:hover, .submitButton:hover {
   background:#0277bd;
 }

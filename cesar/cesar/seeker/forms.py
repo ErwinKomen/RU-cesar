@@ -264,7 +264,7 @@ class CvarForm(ModelForm):
 
 class FunctionForm(ModelForm):
     """Specify the function the user wants to choose"""
-    copyto = forms.ChoiceField((), required=False)
+    copyto = forms.ChoiceField(choices=(), required=False)
 
     class Meta:
         model = Function
