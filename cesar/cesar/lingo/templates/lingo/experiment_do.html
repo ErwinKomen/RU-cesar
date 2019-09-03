@@ -35,7 +35,7 @@
 <div class="participantArea qpart {% if consent %}hidden{% endif %}">
 
   <!-- This is where the participant form will be loaded-->
-  <div id="participant_form" class="post-load" targeturl="{% url 'participant' participant_id %}"></div>
+  <div id="participant_form" class="post-load" targeturl="{% url 'participant' participant_id %}?experiment_id={{object.id}}"></div>
 
 </div>
 
@@ -51,7 +51,7 @@
     <!-- Walk all questions -->
     {% for exp_part in exp_parts %}
       <div class="questionItem hidden">
-        <span>Pagina {{forloop.counter}} ...</span>
+        <span style="font-size: small;">Pagina {{forloop.counter}} / {{exp_parts|length}} </span>
         <!-- The two texts-->
         <div class="row">
           <!-- Left text -->
@@ -76,10 +76,12 @@
         <div class="col-row">
           <div class="col-md-8 col-md-offset-2 qanswerView" >
             <!-- Instructions -->
-            <h3><b>(1) Lees beide teksten, (2) doe de vragen, (3) Druk op 'Volgende'</b></h3>
+            <h3><b>(1) Lees beide teksten, (2) doe de vragen, (3) kies 'Volgende'</b></h3>
 
             <!-- Status -->
+            <!--
             <p>{{forloop.counter0}} van de {{exp_parts|length}} vragen beantwoord.</p>
+              -->
 
             <!-- For this particular answer -->
             <div class="hidden">
@@ -96,6 +98,9 @@
                     <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="Yes" />Ja</label>
                     <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="No" />Nee</label>
                   </div>
+                  <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
+                    Antwoord??
+                  </div>
                 </td>
               </tr>
 
@@ -107,6 +112,9 @@
                     <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="Yes" />Ja</label>
                     <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="No" />Nee</label>
                   </div>
+                  <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
+                    Antwoord??
+                  </div>
                 </td>
               </tr>
 
@@ -117,6 +125,9 @@
                   <div class="btn-group">
                     <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text1" />Tekst 1 (links)</label>
                     <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text2" />Tekst 2 (richts)</label>
+                  </div>
+                  <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
+                    Antwoord??
                   </div>
                 </td>
               </tr>

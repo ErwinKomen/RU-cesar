@@ -87,7 +87,7 @@ def build_choice_list(field, position=None, subcat=None, maybe_empty=False):
     # We do not use defaults
     return choice_list;
 
-def build_abbr_list(field, position=None, subcat=None, maybe_empty=False):
+def build_abbr_list(field, position=None, subcat=None, maybe_empty=False, language="eng"):
     """Create a list of choice-tuples"""
 
     choice_list = [];
@@ -101,13 +101,13 @@ def build_abbr_list(field, position=None, subcat=None, maybe_empty=False):
             unique_list = [('0','-'),('1','N/A')]
         else:
             if maybe_empty:
-                choice_list = [('0','-')]
+                choice_list = [('','-')]
             for choice in FieldChoice.objects.filter(field__iexact=field):
                 # Default
                 sEngName = ""
                 # Any special position??
                 if position==None:
-                    sEngName = choice.english_name
+                    sEngName = choice.english_name if language=="eng" else choice.dutch_name
                 elif position=='before':
                     # We only need to take into account anything before a ":" sign
                     sEngName = choice.english_name.split(':',1)[0]
@@ -208,14 +208,15 @@ class Experiment(models.Model):
     msg = models.TextField("Message")
     # [0-1] Informed consent page (markdown)
     consent = models.TextField("Informed consent", blank=True, null=True)
+    # [0-1] the fields in the Participant model that need to be asked
+    ptcpfields = models.TextField("Participant fields", default="[]", blank=True)
     # [1] the status of this message (can e.g. be 'archived')
     status = models.CharField("Status", choices=build_abbr_list(EXPERIMENT_STATUS), 
                               max_length=5)
 
     def __str__(self):
         # An experiment is the title and the created
-        sDate = get_crpp_date(self.created)
-        sItem = "{}-{}".format(self.title, sDate)
+        sItem = "{}-{}".format(self.title, self.id)
         return sItem
 
     def get_msg_markdown(self):
@@ -232,6 +233,14 @@ class Experiment(models.Model):
         response = super(Experiment, self).save(force_insert, force_update, using, update_fields)
         return response
 
+    def resultcount(self):
+        """Determine how many results there are"""
+
+        # Get all participants from responses
+        ptcp_list = Response.objects.filter(experiment=self).values('participant').distinct()
+        
+        return len(ptcp_list)
+
 
 class Qdata(models.Model):
     """Question data for a particular experiment"""
@@ -242,6 +251,8 @@ class Qdata(models.Model):
     qtext = models.TextField("Question data", blank=True, default = "")
     # [0-1] Topic of the text
     qtopic = models.CharField("Topic", max_length=255, blank=True, default = "")
+    # [0-1] Suggested topic of the text
+    qsuggest = models.CharField("Suggested topic", max_length=255, blank=True, default = "")
     # [0-1] Correct response for this topic
     qcorr = models.CharField("Topic response", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "")
     # [1] The experiment
@@ -267,12 +278,25 @@ class Participant(models.Model):
     # [0-1] Additional languages
     lngother = models.CharField("Other languages", blank=True, null=True, max_length=MAX_TEXT_LEN, default = "")
     # [1] Highest education degree
-    edu = models.CharField("Gender", choices=build_abbr_list(EXPERIMENT_EDU), max_length=5, blank=True, default = "")
+    edu = models.CharField("Education", choices=build_abbr_list(EXPERIMENT_EDU), max_length=5, blank=True, default = "")
+    # [0-1] Specification of education 
+    eduother = models.TextField("Other education", blank=True, default="")
     # [1] Record when it was created
     created = models.DateTimeField(default=datetime.now)
 
     def __str__(self):
-        return self.ptcpid
+        response = "ptcp{}: {}-{}".format(self.id, self.age, self.gender)
+        return response
+
+    def get_edu(self):
+        abbr = self.edu
+        dutch = FieldChoice.objects.filter(field__iexact=EXPERIMENT_EDU, abbr=abbr).first().dutch_name
+        if abbr == "g7" and self.eduother != None:
+            education = "{}_{}".format(dutch, self.eduother)
+        else:
+            education = dutch
+        return education
+
 
 
 class Response(models.Model):

@@ -43,9 +43,19 @@ class ExperimentAdmin(admin.ModelAdmin):
 class QdataAdmin(admin.ModelAdmin):
     """Display and edit [Question Data] definitions"""
 
-    fields = ['experiment', 'qmeta', 'qtext']
-    list_display = ['experiment', 'qmeta']
+    fields = ['qmeta', 'qtext', 'qtopic', 'qsuggest', 'qcorr', 'experiment']
+    list_display = ['qmeta', 'qtopic', 'qsuggest', 'qcorr', 'experiment']
     search_fields = ['qmeta']
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
+        }
+
+class ResponseAdmin(admin.ModelAdmin):
+    """Display and edit [Response] objects from participants"""
+
+    fields = ['experiment', 'participant', 'answer']
+    list_display = ['experiment', 'participant', 'answer']
+    search_fields = ['experiment']
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
         }
@@ -57,3 +67,5 @@ admin.site.register(FieldChoice, FieldChoiceAdmin)
 # Models for Cesar Lingo
 admin.site.register(Experiment, ExperimentAdmin)
 admin.site.register(Qdata, QdataAdmin)
+admin.site.register(Participant)
+admin.site.register(Response, ResponseAdmin)

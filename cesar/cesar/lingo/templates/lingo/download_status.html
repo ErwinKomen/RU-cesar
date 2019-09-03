@@ -1,0 +1,33 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'lingo_home' %}">Home</a>
+      &rsaquo; <a href="{% url 'exp_list' %}">Experiment List</a>
+      &rsaquo; <a href="{{exp_edit_url}}">{{exp_name}}</a>
+      &rsaquo; results
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+    <h4>Report</h4>
+    <p>Downloading could not be started. Please see the error(s) below.</p>
+    <div class="errors">
+      {% if error_list %} 
+        <b>Errors:</b>
+        {% for item in error_list %}
+        <div class="error-item"><code>{{item|safe}}</code></div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <div>&nbsp;</div>
+    <h4>Back</h4>
+    <div>
+      <p>Return to the experiment details of 
+      <a href="{% url 'exp_details' pk=object_id %}">[{{exp_name}}]</a></p>
+    </div>
+  </div>
+{% endblock content %}

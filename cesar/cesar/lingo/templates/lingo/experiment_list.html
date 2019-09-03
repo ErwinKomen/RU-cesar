@@ -78,18 +78,41 @@
               {% for item in object_list %}
                 <tr>
                   <td valign="top" class="clickable tdnowrap">{{item.home}}</td>
-                  <td valign="top" title="{{item.msg}}" style="width: 100%;">{{item.title}}</td>
+                  <td valign="top" title="{{item.msg}}" style="width: 100%;">
+                    <span>{{item.title}}</span>
+                    {% if is_lingo_editor %}<span style="font-size: smaller; color: darkblue;">(There are {{item.resultcount}} results so far)</span>{% endif %}
+                  </td>
                   <td valign="top" class="tdnowrap" align="right">{{item.created|date:"j/b/o G:i"}}</td>
                   <!-- Room for action buttons -->
                   <td class="tdnowrap">
-                    {% if is_in_tsg %}
-                    <a class="view-mode btn btn-xs jumbo-1" href="{% url 'exp_details' item.id %}">
-                      <span class="glyphicon glyphicon-pencil" title="Edit this experiment"></span>
-                    </a>
-                    {% endif %}
-                    <a class="view-mode btn btn-xs jumbo-3" href="{% url 'exp_do' item.id %}">
-                      <span class="glyphicon glyphicon-play-circle" title="Start this experiment"></span>
-                    </a>
+                    <div>
+                      <form>
+                        {% csrf_token %}
+                        <span id="downloadcenter" class="hidden">
+                          <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+                        </span>
+
+                        {% if is_in_tsg %}
+                        <a class="view-mode btn btn-xs jumbo-1" href="{% url 'exp_details' item.id %}">
+                          <span class="glyphicon glyphicon-pencil" title="Edit this experiment"></span>
+                        </a>
+                        {% endif %}
+
+                        <a class="view-mode btn btn-xs jumbo-3" href="{% url 'exp_do' item.id %}">
+                          <span class="glyphicon glyphicon-play-circle" title="Start this experiment"></span>
+                        </a>
+
+                        {% if is_lingo_editor %}
+                          <a href="#" id="result_download_excel"
+                             class="view-mode btn btn-xs jumbo-3" 
+                              downloadtype="xlsx"
+                              ajaxurl="{% url 'exp_download' item.id %}"
+                              onclick="ru.cesar.lingo.post_download(this);" >
+                            <span class="glyphicon glyphicon-arrow-down" title="Get results of this experiment as Excel"></span>
+                          </a>
+                        {% endif %}
+                      </form>
+                    </div>
                   </td>
                 </tr>
               {% endfor %}

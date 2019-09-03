@@ -2325,6 +2325,31 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * edu_check
+       *    Check the eduction
+       * 
+       * @param {type} el
+       */
+      edu_check: function (el) {
+        var sValue = "",
+            elSpec = null;
+
+        try {
+          // Find the special one
+          elSpec = $(el).closest(".row").find(".edu-spec").first();
+          // Find the selected value
+          sValue = $(el).find("select").first().val();
+          if (sValue === "g7") {
+            $(elSpec).removeClass("hidden");
+          } else {
+            $(elSpec).addClass("hidden");
+          }
+        } catch (ex) {
+          private_methods.errMsg("edu_check", ex);
+        }
+      },
+
+      /**
        * exp_button_action
        *    What to do when a user presses a button
        * 
@@ -2333,6 +2358,7 @@ var ru = (function ($, ru) {
       exp_button_action: function (button_name, el) {
         var participant_id = "",
             elQitem = null,
+            bCanNext = false, // Can go to the next button
             elNext = null;
 
         try {
@@ -2342,6 +2368,10 @@ var ru = (function ($, ru) {
                 // Move to the survey part
                 $(".consentForm").addClass("hidden");
                 $('.participantArea').removeClass("hidden");
+                // Reset all radio buttons in the QUESTIONAREA
+                $(".questionArea input[type=radio]").each(function (idx, elradio) {
+                  $(elradio).checked = false;
+                });
                 break;
               case "decline":
                 alert("You have decided to not participate in this experiment. Should you change your mind and decide to participate, you can reload this page or click the link from Amazon Mechanical Turk again.");
@@ -2361,17 +2391,47 @@ var ru = (function ($, ru) {
                 window.scroll(0, 0);
                 break;
               case "nextq":
-                // Hide current questions
-                $(".questionItem").addClass("hidden");
                 // If all is well [el] points to the button
-                // Check if this is the last text pair (the last .questionItem)
                 elQitem = $(el).closest(".questionItem");
-                if ($(elQitem).closest("form").find(".questionItem").last().index() === $(elQitem).index()) {
-                  // This is the last questionItem: go to submit
-                  $(".questionSubmit").removeClass("hidden");
-                } else {
-                  // Just go to the next question item
-                  $(elQitem).next().removeClass("hidden");
+                bCanNext = true;
+
+                // Check all radio buttons *UNDER ME*
+                $(elQitem).find(".btn-group").each(function (idx, elGrp) {
+                  var bChecked = false,
+                      i = 0,
+                      warning = "",
+                      arRadio = null;
+
+                  // Visit all input radio ones that are here
+                  arRadio = $(elGrp).find("input[type=radio]");
+                  if (arRadio.length > 0) {
+                    // There are radio buttons to check
+                    for (i = 0; i < arRadio.length; i++) {
+                      if (arRadio[i].checked) { bChecked = true;}
+                    }
+                    // Check if all is well
+                    if (!bChecked) {
+                      // Show the error message
+                      $(elGrp).closest("tr").find(".errmsg").removeClass("hidden");
+                      bCanNext = false;
+                      // return;
+                    } else {
+                      // HIDE the error message
+                      $(elGrp).closest("tr").find(".errmsg").addClass("hidden");
+                    }
+                  }
+                });
+                if (bCanNext) {
+                  // Hide current questions
+                  $(".questionItem").addClass("hidden");
+                  // Check if this is the last text pair (the last .questionItem)
+                  if ($(elQitem).closest("form").find(".questionItem").last().index() === $(elQitem).index()) {
+                    // This is the last questionItem: go to submit
+                    $(".questionSubmit").removeClass("hidden");
+                  } else {
+                    // Just go to the next question item
+                    $(elQitem).next().removeClass("hidden");
+                  }
                 }
                 break;
               case "submitq":

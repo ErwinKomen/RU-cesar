@@ -27,6 +27,7 @@ from cesar.settings import APP_PREFIX
 from cesar.utils import ErrHandle
 from cesar.lingo.models import *
 from cesar.lingo.forms import ExperimentForm, ParticipantForm, AnswerForm
+from cesar.seeker.views import csv_to_excel
 
 # Debugging for certain functions in this views.py
 bDebug = True
@@ -409,7 +410,7 @@ class BasicLingo(View):
                     # sDbName = "{}_{}_{}_QC{}_Dbase.{}{}".format(sCrpName, sLng, sPartDir, self.qcTarget, self.dtype, sGz)
                     modelname = self.MainModel.__name__
                     obj_id = "n" if self.obj == None else self.obj.id
-                    sDbName = "tsg_{}_{}.{}".format(modelname, obj_id, self.dtype)
+                    sDbName = "lingo_{}_{}.{}".format(modelname, obj_id, self.dtype)
                     sContentType = ""
                     if self.dtype == "csv":
                         sContentType = "text/tab-separated-values"
@@ -423,7 +424,7 @@ class BasicLingo(View):
                         # Convert 'compressed_content' to an Excel worksheet
                         response = HttpResponse(content_type=sContentType)
                         response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
-                        response = csv_to_excel(sData, response)
+                        response = csv_to_excel(sData, response, delimiter="\t")
                     else:
                         response = HttpResponse(sData, content_type=sContentType)
                         response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
@@ -935,6 +936,7 @@ class ExperimentListView(ListView):
 
         # Add some information
         context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+        context['is_lingo_editor'] = user_is_ingroup(self.request, "lingo-editor")
         context['authenticated'] = currentuser.is_authenticated
 
         # Add to the context
@@ -1053,14 +1055,16 @@ class ExperimentDo(LingoDetails):
                                 # Check if the answers were given correctly
                                 text1_corr = (text1.qcorr.lower()  in self.correct)
                                 text2_corr = (text2.qcorr.lower()  in self.correct)
-                                identified = (text1_ans == text1_corr and text2_ans == text2_corr)
+                                identified_1 = (text1_ans == text1_corr)
+                                identified_2 = (text2_ans == text2_corr)
                                 # Find out what the preference was
                                 preference_id = text1.id if best_text.lower() == "text1" else text2.id
                                 preference = text1.qmeta if best_text.lower() == "text1" else text2.qmeta
                             
                                 # combine answer into JSON
                                 answer = {}
-                                answer['identified'] = identified
+                                answer['identified1'] = identified_1
+                                answer['identified2'] = identified_2
                                 answer['preference'] = preference
                                 answer['text1'] = text1.qmeta
                                 answer['text2'] = text2.qmeta
@@ -1107,7 +1111,7 @@ class ExperimentDo(LingoDetails):
                         # 2: right part
                         combi['right_id'] = right['id']
                         combi['right'] = right['qtext']
-                        combi['right_topic'] = left['qtopic']
+                        combi['right_topic'] = right['qtopic']
                         # 3: Add the form from the formset
                         form = formset[idx]
                         combi['form'] = form
@@ -1183,12 +1187,129 @@ class ExperimentEdit(BasicLingo):
             return False    # Change into "TRUE" if changes are made
 
 
+class ExperimentDownload(BasicLingo):
+    MainModel = Experiment
+    template_name = "lingo/download_status.html"
+    qcTarget = 1
+    dtype = "csv"           # downloadtype
+    basket = None
+    action = "download"
+
+    def custom_init(self):
+        """Calculate stuff"""
+        
+        dt = self.qd['downloadtype']
+        if dt != None and dt != '':
+            self.dtype = dt
+
+    def add_to_context(self, context):
+        # Provide search URL and search name
+        context['exp_edit_url'] = reverse("exp_edit", kwargs={"object_id": self.obj.id})
+        context['exp_name'] = self.objname
+        context['basket'] = self.basket
+        return context
+
+    def get_data(self, prefix, dtype):
+        """Get the experiment results as CSV"""
+
+        data = ""
+        lCsv = []
+        oErr = ErrHandle()
+        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified1', 'Preference', 'Education', 'Age', 'Gender']
+        try:
+            # Start with the header
+            oLine = "\t".join(headers)
+            lCsv.append(oLine)
+
+            # Get a list of all answers given to this experiment
+            qs = Response.objects.filter(experiment=self.obj)
+            for obj in qs:
+                participant = obj.participant
+                answer = json.loads( obj.answer)
+
+                identified1 = True
+                if 'identified1' in answer:
+                    identified1 = answer['identified1']
+                elif 'identified' in answer:
+                    identified1 = answer['identified']
+                identified2 = True
+                if 'identified2' in answer:
+                    identified2 = answer['identified2']
+                elif 'identified' in answer:
+                    identified2 = answer['identified']
+
+                education = participant.get_edu()
+
+                sLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                    participant.id, answer['text1'], answer['text2'], identified1, identified2, 
+                    answer['preference'], education, participant.age, participant.gender)
+                lCsv.append(sLine)
+
+            # REturn the whole
+            return "\n".join(lCsv)
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError("ExperimentDownload get_csv")
+            data = ""
+
+        return data
+    
+
 class ParticipantDetails(BasicLingo):
     MainModel = Participant
     template_name = 'lingo/participant.html'
     title = "Participant"
     need_authentication = False
+    ptcpfields = ""
     form_objects = [{'form': ParticipantForm, 'prefix': 'ptcp', 'readonly': False}]
+
+    def is_custom_valid(self, prefix, form):
+        """Validate the participant answers to the questions"""
+
+        bValid = True
+
+        # Iterate over the necessary fields
+        for item in self.ptcpfields:
+            if form.cleaned_data[item] == None or form.cleaned_data[item] == "":
+                bValid = False
+                self.arErr.append("Hoe zit het met {}?".format(form.fields[item].label))
+            elif item == "age":
+                sAge = form.cleaned_data[item]
+                try:
+                    age = int(sAge)
+                    if age <= 10:
+                        self.arErr.append("Sorry, u bent te jong voor deelname")
+                        bValid = False
+                    elif age > 110:
+                        self.arErr.append("Sorry, u bent te oud voor deelname")
+                        bValid = False
+                except:
+                    self.arErr.append("Wat voor leeftijd?")
+                    bValid = False
+            elif item == "edu":
+                # Double check if an alternative has been provided
+                eduother = form.cleaned_data['eduother']
+                edu = form.cleaned_data['edu']
+                if edu == "g7" and eduother == "":
+                    self.arErr.append("Welk schooltype geeft u les?")
+                    bValid = False
+
+        return bValid
+
+    def custom_init(self):
+        # Find out which participant fields need to be shown
+        ptcpfields = []
+        if 'experiment_id' in self.qd:
+            experiment = Experiment.objects.filter(id=self.qd['experiment_id']).first()
+            if experiment != None:
+                sFields = experiment.ptcpfields
+                if sFields != None and sFields != "":
+                    ptcpfields = json.loads(sFields)
+        # if it is empty, put all fields in there
+        if len(ptcpfields) == 0:
+            ptcpfields = ['age','gender', 'engfirst', 'lngfirst', 'lngother', 'edu']
+        self.ptcpfields = ptcpfields
+        return True
 
     def add_to_context(self, context):
         # make sure to add the ID for this participant to what we return
@@ -1197,4 +1318,13 @@ class ParticipantDetails(BasicLingo):
             instance = self.form_objects[0]['instance']
             if instance != None:
                 context['participant_id'] = instance.id
+            # TODO: See if we need to add any warning message
+
+        # Find out which participant fields need to be shown
+        if self.ptcpfields != "":
+            context['ptcpfields'] = self.ptcpfields
+
+        if 'experiment_id' in self.qd:
+            context['experiment_id'] = self.qd['experiment_id']
+
         return context

@@ -45,7 +45,10 @@ urlpatterns = [
     url(r'^lingo/experiment/details(?:/(?P<pk>\d+))?/$', ExperimentDetails.as_view(), name='exp_details'),
     url(r'^lingo/experiment/edit(?:/(?P<pk>\d+))?/$', ExperimentEdit.as_view(), name='exp_edit'),
     url(r'^lingo/experiment/do/(?P<pk>\d+)', ExperimentDo.as_view(), name='exp_do'),
+    url(r'^lingo/experiment/download/(?P<pk>\d+)', ExperimentDownload.as_view(), name='exp_download'),
     url(r'^lingo/experiment/participant(?:/(?P<pk>\d+))?/$', ParticipantDetails.as_view(), name='participant'),
+
+
     url(r'^crm/contacts', cesar.lingo.views.crm_contacts, name='crm_contacts'),
 
     # Cesar proper:
