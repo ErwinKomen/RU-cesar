@@ -87,7 +87,7 @@ def build_choice_list(field, position=None, subcat=None, maybe_empty=False):
     # We do not use defaults
     return choice_list;
 
-def build_abbr_list(field, position=None, subcat=None, maybe_empty=False, language="eng"):
+def build_abbr_list(field, position=None, subcat=None, maybe_empty=False, language="eng", sortcol=1):
     """Create a list of choice-tuples"""
 
     choice_list = [];
@@ -124,7 +124,7 @@ def build_abbr_list(field, position=None, subcat=None, maybe_empty=False, langua
                     # Add it to the list that checks for uniqueness
                     unique_list.append(sEngName)
 
-            choice_list = sorted(choice_list,key=lambda x: x[1]);
+            choice_list = sorted(choice_list,key=lambda x: x[sortcol]);
     except:
         print("Unexpected error:", sys.exc_info()[0])
         choice_list = [('0','-'),('1','N/A')];
@@ -308,6 +308,8 @@ class Response(models.Model):
     participant = models.ForeignKey(Participant, on_delete=models.CASCADE)
     # [0-1] The answers as a json object (stringified)
     answer = models.TextField("Answers", blank=True, null=True)
+    # [1] Record when this response was created
+    created = models.DateTimeField(default=datetime.now)
 
     def __str__(self):
         return "{}_{}".format(self.experiment.home, self.participant.ptcpid)

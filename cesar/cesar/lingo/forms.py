@@ -46,9 +46,9 @@ class ParticipantForm(ModelForm):
         # First perform the default thing
         super(ParticipantForm, self).__init__(*args, **kwargs)
         # This is DUTCH, so we need to load other choices
-        self.fields['gender'].choices = build_abbr_list(EXPERIMENT_GENDER, language="nld", maybe_empty=True)
+        self.fields['gender'].choices = build_abbr_list(EXPERIMENT_GENDER, language="nld", maybe_empty=True, sortcol=0)
         self.fields['engfirst'].choices = build_abbr_list(EXPERIMENT_YESNO, language="nld", maybe_empty=True)
-        self.fields['edu'].choices = build_abbr_list(EXPERIMENT_EDU, language="nld", maybe_empty=True)
+        self.fields['edu'].choices = build_abbr_list(EXPERIMENT_EDU, language="nld", maybe_empty=True, sortcol=0)
 
 
 

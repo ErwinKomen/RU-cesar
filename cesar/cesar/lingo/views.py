@@ -995,7 +995,7 @@ class ExperimentDo(LingoDetails):
     title = "ExperimentDo"
     rtype = "html"
     read_only = True
-    correct = ["ja", "yes", "true"]
+    correct = ["ja", "j", "yes", "y", "true", "t"]
     NUM_RESPONSES = 10
     NUM_TEXTS = 25
     AnswerFormset = formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
@@ -1022,6 +1022,8 @@ class ExperimentDo(LingoDetails):
         # Details of the experiment
         instance = self.object
         context['consent'] = instance.get_consent_markdown()
+        context['agreementq'] = "<p>If you agree to participate, click CONTINUE. You will be asked to enter your Amazon Mechanical Turk worker ID and then complete a short survey.</p>" + \
+                                "<p>If you do not agree to participate, please click DECLINE.</p>"
 
         context['exp_data'] = None
         # Provide data based on 'home' field of experiment
@@ -1215,7 +1217,7 @@ class ExperimentDownload(BasicLingo):
         data = ""
         lCsv = []
         oErr = ErrHandle()
-        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified1', 'Preference', 'Education', 'Age', 'Gender']
+        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender']
         try:
             # Start with the header
             oLine = "\t".join(headers)

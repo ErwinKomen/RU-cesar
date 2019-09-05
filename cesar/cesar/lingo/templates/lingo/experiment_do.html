@@ -13,7 +13,7 @@
   <div id="consentForm" class="consentForm">
 
     <div class="row">&nbsp;</div>
-    <h3 text>Informed Consent</h3>
+    <h3 text>Instructies</h3>
     <hr class="hr-custom">
 
     <!-- Show the consent information -->
@@ -21,11 +21,9 @@
 
     <!-- Ask for agreement -->
     <div class="indented makeleft" >
-      <p>If you agree to participate, click CONTINUE. You will be asked to enter your Amazon Mechanical Turk worker ID and then complete a short survey.</p>
-      <p>If you do not agree to participate, please click DECLINE.</p>
 
-      <button type="button" class="continueButton">CONTINUE</button>
-      <button type="button" class="declineButton">DECLINE</button>
+      <button type="button" class="continueButton">DOORGAAN</button>
+      <button type="button" class="declineButton">AFBREKEN</button>
     </div>
 
   </div>
@@ -76,7 +74,7 @@
         <div class="col-row">
           <div class="col-md-8 col-md-offset-2 qanswerView" >
             <!-- Instructions -->
-            <h3><b>(1) Lees beide teksten, (2) doe de vragen, (3) kies 'Volgende'</b></h3>
+            <h4><b>(1) Lees beide teksten, (2) beantwoord de vragen, (3) klik op 'Volgende'</b></h4>
 
             <!-- Status -->
             <!--
@@ -120,11 +118,11 @@
 
               <!-- Which text is better -->
               <tr>
-                <td align="right">Welke tekst is beter te begrijpen?</td>
+                <td align="right">Welke tekst is beter geschreven?</td>
                 <td align="left">
                   <div class="btn-group">
                     <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text1" />Tekst 1 (links)</label>
-                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text2" />Tekst 2 (richts)</label>
+                    <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text2" />Tekst 2 (rechts)</label>
                   </div>
                   <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
                     Antwoord??
