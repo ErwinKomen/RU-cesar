@@ -21,6 +21,7 @@ from django.views.generic import ListView, View
 from datetime import datetime
 import pytz
 import random
+import itertools
 from django.utils import timezone
 
 from cesar.settings import APP_PREFIX
@@ -47,6 +48,31 @@ def treat_bom(sHtml):
 
 def get_current_datetime():
     return timezone.now()
+
+def unique_permutations(iterable, r=None):
+    # permutations('ABCD', 2) --> AB AC AD BA BC BD CA CB CD DA DB DC
+    # permutations(range(3)) --> 012 021 102 120 201 210
+    pool = tuple(iterable)
+    n = len(pool)
+    r = n if r is None else r
+    if r > n:
+        return
+    indices = range(n)
+    cycles = range(n, n-r, -1)
+    yield tuple(pool[i] for i in indices[:r])
+    while n:
+        for i in reversed(range(r)):
+            cycles[i] -= 1
+            if cycles[i] == 0:
+                indices[i:] = indices[i+1:] + indices[i:i+1]
+                cycles[i] = n - i
+            else:
+                j = cycles[i]
+                indices[i], indices[-j] = indices[-j], indices[i]
+                yield tuple(pool[i] for i in indices[:r])
+                break
+        else:
+            return
 
 # Create your views here.
 def user_is_authenticated(request):
@@ -997,6 +1023,7 @@ class ExperimentDo(LingoDetails):
     read_only = True
     correct = ["ja", "j", "yes", "y", "true", "t"]
     NUM_RESPONSES = 10
+    NUM_PERMU = 10
     NUM_TEXTS = 25
     AnswerFormset = formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
 
@@ -1074,7 +1101,7 @@ class ExperimentDo(LingoDetails):
                                 answer['text1_id'] = text1.id
                                 answer['text2_id'] = text2_id
                                 # Create a response object
-                                response = Response(experiment=self.object, participant=participant, answer= json.dumps(answer))
+                                response = Response(experiment=self.object, participant=participant, answer= json.dumps(answer), created=timezone.now())
                                 response.save()
                     else:
                         # Pass on the fact that there are errors
@@ -1085,42 +1112,83 @@ class ExperimentDo(LingoDetails):
                 # Finished preparing POST data
                 post_finished = True
             elif self.request.method == "GET":
+                # Set the random method
+                random_method = "choose_subset"
+                random_method = "small_set"
+
                 # Make sure the participant id is passed on
-                participant = Participant()
-                participant.save()
+                ip = "{}_{}".format(self.request.META.get('REMOTE_ADDR'), self.request.META.get('REMOTE_HOST'))
+                participant = Participant.objects.filter(ip=ip).first()
+                if participant == None:
+                    participant = Participant()
+                    participant.ip = ip
+                    participant.save()
                 context['participant_id'] = participant.id
 
                 # Create a formset for the answer forms
                 formset = self.AnswerFormset(prefix=pfx)
                 context['answer_formset'] = formset
-                # Get a list of texts
-                qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic' )
-                if len(qs_texts) == self.NUM_TEXTS:
-                    # Create data: 20 random texts from the 25
-                    text_selection = random.sample(list(qs_texts), 2 * self.NUM_RESPONSES)
-                    # NOTE: compare the first ten with the second ten
-                    # Create a list of text combinations
-                    combi_list = []
-                    for idx in range(self.NUM_RESPONSES):
-                        left = text_selection[idx]
-                        right = text_selection[idx+10]
-                        # Create and fill a combi object
-                        combi = {}
-                        # 1: left part
-                        combi['left_id'] = left['id']
-                        combi['left'] = left['qtext']
-                        combi['left_topic'] = left['qtopic']
-                        # 2: right part
-                        combi['right_id'] = right['id']
-                        combi['right'] = right['qtext']
-                        combi['right_topic'] = right['qtopic']
-                        # 3: Add the form from the formset
-                        form = formset[idx]
-                        combi['form'] = form
-                        # Add this to the combi=list
-                        combi_list.append(combi)
-                    # Make the combi list available
-                    context['exp_parts'] = combi_list
+                if random_method == "choose_subset":
+                    # Get a list of texts
+                    qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic' )
+                    if len(qs_texts) == self.NUM_TEXTS:
+                        combi_list = []
+
+                        # Create data: 20 random texts from the 25
+                        text_selection = random.sample(list(qs_texts), 2 * self.NUM_RESPONSES)
+                        # NOTE: compare the first ten with the second ten
+                        # Create a list of text combinations
+                        for idx in range(self.NUM_RESPONSES):
+                            left = text_selection[idx]
+                            right = text_selection[idx+10]
+                            # Create and fill a combi object
+                            combi = {}
+                            # 1: left part
+                            combi['left_id'] = left['id']
+                            combi['left'] = left['qtext']
+                            combi['left_topic'] = left['qtopic']
+                            # 2: right part
+                            combi['right_id'] = right['id']
+                            combi['right'] = right['qtext']
+                            combi['right_topic'] = right['qtopic']
+                            # 3: Add the form from the formset
+                            form = formset[idx]
+                            combi['form'] = form
+                            # Add this to the combi=list
+                            combi_list.append(combi)
+                        # Make the combi list available
+                        context['exp_parts'] = combi_list
+                elif random_method == "small_set":
+                    # Create a list of all permutations
+                    qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic' )
+                    if len(qs_texts) == self.NUM_PERMU:
+                        combi_list = []
+                        # Create all permutations of TWO texts
+                        pms = [comb for comb in itertools.combinations(qs_texts,2)]
+
+                        # Choose NUM_RESPONSES random combinations from  the total
+                        text_selection = random.sample(pms, self.NUM_RESPONSES)
+                        for idx in range(self.NUM_RESPONSES):
+                            left = text_selection[idx][0]
+                            right = text_selection[idx][1]
+                            # Create and fill a combi object
+                            combi = {}
+                            # 1: left part
+                            combi['left_id'] = left['id']
+                            combi['left'] = left['qtext']
+                            combi['left_topic'] = left['qtopic']
+                            # 2: right part
+                            combi['right_id'] = right['id']
+                            combi['right'] = right['qtext']
+                            combi['right_topic'] = right['qtopic']
+                            # 3: Add the form from the formset
+                            form = formset[idx]
+                            combi['form'] = form
+                            # Add this to the combi=list
+                            combi_list.append(combi)
+
+                        # Make the combi list available
+                        context['exp_parts'] = combi_list
 
         # The page to return to
         context['prevpage'] = reverse("exp_list")
@@ -1217,7 +1285,7 @@ class ExperimentDownload(BasicLingo):
         data = ""
         lCsv = []
         oErr = ErrHandle()
-        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender']
+        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender', 'Email', 'Start', 'Finish']
         try:
             # Start with the header
             oLine = "\t".join(headers)
@@ -1242,9 +1310,10 @@ class ExperimentDownload(BasicLingo):
 
                 education = participant.get_edu()
 
-                sLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                sLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
                     participant.id, answer['text1'], answer['text2'], identified1, identified2, 
-                    answer['preference'], education, participant.age, participant.gender)
+                    answer['preference'], education, participant.age, participant.gender, participant.email, 
+                    participant.created, obj.created)
                 lCsv.append(sLine)
 
             # REturn the whole
@@ -1272,7 +1341,7 @@ class ParticipantDetails(BasicLingo):
 
         # Iterate over the necessary fields
         for item in self.ptcpfields:
-            if form.cleaned_data[item] == None or form.cleaned_data[item] == "":
+            if (form.cleaned_data[item] == None or form.cleaned_data[item] == "") and (item != "email"):
                 bValid = False
                 self.arErr.append("Hoe zit het met {}?".format(form.fields[item].label))
             elif item == "age":

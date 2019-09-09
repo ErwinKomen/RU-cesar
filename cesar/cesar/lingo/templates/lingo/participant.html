@@ -12,7 +12,7 @@
     <input id="experiment_id" name="experiment_id" value="{{experiment_id}}" />
   </div>
 
-	<h3>Please answer the following questions</h3>
+	<h3>Beantwoord de volgende vragen</h3>
 
   <!-- participant detail: ptcpid-->
   {% if 'ptcp' in ptcpfields %}
@@ -72,6 +72,14 @@
       <!-- Alternative specification of education -->
       <div class="edu-spec hidden">{{ptcpForm.eduother}}</div>
     </div>
+  </div>
+  {% endif %}
+
+  <!-- participant detail: EMAIL (optional) -->
+  {% if 'email' in ptcpfields %}
+  <div class="form-group row">
+    <div class="col-md-4" align="right">Wat is uw e-mailadres? (alleen als u mee wilt dingen naar de boekenbon van €50)</div>
+    <div class="col-md-8" align="left">{{ptcpForm.email}}</div>
   </div>
   {% endif %}
 

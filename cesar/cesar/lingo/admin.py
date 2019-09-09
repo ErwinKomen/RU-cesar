@@ -43,9 +43,10 @@ class ExperimentAdmin(admin.ModelAdmin):
 class QdataAdmin(admin.ModelAdmin):
     """Display and edit [Question Data] definitions"""
 
-    fields = ['qmeta', 'qtext', 'qtopic', 'qsuggest', 'qcorr', 'experiment']
-    list_display = ['qmeta', 'qtopic', 'qsuggest', 'qcorr', 'experiment']
+    fields = ['qmeta', 'qtext', 'qtopic', 'qsuggest', 'qcorr', 'experiment', 'include']
+    list_display = ['qmeta', 'qtopic', 'qsuggest', 'qcorr', 'experiment', 'include']
     search_fields = ['qmeta']
+    list_filter = ['include']
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
         }

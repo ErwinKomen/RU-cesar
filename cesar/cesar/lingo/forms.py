@@ -31,15 +31,16 @@ class ParticipantForm(ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'edu', 'eduother']
+        fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'edu', 'eduother', 'email']
         widgets={'ptcpid':      forms.TextInput(attrs={'style': 'width: 40%;', 'placeholder':'Jouw participant ID'}),
                  'age':         forms.TextInput(attrs={'style': 'width: 40%;', 'placeholder':'Leeftijd (getal)'}),
                  'gender':      forms.Select(),
                  'engfirst':    forms.Select(),
-                 'lngfirst':    forms.TextInput(attrs={'style': 'width: 50%;', 'placeholder':'Je eerste taal'}),
-                 'lngother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Noem de andere talen die je kent'}),
+                 'lngfirst':    forms.TextInput(attrs={'style': 'width: 50%;', 'placeholder':'Uw eerste taal'}),
+                 'lngother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Noem de andere talen die u kent'}),
                  'eduother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Beschrijf het schooltype waar u lesgeeft'}),
-                 'edu':         forms.Select()
+                 'edu':         forms.Select(),
+                 'email':       forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Uw e-mailadres'})
                  }
 
     def __init__(self, *args, **kwargs):

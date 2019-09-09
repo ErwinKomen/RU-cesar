@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils.html import mark_safe
+from django.utils import timezone
 from datetime import datetime
 from markdown import markdown
 from cesar.utils import *
@@ -257,6 +258,8 @@ class Qdata(models.Model):
     qcorr = models.CharField("Topic response", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "")
     # [1] The experiment
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    # [1] Include this one or not
+    include = models.CharField("Include text", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "n")
 
     def __str__(self):
         return self.qmeta
@@ -267,6 +270,8 @@ class Participant(models.Model):
 
     # [1] A unique ID that has been given to the participant
     ptcpid = models.CharField("Survey participant ID", max_length=MAX_TEXT_LEN, blank=True, default = "")
+    # [0-1] IP address and computer name of participant
+    ip = models.CharField("IP address", max_length=MAX_TEXT_LEN, blank=True, default = "unknown")
     # [1] Age (as a number)
     age = models.IntegerField("Age (number)", blank=True, null=True)
     # [1] Gender
@@ -281,8 +286,10 @@ class Participant(models.Model):
     edu = models.CharField("Education", choices=build_abbr_list(EXPERIMENT_EDU), max_length=5, blank=True, default = "")
     # [0-1] Specification of education 
     eduother = models.TextField("Other education", blank=True, default="")
+    # [0-1] Email (optional)
+    email = models.CharField("E-mailadres", max_length=MAX_TEXT_LEN, blank=True, default="")
     # [1] Record when it was created
-    created = models.DateTimeField(default=datetime.now)
+    created = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         response = "ptcp{}: {}-{}".format(self.id, self.age, self.gender)
@@ -309,7 +316,7 @@ class Response(models.Model):
     # [0-1] The answers as a json object (stringified)
     answer = models.TextField("Answers", blank=True, null=True)
     # [1] Record when this response was created
-    created = models.DateTimeField(default=datetime.now)
+    created = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return "{}_{}".format(self.experiment.home, self.participant.ptcpid)
