@@ -933,13 +933,13 @@ class Variable(models.Model):
     """A (named) variable contains the link to the actual Xquery code"""
 
     # [1; c] Link to the variable name and description definition
-    name = models.ForeignKey(VariableName, blank=False, null=False, on_delete=models.CASCADE)
+    name = models.ForeignKey(VariableName, blank=False, null=False)
     # [1] Where should this variable be found in XML: header of cmdi file?
     loc = models.CharField("Location", choices=build_choice_list(VARIABLE_LOC), max_length=5, help_text=get_help(VARIABLE_LOC), blank=False, null=False)
     # [1; o] Xquery text to get to the value of this variable
     value = models.TextField("Xquery definition", blank=False, null=False)
     # [1] Each variable belongs to exactly one [Metavar]
-    metavar = models.ForeignKey(Metavar, blank=False, null=False, on_delete=models.CASCADE)
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
 
     def __str__(self):
         return "{}_{}".format(self.name.name, self.metavar.name)
@@ -976,11 +976,11 @@ class Grouping(models.Model):
     """A (named) variable contains the link to the actual Xquery code"""
 
     # [1; c] Link to the variable name and description definition
-    name = models.ForeignKey(GroupingName, blank=False, null=False, on_delete=models.CASCADE)
+    name = models.ForeignKey(GroupingName, blank=False, null=False)
     # [1; o] Xquery text to get to the value of this variable
     value = models.TextField("Definition of this grouping in Xquery", blank=False, null=False)
     # [1] Each variable belongs to exactly one [Metavar]
-    metavar = models.ForeignKey(Metavar, blank=False, null=False, on_delete=models.CASCADE)
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
 
     def __str__(self):
         return "{}_{}".format(self.name.name, self.metavar.name)
@@ -1021,7 +1021,7 @@ class ConstituentNameTrans(models.Model):
     # [1] Description
     descr = models.TextField("Constituent description (in this language)", blank=False, null=False, default="SPECIFY")
     # [1] Link to a [TagsetName]
-    constituent = models.ForeignKey(Constituent, blank=False, null=False, on_delete=models.CASCADE)
+    constituent = models.ForeignKey(Constituent, blank=False, null=False)
 
     def __str__(self):
         return "{}_{}".format(self.constituent.title, self.lng)
@@ -1031,11 +1031,11 @@ class Tagset(models.Model):
     """Links the name of a constituent with the POS names used in one corpus"""
 
     # [1; c]
-    constituent = models.ForeignKey(Constituent, blank=False, null=False, default=0, on_delete=models.CASCADE)
+    constituent = models.ForeignKey(Constituent, blank=False, null=False, default=0)
     # [1; o]
     definition = models.CharField("Xquery for the constituent", max_length=MAX_TEXT_LEN, blank=False, null=False)
     # [1] Each tagset specification belongs to exactly one [Metavar]
-    metavar = models.ForeignKey(Metavar, blank=False, null=False, on_delete=models.CASCADE)
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
 
     def __str__(self):
         return "{}_{}".format(self.constituent.title, self.metavar.name)
@@ -1058,7 +1058,7 @@ class Corpus(models.Model):
     # [1]
     eth = models.CharField("Ethnologue 3-letter code of the text langauge", choices=build_choice_list(CORPUS_ETHNO), max_length=5, help_text=get_help(CORPUS_ETHNO))
     # [0-1]
-    metavar = models.ForeignKey(Metavar, blank=True, null=True, on_delete=models.SET_NULL)
+    metavar = models.ForeignKey(Metavar, blank=True, null=True)
     # [1]
     status = models.CharField("The status (e.g. 'hidden')", choices=build_choice_list(CORPUS_STATUS), max_length=5, help_text=get_help(CORPUS_STATUS))
 
@@ -1085,9 +1085,9 @@ class Part(models.Model):
     # [1]
     url = models.URLField("Link to the (original) release of this corpus (part)")
     # [1]
-    metavar = models.ForeignKey(Metavar, blank=False, null=False, on_delete=models.CASCADE)
+    metavar = models.ForeignKey(Metavar, blank=False, null=False)
     # [1] Each 'Part' can only belong to one 'Corpus'
-    corpus = models.ForeignKey(Corpus, blank=False, null=False, on_delete=models.CASCADE)
+    corpus = models.ForeignKey(Corpus, blank=False, null=False)
 
     def __str__(self):
         return self.name
@@ -1118,7 +1118,7 @@ class Download(models.Model):
     # [1] Number of texts available in this format
     count = models.CharField("Number of texts", max_length=10, default="unknown")
     # [1]    Link to the [Part] this download belongs to
-    part = models.ForeignKey(Part, blank=False, null=False, related_name="downloads", on_delete=models.CASCADE)
+    part = models.ForeignKey(Part, blank=False, null=False, related_name="downloads")
 
     def __str__(self):
         return "{}_{}".format(self.part.name, choice_english(CORPUS_FORMAT, self.format))
@@ -1132,7 +1132,7 @@ class Text(models.Model):
     # [1] - every text must be [psdx] or [folia] or something
     format = models.CharField("Format for this corpus (part)", choices=build_choice_list(CORPUS_FORMAT), max_length=5, help_text=get_help(CORPUS_FORMAT))
     # [1] - Every text must be part of a Part
-    part = models.ForeignKey(Part, blank=False, null=False, related_name="part_texts", on_delete=models.CASCADE)
+    part = models.ForeignKey(Part, blank=False, null=False, related_name="part_texts")
     # [1] - EVery text must have a length in number of lines
     lines = models.IntegerField("Number of lines", default=0)
     # [1] - EVery text must have a length in number of words
@@ -1261,7 +1261,7 @@ class Sentence(models.Model):
     # sent = models.CharField("Sentence", max_length=MAX_TEXT_LEN)
     sent = models.TextField("Sentence")
     # [1] Link to the [Text] this line belongs to
-    text = models.ForeignKey(Text, blank=False, null=False, related_name="sentences", on_delete=models.CASCADE)
+    text = models.ForeignKey(Text, blank=False, null=False, related_name="sentences")
 
     def __str__(self):
         return self.identifier

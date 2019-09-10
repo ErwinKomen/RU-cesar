@@ -257,7 +257,7 @@ class Qdata(models.Model):
     # [0-1] Correct response for this topic
     qcorr = models.CharField("Topic response", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "")
     # [1] The experiment
-    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    experiment = models.ForeignKey(Experiment)
     # [1] Include this one or not
     include = models.CharField("Include text", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "n")
 
@@ -310,9 +310,9 @@ class Response(models.Model):
     """Answers of one participant to one experiment"""
 
     # [1] The experiment
-    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    experiment = models.ForeignKey(Experiment)
     # [1] The Participant
-    participant = models.ForeignKey(Participant, on_delete=models.CASCADE)
+    participant = models.ForeignKey(Participant)
     # [0-1] The answers as a json object (stringified)
     answer = models.TextField("Answers", blank=True, null=True)
     # [1] Record when this response was created
