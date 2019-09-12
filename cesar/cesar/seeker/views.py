@@ -836,7 +836,7 @@ class ResearchExe(View):
                         basket = self.obj
                         sStatusCode = "stopping"
                         # Stop the basket
-                        basket.research.stop_execute()
+                        basket.research.stop_execute(basket)
                     elif self.action == "progress":
                         ## First check: if we are in error, then do not continue
                         #if self.obj.get_status() == "error":
