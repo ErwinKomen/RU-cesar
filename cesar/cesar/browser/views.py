@@ -28,6 +28,7 @@ from cesar.viewer.models import NewsItem
 import fnmatch
 import sys
 import base64
+import re
 
 # Global variables
 paginateSize = 10
@@ -172,10 +173,23 @@ def home(request):
     assert isinstance(request, HttpRequest)
     # Specify the template
     template_name = 'index.html'
+
     # Define the initial context
     context =  {'title':'RU-Cesar','year':datetime.now().year,
                 'is_longdale_user': user_is_ingroup(request, 'longdale_user'),
                 'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+
+    # Double check who this is
+    username = request.user.username
+    if username != None and username != "":
+        valid = re.match('^[\w-]+$', username) is not None
+        if not valid:
+            context['message'] = "Your username contains symbols other than letters and digits. " +\
+                "This means you may not be able to get results when running Cesar. " +\
+                "<p>Two options:" + \
+                "<ul><li>Log off and sign up under a new name. That user will not contain the projects you have made.</li>" + \
+                "<li>Mail the Cesar administrator with a request to change your username. You will keep all your search projects.</li></ul></p>"
+
     # Create the list of news-items
     lstQ = []
     lstQ.append(Q(status='val'))

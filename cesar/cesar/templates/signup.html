@@ -15,7 +15,7 @@
             <td valign="top"><div>{{field.label}}</div></td>
             <td valign="top">
               <div>{{field}}</div>
-              <div>{% if field.help_text %}<small style="color: grey;font-size: x-small">{{ field.help_text }}</small>{% endif %}</div>
+              <div>{% if field.help_text %}<small style="color: grey;font-size: x-small">{{ field.help_text|safe }}</small>{% endif %}</div>
               <div>
                 {% for error in field.errors %}<p style="color: red">{{ error }}</p>{% endfor %}
               </div>

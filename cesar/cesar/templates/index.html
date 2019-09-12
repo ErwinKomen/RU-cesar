@@ -23,6 +23,9 @@
 
   <div class="row">
       <div class="col-md-6 bgimg">
+          {% if message %}
+          <div style="color: red;font-size: small;">{{message|safe}}</div>
+          {% endif %}
           <h2>Latest news</h2>
           {% for item in newsitem_list %}
             <div class="panel panel-default">
