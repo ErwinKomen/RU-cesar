@@ -214,6 +214,7 @@
     <Content Include="cesar\lingo\static\lingo\scripts\respond.js" />
     <Content Include="cesar\lingo\templates\lingo\about.html" />
     <Content Include="cesar\lingo\templates\lingo\basic.html" />
+    <Content Include="cesar\lingo\templates\lingo\download_status.html" />
     <Content Include="cesar\lingo\templates\lingo\experiment_done.html" />
     <Content Include="cesar\lingo\templates\lingo\experiment_edit.html" />
     <Content Include="cesar\lingo\templates\lingo\index.html" />

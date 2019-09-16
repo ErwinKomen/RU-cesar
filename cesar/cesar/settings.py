@@ -32,7 +32,7 @@ APP_PREFIX = "dd/"
 if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     APP_PREFIX = ""
     admin.site.site_url = '/'
-    # Ponyland-internal:
+    # Ponyland: use through 8080-8080 SSH tunnel
     CRPP_HOME = 'http://localhost:8080/CrppS'
     PROJECT_DIR = '/var/www/tomcat8/live/tomcat8/crpp/project'
 elif "131.174" in hst:

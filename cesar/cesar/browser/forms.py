@@ -6,7 +6,9 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.utils.translation import ugettext_lazy as _
 from django.forms.widgets import *
+from django.core.exceptions import ValidationError
 from cesar.browser.models import *
+import re
 
 def init_choices(obj, sFieldName, sSet, maybe_empty=False):
     if (obj.fields != None and sFieldName in obj.fields):
@@ -35,6 +37,21 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', )
+
+    def clean_username(self):
+        """There are requirements on the username"""
+
+        usernew = self.cleaned_data.get('username')
+        existing = User.objects.filter(username=usernew).first()
+        if existing == None:
+            # This is a new user - check if the name contains anything but alphanumeric symbols
+            valid = re.match('^[\w-]+$', usernew) is not None
+            if not valid:
+                raise ValidationError("The username may only contain letters and numbers (sorry, this is specifically for Cesar)")
+        else:
+            # This username is already in use
+            raise ValidationError("This username already exists. Please try a different one.")
+        return usernew
 
 
 class VariableForm(forms.ModelForm):

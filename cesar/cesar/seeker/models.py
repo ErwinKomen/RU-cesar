@@ -14,7 +14,7 @@ from cesar.settings import APP_PREFIX
 from cesar.browser.models import build_choice_list, build_abbr_list, \
                                  get_help, choice_value, choice_abbreviation, get_instance_copy, \
                                  copy_m2m, copy_fk, Part, CORPUS_FORMAT, Text, get_format_name
-from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_dbinfo
+from cesar.seeker.services import crpp_exe, crpp_send_crp, crpp_status, crpp_dbinfo, crpp_stop
 import sys
 import copy
 import json
@@ -635,7 +635,19 @@ class Gateway(models.Model):
                             dvar_order += 1
                             dvar = VarDef(name=sName, order=dvar_order, description="dvar for line #{}".format(idx),
                                           type=varType, gateway=gateway)
-                            dvar.save()
+                            trials = 10
+                            bDone = False
+                            while not bDone:
+                                try:
+                                    dvar.save()
+                                    bDone = True
+                                except:
+                                    # there is a database locked error probably
+                                    sMsg = oErr.get_error_message()
+                                    trials -= 1
+                                    # Are we out of bounds?
+                                    if trials <= 0:
+                                        return False, sMsg
                             # Retrieve the CVAR
                             cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
                             cvar.type=varType
@@ -866,29 +878,47 @@ class Gateway(models.Model):
     def check_cvar(self):
         """Check all the CVAR connected to me, adding/deleting where needed"""
 
-        with transaction.atomic():
-            # Step 1: add CVAR for all Construction/Vardef combinations
-            for vardef in self.get_vardef_list():
-                # Walk all constructions
-                for construction in self.constructions.all():
-                    # Check if a cvar exists
-                    qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
-                    if qs.count() == 0:
-                        # Doesn't exist: create it
-                        cvar = ConstructionVariable(variable=vardef, construction=construction)
-                        cvar.save()
-            # Step 2: Find CVAR that do not belong to a gateway
-            gateway_pk_list = [item.pk for item in Gateway.objects.all()]
-            cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list)]
-            # Remove these instances
-            for cvar in cvar_orphans:
-                cvar.delete()
-            cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(variable__gateway__in=gateway_pk_list)]
-            # Remove these instances
-            for cvar in cvar_orphans:
-                cvar.delete()
+        bResult = True
+        sMsg = ""
+        oErr = ErrHandle()
+        try:
+            with transaction.atomic():
+                # Step 1: add CVAR for all Construction/Vardef combinations
+                for vardef in self.get_vardef_list():
+                    # Walk all constructions
+                    for construction in self.constructions.all():
+                        # Check if a cvar exists
+                        qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
+                        if qs.count() == 0:
+                            # Doesn't exist: create it
+                            cvar = ConstructionVariable(variable=vardef, construction=construction)
+                            trials = 10
+                            bDone = False
+                            while not bDone:
+                                try:
+                                    cvar.save()
+                                    bDone=True
+                                except:
+                                    trials -= 10
+                                    if trials <=0:
+                                        # Cannot do it
+                                        sMsg = oErr.get_error_message()
+                                        return False, sMsg
+                # Step 2: Find CVAR that do not belong to a gateway
+                gateway_pk_list = [item.pk for item in Gateway.objects.all()]
+                cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list)]
+                # Remove these instances
+                for cvar in cvar_orphans:
+                    cvar.delete()
+                cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(variable__gateway__in=gateway_pk_list)]
+                # Remove these instances
+                for cvar in cvar_orphans:
+                    cvar.delete()
+        except:
+            sMsg = oErr.get_error_message()
+            bResult = False
         # Make sure we are happy
-        return True
+        return bResult, sMsg
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Save the gateway
@@ -1037,7 +1067,7 @@ class VarDef(Variable):
       # Perform the normal saving
       save_result = super(VarDef, self).save(force_insert, force_update, using, update_fields)
       # Check and add/delete CVAR instances for this gateway
-      Gateway.check_cvar(self.gateway)
+      bCheck, msg = Gateway.check_cvar(self.gateway)
       # Return the result of normal saving
       return save_result
 
@@ -3959,7 +3989,14 @@ class Basket(models.Model):
                                 # Check if we have the right file
                                 while file != text.fileName:
                                     # text = next(text_list.iterator())
-                                    text = next(text_list_iter)
+                                    try:
+                                        text = next(text_list_iter)
+                                    except StopIteration as e:
+                                        # This is the normal 'end' of the iteration.
+                                        # But getting here means that the 'file' has not been found within [text_list_iter]
+                                        # WHY ??? - Is it not in [text_list]?? Double check...
+                                        print(e)
+                                        break
 
                                 # Keep track of the number of words and lines
                                 iNumLines += text.lines
