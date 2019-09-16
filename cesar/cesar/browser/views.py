@@ -617,6 +617,9 @@ class PartListView(ListView):
         # Make sure the paginate-values are available
         context['paginateValues'] = paginateValues
 
+        # Add some information
+        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+        
         if 'paginate_by' in initial:
             context['paginateSize'] = int(initial['paginate_by'])
             self.paginate_by = int(initial['paginate_by'])
@@ -659,9 +662,9 @@ class PartListView(ListView):
 
         # Make the query set available
         qs = Part.objects.filter(*lstQ).distinct().select_related().order_by(
-            Lower('metavar__name'),
             Lower('corpus__name'),
-            Lower('name'))
+            Lower('name'),
+            )
         self.qs = qs
 
         # Set the entry count
