@@ -2367,10 +2367,18 @@ var ru = (function ($, ru) {
               case "continue":
                 // Move to the survey part
                 $(".consentForm").addClass("hidden");
+                // Reset previous user information
+                $(".participantArea .row input[type=radio]").each(function (idx, elradio) {
+                  $(elradio)[0].checked = false;
+                });
+                // Reset previous user information
+                $(".participantArea .row input, .participantArea .row select").each(function (idx, elradio) {
+                  $(elradio).val("");
+                });
                 $('.participantArea').removeClass("hidden");
                 // Reset all radio buttons in the QUESTIONAREA
                 $(".questionArea input[type=radio]").each(function (idx, elradio) {
-                  $(elradio).checked = false;
+                  $(elradio)[0].checked = false;
                 });
                 break;
               case "decline":
