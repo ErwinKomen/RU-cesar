@@ -62,11 +62,22 @@ class ResponseAdmin(admin.ModelAdmin):
         }
 
 
+class ParticipantAdmin(admin.ModelAdmin):
+    """Display and edit [Participant] objects"""
+
+    fields = ['ip', 'age', 'gender', 'edu', 'email', 'created']
+    list_display = ['ip', 'age', 'gender', 'edu', 'email', 'created']
+    search_fields = ['ip', 'email']
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
+        }
+
+
 # Models that serve others
 admin.site.register(FieldChoice, FieldChoiceAdmin)
 
 # Models for Cesar Lingo
 admin.site.register(Experiment, ExperimentAdmin)
 admin.site.register(Qdata, QdataAdmin)
-admin.site.register(Participant)
+admin.site.register(Participant, ParticipantAdmin)
 admin.site.register(Response, ResponseAdmin)

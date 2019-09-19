@@ -191,7 +191,6 @@ def adapt_markdown(val, lowercase=True, nopara=True):
     return sBack
 
 
-
 class Experiment(models.Model):
     """An experiment that can be joined in for a limited time"""
 
@@ -303,7 +302,6 @@ class Participant(models.Model):
         else:
             education = dutch
         return education
-
 
 
 class Response(models.Model):
