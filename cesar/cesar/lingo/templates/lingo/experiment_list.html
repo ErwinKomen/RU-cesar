@@ -78,6 +78,7 @@
               {% for item in object_list %}
                 <tr>
                   <td valign="top" class="clickable tdnowrap">{{item.home}}</td>
+                  <td valign="top" class="clickable tdnowrap">{{item.get_status_displaytd>
                   <td valign="top" title="{{item.msg}}" style="width: 100%;">
                     <span>{{item.title}}</span>
                     {% if is_lingo_editor %}<span style="font-size: smaller; color: darkblue;">(There are {{item.resultcount}} results so far)</span>{% endif %}

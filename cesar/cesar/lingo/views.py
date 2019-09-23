@@ -937,10 +937,11 @@ class ExperimentListView(ListView):
     paginate_by = paginateEntries
     entrycount = 0
     qs = None
-    order_cols = ['home', 'title', 'created']
-    order_heads = [{'name': 'Home', 'order': 'o=2', 'type': 'str'}, 
-                   {'name': 'Title', 'order': 'o=1', 'type': 'str'}, 
-                   {'name': 'Date', 'order': 'o=3', 'type': 'str'}]
+    order_cols = ['home', 'status', 'title', 'created']
+    order_heads = [{'name': 'Home', 'order': 'o=1', 'type': 'str'}, 
+                   {'name': 'Status', 'order': 'o=2', 'type': 'str'}, 
+                   {'name': 'Title', 'order': 'o=3', 'type': 'str'}, 
+                   {'name': 'Date', 'order': 'o=4', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
 
@@ -1053,6 +1054,7 @@ class ExperimentDo(LingoDetails):
                                 "<p>If you do not agree to participate, please click DECLINE.</p>"
 
         context['exp_data'] = None
+        context['exp_valid'] = (instance.status == "val")
         # Provide data based on 'home' field of experiment
         if instance.home == "tcpf":
             pfx = "qans"
