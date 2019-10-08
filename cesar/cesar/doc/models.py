@@ -124,66 +124,23 @@ class FrogLink(models.Model):
                 # DEBUG: show the frog location
                 errHandle.Status("DEBUG: frogLoc={}".format(frogLoc))
 
-                # Action depends on the [froglocation]
-                #if frogLoc == "client" or frogLoc == "local":
-                #    doc = folProc.doc
-                #    # Add annotation layers
-                #    doc.declare(folia.PosAnnotation, 'http://ilk.uvt.nl/folia/sets/frog-mbpos-cgn', 
-                #                annotator='frog', annotatortype=folia.AnnotatorType.AUTO)
-                #    doc.declare(folia.LemmaAnnotation, 'http://ilk.uvt.nl/folia/sets/frog-mblem-nl', 
-                #                annotator='frog', annotatortype=folia.AnnotatorType.AUTO)
-                #    doc.declare(folia.MorphologyLayer, 'http://ilk.uvt.nl/folia/sets/frog-mbma-nl', 
-                #                annotator='frog', annotatortype=folia.AnnotatorType.AUTO)
-                #    # Iterate over paragraphs
-                #    for paragraph in doc.paragraphs():
-                #        # Iterate over all the sentences
-                #        for sentence in paragraph.sentences():
-                #            # Get the text of this sentence
-                #            sLine = sentence.text()
-                #            # Process it
-                #            bOkay, lSent = folProc.parse_sentence(sLine, frogLoc)
-                #            if not bOkay:
-                #                if len(lSent) == 0:
-                #                    sError = "FrogLink read_doc: unknown error"
-                #                else:
-                #                    sError = lSent[0]
-                #                oBack['status'] = 'error'
-                #                oBack['msg'] = sError
-                #                return oBack
 
-                #            # Add the annotation to the words in the sentence
-                #            # Walk the tokens in the sentence and add this information
-                #            for idx, oWord in enumerate(sentence.words()):
-                #                # Get the corresponding parse
-                #                parse = lSent[idx]
-                #                # Add POS annotation
-                #                sPosFull = parse['pos']
-                #                sPosHead = sPosFull.split("(")[0]
-                #                pos = oWord.add(folia.PosAnnotation, cls=sPosFull, head=sPosHead)
-                #                # Add lemma
-                #                lemma = oWord.add(folia.LemmaAnnotation, cls=parse['lemma'])
-                #                # Add morph
-                #                mlayer = oWord.add(folia.MorphologyLayer)
-                #                # The morphemes are enclosed in [...] brackets
-                #                arMorph = parse['morph'].strip("[]").split("][")
-                #                for m in arMorph:
-                #                    mitem = mlayer.add(folia.Morpheme)
-                #                    mitem.settext(m)
-                #    # Think of a name to save it
-                #    folia_out = folProc.basicf.replace(".basis", ".folia")
-                #    # Write it away
-                #    doc.save(folia_out)
-                #    # Note where it is
-                #    self.fullname = folia_out
-                #    self.save()
-                #elif frogLoc == "remote":
                 if frogLoc == "remote":
                     # Think of a project name
                     project = folProc.docstr
                     basicauth = True
                     # Get access to the webservice
                     clamclient = CLAMClient(frogurl, clamuser, clampw, basicauth = basicauth)
+                    # First delete any previous project, if it exists
+                    try:
+                        result = clamclient.delete(project)
+                        errHandle.Status("Removed previous project {} = {}".format(project, result))
+                    except:
+                        # No problem: no project has been removed
+                        pass
+                    # Only now start creating it
                     result = clamclient.create(project)
+                    errHandle.Status("Created new project {} = {}".format(project, result))
                     data = clamclient.get(project)
                     # If we have textinput, then it is 'maininput' (see /frog/info)
                     if inputType == "text":
@@ -203,7 +160,19 @@ class FrogLink(models.Model):
                     result = clamclient.start(project)
                     if result.errors:
                         # Handle errors
-                        sys.exit(1)
+                        # sys.exit(1)
+                        statusmsg = result.statusmessage
+                        oBack['status'] = "error"
+                        oBack['msg'] = "Error in CLAM: {}".format(statusmsg)
+                        for item in result.output:
+                            name = str(item)
+                            if "error.log" in name:
+                                lText = []
+                                for part in item:
+                                    lText.append(str(part))
+                                sText = "\n".join(lText)
+                                oBack['msg'] = "{}\nERROR LOG:\n{}".format(oBack['msg'], sText)
+                        return oBack
                     # Otherwise loop until ready
                     while result.status != clam.common.status.DONE:
                         time.sleep(1)			            # Wacht 4 seconden
@@ -213,6 +182,10 @@ class FrogLink(models.Model):
                         if oStatus != None:
                             msg = "{}: {}% completed".format(statusmsg, completion)
                             oStatus.set("CLAM", msg=msg)
+                    if result.errors:
+                        oBack['status'] = "error"
+                        oBack['msg'] = "Error in CLAM: {}".format(statusmsg)
+                        return oBack
                     # Now we are ready
                     for outputfile in result.output:
                         name = str(outputfile)
@@ -531,6 +504,8 @@ class FoliaProcessor():
                 # Change curly quotes
                 sLine = self.re_single.sub("'", sLine)
                 sLine = self.re_double.sub('"', sLine)
+                # Insert a space before ".." or "..."
+                sLine = sLine.replace("..", " ..")
                 lines.append(sLine)
 
             # Check and/or create the appropriate directory for the user

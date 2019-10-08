@@ -205,6 +205,7 @@ def import_docs(request):
     data_file = ""
     bClean = False
     username = request.user.username
+    oErr = ErrHandle()
     re_number = re.compile( r"^\d[.,\d]*$")
 
     # Check if the user is authenticated and if it is POST
@@ -290,6 +291,7 @@ def import_docs(request):
                             else:
                                 # Indicate that the folia.xml has been created
                                 oStatus.set("working", msg="Created folia.xml file")
+                                oErr.Status("Created folia.xml file")
                                 # Next step: determine concreteness for this file
                                 bResult, msg = fl.do_concreteness()
                                 if bResult == False:
