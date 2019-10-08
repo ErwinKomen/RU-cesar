@@ -16,10 +16,8 @@ from cesar.settings import WRITABLE_DIR
 from xml.dom import minidom
 
 # FOlia handling: pynlpl
-# import pynlpl
-# from pynlpl.formats import folia
+import pynlpl
 from pynlpl.textprocessors import tokenize      # , split_sentences
-# OLD: from pynlpl.clients.frogclient import FrogClient
 
 # New folia: FOliaPy
 import folia.main as folia
