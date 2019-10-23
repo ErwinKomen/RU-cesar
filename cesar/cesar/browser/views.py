@@ -1012,7 +1012,7 @@ class TextDetailView(DetailView):
         text = get_object_or_404(Text, pk=pk)
         bound_form = self.form_class(request.POST, instance=text)
         oUser = self.request.user
-        if oUser.is_superUser:
+        if oUser.is_superuser:
           if bound_form.is_valid():
               new_text = bound_form.save()
               # Find out what to do next
