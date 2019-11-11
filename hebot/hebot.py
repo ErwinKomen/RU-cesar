@@ -65,7 +65,21 @@ def main(prgName, argv) :
     errHandle.DoError("main")
     return False
 
+def read_table(cur, field_list):
+    table = []
+    for row in cur:
+        item = {}
+        for field in field_list:
+            item[field] = row[field]
+        table.append(item)
+    return table
+
 def etcbc_2017_convert(oArgs):
+    book_fields = ['first_monad', 'last_monad', 'mdf_book']
+    chapter_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_book', 'mdf_chapter']
+    verse_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_book', 'mdf_chapter', 'mdf_verse']
+    sentence_fields = ['object_id_d', 'first_monad', 'last_monad']
+    sentence_atom_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_functional_parent']
 
     try:
         # Try open the SQL
@@ -74,12 +88,57 @@ def etcbc_2017_convert(oArgs):
         # Create a cursor
         cur = conn.cursor()
 
-        # Start at the sentence level
-        cur.execute("select * from sentence_objects order by first_monad")
-        for row in cur:
-            # Check the scope of this sentence
-            first_monad = row['first_monad']
-            last_monad = row['last_monad']
+        # COllect the books
+        cur.execute("select * from book_objects order by first_monad")
+        books = read_table(cur, book_fields)
+
+        # Walk through the books
+        for book in books:
+            # COllect the chapters for this book
+            cur.execute("select * from chapter_objects where mdf_book = ? order by first_monad", 
+                        str(book['mdf_book']))
+            chapters = read_table(cur, chapter_fields)
+
+            # Walk through the chapters
+            for chapter in chapters:
+                # Get the scope of this chapter
+                ch_m_f = chapter['first_monad']
+                ch_m_l = chapter['last_monad']
+
+                # Collect the verses of this chapter
+                cur.execute("select * from verse_objects where (mdf_book = ? and mdf_chapter = ?) order by first_monad", 
+                            [str(book['mdf_book']), str(chapter['mdf_chapter'])])
+                verses =  read_table(cur, verse_fields)
+
+                # Walk the verses
+                for verse in verses:
+                    # Get the scope of this verse
+                    vs_m_f = verse['first_monad']
+                    vs_m_l = verse['last_monad']
+
+                    # Collect the sentences in this verse
+                    cur.execute("select * from sentence_objects where (first_monad >= ? and last_monad <= ?) order by first_monad", 
+                                [str(vs_m_f), str(vs_m_l)])
+                    sentences =  read_table(cur, sentence_fields)
+                    for sentence in sentences:
+                        # Get the scope of this sentence
+                        s_m_f = sentence['first_monad']
+                        s_m_l = sentence['last_monad']
+                        # And get my ID
+                        sentence_id = sentence['object_id_d']
+
+                        # ALTERNATIVE: collect the CLAUSES under this [sentence_id]
+
+                        # Collect the atoms from this sentence
+                        cur.execute("select * from sentence_atom_objects where (mdf_functional_parent = ?) order by first_monad", 
+                                    [sentence_id])
+                        sentence_atoms = read_table(cur, sentence_atom_fields)
+                        for sentence_atom in sentence_atoms:
+                            # Get the scope of this sentence
+                            sa_m_f = sentence_atom['first_monad']
+                            sa_m_l = sentence_atom['last_monad']
+                            sentence_atom_id = sentence_atom['object_id_d']
+
 
         return True
     except:
