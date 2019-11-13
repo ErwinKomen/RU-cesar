@@ -111,7 +111,8 @@ def main(prgName, argv) :
 
 def read_table(cur, field_list, **kwargs):
     table = []
-    for row in cur:
+    rows = cur.fetchall()
+    for row in rows:
         item = {}
         for field in field_list:
             # Get the field value into the table
@@ -153,15 +154,14 @@ def read_relation(cur, obj, enum_name):
             value = item['enum_value_name']
             obj[key] = value
 
-def get_text(cur, first_monad, last_monad):
+def get_text(tbl_sentence, first_monad, last_monad):
     """Read the text from first to last monad"""
 
     sBack = ""
     lText = []
-    cur.execute("select * from word_objects where (first_monad >= ? and last_monad <= ?) order by first_monad", 
-                [first_monad, last_monad])
-    for row in cur:
-        lText.append(row["mdf_g_word_utf8"])
+    for row in tbl_sentence:
+        if row['first_monad'] >= first_monad and row['last_monad'] <= last_monad:
+            lText.append(row["mdf_g_word_utf8"])
     # Combine the words into a sentence
     sBack = " ".join(lText)
     return sBack
@@ -224,6 +224,8 @@ def etcbc_2017_convert(oArgs):
         read_relation(cur, phrase_function, "phrase_function_t")
         read_relation(cur, subphrase_relation, "subphrase_relation_t")
         read_relation(cur, part_of_speech, "part_of_speech_t")
+        read_relation(cur, state, "state_t")
+        read_relation(cur, gender, "gender_t")
 
         # COllect the books
         cur.execute("select * from book_objects order by first_monad")
@@ -262,6 +264,9 @@ def etcbc_2017_convert(oArgs):
                     vs_num = verse['mdf_verse']
                     label = verse['mdf_label']
 
+                    # Just show where we are
+                    errHandle.Status("Processing: {}".format(label))
+
                     # Get the scope of this verse
                     vs_m_f = verse['first_monad']
                     vs_m_l = verse['last_monad']
@@ -279,10 +284,11 @@ def etcbc_2017_convert(oArgs):
                         # And get my ID
                         sentence_id = sentence['object_id_d']
                         # And get the text of this unit
-                        sentence_table = get_text_as_table(cur, s_m_f, s_m_l)
-                        sentence_txt = get_text(cur, s_m_f, s_m_l)
+                        sentence_table = get_text_as_table(cur, s_m_f, s_m_l, part_of_speech, state, gender)
+                        sentence_txt = get_text(sentence_table, s_m_f, s_m_l)
 
                         # Start a hierarchical object for this sentence
+                        # hier_sent = None
                         hier_sent = SentenceObj(label=label, sent=sent_num, txt=sentence_txt)
 
                         # Collect the atoms from this sentence
@@ -309,15 +315,14 @@ def etcbc_2017_convert(oArgs):
                             # And get my ID
                             clause_id = clause['object_id_d']
                             # And get the text of this unit
-                            clause_txt = get_text(cur, cl_m_f, cl_m_l)
+                            clause_txt = get_text(sentence_table, cl_m_f, cl_m_l)
 
                             # Make sure we have the clause type, clause category
                             pos_clause = clause['mdf_kind']
 
                             # Create a HierObj for this clause
+                            # hier_clause = None
                             hier_clause = HierObj(pos=pos_clause, txt=clause_txt)
-                            # And add the clause as child under the sentence
-                            hier_sent.child.append(hier_clause)
                             
                             # Read the phrases in this clause
                             cur.execute("select * from phrase_objects where (mdf_functional_parent = ?) order by first_monad", 
@@ -333,23 +338,47 @@ def etcbc_2017_convert(oArgs):
                                 # And get my ID
                                 phrase_id = phrase['object_id_d']
                                 # And get the text of this unit
-                                phrase_txt = get_text(cur, phr_m_f, phr_m_l)
+                                phrase_txt = get_text(sentence_table, phr_m_f, phr_m_l)
 
                                 # Get the Grammatical category of this phrase
                                 pos_phrase = "{}-{}".format(phrase['mdf_typ'], phrase['mdf_function'])
 
                                 # Create a HierObj for this phrase
+                                # hier_phrase = None
                                 hier_phrase = HierObj(pos=pos_phrase, txt=phrase_txt)
-                                # Add the phrase to the above
-                                hier_clause.child.append(hier_phrase)
 
                                 # Get all the words in this phrase and read them in as end-nodes
-                                cur.execute("select * from word_objects where (mdf_functional_parent = ?) order by first_monad", 
-                                        [phrase_id])
-                                pass
+                                for row in sentence_table:
+                                    if row['first_monad'] >= phr_m_f and row['last_monad'] <= phr_m_l:
+                                        # Get the features for this word
+                                        feature_list = []
+                                        feature_list.append({'name': 'lemma', 'value': row['mdf_g_lex_utf8']})
+                                        # Add this row as end node
+                                        hier_word = None
+                                        hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'])
+                                        hier_word.type = "Vern"
+                                        hier_word.f = feature_list
+                                        hier_word.child = None
+                                        # Add this word to the phrase
+                                        # hier_phrase.add_child(hier_word)
+                                        hier_phrase.child.append(hier_word)
+                                # Add the phrase to the above
+                                # hier_clause.add_child(hier_phrase)
+                                hier_clause.child.append(hier_phrase)
+
+                            # And add the clause as child under the sentence
+                            # hier_sent.add_child(hier_clause)
+                            hier_sent.child.append(hier_clause)
 
                         # Add the object to the list of sentences
-                        sentence_list.append(hier_sent)
+                        sentence_list.append(hier_sent.get_object())
+
+            # Create the object of this book
+            book_obj = dict(sentence_list=sentence_list, name=bookname)
+
+            # Write the object to the file
+            with open(filename, "w") as f:
+                json.dump(book_obj, f, indent=2)
 
         return True
     except:
