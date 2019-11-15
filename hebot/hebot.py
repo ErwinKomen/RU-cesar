@@ -67,7 +67,7 @@ def main(prgName, argv) :
   sBook = None      # Specific book
 
   try:
-    sSyntax = prgName + ' -i <input file> -o <output directory>'
+    sSyntax = prgName + ' -i <input file> -o <output directory> [-b <book abbreviation>]'
     # get all the arguments
     try:
       # Get arguments and options
@@ -277,7 +277,7 @@ def etcbc_2017_convert(oArgs):
                         # Make sure we register the chapter and the verse number
                         ch_num = verse['mdf_chapter']
                         vs_num = verse['mdf_verse']
-                        label = verse['mdf_label']
+                        label = verse['mdf_label'].strip()
 
                         # Just show where we are
                         errHandle.Status("Processing: {}".format(label))
@@ -303,11 +303,12 @@ def etcbc_2017_convert(oArgs):
                             sentence_txt = get_text(sentence_table, s_m_f, s_m_l)
 
                             # Start a hierarchical object for this sentence
-                            # hier_sent = None
                             hier_sent = SentenceObj(label=label, sent=sent_num, txt=sentence_txt)
 
                             # Collect the atoms from this sentence
                             if do_sentence_atom_objects:
+                                # NOTE: I'm not sure why one would need the atoms here
+
                                 cur.execute("select * from sentence_atom_objects where (mdf_functional_parent = ?) order by first_monad", 
                                             [sentence_id])
                                 sentence_atoms = read_table(cur, sentence_atom_fields)
@@ -336,7 +337,6 @@ def etcbc_2017_convert(oArgs):
                                 pos_clause = clause['mdf_kind']
 
                                 # Create a HierObj for this clause
-                                # hier_clause = None
                                 hier_clause = HierObj(pos=pos_clause, txt=clause_txt)
                             
                                 # Read the phrases in this clause
@@ -350,16 +350,15 @@ def etcbc_2017_convert(oArgs):
                                     # Get the scope of this sentence
                                     phr_m_f = phrase['first_monad']
                                     phr_m_l = phrase['last_monad']
-                                    # And get my ID
+                                    # Get my ID
                                     phrase_id = phrase['object_id_d']
-                                    # And get the text of this unit
+                                    # Get the text of this unit
                                     phrase_txt = get_text(sentence_table, phr_m_f, phr_m_l)
 
                                     # Get the Grammatical category of this phrase
                                     pos_phrase = "{}-{}".format(phrase['mdf_typ'], phrase['mdf_function'])
 
                                     # Create a HierObj for this phrase
-                                    # hier_phrase = None
                                     hier_phrase = HierObj(pos=pos_phrase, txt=phrase_txt)
 
                                     # Get all the words in this phrase and read them in as end-nodes
@@ -368,6 +367,7 @@ def etcbc_2017_convert(oArgs):
                                             # Get the features for this word
                                             feature_list = []
                                             feature_list.append({'name': 'lemma', 'value': row['mdf_g_lex_utf8']})
+
                                             # Add this row as end node
                                             hier_word = None
                                             hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'])
@@ -375,15 +375,14 @@ def etcbc_2017_convert(oArgs):
                                             hier_word.f = feature_list
                                             hier_word.child = None
                                             hier_word.n = row['first_monad']
+
                                             # Add this word to the phrase
-                                            # hier_phrase.add_child(hier_word)
                                             hier_phrase.child.append(hier_word)
+
                                     # Add the phrase to the above
-                                    # hier_clause.add_child(hier_phrase)
                                     hier_clause.child.append(hier_phrase)
 
                                 # And add the clause as child under the sentence
-                                # hier_sent.add_child(hier_clause)
                                 hier_sent.child.append(hier_clause)
 
                             # Add the object to the list of sentences
@@ -398,7 +397,7 @@ def etcbc_2017_convert(oArgs):
 
         return True
     except:
-        errHandle.DoError("main")
+        errHandle.DoError("etcbc_2017_convert")
         return False
 
 
