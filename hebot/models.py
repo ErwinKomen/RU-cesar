@@ -11,6 +11,7 @@ class HierObj():
     pos = ""    # Grammatical category
     txt = ""    # The text associated with this instance
     type = None # The type, if it is an end-node (Punct, Vern, Star)
+    n = None    # If present, this is a position within the surface text
     f = []      # List of features
     child = []  # List of child HierObj instances
 
@@ -21,6 +22,7 @@ class HierObj():
         self.f = []
         self.child = []
         self.type = None
+        self.n = None
         return response
 
     #def add_child(self, obj):
@@ -33,6 +35,7 @@ class HierObj():
 
         js = dict(pos=self.pos, txt=self.txt, f=self.f)
         if self.type: js['type'] = self.type
+        if self.n: js['n'] = self.n
         if self.child:
             children =[]
             for ch in self.child:

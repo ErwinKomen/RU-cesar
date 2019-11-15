@@ -374,6 +374,7 @@ def etcbc_2017_convert(oArgs):
                                             hier_word.type = "Vern"
                                             hier_word.f = feature_list
                                             hier_word.child = None
+                                            hier_word.n = row['first_monad']
                                             # Add this word to the phrase
                                             # hier_phrase.add_child(hier_word)
                                             hier_phrase.child.append(hier_word)
