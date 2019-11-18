@@ -11,6 +11,7 @@ import csv, json
 # Application specific
 import util                 # This allows using ErrHandle
 from models import *        # This imports HierObj
+from views import ConvertHtreePsdx
 
 errHandle = util.ErrHandle()
 
@@ -45,7 +46,7 @@ def main(prgName, argv):
                 print(sSyntax)
                 sys.exit(0)
             elif opt in ("-i", "--inputdir"):
-                flInput = arg
+                dirInput = arg
             elif opt in ("-o", "--outputdir"):
                 dirOutput = arg
             elif opt in ("-t", "--type"):
@@ -57,6 +58,7 @@ def main(prgName, argv):
         # Check if all arguments are there
         if (dirInput == '' or dirOutput == "" or oConv == None):
             errHandle.DoError(sSyntax)
+            return False
 
         # Check if directories exists
         if not os.path.exists(dirInput):
@@ -67,7 +69,7 @@ def main(prgName, argv):
         # Continue with the program
         errHandle.Status('Input is "' + dirInput + '"')
         errHandle.Status('Output is "' + dirOutput + '"')
-        if sBook: errHandle.Status("Conversion type: {}".format(oConv['type']))
+        if sType: errHandle.Status("Conversion type: {}".format(oConv['type']))
 
         # Call the function that does the job
         oArgs = {'input': dirInput,
@@ -79,6 +81,7 @@ def main(prgName, argv):
     
             # All went fine  
         errHandle.Status("Ready")
+        return True
     except:
         # act
         errHandle.DoError("main")
@@ -88,16 +91,14 @@ def htree_convert(oArgs):
     """a"""
 
     try:
-        # Gather the source documents
-        arSourceFile = [f for f in os.listdir(oConv['input']) if os.path.isfile(join(oConv['input'], f)) and stages[0]['src_ext'] in f]
-
         # Figure out which stages there are in conversion
         oConv = oArgs['conv']
         arConvType = oConv['type'].split("-")
 
         if arConvType[0] == "htree":
             # Create htree
-            arDstFile = do_convert_from_htree(arSourceFile, arConvType[1], oConv['dst'])
+            oConvert = ConvertHtreePsdx(oArgs['input'])
+            oConvert.do_convert()
         elif arConvType[1] == "htree":
             # Stage 1: convert to htree
             arDstFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])

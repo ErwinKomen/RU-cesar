@@ -12,6 +12,9 @@
     <OutputPath>.</OutputPath>
     <Name>htreeconv</Name>
     <RootNamespace>htreeconv</RootNamespace>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>-i "D:/Data Files/Corpora/Bible/Heb_OT/htree" -o "D:/Data Files/Corpora/Bible/Heb_OT/psdx" -t "htree-psdx"</CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,6 +31,12 @@
     <Compile Include="views.py">
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="templates\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="templates\target_psdx.xml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

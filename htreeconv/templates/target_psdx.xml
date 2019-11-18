@@ -1,0 +1,38 @@
+<?xml version="1.0" standalone="yes"?>
+<TEI>
+  <teiHeader>
+    <metadata>
+      <meta id="PublicationPlace">{{meta.publication_place}}</meta>
+      <meta id="PublicationName">{{meta.publication_name}}</meta>
+      <meta id="Publisher">{{meta.publisher}}</meta>
+      <meta id="TranslatorName">{{meta.translator}}</meta>
+      <meta id="OriginalLanguage">{{meta.lang_ethno}}</meta>
+      <meta id="SourceName">{{meta.source}}</meta>
+      <meta id="LicenseCode">{{meta.licensecode}}</meta>
+      <meta id="Translated">{{meta.translated}}</meta>
+      <meta id="Published">{{meta.published}}</meta>
+      <meta id="TextType">{{meta.texttype}}</meta>
+      <meta id="Sex">{{meta.author_gender}}</meta>
+      <meta id="Town">{{meta.author_place}}</meta>
+      <meta id="Country">{{meta.author_country}}</meta>
+      <meta id="AuthorNameOrPseudonym">{{meta.author_name}}</meta>
+      <meta id="CollectionName">{{meta.collection_name}}</meta>
+    </metadata>
+    <profileDesc>
+      <langUsage>
+        <language ident="{{meta.lang_ethno}}" name="{{meta.lang_name}}" />
+        <creation original="{{meta.year_original}}" manuscript="{{meta.year_manuscript}}" subtype="{{meta.subtype}}" />
+      </langUsage>
+    </profileDesc>
+    <revisionDesc>
+    </revisionDesc>
+    <fileDesc>
+      <publicationStmt distributor="{{meta.distributor}}" />
+      <titleStmt title="{{meta.title}}" author="{{meta.author_name}}" editor="{{meta.editor}}" />
+      <sourceDesc bibl="{{meta.source_bibl}}" />
+    </fileDesc>
+  </teiHeader>
+  <forestGrp File="{{text_id}}">
+
+  </forestGrp>
+</TEI>    
