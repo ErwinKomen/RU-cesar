@@ -116,20 +116,24 @@ def main(prgName, argv) :
 
 def read_table(cur, field_list, **kwargs):
     table = []
-    rows = cur.fetchall()
-    for row in rows:
-        item = {}
-        for field in field_list:
-            # Get the field value into the table
-            item[field] = row[field]
-            # Possibly translate the field value
-            if len(kwargs) > 0:
-                kv_obj = kwargs['kwargs']
-                for k, v in kv_obj.items():
-                    if k == field:
-                        item[field] = v[item[field]]
-        table.append(item)
-    return table
+    try:
+        rows = cur.fetchall()
+        for row in rows:
+            item = {}
+            for field in field_list:
+                # Get the field value into the table
+                item[field] = row[field]
+                # Possibly translate the field value
+                if len(kwargs) > 0:
+                    kv_obj = kwargs['kwargs']
+                    for k, v in kv_obj.items():
+                        if k == field:
+                            item[field] = v[item[field]]
+            table.append(item)
+        return table
+    except:
+        errHandle.DoError("read_table")
+        return None
 
 def get_book_name(mdf_book, type=""):
     sBack = ""
@@ -182,6 +186,26 @@ def get_text_as_table(cur, first_monad, last_monad, part_of_speech, state, gende
                           kwargs = {'mdf_sp': part_of_speech, 'mdf_st': state, 'mdf_prs_gn': gender})
     return tbl_back
 
+def get_hier_word(hier_obj, first_monad):
+    """Look (recursively) in hier_obj to check if there is a WORD with first_monad"""
+
+    # Validate
+    if not hier_obj:
+        return None
+    # Look at this level
+    if hier_obj.type and hier_obj.n and hier_obj.n == first_monad:
+        return hier_obj
+    elif hier_obj.child:
+        # Visit all children
+        for hier_child in hier_obj.child:
+            oChild = get_hier_word(hier_child, first_monad)
+            if oChild: 
+                return oChild
+    else:
+        return None
+    # REturn empty
+    return None
+
 
 def etcbc_2017_convert(oArgs):
 
@@ -193,6 +217,7 @@ def etcbc_2017_convert(oArgs):
     sentence_atom_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_functional_parent']
     clause_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_functional_parent', 'mdf_mother', 'mdf_rela', 'mdf_kind', 'mdf_typ']
     phrase_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_functional_parent', 'mdf_mother', 'mdf_rela', 'mdf_function', 'mdf_typ']
+    phrase_atom_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_functional_parent', 'mdf_mother', 'mdf_rela', 'mdf_typ']
 
     # Necessary for the interpretation of type, kind etc
     clause_constituent_relation = {}
@@ -204,6 +229,7 @@ def etcbc_2017_convert(oArgs):
     phrase_relation = {}
     phrase_function = {}
     subphrase_relation = {}
+    phrase_atom_relation = {}
     part_of_speech = {}
     state = {}
     gender = {}
@@ -228,6 +254,7 @@ def etcbc_2017_convert(oArgs):
         read_relation(cur, phrase_relation, "phrase_relation_t")
         read_relation(cur, phrase_function, "phrase_function_t")
         read_relation(cur, subphrase_relation, "subphrase_relation_t")
+        read_relation(cur, phrase_atom_relation, "phrase_atom_relation_t")
         read_relation(cur, part_of_speech, "part_of_speech_t")
         read_relation(cur, state, "state_t")
         read_relation(cur, gender, "gender_t")
@@ -337,7 +364,7 @@ def etcbc_2017_convert(oArgs):
                                 pos_clause = clause['mdf_kind']
 
                                 # Create a HierObj for this clause
-                                hier_clause = HierObj(pos=pos_clause, txt=clause_txt)
+                                hier_clause = HierObj(pos=pos_clause, txt=clause_txt, parent=hier_sent, id=clause_id)
                             
                                 # Read the phrases in this clause
                                 cur.execute("select * from phrase_objects where (mdf_functional_parent = ?) order by first_monad", 
@@ -347,7 +374,7 @@ def etcbc_2017_convert(oArgs):
                                                                'mdf_typ': phrase_type, 'mdf_function': phrase_function})
                                 # Walk the phrases
                                 for phrase in phrases:
-                                    # Get the scope of this sentence
+                                    # Get the scope of this phrase
                                     phr_m_f = phrase['first_monad']
                                     phr_m_l = phrase['last_monad']
                                     # Get my ID
@@ -355,29 +382,77 @@ def etcbc_2017_convert(oArgs):
                                     # Get the text of this unit
                                     phrase_txt = get_text(sentence_table, phr_m_f, phr_m_l)
 
+                                    ## Debugging
+                                    #if phr_m_f >= 355807 and phr_m_l <= 355821:
+                                    #    iDebugStop = 1
+
                                     # Get the Grammatical category of this phrase
                                     pos_phrase = "{}-{}".format(phrase['mdf_typ'], phrase['mdf_function'])
 
                                     # Create a HierObj for this phrase
-                                    hier_phrase = HierObj(pos=pos_phrase, txt=phrase_txt)
+                                    hier_phrase = HierObj(pos=pos_phrase, txt=phrase_txt, parent=hier_clause, id=phrase_id)
 
-                                    # Get all the words in this phrase and read them in as end-nodes
-                                    for row in sentence_table:
-                                        if row['first_monad'] >= phr_m_f and row['last_monad'] <= phr_m_l:
-                                            # Get the features for this word
-                                            feature_list = []
-                                            feature_list.append({'name': 'lemma', 'value': row['mdf_g_lex_utf8']})
+                                    # Read the phrase-atoms in this phrase
+                                    cur.execute("select * from phrase_atom_objects where (mdf_functional_parent = ?) order by first_monad", 
+                                                [phrase_id])
+                                    try:
+                                        phrase_atoms = read_table(cur, phrase_atom_fields, 
+                                                             kwargs = {'mdf_rela': phrase_atom_relation,
+                                                                       'mdf_typ': phrase_type})
+                                    except:
+                                        msg = errHandle.get_error_message()
+                                        iStop = 1
 
-                                            # Add this row as end node
-                                            hier_word = None
-                                            hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'])
-                                            hier_word.type = "Vern"
-                                            hier_word.f = feature_list
-                                            hier_word.child = None
-                                            hier_word.n = row['first_monad']
+                                    # Walk the phrase-atoms
+                                    for phrase_atom in phrase_atoms:
+                                        # Get the scope of this phrase_atom
+                                        phra_m_f = phrase_atom['first_monad']
+                                        phra_m_l = phrase_atom['last_monad']
+                                        # Get my ID
+                                        phrase_atom_id = phrase_atom['object_id_d']
+                                        # Get the text of this unit
+                                        phrase_atom_txt = get_text(sentence_table, phra_m_f, phra_m_l)
 
-                                            # Add this word to the phrase
-                                            hier_phrase.child.append(hier_word)
+                                        # Get the Grammatical category of this phrase
+                                        pos_phrase_atom = "{}".format(phrase_atom['mdf_typ'])
+
+                                        # Create a HierObj for this phrase_atom
+                                        hier_phrase_atom = HierObj(pos=pos_phrase_atom, txt=phrase_atom_txt, parent=hier_phrase, id=phrase_atom_id)
+
+                                        # Get all the words in this phrase_atom and read them in as end-nodes
+                                        for row in sentence_table:
+                                            first_monad = row['first_monad']
+                                            if first_monad >= phra_m_f and row['last_monad'] <= phra_m_l:
+
+                                                # Check if this word has already been attached somewhere else in [hier_sent]
+                                                hier_word = get_hier_word(hier_sent, first_monad)
+
+                                                if hier_word:
+                                                    # Remove it from its current parent
+                                                    hier_parent = hier_word.par
+                                                    hier_parent.child.remove(hier_word)
+                                                    hier_word.par = hier_phrase_atom
+                                                    iStop = 1
+                                                else:
+
+                                                    # Get the features for this word
+                                                    feature_list = []
+                                                    feature_list.append({'name': 'lemma', 'value': row['mdf_g_lex_utf8']})
+
+                                                    # Add this row as end node
+                                                    hier_word = None
+                                                    hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'], id=row[''])
+                                                    hier_word.type = "Vern"
+                                                    hier_word.f = feature_list
+                                                    hier_word.child = None
+                                                    hier_word.n = first_monad
+                                                    hier_word.par = hier_phrase_atom
+
+                                                # Add this word to the phrase
+                                                hier_phrase_atom.child.append(hier_word)
+
+                                        # Add the phrase_atom to the above
+                                        hier_phrase.child.append(hier_phrase_atom)
 
                                     # Add the phrase to the above
                                     hier_clause.child.append(hier_phrase)
