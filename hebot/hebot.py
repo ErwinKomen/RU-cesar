@@ -329,6 +329,9 @@ def etcbc_2017_convert(oArgs):
                             sentence_table = get_text_as_table(cur, s_m_f, s_m_l, part_of_speech, state, gender)
                             sentence_txt = get_text(sentence_table, s_m_f, s_m_l)
 
+                            # Start a list of child-mother connections that need to be made after the clauses have been done
+                            child_to_mother = []
+
                             # Start a hierarchical object for this sentence
                             hier_sent = SentenceObj(label=label, sent=sent_num, txt=sentence_txt)
 
@@ -360,6 +363,9 @@ def etcbc_2017_convert(oArgs):
                                 # And get the text of this unit
                                 clause_txt = get_text(sentence_table, cl_m_f, cl_m_l)
 
+                                # Check out the mdf_mother
+                                clause_mother = clause['mdf_mother']
+
                                 # Make sure we have the clause type, clause category
                                 pos_clause = clause['mdf_kind']
 
@@ -385,6 +391,9 @@ def etcbc_2017_convert(oArgs):
                                     ## Debugging
                                     #if phr_m_f >= 355807 and phr_m_l <= 355821:
                                     #    iDebugStop = 1
+
+                                    # Check out the mdf_mother
+                                    phrase_mother = phrase['mdf_mother']
 
                                     # Get the Grammatical category of this phrase
                                     pos_phrase = "{}-{}".format(phrase['mdf_typ'], phrase['mdf_function'])
@@ -412,6 +421,9 @@ def etcbc_2017_convert(oArgs):
                                         phrase_atom_id = phrase_atom['object_id_d']
                                         # Get the text of this unit
                                         phrase_atom_txt = get_text(sentence_table, phra_m_f, phra_m_l)
+
+                                        # Check out the mdf_mother
+                                        phrase_atom_mother = phrase_atom['mdf_mother']
 
                                         # Get the Grammatical category of this phrase
                                         pos_phrase_atom = "{}".format(phrase_atom['mdf_typ'])
@@ -441,7 +453,7 @@ def etcbc_2017_convert(oArgs):
 
                                                     # Add this row as end node
                                                     hier_word = None
-                                                    hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'], id=row[''])
+                                                    hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'], id=row['object_id_d'])
                                                     hier_word.type = "Vern"
                                                     hier_word.f = feature_list
                                                     hier_word.child = None
@@ -452,13 +464,36 @@ def etcbc_2017_convert(oArgs):
                                                 hier_phrase_atom.child.append(hier_word)
 
                                         # Add the phrase_atom to the above
-                                        hier_phrase.child.append(hier_phrase_atom)
+                                        if phrase_atom_mother == 0:
+                                            hier_phrase.child.append(hier_phrase_atom)
+                                        else:
+                                            # add to the list
+                                            child_to_mother.append(dict(obj=hier_phrase_atom, id=phrase_atom_mother))
 
                                     # Add the phrase to the above
-                                    hier_clause.child.append(hier_phrase)
+                                    if phrase_mother == 0:
+                                        hier_clause.child.append(hier_phrase)
+                                    else:
+                                        # add to the list
+                                        child_to_mother.append(dict(obj=hier_phrase, id=phrase_mother))
 
                                 # And add the clause as child under the sentence
-                                hier_sent.child.append(hier_clause)
+                                if clause_mother == 0:
+                                    hier_sent.child.append(hier_clause)
+                                else:
+                                    # add to the list
+                                    child_to_mother.append(dict(obj=hier_clause, id=clause_mother))
+
+                            # Check the child-to-mother relations
+                            for relation in child_to_mother:
+                                id = relation['id']
+                                obj = relation['obj']
+                                mother = HierObj.find(id)
+                                if not mother:
+                                    iStop = 1
+                                if not mother.child:
+                                    mother = mother.par
+                                mother.child.append(obj)
 
                             # Add the object to the list of sentences
                             sentence_list.append(hier_sent.get_object())

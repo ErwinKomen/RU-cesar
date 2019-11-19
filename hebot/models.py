@@ -5,6 +5,9 @@ The classes in this models.py are used by the Python application hebot
 
 import copy
 
+# Table of hierobj elements
+lst_hierobj = []
+
 class HierObj():
     """Hierarchical object"""
 
@@ -27,6 +30,9 @@ class HierObj():
         self.n = None
         self.par = parent
         self.id = id
+        # Make sure to add this object to the list
+        lst_hierobj.append(self)
+        # Return the correct response
         return response
 
     #def add_child(self, obj):
@@ -46,6 +52,14 @@ class HierObj():
                 children.append(ch.get_object())
             js['child'] = children
         return js
+
+    def find(id):
+        """Look in the lst_hierobj and find the one with this id"""
+
+        for obj in lst_hierobj:
+            if obj.id == id:
+                return obj
+        return None
 
 
 class SentenceObj():
@@ -69,6 +83,9 @@ class SentenceObj():
         self.f = []
         self.child = []
         self.type = None
+        # Reset the table of hierobj elements
+        lst_hierobj.clear()
+        # Return the correct response
         return response
 
     #def add_child(self, obj):
