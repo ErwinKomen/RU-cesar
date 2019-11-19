@@ -18,6 +18,7 @@ def atom(type, key, value):
     obj = dict(type=type, key=key, value=value)
     return obj
 
+
 class XmlProcessor():
     """Basic XML operations"""
 
@@ -46,6 +47,7 @@ class XmlProcessor():
 
         # Add a namespace for custom function(s)
         ns = ET.FunctionNamespace(None)
+        # Add the function matches() to the namespace
         ns['matches'] = self.matches
 
         # DEBUGGING:
@@ -97,6 +99,7 @@ class XmlProcessor():
 
         for k, v in att_list.items():
             ndx_this.set(k, v)
+
 
 class ConvertBasic():
     src_ext = ""
@@ -411,10 +414,11 @@ class ConvertHtreePsdx(ConvertBasic):
             ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
                 [atom("attribute", "Id", self.next_id()), 
                  atom("attribute", "Label", pos)])
+            str_position = "{0:08d}".format(n)
             ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
                 [atom("attribute", "Type", type),
                  atom("attribute", "Text", txt),
-                 atom("attribute", "n", "{0:08d}".format(n))])
+                 atom("attribute", "n", str_position)])
             # Process the list of features
             for feat in feat_list:
                 # Determine the <fs> @type attribute
@@ -424,6 +428,9 @@ class ConvertHtreePsdx(ConvertBasic):
                     feat['name'] = "l"
                 # Add feature
                 self.add_feature(ndx_node, feat, ftype)
+            # Also add the "n" as feature
+            feat = {"name": "n", "value": str_position}
+            self.add_feature(ndx_node, feat, "etctc")
             return ndx_node
         except:
             errHandle.DoError("views/ConvertHtreePsdx/add_endnode")
@@ -455,11 +462,9 @@ class ConvertHtreeFolia(ConvertBasic):
 class ConvertPsdxHtree(ConvertBasic):
     src_ext = ".psdx"
     dst_ext = ".json"
-    # src_template = "templates/"
 
 
 class ConvertFoliaHtree(ConvertBasic):
     src_ext = ".folia.xml"
     dst_ext = ".json"
-    # src_template = "templates/"
 
