@@ -4,7 +4,8 @@ import csv, json
 import jinja2
 # XML processing
 from xml.dom import minidom
-import xml.etree.ElementTree as ET
+# import xml.etree.ElementTree as ET
+from lxml import etree as ET
 
 # Application specific
 import util                 # This allows using ErrHandle
@@ -13,27 +14,56 @@ from models import *        # This imports HierObj
 errHandle = util.ErrHandle()
 
 
+def atom(type, key, value):
+    obj = dict(type=type, key=key, value=value)
+    return obj
+
 class XmlProcessor():
     """Basic XML operations"""
 
     xmldocument = None
 
-    def __init__(self, sXml, **kwargs):
+    def __init__(self, **kwargs):
         response = super(XmlProcessor, self).__init__(**kwargs)
-        self.xmldocument = ET.fromstring(sXml)
         return response
 
-    def select_nodes(self, search):
-        result = self.xmldocument.findall(search)
+    def matches(self, context, text, pattern):
+        """Check if text matches pattern"""
+
+        bMatch = False
+        lst_pattern = pattern.split("|")
+        for patt in lst_pattern:
+            if text == patt:
+                bMatch = True
+                break
+        return bMatch
+
+    def loadstring(self, sXml):
+        # Make sure to parse blanks away!!
+        parser = ET.XMLParser(remove_blank_text=True)
+        sXml = sXml.replace("\n", "")
+        self.xmldocument = ET.fromstring(sXml, parser)
+
+        # Add a namespace for custom function(s)
+        ns = ET.FunctionNamespace(None)
+        ns['matches'] = self.matches
+
+        # DEBUGGING:
+        # x = ET.tostring(self.xmldocument, xml_declaration=True, encoding="utf-8", pretty_print=False).decode("utf-8")
+        return True
+
+    def select_nodes(self, node, search):
+        # OLD: result = self.xmldocument.findall(search)
+        result = node.xpath(search)
         return result
 
-    def select_single_node(self, search):
-        result = self.xmldocument.find(search)
-        return result
-
-    def atom(type, key, value):
-        obj = dict(type=type, key=key, value=value)
-        return obj
+    def select_single_node(self, node, search):
+        # result = node.find(search)
+        result = node.xpath(search)
+        if result == None or len(result) == 0:
+            return None
+        else:
+            return result[0]
 
     def add_xml_child(self, ndx_parent, s_tag, v_list = None):
         """Add a child under ndx_parent"""
@@ -41,17 +71,18 @@ class XmlProcessor():
         # Create the child
         ndx_this = ET.SubElement(ndx_parent, s_tag)
         # Check what values need to be added
-        for oValue in v_list:
-            type = oValue['type']
-            key = oValue['key']
-            value = oValue['value']
+        if v_list:
+            for oValue in v_list:
+                type = oValue['type']
+                key = oValue['key']
+                value = oValue['value']
 
-            # Action depends on the kind of child
-            if type == "attribute":
-                ndx_this.set(key, value)
-            elif type == "child":
-                ndx_child = ET.SubElement(ndx_this, key)
-                ndx_child.text = value
+                # Action depends on the kind of child
+                if type == "attribute":
+                    ndx_this.set(key, value)
+                elif type == "child":
+                    ndx_child = ET.SubElement(ndx_this, key)
+                    ndx_child.text = value
 
         # Return the created child
         return ndx_this
@@ -61,13 +92,19 @@ class XmlProcessor():
 
         ndx_this.set(att_name, att_value)
 
+    def add_xml_attributes(self, ndx_this, att_list):
+        """Add a list of attributes"""
+
+        for k, v in att_list.items():
+            ndx_this.set(k, v)
+
 class ConvertBasic():
     src_ext = ""
     dst_ext = ""
-    xml_doc = ""            # tag name for all sentences together
-    xml_sent = ""           # The xml tag name for a sentence
-    xml_node = ""           # Tag name for syntactic constituents
-    xml_endnode = ""        # Tag name for end node
+    tag_doc = ""            # tag name for all sentences together
+    tag_sent = ""           # The xml tag name for a sentence
+    tag_node = ""           # Tag name for syntactic constituents
+    tag_endnode = ""        # Tag name for end node
     lst_dst = []
     lst_src = []
     dst_template = None
@@ -103,7 +140,13 @@ class ConvertBasic():
                 if 'meta' in oJsonFile: meta = oJsonFile['meta']
 
                 # Create an XML from the information we have
-                self.create_xml(text_id, meta, oJsonFile['sentence_list'])
+                xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
+
+                # Save this one
+                outfile = file.replace(self.src_ext,self.dst_ext)
+                with open(outfile, "w", encoding="utf-8") as fp:
+                    str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")
+                    fp.write(str_output)
 
             # Return positively
             return 1
@@ -134,40 +177,79 @@ class ConvertBasic():
             sXml = template.render(context)
 
             # Load the string into the XML Processor
-            self.pdx = XmlProcessor(sXml)
+            self.pdx = XmlProcessor()
+            self.pdx.loadstring(sXml)
 
             sent_idx = 0
             # Find the XML element in the template that hosts all sentences
-            ndx_sent_host = self.pdx.select_single_node(".//" + self.xml_doc)
+            ndx_sent_host = self.pdx.select_single_node(self.pdx.xmldocument, ".//" + self.tag_doc)
 
             # Walk the sentences in sent_list
             for sentence in sent_list:
-                # Get the sentence from the JSON
-                obj_sent = sent_list[sent_idx]
-                sent_idx = obj_sent['sent']
+                # Get the sentence index
+                object_sent_idx = sentence['sent']
+                sent_idx += 1
 
                 # Add an XML sentence under the XML grouping
-                xml_sent = self.pdx.add_xml_child(ndx_sent_host, self.xml_sent)
+                ndxSentence = self.pdx.add_xml_child(ndx_sent_host, self.tag_sent)
 
                 # NOTE: a sentence as a whole (psdx: <forest>) does *not* have a syntactic category
-                self.add_sent_details(xml_sent, sent_idx, obj_sent['label'], obj_sent['txt'], obj_sent['f'])
+                self.add_sent_details(ndxSentence, sent_idx, text_id, sentence['label'], sentence['txt'], sentence['f'])
 
-                # Create an XML sentence from this sentence
+                # Add all the main clauses in this sentence
+                for clause in sentence['child']:
+                    # Possibly adapt this clause, because it must be a main clause
+                    self.adapt_main_clause(clause)
+                    # Add this clause under tag_sent
+                    self.add_clause(ndxSentence, clause)
+                # Any post-processing on the XML
+                self.adapt_main_xml(ndxSentence)
 
-                pass
+                # Debugging
+                x = ET.tostring(self.pdx.xmldocument)
 
-
-
+            # Return the document
+            xmldoc = self.pdx.xmldocument
+            
             return xmldoc
         except:
             errHandle.DoError("views/create_xml")
+            return None
+
+    def adapt_main_clause(self, obj):
+        return True
+
+    def adapt_main_xml(self, xmlobj):
+        return True
+
+    def add_clause(self, xml_parent, obj):
+        """Add the [obj] as XML child under xml_parent"""
+
+        oBack = None
+        try:
+            # Top level: add [obj]
+            if 'type' in obj:
+                # This is an end node: add the end-node attributes
+                ndx_endnode = self.add_endnode(xml_parent, obj['type'], obj['txt'], obj['pos'], obj['n'], obj['f'] )
+            else:
+                # This is another node: add the basics
+                ndx_node = self.add_node(xml_parent, obj['txt'], obj['pos'], obj['f'] )
+
+                # Process the children
+                for oChild in obj['child']:
+                    self.add_clause(ndx_node, oChild)
+
+            # Return the element that has been made
+            return oBack
+        except:
+            errHandle.DoError("views/ConvertBasic/add_clause")
             return None
 
     def add_to_context(self, context):
         """User overwritable function to add to the context"""
         return context
 
-    def add_sent_details(self, xml_sent, sent_id, label, txt, f):
+    def add_sent_details(self, xml_sent, sent_id, text_id, label, txt, f):
         """Add sentence details """
         pass
 
@@ -175,36 +257,193 @@ class ConvertBasic():
         """Add the features in the list"""
         pass
 
+    def add_endnode(self, xml_this, type, txt, pos, n, feat_list):
+        return None
+
+    def add_node(self, xml_this, txt, pos, feat_list):
+        return None
+
 
 class ConvertHtreePsdx(ConvertBasic):
     src_ext = ".json"
     dst_ext = ".psdx"
-    xml_doc = "forestGrp"
-    xml_sent = "forest"
-    xml_node = "eTree"
-    xml_endnode = "eLeaf"
+    tag_doc = "forestGrp"
+    tag_sent = "forest"
+    tag_node = "eTree"
+    tag_endnode = "eLeaf"
     dst_template = "target_psdx.xml"
+    idnum = 0
 
-    def add_sent_details(self, xml_sent, sent_id, label, txt, f):
+    def next_id(self):
+        self.idnum += 1
+        return str(self.idnum)
+
+    def add_sent_details(self, xml_sent, sent_id, text_id, label, txt, feat_list):
         """Add details of <forest> for PSDX"""
 
-        self.pdx.add_xml_attribute("forestId", str(sent_id))
-        self.pdx.add_xml_attribute("File", "")
-        self.pdx.add_xml_attribute("TextId", "")
-        self.pdx.add_xml_attribute("Location", label.strip())
+        oAttrs = dict(forestId=str(sent_id), 
+                      File=text_id, 
+                      TextId=text_id, 
+                      Location=label.strip())
+        self.pdx.add_xml_attributes(xml_sent, oAttrs)
         # Add <div> org
         self.pdx.add_xml_child(xml_sent, "div", [
-            self.pdx.atom("attribute", "lang", "org"), self.pdx.atom("child", "seg", txt)])
+            atom("attribute", "lang", "org"), atom("child", "seg", txt)])
         # Add <div> english
         self.pdx.add_xml_child(xml_sent, "div", [
-            self.pdx.atom("attribute", "lang", "eng"), self.pdx.atom("child", "seg", "")])
+            atom("attribute", "lang", "eng"), atom("child", "seg", "")])
         # If there are features at this level, add them
-        if f != None and len(f) > 0:
+        if feat_list != None and len(feat_list) > 0:
+            for feat in feat_list:
+                self.add_feature(xml_this, feat)
             self.add_features(xml_sent, f)
 
-    def add_features(self, xml_this, f_list):
+    def adapt_main_clause(self, obj):
+        """Main clauses must be IP-MAT"""
+
+        obj['pos'] = "IP-MAT-" + obj['pos']
+        return True
+
+    def adapt_main_xml(self, ndx_this):
+        """This is the equivalent of [eTreeSentence] in Cesax
+        
+        Determine the correct values of the @from and the @to attributes 
+        This goes both for <eLeaf> as well as <eTree> nodes
+        """
+
+        # Initialisations
+        strNoText = "CODE|META|METADATA|E_S"
+        # Validate
+        if ndx_this == None: return false
+
+        try:
+            # Make sure we have the forest
+            ndxFor = self.pdx.select_single_node(ndx_this, "./ancestor-or-self::forest")
+            # Check if the original text if is there
+            ndxOrg = self.pdx.select_single_node(ndxFor, "./child::div[@lang='org']/seg")
+            # Get the text of the sentence
+            strSentence = ndxOrg.text
+            if strSentence == "":
+                # We cannot yet process this
+                pass
+            else:
+                # The text is already there, and we do not change it
+                iCurrentPos = -1
+                iFrom = 0
+                iTo = 0
+                iSpace = 0
+                # Get a list of all the words in the text
+                ndxList = self.pdx.select_nodes(ndxFor, "./descendant::eLeaf[count(ancestor::eTree[matches(@Label, '{}')])=0]".format(strNoText))
+                for ndxEleaf in ndxList:
+                    # Get the word
+                    strWord = ndxEleaf.get("Text")
+                    # find the position of the word within the sentence
+                    if iCurrentPos < 0:
+                        iCurrentPos = strSentence.find(strWord)
+                    else:
+                        iCurrentPos = strSentence.find(strWord, iCurrentPos+1)
+                    # Do we have the word?
+                    if iCurrentPos < 0:
+                        # Retry from the beginning
+                        iCurrentPos = strSentence.find(strWord)
+                    # Validate once more
+                    if iCurrentPos < 0:
+                        iStop = 1
+                    # Get the size of this element
+                    iSize = len(strWord)
+                    # Calculate from and to
+                    iFrom = iCurrentPos
+                    iTo = iFrom + iSize
+                    # Set these attributes
+                    ndxEleaf.set("from", str(iFrom))
+                    ndxEleaf.set("to", str(iTo))
+                # Get a list of all the <eTree> nodes
+                ndxList = self.pdx.select_nodes(ndxFor, "./descendant::eTree")
+                # Treat them all
+                for ndxEtree in ndxList:
+                    # Determine this one's starting position
+                    ndxLeaf = self.pdx.select_single_node(ndxEtree, "./descendant::eLeaf[1]")
+                    if ndxLeaf != None:
+
+                        # --------- DEBUGGING ------------
+                        x = ET.tostring(ndxFor, pretty_print=True, encoding="utf-8").decode("utf-8")
+
+                        # Get the value
+                        strFrom = ndxLeaf.get("from")
+                        # Set this for the <eTRee>
+                        ndxEtree.set("from", strFrom)
+                    # Determine the end position
+                    ndxLeaf = self.pdx.select_single_node(ndxEtree, "./descendant::eLeaf[last()]")
+                    if ndxLeaf != None:
+                        # Get the value
+                        strTo = ndxLeaf.get("to")
+                        # Set this for the <eTRee>
+                        ndxEtree.set("to", strTo)
+            return True
+        except:
+            errHandle.DoError("ConvertHtreePsdx/adapt_main_xml")
+            return None
+
+    def add_feature(self, xml_this, feat, type="leaf"):
         """Add features"""
 
+        try:
+            # Check if there is an <fs> node child
+            ndxFS = self.pdx.select_single_node(xml_this, './child::fs[@type="{}"]'.format(type))
+            if ndxFS == None:
+                # Add the <fs> node with a @type
+                ndxFS = self.pdx.add_xml_child(xml_this, "fs", [atom("attribute", "type", type)])
+                
+            # Check presence of the <f> node
+            ndxF = self.pdx.select_single_node(ndxFS, './child::f[@name="{}"]'.format(feat['name']))
+            if ndxF == None:
+                ndxF = self.pdx.add_xml_child(ndxFS, "f", [atom("attribute", "name", feat['name'])])
+            # Set the correct value for the feature value
+            ndxF.set("value", feat['value'])
+            # Return this feature <f>
+            return ndxF
+        except:
+            errHandle.DoError("views/ConvertHtreePsdx/add_feature")
+            return None
+
+    def add_endnode(self, xml_this, type, txt, pos, n, feat_list):
+        try:
+            ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
+                [atom("attribute", "Id", self.next_id()), 
+                 atom("attribute", "Label", pos)])
+            ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
+                [atom("attribute", "Type", type),
+                 atom("attribute", "Text", txt),
+                 atom("attribute", "n", "{0:08d}".format(n))])
+            # Process the list of features
+            for feat in feat_list:
+                # Determine the <fs> @type attribute
+                ftype = type
+                if feat['name'] == "lemma":
+                    ftype = "M"
+                    feat['name'] = "l"
+                # Add feature
+                self.add_feature(ndx_node, feat, ftype)
+            return ndx_node
+        except:
+            errHandle.DoError("views/ConvertHtreePsdx/add_endnode")
+            return None
+
+    def add_node(self, xml_this, txt, pos, feat_list):
+        try:
+            ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
+                [atom("attribute", "Id", self.next_id()), 
+                 atom("attribute", "Label", pos)])
+            # Process the list of features
+            for feat in feat_list:
+                # Determine the <fs> @type attribute
+                ftype = type
+                # Add feature
+                self.add_feature(ndx_node, feat, ftype)
+            return ndx_node
+        except:
+            errHandle.DoError("views/ConvertHtreePsdx/add_node")
+            return None
         
 
 class ConvertHtreeFolia(ConvertBasic):

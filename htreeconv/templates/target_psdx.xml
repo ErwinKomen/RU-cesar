@@ -24,15 +24,12 @@
         <creation original="{{meta.year_original}}" manuscript="{{meta.year_manuscript}}" subtype="{{meta.subtype}}" />
       </langUsage>
     </profileDesc>
-    <revisionDesc>
-    </revisionDesc>
+    <revisionDesc></revisionDesc>
     <fileDesc>
       <publicationStmt distributor="{{meta.distributor}}" />
       <titleStmt title="{{meta.title}}" author="{{meta.author_name}}" editor="{{meta.editor}}" />
       <sourceDesc bibl="{{meta.source_bibl}}" />
     </fileDesc>
   </teiHeader>
-  <forestGrp File="{{text_id}}">
-
-  </forestGrp>
+  <forestGrp File="{{text_id}}"></forestGrp>
 </TEI>    
