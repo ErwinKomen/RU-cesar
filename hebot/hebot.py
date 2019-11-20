@@ -114,21 +114,63 @@ def main(prgName, argv) :
     errHandle.DoError("main")
     return False
 
-def read_table(cur, field_list, **kwargs):
+def read_table(cur, field_list, feat_list = None, **kwargs):
     table = []
     try:
         rows = cur.fetchall()
         for row in rows:
-            item = {}
+            item = {}   # main items
+            feat = {}   # features
+            value = ""
             for field in field_list:
                 # Get the field value into the table
                 item[field] = row[field]
                 # Possibly translate the field value
                 if len(kwargs) > 0:
+                    # Get the field value into the features
+                    item[field] = row[field]
                     kv_obj = kwargs['kwargs']
                     for k, v in kv_obj.items():
                         if k == field:
-                            item[field] = v[item[field]]
+                            x = item[field]
+                            if not isinstance(x, str) and int(x) < 0:
+                                item.pop(field)
+                            else:
+                                value = v[item[field]]
+                                vl = value.lower()
+                                if vl == "unknown" or vl == "none" or vl == "n/a" or vl == "absent":
+                                    # Remove from the object
+                                    item.pop(field)
+                                else:
+                                    item[field] = value 
+            if feat_list:
+                for field in feat_list:
+                    # Get the field value into the table
+                    feat[field] = row[field]
+                    # Possibly translate the field value
+                    if len(kwargs) > 0:
+                        # Get the field value into the features
+                        feat[field] = row[field]
+                        kv_obj = kwargs['kwargs']
+                        for k, v in kv_obj.items():
+                            if k == field:
+                                x = feat[field]
+                                if not isinstance(x, str) and int(x) < 0:
+                                    feat.pop(field)
+                                else:
+                                    value = v[feat[field]]
+                                    vl = value.lower()
+                                    if vl == "unknown" or vl == "none" or vl == "n/a" or vl == "absent":
+                                        # Remove from the object
+                                        feat.pop(field)
+                                    else:
+                                        feat[field] = value
+                features = {}
+                for k,v in feat.items():
+                    k_new = k.replace("mdf_", "")
+                    features[k_new] = v
+                item['f'] = features
+
             table.append(item)
         return table
     except:
@@ -163,6 +205,18 @@ def read_relation(cur, obj, enum_name):
             value = item['enum_value_name']
             obj[key] = value
 
+def read_relation_table(cur, obj, tbl_name):
+    fields = ['id_d', 'string_value']
+    # Read the table
+    cur.execute('select * from {}'.format(tbl_name))
+    kv_list = read_table(cur, fields)
+    # Transform list values to object
+    for item in kv_list:
+        key = item['id_d']
+        value = item['string_value']
+        obj[key] = value
+
+
 def get_text(tbl_sentence, first_monad, last_monad):
     """Read the text from first to last monad"""
 
@@ -175,15 +229,30 @@ def get_text(tbl_sentence, first_monad, last_monad):
     sBack = " ".join(lText)
     return sBack
 
-def get_text_as_table(cur, first_monad, last_monad, part_of_speech, state, gender):
+def get_text_as_table(cur, first_monad, last_monad, part_of_speech, state, gender, number, 
+                      person, verbal_stem, verbal_tense, lexical_set,
+                      uvf, pfm, vbs, vbe, prs, language):
     """Read the text from first to last monad"""
 
-    word_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_sp', 'mdf_st', 'mdf_prs_gn', 'mdf_functional_parent',
-                   'mdf_g_lex_utf8', 'mdf_g_word_utf8']
+    word_fields = ['object_id_d', 'first_monad', 'last_monad', 'mdf_sp',
+                   'mdf_functional_parent', 'mdf_g_lex_utf8', 'mdf_g_word_utf8']
+    feat_fields = ['mdf_st', 'mdf_prs_gn', 
+                   'mdf_pdp', 'mdf_sp', 'mdf_st', 
+                   'mdf_suffix_gender', 'mdf_gn', 'mdf_prs_gn', 
+                   'mdf_suffix_number', 'mdf_nu', 'mdf_prs_nu',
+                   'mdf_suffix_person', 'mdf_ps', 'mdf_prs_ps',
+                   'mdf_vt', 'mdf_ls', 'mdf_language',
+                   'mdf_uvf', 'mdf_pfm', 'mdf_vbs', 'mdf_vbe', 'mdf_prs']
     cur.execute("select * from word_objects where (first_monad >= ? and last_monad <= ?) order by first_monad", 
                 [first_monad, last_monad])
-    tbl_back = read_table(cur, word_fields, 
-                          kwargs = {'mdf_sp': part_of_speech, 'mdf_st': state, 'mdf_prs_gn': gender})
+    tbl_back = read_table(cur, word_fields, feat_fields,
+                          kwargs = {'mdf_sp': part_of_speech, 'mdf_pdp': part_of_speech, 'mdf_st': state, 
+                                    'mdf_suffix_gender': gender, 'mdf_gn': gender, 'mdf_prs_gn': gender,
+                                    'mdf_suffix_number': number, 'mdf_nu': number, 'mdf_prs_nu': number,
+                                    'mdf_suffix_person': person, 'mdf_ps': person, 'mdf_prs_ps': person,
+                                    'mdf_vt': verbal_tense, 'mdf_vs': verbal_stem, 'mdf_ls': lexical_set,
+                                    'mdf_uvf': uvf, 'mdf_pfm': pfm, 'mdf_vbs': vbs, 'mdf_vbe': vbe, 'mdf_prs': prs,
+                                    'mdf_language': language})
     return tbl_back
 
 def get_hier_word(hier_obj, first_monad):
@@ -233,9 +302,21 @@ def etcbc_2017_convert(oArgs):
     part_of_speech = {}
     state = {}
     gender = {}
+    number = {}
+    person = {}
+    verbal_tense = {}
+    verbal_stem = {}
+    lexical_set = {}
+    uvf = {}
+    pfm = {}
+    vbs = {}
+    vbe = {}    # verbal ending
+    prs = {}    # pronominal suffix
+    language = {1: "heb", 2: "tmr"}
 
     # Settings
-    do_sentence_atom_objects = False
+    do_sentence_atom_objects = False    # Now extinct
+    do_hier_word_check = False          # Still valid...
 
     try:
         # Try open the SQL
@@ -258,6 +339,16 @@ def etcbc_2017_convert(oArgs):
         read_relation(cur, part_of_speech, "part_of_speech_t")
         read_relation(cur, state, "state_t")
         read_relation(cur, gender, "gender_t")
+        read_relation(cur, number, "number_t")
+        read_relation(cur, person, "person_t")
+        read_relation(cur, verbal_tense, "verbal_tense_t")
+        read_relation(cur, verbal_stem, "verbal_stem_t")
+        read_relation(cur, lexical_set, "lexical_set_t")
+        read_relation_table(cur, uvf, "word_mdf_uvf_set")
+        read_relation_table(cur, pfm, "word_mdf_pfm_set")
+        read_relation_table(cur, vbs, "word_mdf_vbs_set")
+        read_relation_table(cur, vbe, "word_mdf_vbe_set")
+        read_relation_table(cur, prs, "word_mdf_prs_set")
 
         # COllect the books
         cur.execute("select * from book_objects order by first_monad")
@@ -326,7 +417,9 @@ def etcbc_2017_convert(oArgs):
                             # And get my ID
                             sentence_id = sentence['object_id_d']
                             # And get the text of this unit
-                            sentence_table = get_text_as_table(cur, s_m_f, s_m_l, part_of_speech, state, gender)
+                            sentence_table = get_text_as_table(cur, s_m_f, s_m_l, 
+                                part_of_speech, state, gender, number, person, verbal_stem, verbal_tense, lexical_set,
+                                uvf, pfm, vbs, vbe, prs, language)
                             sentence_txt = get_text(sentence_table, s_m_f, s_m_l)
 
                             # Start a list of child-mother connections that need to be made after the clauses have been done
@@ -334,19 +427,6 @@ def etcbc_2017_convert(oArgs):
 
                             # Start a hierarchical object for this sentence
                             hier_sent = SentenceObj(label=label, sent=sent_num, txt=sentence_txt)
-
-                            # Collect the atoms from this sentence
-                            if do_sentence_atom_objects:
-                                # NOTE: I'm not sure why one would need the atoms here
-
-                                cur.execute("select * from sentence_atom_objects where (mdf_functional_parent = ?) order by first_monad", 
-                                            [sentence_id])
-                                sentence_atoms = read_table(cur, sentence_atom_fields)
-                                for sentence_atom in sentence_atoms:
-                                    # Get the scope of this sentence
-                                    sa_m_f = sentence_atom['first_monad']
-                                    sa_m_l = sentence_atom['last_monad']
-                                    sentence_atom_id = sentence_atom['object_id_d']
 
                             # ALTERNATIVE: collect the CLAUSES under this [sentence_id]
                             cur.execute("select * from clause_objects where (mdf_functional_parent = ?) order by first_monad", 
@@ -387,10 +467,6 @@ def etcbc_2017_convert(oArgs):
                                     phrase_id = phrase['object_id_d']
                                     # Get the text of this unit
                                     phrase_txt = get_text(sentence_table, phr_m_f, phr_m_l)
-
-                                    ## Debugging
-                                    #if phr_m_f >= 355807 and phr_m_l <= 355821:
-                                    #    iDebugStop = 1
 
                                     # Check out the mdf_mother
                                     phrase_mother = phrase['mdf_mother']
@@ -436,29 +512,32 @@ def etcbc_2017_convert(oArgs):
                                             first_monad = row['first_monad']
                                             if first_monad >= phra_m_f and row['last_monad'] <= phra_m_l:
 
-                                                # Check if this word has already been attached somewhere else in [hier_sent]
-                                                hier_word = get_hier_word(hier_sent, first_monad)
+                                                # Only do checking if this is intentional
+                                                if do_hier_word_check:
+                                                    # Check if this word has already been attached somewhere else in [hier_sent]
+                                                    hier_word = get_hier_word(hier_sent, first_monad)
 
-                                                if hier_word:
-                                                    # Remove it from its current parent
-                                                    hier_parent = hier_word.par
-                                                    hier_parent.child.remove(hier_word)
-                                                    hier_word.par = hier_phrase_atom
-                                                    iStop = 1
-                                                else:
+                                                    if hier_word:
+                                                        # Remove it from its current parent
+                                                        hier_parent = hier_word.par
+                                                        hier_parent.child.remove(hier_word)
+                                                        hier_word.par = hier_phrase_atom
+                                                        iStop = 1
 
-                                                    # Get the features for this word
-                                                    feature_list = []
-                                                    feature_list.append({'name': 'lemma', 'value': row['mdf_g_lex_utf8']})
+                                                # Get the features for this word
+                                                feature_list = []
+                                                feature_list.append({'name': 'lemma', 'value': row['mdf_g_lex_utf8']})
+                                                for k, v in row['f'].items():
+                                                    feature_list.append(dict(name=k, value=v))
 
-                                                    # Add this row as end node
-                                                    hier_word = None
-                                                    hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'], id=row['object_id_d'])
-                                                    hier_word.type = "Vern"
-                                                    hier_word.f = feature_list
-                                                    hier_word.child = None
-                                                    hier_word.n = first_monad
-                                                    hier_word.par = hier_phrase_atom
+                                                # Add this row as end node
+                                                hier_word = None
+                                                hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'], id=row['object_id_d'])
+                                                hier_word.type = "Vern"
+                                                hier_word.f = feature_list
+                                                hier_word.child = None
+                                                hier_word.n = first_monad
+                                                hier_word.par = hier_phrase_atom
 
                                                 # Add this word to the phrase
                                                 hier_phrase_atom.child.append(hier_word)
