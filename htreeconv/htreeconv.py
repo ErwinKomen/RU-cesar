@@ -98,7 +98,7 @@ def htree_convert(oArgs):
         if arConvType[0] == "htree":
             # Create htree
             oConvert = ConvertHtreePsdx(oArgs['input'])
-            oConvert.do_convert()
+            oConvert.do_convert(oArgs['output'])
         elif arConvType[1] == "htree":
             # Stage 1: convert to htree
             arDstFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])

@@ -125,7 +125,7 @@ class ConvertBasic():
         self.env = jinja2.Environment(loader=self.file_loader)
         return response
 
-    def do_convert(self):
+    def do_convert(self, output_dir):
         """Convert files from source to destination"""
 
         try:
@@ -146,7 +146,8 @@ class ConvertBasic():
                 xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
 
                 # Save this one
-                outfile = file.replace(self.src_ext,self.dst_ext)
+                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
+                # outfile = file.replace(self.src_ext,self.dst_ext)
                 with open(outfile, "w", encoding="utf-8") as fp:
                     str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")
                     fp.write(str_output)
