@@ -312,6 +312,8 @@ def sync_crpp_start(request):
 
     oErr = ErrHandle()
     data = {'status': 'starting'}
+    allow_delete_all = False        # SECURITY
+
     try:
         # Get the user
         username = request.user.username
@@ -405,7 +407,7 @@ def sync_crpp_start(request):
                     oStatus.set("error", msg="Cannot find [part] information" )
                     data['status'] = 'error'
 
-            elif synctype == "alltexts":
+            elif allow_delete_all and synctype == "alltexts":
                 # Create a new synchronisation object that contains all relevant information
                 oStatus.set("contacting", msg="Obtaining data from /crpp")
 
