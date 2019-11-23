@@ -64,14 +64,15 @@ BOOKNAMES = [{"mdf_book": 1 , "name": "Genesis", "abbr": "GEN"},
 def main(prgName, argv) :
   flInput = ''      # input file name
   dirOutput = ''    # output directory
+  dirSurface = ''   # directory for surfaced htree
   sBook = None      # Specific book
 
   try:
-    sSyntax = prgName + ' -i <input file> -o <output directory> [-b <book abbreviation>]'
+    sSyntax = prgName + ' -i <input file> -o <output directory> [-b <book abbreviation>] [-s <surface directory>]'
     # get all the arguments
     try:
       # Get arguments and options
-      opts, args = getopt.getopt(argv, "hi:o:b:", ["-inputfile=", "-outputdir=", "-book="])
+      opts, args = getopt.getopt(argv, "hi:o:b:s:", ["-inputfile=", "-outputdir=", "-book=", "-surface="])
     except getopt.GetoptError:
       print(sSyntax)
       sys.exit(2)
@@ -86,6 +87,8 @@ def main(prgName, argv) :
         dirOutput = arg
       elif opt in ("-b", "--book"):
         sBook = arg
+      elif opt in ("-s", "--surface"):
+        dirSurface = arg
     # Check if all arguments are there
     if (flInput == ''):
       errHandle.DoError(sSyntax)
@@ -94,15 +97,21 @@ def main(prgName, argv) :
     if not os.path.exists(dirOutput):
         errHandle.DoError("Output directory does not exist", True)
 
+    # Check if surface directory exists
+    if dirSurface != "" and not os.path.exists(dirSurface):
+        errHandle.DoError("Surface directory does not exist", True)
+
     # Continue with the program
     errHandle.Status('Input is "' + flInput + '"')
     errHandle.Status('Output is "' + dirOutput + '"')
     if sBook: errHandle.Status("Book: {}".format(sBook))
+    if dirSurface != "": errHandle  .Status("Surface dir is: {}".format(dirSurface))
 
     # Call the function that does the job
-    oArgs = {'input': flInput,
-             'output': dirOutput,
-             'book': sBook}
+    oArgs = {'input':   flInput,
+             'output':  dirOutput,
+             'surface': dirSurface,
+             'book':    sBook}
     if (not etcbc_2017_convert(oArgs)) :
       errHandle.DoError("Could not complete")
       return False
@@ -216,7 +225,6 @@ def read_relation_table(cur, obj, tbl_name):
         value = item['string_value']
         obj[key] = value
 
-
 def get_text(tbl_sentence, first_monad, last_monad):
     """Read the text from first to last monad"""
 
@@ -274,7 +282,6 @@ def get_hier_word(hier_obj, first_monad):
         return None
     # REturn empty
     return None
-
 
 def etcbc_2017_convert(oArgs):
 
@@ -360,16 +367,23 @@ def etcbc_2017_convert(oArgs):
         if sBook:
             mdf_book = next( item['mdf_book'] for item in BOOKNAMES if item['abbr'] == sBook)
 
-
         # Walk through the books
         for book in books:
             # Do we process this book?
             if mdf_book == None or book['mdf_book'] == mdf_book:
 
                 # Create a name for this book
-                bookname = get_book_name(book['mdf_book'])
+                booknum = book['mdf_book']
+                bookname = get_book_name(booknum)
                 # Create a file name for this book
                 filename = os.path.abspath( os.path.join(oArgs['output'], bookname)) + ".json"
+                fsurface = None
+
+                # Are we doing surfacing?
+                dirsurface = oArgs['surface']
+                if dirsurface != "":
+                    # Create a file name for this book's surface output
+                    fsurface = os.path.abspath( os.path.join(dirsurface, bookname)) + ".json"
 
                 # COllect the chapters for this book
                 cur.execute("select * from chapter_objects where mdf_book = ? order by first_monad", 
@@ -378,16 +392,18 @@ def etcbc_2017_convert(oArgs):
 
                 # Start a list of SENTENCES in this book
                 sentence_list = []
+                surface_list = []
 
                 # Walk through the chapters
                 for chapter in chapters:
                     # Get the scope of this chapter
                     ch_m_f = chapter['first_monad']
                     ch_m_l = chapter['last_monad']
+                    chapter_num = chapter['mdf_chapter']
 
                     # Collect the verses of this chapter
                     cur.execute("select * from verse_objects where (mdf_book = ? and mdf_chapter = ?) order by first_monad", 
-                                [str(book['mdf_book']), str(chapter['mdf_chapter'])])
+                                [str(booknum), str(chapter_num)])
                     verses =  read_table(cur, verse_fields)
 
                     # Walk the verses
@@ -426,7 +442,7 @@ def etcbc_2017_convert(oArgs):
                             child_to_mother = []
 
                             # Start a hierarchical object for this sentence
-                            hier_sent = SentenceObj(label=label, sent=sent_num, txt=sentence_txt)
+                            hier_sent = SentenceObj(label=label, sent=sent_num, txt=sentence_txt, div=ch_num, divpar=vs_num)
 
                             # ALTERNATIVE: collect the CLAUSES under this [sentence_id]
                             cur.execute("select * from clause_objects where (mdf_functional_parent = ?) order by first_monad", 
@@ -450,7 +466,7 @@ def etcbc_2017_convert(oArgs):
                                 pos_clause = clause['mdf_kind']
 
                                 # Create a HierObj for this clause
-                                hier_clause = HierObj(pos=pos_clause, txt=clause_txt, parent=hier_sent, id=clause_id)
+                                hier_clause = HierObj(hier_sent, pos=pos_clause, txt=clause_txt, parent=hier_sent, id=clause_id)
                             
                                 # Read the phrases in this clause
                                 cur.execute("select * from phrase_objects where (mdf_functional_parent = ?) order by first_monad", 
@@ -475,7 +491,7 @@ def etcbc_2017_convert(oArgs):
                                     pos_phrase = "{}-{}".format(phrase['mdf_typ'], phrase['mdf_function'])
 
                                     # Create a HierObj for this phrase
-                                    hier_phrase = HierObj(pos=pos_phrase, txt=phrase_txt, parent=hier_clause, id=phrase_id)
+                                    hier_phrase = HierObj(hier_sent, pos=pos_phrase, txt=phrase_txt, parent=hier_clause, id=phrase_id)
 
                                     # Read the phrase-atoms in this phrase
                                     cur.execute("select * from phrase_atom_objects where (mdf_functional_parent = ?) order by first_monad", 
@@ -505,7 +521,7 @@ def etcbc_2017_convert(oArgs):
                                         pos_phrase_atom = "{}".format(phrase_atom['mdf_typ'])
 
                                         # Create a HierObj for this phrase_atom
-                                        hier_phrase_atom = HierObj(pos=pos_phrase_atom, txt=phrase_atom_txt, parent=hier_phrase, id=phrase_atom_id)
+                                        hier_phrase_atom = HierObj(hier_sent, pos=pos_phrase_atom, txt=phrase_atom_txt, parent=hier_phrase, id=phrase_atom_id)
 
                                         # Get all the words in this phrase_atom and read them in as end-nodes
                                         for row in sentence_table:
@@ -519,9 +535,9 @@ def etcbc_2017_convert(oArgs):
 
                                                     if hier_word:
                                                         # Remove it from its current parent
-                                                        hier_parent = hier_word.par
+                                                        hier_parent = hier_word.parent
                                                         hier_parent.child.remove(hier_word)
-                                                        hier_word.par = hier_phrase_atom
+                                                        hier_word.parent = hier_phrase_atom
                                                         iStop = 1
 
                                                 # Get the features for this word
@@ -532,12 +548,12 @@ def etcbc_2017_convert(oArgs):
 
                                                 # Add this row as end node
                                                 hier_word = None
-                                                hier_word = HierObj(pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'], id=row['object_id_d'])
+                                                hier_word = HierObj(hier_sent, pos=row['mdf_sp'], txt=row['mdf_g_word_utf8'], id=row['object_id_d'])
                                                 hier_word.type = "Vern"
                                                 hier_word.f = feature_list
                                                 hier_word.child = None
                                                 hier_word.n = first_monad
-                                                hier_word.par = hier_phrase_atom
+                                                hier_word.parent = hier_phrase_atom
 
                                                 # Add this word to the phrase
                                                 hier_phrase_atom.child.append(hier_word)
@@ -567,15 +583,25 @@ def etcbc_2017_convert(oArgs):
                             for relation in child_to_mother:
                                 id = relation['id']
                                 obj = relation['obj']
-                                mother = HierObj.find(id)
+                                mother = hier_sent.find(id)
                                 if not mother:
                                     iStop = 1
                                 if not mother.child:
-                                    mother = mother.par
+                                    mother = mother.parent
                                 mother.child.append(obj)
+
+                            # Simplification of the tree
+                            hier_sent.simplify()
 
                             # Add the object to the list of sentences
                             sentence_list.append(hier_sent.get_object())
+
+                            # Do we do surfacing?
+                            if fsurface:
+                                # Get a surface representation of the sentence
+                                surface_sent = hier_sent.copy_surface()
+                                # Append it to the surface list
+                                surface_list.append(surface_sent.get_object())
 
                 # Create the object of this book
                 book_obj = dict(sentence_list=sentence_list, name=bookname)
@@ -583,6 +609,13 @@ def etcbc_2017_convert(oArgs):
                 # Write the object to the file
                 with open(filename, "w") as f:
                     json.dump(book_obj, f, indent=2)
+
+                if fsurface:
+                    # Make an object for the book as a whole
+                    book_obj_surface = dict(sentence_list=surface_list, name=bookname)
+                    # Write the surface output
+                    with open(fsurface, "w") as f:
+                        json.dump(book_obj_surface, f, indent=2)
 
         return True
     except:
