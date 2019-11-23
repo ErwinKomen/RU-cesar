@@ -21,6 +21,7 @@ class HierObj(object):
     f = []          # List of features
     child = []      # List of child HierObj instances
     parent = None   # Each object may be part of another
+    status = ""     # Possible status (not used initially)
     # sent_obj = None # The sentence object to which I am related
 
     def __init__(self, sent_obj, pos, txt="", parent=None, id=-1, **kwargs):
@@ -53,6 +54,9 @@ class HierObj(object):
             js['child'] = children
         return js
 
+    def is_endnode(self):
+        return self.type and self.n
+
     def simplify(self):
         """TRy to simplify myself in labels and hierarchically"""
 
@@ -84,6 +88,15 @@ class HierObj(object):
         if self.child:
             for ch in self.child:
                 ch.simplify()
+
+    def get_copy(self, target):
+        """Create a copy of myself """
+
+        node = HierObj(target, pos=self.pos, txt=self.txt, id=self.id)
+        if self.n: node.n = self.n
+        if self.type: node.type = self.type
+        node.f = copy.copy(self.f)
+        return node
 
 
 class SentenceObj(object):
@@ -150,21 +163,38 @@ class SentenceObj(object):
     def copy_surface(self):
         """Create a copy of me, putting discontinuous constituents in surface word order"""
 
+        lst_source_endnodes = []
+
         # (1) Create a copy with the basic information
         target = SentenceObj(label=self.label, sent=self.sent, txt=self.txt, id=self.id, div = self.div, divpar=self.divpar)
         # (2) Collect a list of copies of all 'end' nodes
         for obj in self.lst_hierobj:
             # Check if this is an end-node
-            if obj.type and obj.n:
+            if obj.is_endnode():
                 # Create a copy of the relevant parts
-                endnode = HierObj(target, pos=obj.pos, txt=obj.txt, id=obj.id)
-                endnode.n = obj.n
-                endnode.type = obj.type
-                endnode.f = copy.copy(obj.f)
+                endnode = obj.get_copy(target)
+                # Add source word to *SOURCE* endnodes list
+                lst_source_endnodes.append(obj)
+            else:
+                # (3) Mark non-endnodes as "notdone" in the *SOURCE*
+                obj.status = "notdone"
 
-        # Order the items in the lst_hierobj on @n
+        # (4) Order the items in the lst_hierobj of *TARGET* on @n
         target.lst_hierobj.sort(key=lambda x: x.n)
-        
+
+        # (5) Walk left-to-right through the *SOURCE* words
+        for src_word in lst_source_endnodes:
+
+            # Travel upwards looking for parents in the *SOURCE* nodes
+            src_node = src_word
+            while src_node:
+                src_parent = src_node.parent
+                # Check: has the constituent been done yet?
+                if src_parent.status == "notdone":
+                    # Create a copy of the consitutent
+                    dst_parent = src_parent.get_copy(target)
+                    # Insert this constituent above me
+
 
         # Return the copy
         return target
