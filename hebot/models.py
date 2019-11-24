@@ -98,6 +98,9 @@ class HierObj(object):
         node.f = copy.copy(self.f)
         return node
 
+    def is_top(self):
+        return False
+
 
 class SentenceObj(object):
     """Sentence object"""
@@ -160,6 +163,9 @@ class SentenceObj(object):
                 return obj
         return None
 
+    def is_top(self):
+        return True
+
     def copy_surface(self):
         """Create a copy of me, putting discontinuous constituents in surface word order"""
 
@@ -184,16 +190,22 @@ class SentenceObj(object):
 
         # (5) Walk left-to-right through the *SOURCE* words
         for src_word in lst_source_endnodes:
+            # Find the equivalent *DST* node
+            dst_word = target.find(src_word.id)
 
             # Travel upwards looking for parents in the *SOURCE* nodes
             src_node = src_word
-            while src_node:
-                src_parent = src_node.parent
+            src_parent = src_node.parent
+            while src_node and src_parent and not src_parent.is_top():
                 # Check: has the constituent been done yet?
                 if src_parent.status == "notdone":
                     # Create a copy of the consitutent
                     dst_parent = src_parent.get_copy(target)
-                    # Insert this constituent above me
+                    # Insert this constituent above the 'current' dst node
+
+                # Get the new source
+                src_node = src_parent
+                src_parent = src_node.parent
 
 
         # Return the copy
