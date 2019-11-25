@@ -89,17 +89,33 @@ class HierObj(object):
             for ch in self.child:
                 ch.simplify()
 
-    def get_copy(self, target):
-        """Create a copy of myself """
+    def get_copy(self, target, parent=None):
+        """Create a copy of myself 
+        If parent is set, that becomes my parent, otherwise [target] is my parent
+        """
 
         node = HierObj(target, pos=self.pos, txt=self.txt, id=self.id)
         if self.n: node.n = self.n
         if self.type: node.type = self.type
         node.f = copy.copy(self.f)
+        node.parent = target if parent == None else parent
         return node
 
     def is_top(self):
         return False
+
+    def insert_above(self, node):
+        """Insert [node] above me (self)"""
+
+        # (1) I should be deleted as child from my former parent
+        self.parent.child.remove(self)
+        # (2) the parent of [node] becomes what was my parent
+        node.parent = self.parent
+        # (3) my parent becomes [node]
+        self.parent = node
+        # (4) I should be added as child of [node]
+        node.child.append(self)
+        return True
 
 
 class SentenceObj(object):
@@ -163,6 +179,14 @@ class SentenceObj(object):
                 return obj
         return None
 
+    def find_endnode(self, n):
+        """Look in the lst_hierobj and find the one with this @n"""
+
+        for obj in self.lst_hierobj:
+            if obj.n and obj.n == n:
+                return obj
+        return None
+
     def is_top(self):
         return True
 
@@ -177,7 +201,7 @@ class SentenceObj(object):
         for obj in self.lst_hierobj:
             # Check if this is an end-node
             if obj.is_endnode():
-                # Create a copy of the relevant parts
+                # Create a copy of the relevant parts, adding them under [target]
                 endnode = obj.get_copy(target)
                 # Add source word to *SOURCE* endnodes list
                 lst_source_endnodes.append(obj)
@@ -190,23 +214,38 @@ class SentenceObj(object):
 
         # (5) Walk left-to-right through the *SOURCE* words
         for src_word in lst_source_endnodes:
-            # Find the equivalent *DST* node
-            dst_word = target.find(src_word.id)
+            # Find the corresponding node in the *DST*
+            dst_node = target.find_endnode(src_word.n)
 
             # Travel upwards looking for parents in the *SOURCE* nodes
             src_node = src_word
-            src_parent = src_node.parent
-            while src_node and src_parent and not src_parent.is_top():
-                # Check: has the constituent been done yet?
-                if src_parent.status == "notdone":
-                    # Create a copy of the consitutent
-                    dst_parent = src_parent.get_copy(target)
-                    # Insert this constituent above the 'current' dst node
-
-                # Get the new source
-                src_node = src_parent
+            if src_node.parent:
+                # Get the parent of the source node
                 src_parent = src_node.parent
+                # If a source word is at the 'top', it gets a special treatment
+                if src_parent.is_top():
+                    # Save words attached to the 'top'
+                    src_word.status = "later"
+                else:
+                    while src_node and src_parent and not src_parent.is_top() and not src_parent.status == "notdone":
+                        # This node has not yet been processed...
+                        # (a) Create a copy of the consitutent (Note: 'target' becomes initial parent)
+                        dst_parent = src_parent.get_copy(target)
+                        # (b) now [src_parent] has been 'done'
+                        src_parent.status = "done"
 
+                        # (c) Insert this constituent above the 'current' dst node
+                        dst_node.insert_above(dst_parent)
+
+                        # Next step up: 
+                        # (d) go to the destination parent
+                        dst_node = dst_parent
+                        # (e) Get the new source and its parent
+                        src_node = src_parent
+                        src_parent = src_node.parent
+                    # Check the end situation: is the current source parent 'done'?
+                    if src_node and src_parent and src_parent.status == "done":
+                        pass
 
         # Return the copy
         return target
