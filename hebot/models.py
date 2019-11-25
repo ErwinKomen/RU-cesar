@@ -227,6 +227,7 @@ class SentenceObj(object):
                     # Save words attached to the 'top'
                     src_word.status = "later"
                 else:
+                    # PHASE 1
                     while src_node and src_parent and not src_parent.is_top() and not src_parent.status == "notdone":
                         # This node has not yet been processed...
                         # (a) Create a copy of the consitutent (Note: 'target' becomes initial parent)
@@ -243,8 +244,19 @@ class SentenceObj(object):
                         # (e) Get the new source and its parent
                         src_node = src_parent
                         src_parent = src_node.parent
+
+                    # PHASE 2
                     # Check the end situation: is the current source parent 'done'?
                     if src_node and src_parent and src_parent.status == "done":
+                        # The new destination [dst_node] must be added as child 
+                        #   under the correct copy of the source node
+
+                        # (2.1) Find the copy of the source node
+
+                        # (2.2) Check for well-formedness:
+                        #       - linear precedence: the last endnode under my destination parent
+                        #                            must immediately precede 'me'
+                        #       - the word preceding me may not come after my destination parent-to-be
                         pass
 
         # Return the copy
