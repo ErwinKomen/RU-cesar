@@ -386,8 +386,7 @@ def etcbc_2017_convert(oArgs):
                     fsurface = os.path.abspath( os.path.join(dirsurface, bookname)) + ".json"
 
                 # COllect the chapters for this book
-                cur.execute("select * from chapter_objects where mdf_book = ? order by first_monad", 
-                            str(book['mdf_book']))
+                cur.execute("select * from chapter_objects where mdf_book = ? order by first_monad", (str(book['mdf_book']),))
                 chapters = read_table(cur, chapter_fields)
 
                 # Start a list of SENTENCES in this book
@@ -413,9 +412,6 @@ def etcbc_2017_convert(oArgs):
                         vs_num = verse['mdf_verse']
                         label = verse['mdf_label'].strip()
 
-                        # Just show where we are
-                        errHandle.Status("Processing: {}".format(label))
-
                         # Get the scope of this verse
                         vs_m_f = verse['first_monad']
                         vs_m_l = verse['last_monad']
@@ -427,6 +423,9 @@ def etcbc_2017_convert(oArgs):
                         sent_num = 0
                         for sentence in sentences:
                             sent_num += 1
+                            # Just show where we are
+                            errHandle.Status("Processing: {} - d.{}.p.{}.s.{}".format(label, ch_num, vs_num, sent_num))
+
                             # Get the scope of this sentence
                             s_m_f = sentence['first_monad']
                             s_m_l = sentence['last_monad']
@@ -589,6 +588,7 @@ def etcbc_2017_convert(oArgs):
                                 if not mother.child:
                                     mother = mother.parent
                                 mother.child.append(obj)
+                                obj.parent = mother
 
                             # Simplification of the tree
                             hier_sent.simplify()

@@ -112,6 +112,9 @@ class ConvertBasic():
     lst_src = []
     dst_template = None
     pdx = None
+    div = None
+    par = None
+    sent = None
 
     def __init__(self, input_dir, **kwargs):
         response = super(ConvertBasic, self).__init__(**kwargs)
@@ -198,7 +201,8 @@ class ConvertBasic():
                 ndxSentence = self.pdx.add_xml_child(ndx_sent_host, self.tag_sent)
 
                 # NOTE: a sentence as a whole (psdx: <forest>) does *not* have a syntactic category
-                self.add_sent_details(ndxSentence, sent_idx, text_id, sentence['label'], sentence['txt'], sentence['f'])
+                self.add_sent_details(ndxSentence, sent_idx, text_id, sentence['label'], sentence['txt'], 
+                                      str(sentence['div']), str(sentence['par']), str(sentence['sent']), sentence['f'])
 
                 # Add all the main clauses in this sentence
                 for clause in sentence['child']:
@@ -233,8 +237,11 @@ class ConvertBasic():
         try:
             # Top level: add [obj]
             if 'type' in obj:
+                if obj['type'] == "Star":
+                    iStop = 1
                 # This is an end node: add the end-node attributes
-                ndx_endnode = self.add_endnode(xml_parent, obj['type'], obj['txt'], obj['pos'], obj['n'], obj['f'] )
+                n = 0 if "n" not in obj else obj['n']
+                ndx_endnode = self.add_endnode(xml_parent, obj['type'], obj['txt'], obj['pos'], n, obj['f'] )
             else:
                 # This is another node: add the basics
                 ndx_node = self.add_node(xml_parent, obj['txt'], obj['pos'], obj['f'] )
@@ -253,7 +260,7 @@ class ConvertBasic():
         """User overwritable function to add to the context"""
         return context
 
-    def add_sent_details(self, xml_sent, sent_id, text_id, label, txt, f):
+    def add_sent_details(self, xml_sent, sent_id, text_id, label, txt, div, par, sent, f):
         """Add sentence details """
         pass
 
@@ -282,13 +289,18 @@ class ConvertHtreePsdx(ConvertBasic):
         self.idnum += 1
         return str(self.idnum)
 
-    def add_sent_details(self, xml_sent, sent_id, text_id, label, txt, feat_list):
+    def add_sent_details(self, xml_sent, sent_id, text_id, label, txt, div, par, sent, feat_list):
         """Add details of <forest> for PSDX"""
 
         oAttrs = dict(forestId=str(sent_id), 
                       File=text_id, 
                       TextId=text_id, 
                       Location=label.strip())
+        if div != self.div: oAttrs['Section'] = div
+        if par != self.par: oAttrs['Paragraph'] = par
+        self.div = div
+        self.par = par
+        self.sent = sent
         self.pdx.add_xml_attributes(xml_sent, oAttrs)
         # Add <div> org
         self.pdx.add_xml_child(xml_sent, "div", [
@@ -412,14 +424,25 @@ class ConvertHtreePsdx(ConvertBasic):
 
     def add_endnode(self, xml_this, type, txt, pos, n, feat_list):
         try:
-            ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
-                [atom("attribute", "Id", self.next_id()), 
-                 atom("attribute", "Label", pos)])
-            str_position = "{0:08d}".format(n)
-            ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
-                [atom("attribute", "Type", type),
-                 atom("attribute", "Text", txt),
-                 atom("attribute", "n", str_position)])
+            if txt == "":
+                txt = " "
+            if type == "Star":
+                str_position = "{0:08d}".format(n)
+                ndx_node = xml_this
+                txt = pos
+                ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
+                    [atom("attribute", "Type", type),
+                     atom("attribute", "Text", txt),
+                     atom("attribute", "n", str_position)])
+            elif type == "Vern" or type == "Punc" or type == "Punct":
+                ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
+                    [atom("attribute", "Id", self.next_id()), 
+                     atom("attribute", "Label", pos)])
+                str_position = "{0:08d}".format(n)
+                ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
+                    [atom("attribute", "Type", type),
+                     atom("attribute", "Text", txt),
+                     atom("attribute", "n", str_position)])
             # Process the list of features
             for feat in feat_list:
                 # Determine the <fs> @type attribute
