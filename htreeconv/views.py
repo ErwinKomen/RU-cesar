@@ -136,6 +136,8 @@ class ConvertBasic():
 
             # Walk all source files
             for file in self.lst_src:
+                # Determine the output file name
+                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
                 # Load the JSON file into memory
                 with open(file, "r") as fp:
                     oJsonFile = json.load(fp)
@@ -149,7 +151,6 @@ class ConvertBasic():
                 xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
 
                 # Save this one
-                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
                 # outfile = file.replace(self.src_ext,self.dst_ext)
                 with open(outfile, "w", encoding="utf-8") as fp:
                     str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")

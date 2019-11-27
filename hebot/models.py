@@ -534,7 +534,7 @@ class SentenceObj(object):
                                 #       2 - the endnode that precedes dst_node
                                 iSubtract = 0
                                 while True:
-                                    iSubtract = -1
+                                    iSubtract -= 1
                                     dst_prec_endnode = next(iter([x for x in target.lst_hierobj if x.n and x.n == intN+iSubtract]), None)
                                     if dst_prec_endnode == None:
                                         msg = "Warning: could not find endnode with @n={}".format(intN+iSubtract)
