@@ -1,0 +1,142 @@
+﻿{% extends "lingo/layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'lingo_home' %}">Home</a>
+      <a href="{% url 'lingo_home' %}">Experiment</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content"> 
+    
+    <div id="tab_list">
+      <div class="panel panel-default">
+
+        <!-- Heading and button to add a new qdata item -->
+        <form>
+          <h3>
+            <span title="An edition points to a particular sermon collection">Question definitions</span>
+            {% if is_lingo_editor %}
+              <span id="add_qdata" class="pull-right">
+                {% csrf_token %}
+                <a class="btn btn-xs jumbo-3" role="button" 
+                    href="{% url 'qdata_add' %}">
+                  <span class="glyphicon glyphicon-plus"></span>Add question data
+                </a>
+              </span>
+            {% endif %}
+          </h3>
+        </form>
+      
+        <div class="row">&nbsp;</div>
+
+        <!-- Room for errors -->
+        <div id="research_err">{% for item in error_list %}{{item}}{% endfor %}</div>
+
+        {% if object_list %}
+
+          {% if is_paginated > 0 %}
+            <!-- Top pagination-->
+            <div class="row">
+              <div class="col-sm-4"><span>Number of experiments: </span><b>{{entrycount}}</b></div>
+              <div class="col-sm-8 right">
+              <span class="step-links pull-right">
+
+              {% include 'pagination.html' %}
+
+              </span>
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Table that lists all qdata items -->
+          <div class="row">
+            <div class="col-md-12">
+              <table class="table table-hover" style="width: 100%;">
+                <thead>
+                  <tr>
+                    {% for hd in order_heads %}
+                      <th class="sortable" scope="col">
+                        <div class="text">
+                          {% if hd.order == "" %}{{hd.name}}
+                          {% else %}
+                          <a href=?{{hd.order}}>{{hd.name}}</a>
+                          {% endif %}
+                        </div>
+                      </th>
+                    {% endfor %}
+                    <th><!-- Action button(s) --></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in object_list %}
+                    <tr class="qdata-entry">
+                      <!-- ['qmeta', 'qtopic', 'qtext', 'include'] -->
+                      <td class="hidden"> {{ item.id }}</td>
+
+                      <td valign="top" class="tdnowrap clickable">
+                        <a href="{% url 'qdata_details' item.id %}">{{item.qmeta}}</a>
+                      </td>
+                      <td valign="top" class="tdnowrap">{{item.qtopic}}</td>
+                      <td valign="top" title="{{item.qtext}}" style="width: 100%;">
+                        <span>{{item.qtext|truncatewords:10}}{% if item.qtext|wordcount > 10 %}...{% endif %}</span>
+                      </td>
+                      <td valign="top" class="tdnowrap" align="right">{{item.get_include_display}}</td>
+
+                      <!-- Short indications for this edition -->
+                      <td style="min-width: 80px;" align="right">
+                        {% if is_lingo_editor %}
+                          <!-- Edit button -->
+                          <a mode="edit" class="view-mode btn btn-xs jumbo-1"
+                             onclick="ru.cesar.lingo.goto_url('{% url 'admin:lingo_qdata_change' item.id %}')">
+                            <span class="glyphicon glyphicon-pencil" title="Edit these data"></span>
+                          </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {% if is_paginated %}
+            <!-- Bottom pagination -->
+            <div class="row">
+              <div class="col-sm-4"></div>
+              <div class="col-sm-8">
+                <span class="step-links pull-right">
+
+                {% include 'pagination.html' %}
+
+                </span>
+                </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <div>
+            <p>No current texts are available.</p>
+            {% if error_msg %}
+              <p>There are no texts, because there is an error:</p>
+              <code>{{error_msg}}</code>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        </div>
+
+      </div>   
+
+  </div>
+
+<script>
+  ru.cesar.lingo.init_events();
+</script>
+
+{% endblock content %}
+

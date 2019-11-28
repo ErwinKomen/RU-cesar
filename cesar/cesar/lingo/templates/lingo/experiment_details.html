@@ -42,11 +42,11 @@
         <div class="row">&nbsp;</div>
       </div>
 
-    {% if authenticated %}
+    {% if authenticated or is_lingo_editor %}
     {% else %}
       <div class="explanation">
         <p>Dear user, you are <b>not</b> logged in.</p>
-        <p>Unfortunately this means that you will not be able to see Lingo Experiment details.</p>
+        <p>Unfortunately this means that you will not be able to see (all the) Lingo Experiment details.</p>
       </div>
     {% endif %}
   </div>

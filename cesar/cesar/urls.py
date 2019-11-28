@@ -48,6 +48,9 @@ urlpatterns = [
     url(r'^lingo/experiment/download/(?P<pk>\d+)', ExperimentDownload.as_view(), name='exp_download'),
     url(r'^lingo/experiment/participant(?:/(?P<pk>\d+))?/$', ParticipantDetails.as_view(), name='participant'),
 
+    url(r'^lingo/qdata/list', QdataListView.as_view(), name='qdata_list'),
+    url(r'^lingo/qdata/add',  RedirectView.as_view(url='/'+APP_PREFIX+'admin/lingo/qdata/add'), name='qdata_add'),
+    url(r'^lingo/qdata/view(?:/(?P<pk>\d+))?/$', QdataDetailsView.as_view(), name='qdata_details'),
 
     url(r'^crm/contacts', cesar.lingo.views.crm_contacts, name='crm_contacts'),
 
