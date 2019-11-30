@@ -5,7 +5,7 @@
   {% csrf_token %}
   <table class="experiment-details">
     <!-- Row to indicate editing, if possible -->
-    {% if is_in_tsg %}
+    {% if is_lingo_editor %}
       <tr>
         <td colspan="2"  class="ms editable table">
           <!-- Provide the necessary buttons: edit, cancel and save -->
@@ -41,7 +41,7 @@
       <td class="hoverable" valign="top"  style="min-width: 150px;">Title</td>
       <td  style="width: 100%;">
         <div class="view-mode">{{expForm.title.value}}</div>
-        {% if is_in_tsg %}
+        {% if is_lingo_editor %}
           <div class="edit-mode hidden">{{expForm.title}}</div>
         {% endif %}
       </td>
@@ -51,7 +51,7 @@
       <td class="hoverable" valign="top"  style="min-width: 150px;">Home</td>
       <td  style="width: 100%;">
         <div class="view-mode">{{expForm.home.value}}</div>
-        {% if is_in_tsg %}
+        {% if is_lingo_editor %}
           <div class="edit-mode hidden">{{expForm.home}}</div>
         {% endif %}
       </td>
@@ -61,7 +61,7 @@
       <td class="hoverable" valign="top"  style="min-width: 150px;">Message</td>
       <td  style="width: 100%;">
         <div class="view-mode">{% if expForm.instance.msg %}{{expForm.instance.get_msg_markdown|safe}}{% else %}-{% endif %}</div>
-        {% if is_in_tsg %}
+        {% if is_lingo_editor %}
           <div class="edit-mode hidden">{{expForm.msg}}</div>
         {% endif %}
       </td>
@@ -70,9 +70,9 @@
     <!-- Informed consent for this experiment -->
     <tr class="form-row">
       <td class="hoverable" valign="top"  style="min-width: 150px;">Informed consent</td>
-      <td  style="width: 100%;">
+      <td  style="width: 100%;" valign="top">
         <div class="view-mode">{% if expForm.instance.consent %}{{expForm.instance.get_consent_markdown|safe}}{% else %}-{% endif %}</div>
-        {% if is_in_tsg %}
+        {% if is_lingo_editor %}
           <div class="edit-mode hidden">{{expForm.consent}}</div>
         {% endif %}
       </td>
@@ -80,10 +80,10 @@
 
     <!-- Participant fields to be included for this experiment -->
     <tr class="form-row">
-      <td class="hoverable" valign="top"  style="min-width: 150px;">Participant fields to be included</td>
-      <td  style="width: 100%;">
+      <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Participant fields to be included</td>
+      <td style="width: 100%;" valign="top">
         <div class="view-mode">{% if expForm.instance.ptcpfields %}{{expForm.instance.ptcpfields}}{% else %}-{% endif %}</div>
-        {% if is_in_tsg %}
+        {% if is_lingo_editor %}
           <div class="edit-mode hidden">{{expForm.ptcpfields}}</div>
         {% endif %}
       </td>
@@ -99,7 +99,10 @@
     <tr class="form-row edit-notnew">
       <td class="hoverable" valign="top" style="min-width: 150px;">Status</td>
       <td  style="width: 100%;">
-        <div class="any-mode">{{expForm.instance.get_status_display}}</div>
+        <div class="view-mode">{{expForm.instance.get_status_display}}</div>
+        {% if is_lingo_editor %}
+          <div class="edit-mode hidden">{{expForm.status}}</div>
+        {% endif %}
       </td>
     </tr>
 

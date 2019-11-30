@@ -154,6 +154,10 @@
                           <li role="separator" class="divider"></li>
                           <li><a href="{% url 'tsg_list' %}">TSG</a></li>
                           <li><a href="{% url 'lingo_home' %}">Lingo</a></li>
+                        {% elif is_lingo_editor %}
+                        <!-- Specific lingo editor -->
+                          <li role="separator" class="divider"></li>
+                          <li><a href="{% url 'lingo_home' %}">Lingo</a></li>
                         {% endif %}
                       </ul>
                     </li>

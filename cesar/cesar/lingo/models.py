@@ -255,8 +255,8 @@ class Qdata(models.Model):
     qsuggest = models.CharField("Suggested topic", max_length=255, blank=True, default = "")
     # [0-1] Correct response for this topic
     qcorr = models.CharField("Topic response", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "")
-    # [1] The experiment
-    experiment = models.ForeignKey(Experiment)
+    # [1] The experiment. Note: when the experiment is removed, the Qdata is removed too
+    experiment = models.ForeignKey(Experiment, related_name="experiment_qdatas", on_delete=models.CASCADE)
     # [1] Include this one or not
     include = models.CharField("Include text", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "n")
 

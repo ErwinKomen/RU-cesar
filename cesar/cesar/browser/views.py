@@ -197,6 +197,7 @@ def home(request):
     context['newsitem_list'] = newsitem_list
     # Make sure we add special group permission(s)
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
+    context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
     # Render and return the page
     return render(request, template_name, context)
 
