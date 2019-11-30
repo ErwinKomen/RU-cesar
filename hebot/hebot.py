@@ -421,6 +421,9 @@ def etcbc_2017_convert(oArgs):
                                     [str(vs_m_f), str(vs_m_l)])
                         sentences =  read_table(cur, sentence_fields)
                         sent_num = 0
+
+                        last_hier_sent = None
+
                         for sentence in sentences:
                             sent_num += 1
                             # Just show where we are
@@ -598,10 +601,34 @@ def etcbc_2017_convert(oArgs):
 
                             # Do we do surfacing?
                             if fsurface:
-                                # Get a surface representation of the sentence
-                                surface_sent = hier_sent.copy_surface()
-                                # Append it to the surface list
-                                surface_list.append(surface_sent.get_object())
+                                # Check if we can already do this one
+                                if not SentenceObj.is_complete(hier_sent):
+                                    # Keep this one to use it the next time
+                                    last_hier_sent = copy.copy(hier_sent)
+                                else:
+                                    if last_hier_sent != None:
+                                        # Add the new sentence
+                                        last_hier_sent.insert_sentence(hier_sent)
+
+                                        # Check if it is now complete
+                                        if last_hier_sent.is_complete():
+                                            # Yes, complete: so create surface
+                                            surface_sent = last_hier_sent.copy_surface()
+                                            # Append it to the surface list
+                                            surface_list.append(surface_sent.get_object())
+                                            # Reset last one
+                                            last_hier_sent = None
+                                        
+
+                                        ## DEBUGGING
+                                        #x = hier_sent.get_simple()
+                                        #y = last_hier_sent.get_simple()
+
+                                    else:
+                                        # Get a surface representation of the sentence
+                                        surface_sent = hier_sent.copy_surface()
+                                        # Append it to the surface list
+                                        surface_list.append(surface_sent.get_object())
 
                 # Create the object of this book
                 book_obj = dict(sentence_list=sentence_list, name=bookname)

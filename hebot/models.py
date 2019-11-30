@@ -6,9 +6,12 @@ The classes in this models.py are used by the Python application hebot
 import os, sys
 import copy
 import json
+import util
 
 cat_dict = {}
 cat_dict['CP-Conj']='ConjP'
+
+errHandle = util.ErrHandle()
 
 def get_error_message():
     arInfo = sys.exc_info()
@@ -221,11 +224,19 @@ class HierObj(object):
         # Return what we have
         return endnodes
         
-    def get_endnode(self, type, n = None):
+    def get_endnode(self, type, n = None, sametop = False):
         """Get the end-node according to type ('first', 'last')"""
 
         node = self
-        endnodes = self.get_endnodes([])
+        if sametop:
+            # Find the top from here
+            top = self
+            while top.parent and not top.parent.is_top():
+                top = top.parent
+            if top != None and top.parent and top.parent.is_top():
+                endnodes = top.get_endnodes([])
+        else:
+            endnodes = self.get_endnodes([])
         if endnodes and len(endnodes) > 0:
             if type == "first":
                 node = endnodes[0]
@@ -269,8 +280,6 @@ class HierObj(object):
         except:
             msg = get_error_message()
             return []
-
-
 
 
 class SentenceObj(object):
@@ -416,14 +425,49 @@ class SentenceObj(object):
             msg = get_error_message()
             return None, None, None
 
+    def insert_sentence(self, additional):
+        """Combine the [additional] SentenceObj into [self]"""
+
+        try:
+            # (PRE.1) If we have an additional, then combine it onto the main one
+            if additional == None:
+                return "insert_sentence: empty"
+            else:
+                # Copy the additional's lst_hierobj
+                for obj in additional.lst_hierobj:
+                    self.lst_hierobj.append(obj)
+                # Add the child(ren) of additional to self
+                # (a) Get all the end-nodes in additional
+                add_endnodes = additional.child[0].get_endnodes([])
+                add_first = add_endnodes[0]
+                # (b) Get all the end-nodes in [self]
+                self_endnodes = self.child[0].get_endnodes([])
+                # (c) walk the ones in self
+                idx = 0
+                while self_endnodes[idx].n < add_first.n:
+                    idx += 1
+                nd_bef = self_endnodes[idx-1]
+                nd_aft = self_endnodes[idx]
+                # (d) get common ancestor
+                add_common, self_left, self_right = self.get_common_ancestor(nd_bef, nd_aft)
+                # (e) Place additional as child under add_common
+                add_common.add_child(additional.child[0], after = self_left)
+
+                x = self.get_simple()
+        except:
+            msg = errHandle.get_error_message()
+            return msg
+
     def copy_surface(self):
         """Create a copy of me, putting discontinuous constituents in surface word order"""
 
-        lst_source_endnodes = []
-        iIchCounter = 0
-        use_preceding_parent = False
+        lst_source_endnodes = []        # List of endnodes in the source (will be sorted)
+        top_later = []                  # List of top-nodes that may need to be inserted somewhere later
+        iIchCounter = 0                 # Local counter for all *ICH*-n nodes in this sentence
+        use_preceding_parent = False    # Programming option. Use 'False' for the moment
 
         try:
+
             # (1) Create a copy with the basic information
             target = SentenceObj(label=self.label, sent=self.sent, txt=self.txt, id=self.id, div = self.div, divpar=self.divpar)
             # (2) Collect a list of copies of all 'end' nodes
@@ -444,18 +488,24 @@ class SentenceObj(object):
             lst_target_endnodes = [x for x in target.lst_hierobj if x.is_endnode()]
 
             # ============= Debugging ======================
-            if (self.div == 1 and self.divpar == 22 and self.sent == 2) or \
-                (self.div == 1 and self.divpar == 1 and self.sent == 3):
+            if (self.div == 1 and self.divpar == 22 and self.sent == 1) :
                 iStop = 1
+                x = target.get_simple()
+            #if additional != None:
+            #    iStop = 1
             # ==============================================
 
-            # (5) Walk left-to-right through the *SOURCE* words
+            # (6) Make sure to note whether the 'top' has already been reached
+            bDstTopReached =False
+
+            # (7) Walk left-to-right through the *SOURCE* words
+            dst_previous_node = None
             for dst_node in lst_target_endnodes:
                 # Find the corresponding node in the *SRC*
                 src_word = self.find_endnode(dst_node.n)
 
                 # ============= Debugging ======================
-                if src_word.n == 355811:
+                if src_word.n == 367515:
                     iStop = 1
                 # ==============================================
                 
@@ -490,6 +540,14 @@ class SentenceObj(object):
                             src_node = src_parent
                             src_parent = src_node.parent
 
+                        # Check for special situation: target already has a sentence-child, and this would be the second
+                        if src_parent.is_top():
+                           if bDstTopReached:
+                               # Store the dst_parent to be treated later on
+                               top_later.append(dict(node=dst_node, prev_word=dst_previous_node))
+                           else:
+                               bDstTopReached = True
+
                         # PHASE 2
                         # Check the end situation: is the current source parent 'done'?
                         if src_node and src_parent and not src_parent.is_top() and src_parent.status == "done":
@@ -517,6 +575,8 @@ class SentenceObj(object):
                             following = dst_new_parent.following()
                             first_following = None if len(following) == 0 else following[0]
                             dst_test = None
+                            dst_left = None
+                            dst_test = None
                             if first_following:
                                 dst_test = first_following.get_endnode("precedes", n_prec)
                                 method = "common_ancestor"
@@ -538,10 +598,14 @@ class SentenceObj(object):
                                     dst_prec_endnode = next(iter([x for x in target.lst_hierobj if x.n and x.n == intN+iSubtract]), None)
                                     if dst_prec_endnode == None:
                                         msg = "Warning: could not find endnode with @n={}".format(intN+iSubtract)
+                                        # Provide a message to the user
+                                        errHandle.Status(msg)
                                     if dst_prec_endnode and not dst_prec_endnode.is_top():
                                         break
                                 if dst_prec_endnode == None:
                                     msg = "Warning: *no* preceding node found before n={}".format(intN)
+                                    # Provide a message to the user
+                                    errHandle.Status(msg)
                                 else:
                                     # We found the right preceding node
                                     # (3.5) do we have a lowest common ancestor?
@@ -557,11 +621,20 @@ class SentenceObj(object):
                                         iIchCounter += 1
                                         # Depends on [dst_right]
                                         if dst_right and dst_right in dst_common.child:
-                                            prev_parent = dst_right.parent
-                                            dst_common.add_ich(iIchCounter, dst_right)
-                                            # [dst_new_parent] becomes new parent, [dst_right] must move
-                                            dst_new_parent.add_child(dst_right)
-                                            dst_left = dst_right
+                                            if dst_right in following:
+                                                # Process all the following elements in the same way
+                                                for follows in following:
+                                                    prev_parent = follows.parent
+                                                    dst_common.add_ich(iIchCounter, follows)
+                                                    dst_new_parent.add_child(follows)
+                                                    iIchCounter += 1
+                                                dst_left = follows
+                                            else:
+                                                prev_parent = dst_right.parent
+                                                dst_common.add_ich(iIchCounter, dst_right)
+                                                # [dst_new_parent] becomes new parent, [dst_right] must move
+                                                dst_new_parent.add_child(dst_right)
+                                                dst_left = dst_right
                                         else:
                                             # (3.1) Create a new node under the dst_new_parent for an *ICH*-n
                                             dst_new_parent.add_ich(iIchCounter, dst_node)
@@ -588,9 +661,35 @@ class SentenceObj(object):
                             # y = json.dumps(self.get_object(), indent=2)
                             # ============================================
 
+                # Keep the destination node for later
+                dst_previous_node = target.find_endnode(src_word.n)
+
             # Check if everything has been done in the source
             if not self.done():
                 iStop = 1
+
+            if len(top_later) > 0:
+                # Check if the target is in the right order
+                if not target.is_complete(sorted=False):
+                    # We still have elements in the 'top_later': use these
+                    for item in top_later:
+                        nd_bef = item['prev_word']
+                        node = item['node']
+                        # FInd the *next* node following after [nd_bef]
+                        nd_aft = nd_bef.get_endnode("follows", nd_bef.n, sametop = True )
+                        # nd_aft = target.find_endnode(nd_bef.n + 1)
+                        # Find common ancestor
+                        nd_common, nd_left, nd_right = target.get_common_ancestor(nd_bef, nd_aft)
+                        # Add [node] at the right place
+                        nd_common.add_child(node, after=nd_left)
+                        # Debugging
+                        x = target.get_simple()
+
+            # Perform an evaluation of the result
+            msg = SentenceObj.evaluate(target)
+            if msg != None and msg != "":
+                # Provide a message to the user
+                errHandle.Status(msg)                
 
             # Return the copy
             return target
@@ -598,6 +697,69 @@ class SentenceObj(object):
             msg = get_error_message()
             return None
 
+    def is_complete(self, sorted=True):
+        """Check if the sentence is COMPLETE"""
+
+        try:
+            endnodes = []
+            for ch in self.child:
+                endnodes = ch.get_endnodes(endnodes)
+            if sorted:
+                # Sort the end nodes
+                endnodes.sort(key=lambda x: x.n)
+            # Walk them and see if there are no gaps
+            last_n = 0
+            for node in endnodes:
+                if last_n == 0:
+                    last_n = node.n
+                else:
+                    if node.n - last_n != 1:
+                        return False
+                    last_n = node.n
+
+            # Return positively
+            return True
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.Status(msg)
+            return False
+        
+    def evaluate(target):
+        """Check if the sentence in target is ok. If not: provide a report"""
+
+        try:
+            lBack = []
+            # Walk all my children
+            for ch in target.child:
+                # Get the end nodes
+                endnodes = ch.get_endnodes([])
+                # Check the end nodes
+                bOrder = True
+                bNumber = True
+                last_n = 0
+                for node in endnodes:
+                    if last_n == 0:
+                        last_n = node.n
+                    else:
+                        if node.n - last_n > 1:
+                            bNumber = False
+                            lBack.append("d.{}.p.{}.s.{} Number problem: {}...{}".format(
+                                target.div, target.divpar, target.sent,  last_n, node.n)) 
+                        if node.n < last_n:
+                            bOrder = False
+                            lBack.append("d.{}.p.{}.s.{} Order problem: {}...{}".format(
+                                target.div, target.divpar, target.sent,last_n, node.n))
+                        last_n = node.n
+            if len(lBack) > 0:
+                msg = "\n".join(lBack)
+                return msg
+
+            # Return positively
+            return None
+        except:
+            msg = errHandle.get_error_message()
+            return msg
+        
     def done(self):
 
         bFound = False
