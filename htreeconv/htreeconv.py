@@ -25,6 +25,7 @@ def main(prgName, argv):
     dirInput = ''   # input directory
     dirOutput = ''  # output directory
     sType = ""      # the type of conversion
+    bForce = False  # Force means: overwrite
     oConv = None    # Conversion object
     conv_type = [
         {'type': 'htree-psdx', 'src': '.json', 'dst': '.psdx'},
@@ -32,11 +33,11 @@ def main(prgName, argv):
         ]
 
     try:
-        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion>'
+        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion> [-f]'
         # get all the arguments
         try:
             # Get arguments and options
-            opts, args = getopt.getopt(argv, "hi:o:t:", ["-inputdir=", "-outputdir=", "-type="])
+            opts, args = getopt.getopt(argv, "hi:o:t:f", ["-inputdir=", "-outputdir=", "-type=", "-force"])
         except getopt.GetoptError:
             print(sSyntax)
             sys.exit(2)
@@ -54,6 +55,8 @@ def main(prgName, argv):
                 for item in conv_type: 
                     if item['type'] == sType:
                         oConv = item ; break
+            elif opt in ("-f", "--force"):
+                bForce = True
 
         # Check if all arguments are there
         if (dirInput == '' or dirOutput == "" or oConv == None):
@@ -74,6 +77,7 @@ def main(prgName, argv):
         # Call the function that does the job
         oArgs = {'input': dirInput,
                  'output': dirOutput,
+                 'force': bForce,
                  'conv': oConv}
         if (not htree_convert(oArgs)) :
             errHandle.DoError("Could not complete")
@@ -94,11 +98,12 @@ def htree_convert(oArgs):
         # Figure out which stages there are in conversion
         oConv = oArgs['conv']
         arConvType = oConv['type'].split("-")
+        bForce = oArgs['force']
 
         if arConvType[0] == "htree":
             # Create htree
             oConvert = ConvertHtreePsdx(oArgs['input'])
-            oConvert.do_convert(oArgs['output'])
+            oConvert.do_convert(oArgs['output'], bForce)
         elif arConvType[1] == "htree":
             # Stage 1: convert to htree
             arDstFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])

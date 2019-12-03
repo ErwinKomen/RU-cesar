@@ -128,7 +128,7 @@ class ConvertBasic():
         self.env = jinja2.Environment(loader=self.file_loader)
         return response
 
-    def do_convert(self, output_dir):
+    def do_convert(self, output_dir, force=False):
         """Convert files from source to destination"""
 
         try:
@@ -138,23 +138,31 @@ class ConvertBasic():
             for file in self.lst_src:
                 # Determine the output file name
                 outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
-                # Load the JSON file into memory
-                with open(file, "r") as fp:
-                    oJsonFile = json.load(fp)
 
-                # Get the text id
-                text_id = oJsonFile['name']
-                meta = None
-                if 'meta' in oJsonFile: meta = oJsonFile['meta']
+                # Check if it already exists and whether we should overwrite
+                if not os.path.exists(outfile) or force:
+                    # Show where we are
+                    errHandle.Status("Working on file {}".format(file))
 
-                # Create an XML from the information we have
-                xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
+                    # Load the JSON file into memory
+                    with open(file, "r") as fp:
+                        oJsonFile = json.load(fp)
 
-                # Save this one
-                # outfile = file.replace(self.src_ext,self.dst_ext)
-                with open(outfile, "w", encoding="utf-8") as fp:
-                    str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")
-                    fp.write(str_output)
+                    # Get the text id
+                    text_id = oJsonFile['name']
+                    meta = None
+                    if 'meta' in oJsonFile: meta = oJsonFile['meta']
+
+                    # Create an XML from the information we have
+                    xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
+
+                    # Save this one
+                    # outfile = file.replace(self.src_ext,self.dst_ext)
+                    with open(outfile, "w", encoding="utf-8") as fp:
+                        str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")
+                        fp.write(str_output)
+                else:
+                    errHandle.Status("Skipping file {}".format(outfile))
 
             # Return positively
             return 1
@@ -194,6 +202,9 @@ class ConvertBasic():
 
             # Walk the sentences in sent_list
             for sentence in sent_list:
+                # Show where we are
+                errHandle.Status("Processing: d.{}.p.{}.s.{}".format(sentence['div'], sentence['par'], sentence['sent']))
+
                 # Get the sentence index
                 object_sent_idx = sentence['sent']
                 sent_idx += 1
@@ -215,7 +226,7 @@ class ConvertBasic():
                 self.adapt_main_xml(ndxSentence)
 
                 # Debugging
-                x = ET.tostring(self.pdx.xmldocument)
+                #x = ET.tostring(self.pdx.xmldocument)
 
             # Return the document
             xmldoc = self.pdx.xmldocument
