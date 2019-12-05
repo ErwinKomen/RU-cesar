@@ -80,7 +80,7 @@ class HierObj(object):
                 t = "[{}]".format(self.txt)
             elif self.type == "Star":
                 t = "[{}]".format(self.txt)
-        txt.append("{}{} {} {} (id={})".format(spaces, self.pos, t, n, self.id))
+        txt.append("{}{} {}\t{}\t(id={})".format(spaces, self.pos, t, n, self.id))
         if self.child:
             for ch in self.child:
                 txt.append(ch.get_simple(level+1))
@@ -458,7 +458,7 @@ class SentenceObj(object):
             msg = errHandle.get_error_message()
             return msg
 
-    def copy_surface(self):
+    def copy_surface(self, debug = None):
         """Create a copy of me, putting discontinuous constituents in surface word order"""
 
         lst_source_endnodes = []        # List of endnodes in the source (will be sorted)
@@ -494,6 +494,7 @@ class SentenceObj(object):
             #if additional != None:
             #    iStop = 1
             # ==============================================
+            if debug and debug > 2: errHandle.Status(target.get_simple())
 
             # (6) Make sure to note whether the 'top' has already been reached
             bDstTopReached =False
@@ -660,6 +661,7 @@ class SentenceObj(object):
                             x = target.get_simple()
                             # y = json.dumps(self.get_object(), indent=2)
                             # ============================================
+                            if debug and debug > 2: errHandle.Status(target.get_simple())
 
                 # Keep the destination node for later
                 dst_previous_node = target.find_endnode(src_word.n)

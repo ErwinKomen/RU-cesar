@@ -65,14 +65,19 @@ def main(prgName, argv) :
   flInput = ''      # input file name
   dirOutput = ''    # output directory
   dirSurface = ''   # directory for surfaced htree
+  location = ""     # GO to a specific location
+  debug = None
+  l_div = -1
+  l_par = -1
+  l_sen = -1
   sBook = None      # Specific book
 
   try:
-    sSyntax = prgName + ' -i <input file> -o <output directory> [-b <book abbreviation>] [-s <surface directory>]'
+    sSyntax = prgName + ' -i <input file> -o <output directory> [-d] [-b <book abbreviation>] [-s <surface directory>] [-l <d.N.p.M.s.P>]'
     # get all the arguments
     try:
       # Get arguments and options
-      opts, args = getopt.getopt(argv, "hi:o:b:s:", ["-inputfile=", "-outputdir=", "-book=", "-surface="])
+      opts, args = getopt.getopt(argv, "hi:o:b:s:l:d:", ["-inputfile=", "-outputdir=", "-book=", "-surface=", "-location=", "-debug"])
     except getopt.GetoptError:
       print(sSyntax)
       sys.exit(2)
@@ -87,8 +92,12 @@ def main(prgName, argv) :
         dirOutput = arg
       elif opt in ("-b", "--book"):
         sBook = arg
+      elif opt in ("-d", "--debug"):
+        debug = arg
       elif opt in ("-s", "--surface"):
         dirSurface = arg
+      elif opt in ("-l", "--location"):
+        location = arg
     # Check if all arguments are there
     if (flInput == ''):
       errHandle.DoError(sSyntax)
@@ -101,6 +110,21 @@ def main(prgName, argv) :
     if dirSurface != "" and not os.path.exists(dirSurface):
         errHandle.DoError("Surface directory does not exist", True)
 
+    # Possibly read the location
+    if location != "":
+        arLoc = location.split(".")
+        idx = 0
+        while idx * 2 < len(arLoc):
+            part = arLoc[idx*2]
+            number = arLoc[idx*2+1]
+            idx += 1
+            if part == "d":
+                l_div = int(number)
+            elif part == "p":
+                l_par = int(number)
+            elif part == "s":
+                l_sen = int(number)
+
     # Continue with the program
     errHandle.Status('Input is "' + flInput + '"')
     errHandle.Status('Output is "' + dirOutput + '"')
@@ -112,6 +136,10 @@ def main(prgName, argv) :
              'output':  dirOutput,
              'surface': dirSurface,
              'book':    sBook}
+    if l_div >=0: oArgs['div'] = l_div
+    if l_par >=0: oArgs['par'] = l_par
+    if l_sen >=0: oArgs['sen'] = l_sen
+    if debug: oArgs['d'] = debug
     if (not etcbc_2017_convert(oArgs)) :
       errHandle.DoError("Could not complete")
       return False
@@ -320,12 +348,24 @@ def etcbc_2017_convert(oArgs):
     vbe = {}    # verbal ending
     prs = {}    # pronominal suffix
     language = {1: "heb", 2: "tmr"}
+    l_div = -1
+    l_par = -1
+    l_sen = -1
+    debug = None
 
     # Settings
     do_sentence_atom_objects = False    # Now extinct
     do_hier_word_check = False          # Still valid...
 
     try:
+        # Debugging?
+        if "d" in oArgs: debug = int(oArgs['d'])
+
+        # Read location
+        if "div" in oArgs: l_div = oArgs['div']
+        if "par" in oArgs: l_par = oArgs['par']
+        if "sen" in oArgs: l_sen = oArgs['sen']
+
         # Try open the SQL
         conn = sqlite3.connect(oArgs['input'])
         conn.row_factory = sqlite3.Row
@@ -375,8 +415,14 @@ def etcbc_2017_convert(oArgs):
                 # Create a name for this book
                 booknum = book['mdf_book']
                 bookname = get_book_name(booknum)
-                # Create a file name for this book
-                filename = os.path.abspath( os.path.join(oArgs['output'], bookname)) + ".json"
+                # Create a file name for this book (or specific part o it)
+                basis = os.path.abspath( os.path.join(oArgs['output'], bookname))
+                lAdded = []
+                if l_div >= 0: lAdded.append("d{}".format(l_div))
+                if l_par >= 0: lAdded.append("p{}".format(l_par))
+                if l_sen >= 0: lAdded.append("s{}".format(l_sen))
+                plus = "" if len(lAdded) == 0 else "_"+"-".join(lAdded)
+                filename = "{}{}.json".format(basis, plus)
                 fsurface = None
 
                 # Are we doing surfacing?
@@ -395,10 +441,14 @@ def etcbc_2017_convert(oArgs):
 
                 # Walk through the chapters
                 for chapter in chapters:
+                    chapter_num = chapter['mdf_chapter']
+
+                    # May we continue?
+                    if l_div >=0 and chapter_num != l_div:
+                        continue
                     # Get the scope of this chapter
                     ch_m_f = chapter['first_monad']
                     ch_m_l = chapter['last_monad']
-                    chapter_num = chapter['mdf_chapter']
 
                     # Collect the verses of this chapter
                     cur.execute("select * from verse_objects where (mdf_book = ? and mdf_chapter = ?) order by first_monad", 
@@ -411,6 +461,10 @@ def etcbc_2017_convert(oArgs):
                         ch_num = verse['mdf_chapter']
                         vs_num = verse['mdf_verse']
                         label = verse['mdf_label'].strip()
+
+                        # May we continue?
+                        if l_div >=0 and l_par >=0 and vs_num != l_par:
+                            continue
 
                         # Get the scope of this verse
                         vs_m_f = verse['first_monad']
@@ -426,6 +480,11 @@ def etcbc_2017_convert(oArgs):
 
                         for sentence in sentences:
                             sent_num += 1
+
+                            # May we continue?
+                            if l_div >=0 and l_par >=0 and l_sen >=0 and sent_num != l_sen:
+                                continue
+
                             # Just show where we are
                             errHandle.Status("Processing: {} - d.{}.p.{}.s.{}".format(label, ch_num, vs_num, sent_num))
 
@@ -613,7 +672,7 @@ def etcbc_2017_convert(oArgs):
                                         # Check if it is now complete
                                         if last_hier_sent.is_complete():
                                             # Yes, complete: so create surface
-                                            surface_sent = last_hier_sent.copy_surface()
+                                            surface_sent = last_hier_sent.copy_surface(debug)
                                             # Append it to the surface list
                                             surface_list.append(surface_sent.get_object())
                                             # Reset last one
@@ -626,7 +685,7 @@ def etcbc_2017_convert(oArgs):
 
                                     else:
                                         # Get a surface representation of the sentence
-                                        surface_sent = hier_sent.copy_surface()
+                                        surface_sent = hier_sent.copy_surface(debug)
                                         # Append it to the surface list
                                         surface_list.append(surface_sent.get_object())
 
