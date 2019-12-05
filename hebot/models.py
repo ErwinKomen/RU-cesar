@@ -506,7 +506,7 @@ class SentenceObj(object):
                 src_word = self.find_endnode(dst_node.n)
 
                 # ============= Debugging ======================
-                if src_word.n == 367515:
+                if src_word.n == 189:
                     iStop = 1
                 # ==============================================
                 
