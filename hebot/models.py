@@ -224,42 +224,52 @@ class HierObj(object):
         # Return what we have
         return endnodes
         
-    def get_endnode(self, type, n = None, sametop = False):
+    def get_endnode(self, type, n = None, sametop = False, sentence = False):
         """Get the end-node according to type ('first', 'last')"""
 
         node = self
-        if sametop:
-            # Find the top from here
-            top = self
-            while top.parent and not top.parent.is_top():
-                top = top.parent
-            if top != None and top.parent and top.parent.is_top():
-                endnodes = top.get_endnodes([])
-        else:
-            endnodes = self.get_endnodes([])
-        if endnodes and len(endnodes) > 0:
-            if type == "first":
-                node = endnodes[0]
-            elif type == "last":
-                node = endnodes[-1]
-            elif type == "precedes":
-                node = None
-                nsmall = 0
-                for endnode in endnodes:
-                    if endnode.n > nsmall and endnode.n < n and endnode.status != "later":
-                        node = endnode
-                        nsmall = node.n
-            elif type == "follows":
-                node = None
-                nsmall = 0
-                for endnode in endnodes:
-                    if endnode.n > n and endnode.status != "later":
-                        node = endnode
-                        break
-        # Found anything?
-        if node and node.is_endnode():
-            return node
-        else:
+        try:
+            if sentence:
+                # Get end-nodes from the sentence level
+                endnodes = []
+                for ch in self.sent_obj.child:
+                    endnodes = ch.get_endnodes(endnodes)
+            elif sametop:
+                # Find the top from here
+                top = self
+                while top.parent and not top.parent.is_top():
+                    top = top.parent
+                if top != None and top.parent and top.parent.is_top():
+                    endnodes = top.get_endnodes([])
+            else:
+                endnodes = self.get_endnodes([])
+            if endnodes and len(endnodes) > 0:
+                if type == "first":
+                    node = endnodes[0]
+                elif type == "last":
+                    node = endnodes[-1]
+                elif type == "precedes":
+                    node = None
+                    nsmall = 0
+                    for endnode in endnodes:
+                        if endnode.n > nsmall and endnode.n < n and endnode.status != "later":
+                            node = endnode
+                            nsmall = node.n
+                elif type == "follows":
+                    node = None
+                    nsmall = 0
+                    for endnode in endnodes:
+                        if endnode.n > n and endnode.status != "later":
+                            node = endnode
+                            break
+            # Found anything?
+            if node and node.is_endnode():
+                return node
+            else:
+                return None
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.Status(msg)
             return None
 
     def following(self):
@@ -682,14 +692,30 @@ class SentenceObj(object):
                         nd_bef = item['prev_word']
                         node = item['node']
                         # FInd the *next* node following after [nd_bef]
-                        nd_aft = nd_bef.get_endnode("follows", nd_bef.n, sametop = True )
-                        # nd_aft = target.find_endnode(nd_bef.n + 1)
-                        # Find common ancestor
-                        nd_common, nd_left, nd_right = target.get_common_ancestor(nd_bef, nd_aft)
-                        # Add [node] at the right place
-                        nd_common.add_child(node, after=nd_left)
+                        if nd_bef.n == 36194:
+                            iStop = 1
+                        nd_aft = nd_bef.get_endnode("follows", nd_bef.n, sentence = True )  # , sametop = True
+                        if nd_aft == None:
+                            # Cannot find the *next* node after [nd_bef] - now do what?
+                            msg = "Could not find a node following after {}".format(nd_bef.n)
+                            errHandle.Status(msg)
+                        else:
+                            # Find common ancestor
+                            nd_common, nd_left, nd_right = target.get_common_ancestor(nd_bef, nd_aft)
+                            # Make sure we have a common ancestor
+                            if nd_common:
+                                # Add [node] at the right place
+                                nd_common.add_child(node, after=nd_left)
+                            elif nd_left and nd_right:
+                                # Place right under left
+                                nd_left.add_child(nd_right)
+                                # pass
+                            else:
+                                # There is no common ancestor - now what do we do??
+                                msg = "Could not find a common ancestor"
+                                errHandle.Status(msg)
                         # Debugging
-                        x = target.get_simple()
+                        if debug > 1: x = target.get_simple()
 
             # Perform an evaluation of the result
             msg = SentenceObj.evaluate(target)
@@ -698,10 +724,10 @@ class SentenceObj(object):
                 errHandle.Status(msg)                
 
             # Return the copy
-            return target
+            return target, ""
         except:
             msg = get_error_message()
-            return None
+            return None, msg
 
     def is_complete(self, sorted=True):
         """Check if the sentence is COMPLETE"""
