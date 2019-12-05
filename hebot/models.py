@@ -267,15 +267,19 @@ class HierObj(object):
 
         try:
             nodelist = []
-            parent = self.parent
-            if not self.parent.is_top():
-                # There *may* be nodes following me
+            # Get to my highest ancestor
+            previous = self 
+            node = self
+            while not node.parent.is_top():
+                node = node.parent
+                # Look for nodes following 'me' (='previous')
                 bFound = False
-                for child in parent.child:
-                    if child is self:
+                for child in node.child:
+                    if child is previous:
                         bFound = True
                     elif bFound:
                         nodelist.append(child)
+                previous = node
             return nodelist
         except:
             msg = get_error_message()
@@ -393,10 +397,10 @@ class SentenceObj(object):
             # Validate
             if nd_one == None or nd_two == None:
                 # There is no common ancestor
-                return None
+                return None, None, None
             if nd_one is nd_two:
                 # They are equal
-                return nd_one
+                return nd_one, None, None
             # Initialize
             ndLeft = nd_one
             ndRight = nd_two
