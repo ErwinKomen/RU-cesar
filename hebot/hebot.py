@@ -672,9 +672,13 @@ def etcbc_2017_convert(oArgs):
                                         # Check if it is now complete
                                         if last_hier_sent.is_complete():
                                             # Yes, complete: so create surface
-                                            surface_sent = last_hier_sent.copy_surface(debug)
+                                            surface_sent, msg = last_hier_sent.copy_surface(debug)
                                             # Append it to the surface list
-                                            surface_list.append(surface_sent.get_object())
+                                            if surface_sent:
+                                                surface_list.append(surface_sent.get_object())
+                                            else:
+                                                # We have the message
+                                                errHandle.Status("Could not create surface copy [a]: {}".format(msg))
                                             # Reset last one
                                             last_hier_sent = None
                                         
@@ -685,9 +689,13 @@ def etcbc_2017_convert(oArgs):
 
                                     else:
                                         # Get a surface representation of the sentence
-                                        surface_sent = hier_sent.copy_surface(debug)
+                                        surface_sent, msg = hier_sent.copy_surface(debug)
                                         # Append it to the surface list
-                                        surface_list.append(surface_sent.get_object())
+                                        if surface_sent:
+                                            surface_list.append(surface_sent.get_object())
+                                        else:
+                                            # We have the message
+                                            errHandle.Status("Could not create surface copy [b]: {}".format(msg))
 
                 # Create the object of this book
                 book_obj = dict(sentence_list=sentence_list, name=bookname)

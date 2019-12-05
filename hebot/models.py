@@ -397,10 +397,10 @@ class SentenceObj(object):
             # Validate
             if nd_one == None or nd_two == None:
                 # There is no common ancestor
-                return None
+                return None, None, None
             if nd_one is nd_two:
                 # They are equal
-                return nd_one
+                return nd_one, None, None
             # Initialize
             ndLeft = nd_one
             ndRight = nd_two
