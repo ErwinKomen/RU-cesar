@@ -66,6 +66,7 @@ def main(prgName, argv) :
   dirOutput = ''    # output directory
   dirSurface = ''   # directory for surfaced htree
   location = ""     # GO to a specific location
+  bForce = False  # Force means: overwrite
   debug = None
   l_div = -1
   l_par = -1
@@ -73,34 +74,36 @@ def main(prgName, argv) :
   sBook = None      # Specific book
 
   try:
-    sSyntax = prgName + ' -i <input file> -o <output directory> [-d] [-b <book abbreviation>] [-s <surface directory>] [-l <d.N.p.M.s.P>]'
+    sSyntax = prgName + ' -i <input file> -o <output directory> [-d] [-b <book abbreviation>] [-s <surface directory>] [-l <d.N.p.M.s.P>] [-f]'
     # get all the arguments
     try:
-      # Get arguments and options
-      opts, args = getopt.getopt(argv, "hi:o:b:s:l:d:", ["-inputfile=", "-outputdir=", "-book=", "-surface=", "-location=", "-debug"])
+          # Get arguments and options
+          opts, args = getopt.getopt(argv, "hi:o:b:s:l:d:", ["-inputfile=", "-outputdir=", "-book=", "-surface=", "-location=", "-debug", "-force"])
     except getopt.GetoptError:
-      print(sSyntax)
-      sys.exit(2)
+          print(sSyntax)
+          sys.exit(2)
     # Walk all the arguments
     for opt, arg in opts:
-      if opt in ("-h", "--help"):
-        print(sSyntax)
-        sys.exit(0)
-      elif opt in ("-i", "--inputfile"):
-        flInput = arg
-      elif opt in ("-o", "--outputdir"):
-        dirOutput = arg
-      elif opt in ("-b", "--book"):
-        sBook = arg
-      elif opt in ("-d", "--debug"):
-        debug = arg
-      elif opt in ("-s", "--surface"):
-        dirSurface = arg
-      elif opt in ("-l", "--location"):
-        location = arg
+        if opt in ("-h", "--help"):
+            print(sSyntax)
+            sys.exit(0)
+        elif opt in ("-i", "--inputfile"):
+            flInput = arg
+        elif opt in ("-o", "--outputdir"):
+            dirOutput = arg
+        elif opt in ("-b", "--book"):
+            sBook = arg
+        elif opt in ("-d", "--debug"):
+            debug = arg
+        elif opt in ("-s", "--surface"):
+            dirSurface = arg
+        elif opt in ("-l", "--location"):
+            location = arg
+        elif opt in ("-f", "--force"):
+            bForce = True
     # Check if all arguments are there
     if (flInput == ''):
-      errHandle.DoError(sSyntax)
+        errHandle.DoError(sSyntax)
 
     # Check if output directory exists
     if not os.path.exists(dirOutput):
@@ -135,12 +138,13 @@ def main(prgName, argv) :
     oArgs = {'input':   flInput,
              'output':  dirOutput,
              'surface': dirSurface,
+             'force':   bForce,
              'book':    sBook}
     if l_div >=0: oArgs['div'] = l_div
     if l_par >=0: oArgs['par'] = l_par
     if l_sen >=0: oArgs['sen'] = l_sen
     if debug: oArgs['d'] = debug
-    if (not etcbc_2017_convert(oArgs)) :
+    if (not etcbc_2017_convert(oArgs)):
       errHandle.DoError("Could not complete")
       return False
     
@@ -366,6 +370,9 @@ def etcbc_2017_convert(oArgs):
         if "par" in oArgs: l_par = oArgs['par']
         if "sen" in oArgs: l_sen = oArgs['sen']
 
+        # Other parameters
+        bForce = oArgs['force']
+
         # Try open the SQL
         conn = sqlite3.connect(oArgs['input'])
         conn.row_factory = sqlite3.Row
@@ -424,6 +431,12 @@ def etcbc_2017_convert(oArgs):
                 plus = "" if len(lAdded) == 0 else "_"+"-".join(lAdded)
                 filename = "{}{}.json".format(basis, plus)
                 fsurface = None
+
+                # Check if this has already been done and needs to be skipped
+                if not bForce and os.path.exists(filename):
+                    # Skip this one
+                    errHandle.Status("Skipping book {}".format(bookname))
+                    continue
 
                 # Are we doing surfacing?
                 dirsurface = oArgs['surface']
