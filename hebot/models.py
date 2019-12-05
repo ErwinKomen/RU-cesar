@@ -267,15 +267,19 @@ class HierObj(object):
 
         try:
             nodelist = []
-            parent = self.parent
-            if not self.parent.is_top():
-                # There *may* be nodes following me
+            # Get to my highest ancestor
+            previous = self 
+            node = self
+            while not node.parent.is_top():
+                node = node.parent
+                # Look for nodes following 'me' (='previous')
                 bFound = False
-                for child in parent.child:
-                    if child is self:
+                for child in node.child:
+                    if child is previous:
                         bFound = True
                     elif bFound:
                         nodelist.append(child)
+                previous = node
             return nodelist
         except:
             msg = get_error_message()
