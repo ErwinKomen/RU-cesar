@@ -54,6 +54,24 @@ class XmlProcessor():
         # x = ET.tostring(self.xmldocument, xml_declaration=True, encoding="utf-8", pretty_print=False).decode("utf-8")
         return True
 
+    def loadfile(self, sFile):
+        """Load a file into xml"""
+
+        try:
+            # Load the UTF8 file into memory
+            with open(sFile, "rb") as fp:
+                sXml = fp.read()
+
+            self.xmldocument = ET.fromstring(sXml)
+            # Add a namespace for custom function(s)
+            ns = ET.FunctionNamespace(None)
+            # Add the function matches() to the namespace
+            ns['matches'] = self.matches
+            return self.xmldocument
+        except:
+            errHandle.DoError("XmlProcessor/loadfile")
+            return None
+
     def select_nodes(self, node, search):
         # OLD: result = self.xmldocument.findall(search)
         result = node.xpath(search)
@@ -128,8 +146,8 @@ class ConvertBasic():
         self.env = jinja2.Environment(loader=self.file_loader)
         return response
 
-    def do_convert(self, output_dir, force=False):
-        """Convert files from source to destination"""
+    def do_htree_xml(self, output_dir, force=False):
+        """Convert files from htree source to XML destination"""
 
         try:
             # Get the metadata information
@@ -167,9 +185,51 @@ class ConvertBasic():
             # Return positively
             return 1
         except:
-            errHandle.DoError("views/do_convert")
+            errHandle.DoError("views/do_htree_xml")
             return None
 
+    def do_xml_htree(self, output_dir, force=False):
+        """Convert files from XML source to Htree destination"""
+
+        try:
+            # Get the metadata information
+
+            # Walk all source files
+            for file in self.lst_src:
+                # Determine the output file name
+                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
+
+                # Check if it already exists and whether we should overwrite
+                if not os.path.exists(outfile) or force:
+                    # Show where we are
+                    errHandle.Status("Working on file {}".format(file))
+
+                    # Load the XML file into memory
+                    self.pdx = XmlProcessor()
+                    xmldoc = self.pdx.loadfile(file)
+                    ndSent = self.pdx.select_nodes(xmldoc, "./descendant-or-self::{}".format(self.tag_sent))
+                    
+                    # Get the text id
+                    text_id = os.path.basename(file).replace(self.src_ext, "")
+                    meta = None
+                    oJsonFile = dict(name=text_id, meta=meta)
+
+                    # Create an XML from the information we have
+                    oJsonFile['sentence_list'] = self.create_json(text_id, meta, ndSent)
+
+                    # Save this one
+                    with open(outfile, "w", encoding="utf-8") as fp:
+                        str_output = json.dumps( oJsonFile, indent=2)
+                        fp.write(str_output)
+                else:
+                    errHandle.Status("Skipping file {}".format(outfile))
+
+            # Return positively
+            return 1
+        except:
+            errHandle.DoError("views/do_xml_htree")
+            return None
+        
     def create_xml(self, text_id, meta, sent_list):
         """Create an XML based on the destination template"""
 
@@ -236,6 +296,19 @@ class ConvertBasic():
             errHandle.DoError("views/create_xml")
             return None
 
+    def create_json(self, text_id, meta, ndList):
+        """Create a HTREE json"""
+
+        lSent = []  # The json with the sentences
+
+        try:
+
+
+            return lSent
+        except:
+            errHandle.DoError("views/create_json")
+            return None
+        
     def adapt_main_clause(self, obj):
         return True
 
@@ -495,12 +568,37 @@ class ConvertHtreeFolia(ConvertBasic):
     dst_template = "templates/target_folia.xml"
 
 
+class ConvertHtreeLowfat(ConvertBasic):
+    src_ext = ".json"
+    dst_ext = ".xml"
+    dst_template = "templates/target_lowfat.xml"
+
+
 class ConvertPsdxHtree(ConvertBasic):
     src_ext = ".psdx"
     dst_ext = ".json"
+    tag_doc = "forestGrp"
+    tag_sent = "forest"
+    tag_node = "eTree"
+    tag_endnode = "eLeaf"
+
+
+class ConvertLowfatHtree(ConvertBasic):
+    src_ext = ".xml"
+    dst_ext = ".json"
+    tag_doc = "book"
+    tag_sent = "sentence"
+    tag_node = "wg"
+    tag_endnode = "w"
+    idnum = 0
+
+    def next_id(self):
+        self.idnum += 1
+        return str(self.idnum)
 
 
 class ConvertFoliaHtree(ConvertBasic):
     src_ext = ".folia.xml"
     dst_ext = ".json"
+
 

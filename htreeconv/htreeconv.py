@@ -11,7 +11,9 @@ import csv, json
 # Application specific
 import util                 # This allows using ErrHandle
 from models import *        # This imports HierObj
-from views import ConvertHtreePsdx
+from views import ConvertHtreePsdx, ConvertHtreeFolia, ConvertHtreeLowfat,\
+                  ConvertLowfatHtree, ConvertFoliaHtree, ConvertPsdxHtree
+                  
 
 errHandle = util.ErrHandle()
 
@@ -29,7 +31,9 @@ def main(prgName, argv):
     oConv = None    # Conversion object
     conv_type = [
         {'type': 'htree-psdx', 'src': '.json', 'dst': '.psdx'},
-        {'type': 'htree-folia', 'src': '.json', 'dst': '.folia.xml'}
+        {'type': 'htree-folia', 'src': '.json', 'dst': '.folia.xml'},
+        {'type': 'htree-lowfat', 'src': '.json', 'dst': '.xml'},
+        {'type': 'lowfat-htree', 'src': '.xml', 'dst': '.json'}
         ]
 
     try:
@@ -94,6 +98,13 @@ def main(prgName, argv):
 def htree_convert(oArgs):
     """a"""
 
+    oToHtree = {'lowfat': ConvertLowfatHtree, 
+                'folia': ConvertFoliaHtree,
+                'psdx': ConvertPsdxHtree}
+    oFromHtree = {'lowfat': ConvertHtreeLowfat,
+                  'folia': ConvertHtreeFolia,
+                  'psdx': ConvertHtreePsdx}
+
     try:
         # Figure out which stages there are in conversion
         oConv = oArgs['conv']
@@ -101,12 +112,15 @@ def htree_convert(oArgs):
         bForce = oArgs['force']
 
         if arConvType[0] == "htree":
-            # Create htree
-            oConvert = ConvertHtreePsdx(oArgs['input'])
-            oConvert.do_convert(oArgs['output'], bForce)
+            # Create XML from htree
+            cls = oFromHtree[arConvType[1]]
+            oConvert = cls(oArgs['input'])
+            oConvert.do_htree_xml(oArgs['output'], bForce)
         elif arConvType[1] == "htree":
-            # Stage 1: convert to htree
-            arDstFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])
+            # Create htree from XML
+            cls = oToHtree[arConvType[0]]
+            oConvert = cls(oArgs['input'])
+            oConvert.do_xml_htree(oArgs['output'], bForce)
         else:
             # Stage 1: convert to htree
             arHtreeFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])
