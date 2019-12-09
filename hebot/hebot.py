@@ -490,6 +490,7 @@ def etcbc_2017_convert(oArgs):
                         sent_num = 0
 
                         last_hier_sent = None
+                        prev_hier_sent = None
 
                         for sentence in sentences:
                             sent_num += 1
@@ -657,13 +658,25 @@ def etcbc_2017_convert(oArgs):
                             for relation in child_to_mother:
                                 id = relation['id']
                                 obj = relation['obj']
+
+                                # First find a mother in hier_sent
                                 mother = hier_sent.find(id)
+                                if mother == None:
+                                    # Check if the mother is in the *previous* sentence
+                                    mother = prev_hier_sent.find(id)
+                                    if mother:
+                                        # The mother is in the last hier_sent
+                                        prev_hier_sent.insert_sentence(hier_sent)
+                                        hier_sent = prev_hier_sent
                                 if not mother:
+                                    msg = "Could not find mother with id={} in hier_sent {}".format(id, sent_num)
+                                    errHandle.Status(msg)
                                     iStop = 1
-                                if not mother.child:
-                                    mother = mother.parent
-                                mother.child.append(obj)
-                                obj.parent = mother
+                                else:
+                                    if not mother.child:
+                                        mother = mother.parent
+                                    mother.child.append(obj)
+                                    obj.parent = mother
 
                             # Simplification of the tree
                             hier_sent.simplify()
@@ -671,12 +684,16 @@ def etcbc_2017_convert(oArgs):
                             # Add the object to the list of sentences
                             sentence_list.append(hier_sent.get_object())
 
+                            # Keep a copy of the last sentence
+                            prev_hier_sent = copy.copy(hier_sent)
+
                             # Do we do surfacing?
                             if fsurface:
                                 # Check if we can already do this one
                                 if not SentenceObj.is_complete(hier_sent):
                                     # Keep this one to use it the next time
                                     last_hier_sent = copy.copy(hier_sent)
+                                    # iContinue = 1
                                 else:
                                     if last_hier_sent != None:
                                         # Add the new sentence

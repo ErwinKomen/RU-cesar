@@ -458,16 +458,18 @@ class SentenceObj(object):
                 self_endnodes = self.child[0].get_endnodes([])
                 # (c) walk the ones in self
                 idx = 0
-                while self_endnodes[idx].n < add_first.n:
+                size = len(list(self_endnodes))
+                while idx < size and self_endnodes[idx].n < add_first.n :
                     idx += 1
-                nd_bef = self_endnodes[idx-1]
-                nd_aft = self_endnodes[idx]
-                # (d) get common ancestor
-                add_common, self_left, self_right = self.get_common_ancestor(nd_bef, nd_aft)
-                # (e) Place additional as child under add_common
-                add_common.add_child(additional.child[0], after = self_left)
+                if idx < size:
+                    nd_bef = self_endnodes[idx-1]
+                    nd_aft = self_endnodes[idx]
+                    # (d) get common ancestor
+                    add_common, self_left, self_right = self.get_common_ancestor(nd_bef, nd_aft)
+                    # (e) Place additional as child under add_common
+                    add_common.add_child(additional.child[0], after = self_left)
 
-                x = self.get_simple()
+                # x = self.get_simple()
         except:
             msg = errHandle.get_error_message()
             return msg
@@ -715,14 +717,14 @@ class SentenceObj(object):
                                 msg = "Could not find a common ancestor"
                                 errHandle.Status(msg)
                         # Debugging
-                        if debug > 1: x = target.get_simple()
+                        if debug and debug > 3: x = target.get_simple()
 
             # Perform an evaluation of the result
             msg = SentenceObj.evaluate(target)
             if msg != None and msg != "":
                 # Provide a message to the user
                 errHandle.Status(msg)                
-
+                x = self.get_simple()
             # Return the copy
             return target, ""
         except:
