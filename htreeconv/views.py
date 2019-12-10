@@ -77,6 +77,15 @@ class XmlProcessor():
         result = node.xpath(search)
         return result
 
+    def select_selfordescendant(self, node, tag):
+        """Look for self::w and descendant::w"""
+        result = []
+        if node.tag == tag:
+            result.append(node)
+        for desc in node.xpath("./descendant::{}".format(tag)):
+            result.append(desc)
+        return result
+
     def select_single_node(self, node, search):
         # result = node.find(search)
         result = node.xpath(search)
@@ -126,8 +135,11 @@ class ConvertBasic():
     tag_sent = ""           # The xml tag name for a sentence
     tag_node = ""           # Tag name for syntactic constituents
     tag_endnode = ""        # Tag name for end node
+    action = ""
     lst_dst = []
     lst_src = []
+    id_node = 0
+    id_word = 0
     dst_template = None
     pdx = None
     div = None
@@ -192,6 +204,9 @@ class ConvertBasic():
         """Convert files from XML source to Htree destination"""
 
         try:
+            # Validate
+            if not self.dst_template: return None
+
             # Get the metadata information
 
             # Walk all source files
@@ -212,15 +227,20 @@ class ConvertBasic():
                     # Get the text id
                     text_id = os.path.basename(file).replace(self.src_ext, "")
                     meta = None
-                    oJsonFile = dict(name=text_id, meta=meta)
+
+                    # Other initializations for one file
+                    self.id_word = 1
+                    self.id_node = 1
+
+                    #oJsonFile = dict(name=text_id, meta=meta)
 
                     # Create an XML from the information we have
-                    oJsonFile['sentence_list'] = self.create_json(text_id, meta, ndSent)
+                    sXml = self.create_json(text_id, meta, ndSent)
 
-                    # Save this one
-                    with open(outfile, "w", encoding="utf-8") as fp:
-                        str_output = json.dumps( oJsonFile, indent=2)
-                        fp.write(str_output)
+                    # Write the object to the file
+                    with open(outfile, "w", encoding="utf-8") as f:
+                        errHandle.Status("Saving text {}".format(text_id))
+                        f.write(sXml)
                 else:
                     errHandle.Status("Skipping file {}".format(outfile))
 
@@ -229,7 +249,106 @@ class ConvertBasic():
         except:
             errHandle.DoError("views/do_xml_htree")
             return None
+
+    def do_htree_htree(self, output_dir, force=False):
+        """Convert files from htree source to htree destination
         
+        This means that we are either surfacing or unraveling
+        """
+
+        debug = 4
+
+        try:
+            # Validate
+            if not self.dst_template: return None
+
+            # Get the metadata information
+
+            # Walk all source files
+            for file in self.lst_src:
+                # Determine the output file name
+                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
+
+                # Check if it already exists and whether we should overwrite
+                if not os.path.exists(outfile) or force:
+                    # Show where we are
+                    errHandle.Status("Working on file {}".format(file))
+
+                    # Load the JSON file into memory
+                    try:
+                        with open(file, "r") as fp:
+                            oJsonFile = json.load(fp)
+                    except:
+                        with open(file, "r", encoding="utf-8-sig") as fp:
+                            oJsonFile = json.load(fp)
+
+                    # Get the text id
+                    text_id = oJsonFile['name']
+                    meta = None
+                    if 'meta' in oJsonFile: meta = oJsonFile['meta']
+
+                    # Create a context for the template
+                    context = dict()
+                    # Possibly add metadata, if this has been supplied
+                    context['meta'] = meta
+                    context['text_id'] = text_id
+
+                    # Allow ancestor to add to context
+                    context = self.add_to_context(context)
+
+                    sentence_list = []
+
+                    # Other initializations for one file
+                    self.id_word = 1
+                    self.id_node = 1
+                    div = -1
+
+                    # Walk all source sentences
+                    for sentence in oJsonFile['sentence_list']:
+                        # Properly read the source sentence
+                        oSentSrc = SentenceObj.loadsent(sentence, text_id)
+                        # oSentDst = {}
+                        sSentDst = ""
+
+                        # Show where we are
+                        if debug > 3:
+                            errHandle.Status("{} {}:{} s={}".format(text_id, oSentSrc.div, oSentSrc.divpar, oSentSrc.sent))
+                        if div != oSentSrc.div:
+                            errHandle.Status("{} {}".format(text_id, oSentSrc.div))
+                            div = oSentSrc.div
+
+                        # Create the destination sentence from the source one
+                        if self.action == "to-surface":
+                            oSent, msg = oSentSrc.copy_surface()
+                            sSentDst = json.dumps(oSent.get_object(), indent=2)
+                        elif self.action == "from-surface":
+                            # TODO make code here
+                            pass
+
+                        # Add to the destination
+                        sentence_list.append(sSentDst)
+
+                    # Add the sentence list to the context
+                    context['sentence_list'] = sentence_list
+
+                    # Create a JSON string based on this context
+                    template = self.env.get_template(self.dst_template)
+                    sJson = template.render(context)
+
+                    # Save the string as UTF8
+                    with open(outfile, "w", encoding="utf8") as f:
+                        errHandle.Status("Saving text {}".format(text_id))
+                        f.write(sJson)
+
+                else:
+                    errHandle.Status("Skipping file {}".format(outfile))
+
+            # Return positively
+            return 1
+        except:
+            errHandle.DoError("views/do_htree_xml")
+            return None
+                
     def create_xml(self, text_id, meta, sent_list):
         """Create an XML based on the destination template"""
 
@@ -300,17 +419,174 @@ class ConvertBasic():
         """Create a HTREE json"""
 
         lSent = []  # The json with the sentences
+        # Create a context for the template
+        context = dict()
+        debug = 0
 
         try:
+            # Possibly add metadata, if this has been supplied
+            context['meta'] = meta
+            context['text_id'] = text_id
 
+            # Allow ancestor to add to context
+            context = self.add_to_context(context)
 
-            return lSent
+            # Get the template
+            template = self.env.get_template(self.dst_template)
+
+            # Initialize counting
+            sent = 0
+            par = 1
+            div = 1
+            self.sent = 0
+            # Walk the XML list of sentence nodes
+            for ndSent in ndList:
+                # Make sure we keep track of the sentence number
+                self.sent += 1
+                sent = self.sent
+                # Get the correct div/par/sent in a generic way
+                self.div, self.par, self.sent = self.get_xml_location(ndSent, div,par,sent)
+                
+                # Show where we are
+                if debug > 3:
+                    errHandle.Status("{} {}:{} s={}".format(text_id, self.div, self.par, self.sent))
+                if div != self.div:
+                    errHandle.Status("{} {}".format(text_id, self.div))
+                    div = self.div
+
+                # Convert this XML sentence into a sentence node
+                if self.div >= 0:
+                    oSentence = self.get_xml_sentence(text_id, ndSent)
+                    if oSentence != None:
+                        oJson = oSentence.get_object()
+
+                        # lSent.append(oSentence.get_object())
+                        lSent.append(json.dumps(oJson, indent=2))
+
+            # return lSent
+            # Add sentence list to context
+            context['sentence_list'] = lSent
+
+            # Create a JSON string based on this context
+            sJson = template.render(context)
+
+            return sJson
         except:
             errHandle.DoError("views/create_json")
             return None
         
     def adapt_main_clause(self, obj):
         return True
+
+    def get_xml_location(self, ndSent, div, par, sent):
+        return div, par, sent
+
+    def get_xml_sentence(self, text_id, ndSent):
+        """Convert the XML [ndSent] into a sentence object"""
+
+        try:
+            # Create a SentenceObj instance
+            label = "{} {}:{}".format(text_id, self.div, self.par)
+            txt = self.get_xml_sent_text(ndSent)
+            oSentence = SentenceObj(label, self.sent, textid=text_id, txt=txt, div=self.div, divpar=self.par)
+
+            # Walk all the main nodes in this sentence
+            ndClauses = self.pdx.select_nodes(ndSent, "./child::{}".format(self.tag_node))
+            for ndClause in ndClauses:
+                # Call a recursive routine to build the elements of this clause
+                oClause = self.get_xml_constituent(ndClause, oSentence, None)
+                oSentence.child.append(oClause)
+
+            return oSentence
+        except:
+            errHandle.DoError("views/get_xml_sentence")
+            return None
+
+    def get_xml_sent_text(self, ndSent):
+        return ""
+
+    def get_xml_constituent(self, ndConst, oSentence, oParent):
+        """Given XML [ndConst], parse it into a HierObj under [oParent] in [oSentence]"""
+
+        try:
+            # Determine postag, txt, n and id
+            postag = self.get_xml_pos(ndConst)
+            txt = self.get_xml_const_txt(ndConst)
+            id = self.get_xml_id(ndConst)
+
+            # Create the new constituent from [ndConst]
+            oConst = HierObj(oSentence, postag, txt, parent=oParent, id=id)
+            oConst.f = self.get_xml_features(ndConst)
+            # Constituent may not have @n: oConst.n = self.get_xml_n(ndConst)
+
+            # Walk all the CHILDREN of [ndConst]
+            for ndChild in ndConst:
+                # Get the node name of this child
+                if ndChild.tag == self.tag_endnode:
+                    # Treat as endnode
+                    oChild = self.get_xml_endnode(ndChild, oSentence, oConst)
+                    # Add to my children
+                    oConst.child.append(oChild)
+                elif ndChild.tag == self.tag_node:
+                    # Call myself
+                    oChild = self.get_xml_constituent(ndChild, oSentence, oConst)
+                    # Add this to my children
+                    oConst.child.append(oChild)
+            
+            # REturn our node
+            return oConst
+        except:
+            errHandle.DoError("views/get_xml_clause")
+            return None
+
+    def get_xml_endnode(self, ndConst, oSentence, oParent):
+        """Given XML [ndConst], parse it into a HierObj under [oParent] in [oSentence]"""
+
+        try:
+            # Determine postag, txt, n and id
+            postag = self.get_xml_pos(ndConst)
+            txt = self.get_xml_const_txt(ndConst)
+            id = self.get_xml_id(ndConst)
+
+            # Create the new constituent from [ndConst]
+            oConst = HierObj(oSentence, postag, txt, parent=oParent, id=id)
+            oConst.n = self.get_xml_n(ndConst)
+            oConst.f = self.get_xml_features(ndConst)
+            oConst.type = self.get_word_type(txt, postag)
+
+            # REturn our node
+            return oConst
+        except:
+            errHandle.DoError("views/get_xml_clause")
+            return None
+
+    def get_xml_pos(self, ndConst):
+        """Return the part-of-speech tag of [ndConst]"""
+        return ""
+
+    def get_xml_n(self, ndConst):
+        """Return the n tag of [ndConst]"""
+
+        response = self.id_word
+        self.id_word += 1
+        return response
+
+    def get_word_type(self, txt, postag):
+        return "Vern"
+
+    def get_xml_const_txt(self, ndConst):
+        """Return the txt of [ndConst]"""
+        return ""
+
+    def get_xml_id(self, ndConst):
+        """Return the id of [ndConst] - as a number"""
+        response = self.id_node
+        self.id_node += 1
+        return response
+
+    def get_xml_features(self, ndNode):
+        """Given the NODE (constituent or word), return a dictionary of features"""
+        return []
 
     def adapt_main_xml(self, xmlobj):
         return True
@@ -565,13 +841,13 @@ class ConvertHtreePsdx(ConvertBasic):
 class ConvertHtreeFolia(ConvertBasic):
     src_ext = ".json"
     dst_ext = ".folia.xml"
-    dst_template = "templates/target_folia.xml"
+    dst_template = "target_folia.xml"
 
 
 class ConvertHtreeLowfat(ConvertBasic):
     src_ext = ".json"
     dst_ext = ".xml"
-    dst_template = "templates/target_lowfat.xml"
+    dst_template = "target_lowfat.xml"
 
 
 class ConvertPsdxHtree(ConvertBasic):
@@ -583,6 +859,22 @@ class ConvertPsdxHtree(ConvertBasic):
     tag_endnode = "eLeaf"
 
 
+class ConvertHtreeSurface(ConvertBasic):
+    src_ext = ".json"
+    dst_ext = ".json"
+    idnum = 0
+    dst_template = "target_htree.txt"
+    action = "to-surface"
+
+
+class ConvertSurfaceHtree(ConvertBasic):
+    src_ext = ".json"
+    dst_ext = ".json"
+    idnum = 0
+    dst_template = "target_htree.txt"
+    action = "from-surface"
+
+
 class ConvertLowfatHtree(ConvertBasic):
     src_ext = ".xml"
     dst_ext = ".json"
@@ -591,10 +883,80 @@ class ConvertLowfatHtree(ConvertBasic):
     tag_node = "wg"
     tag_endnode = "w"
     idnum = 0
+    dst_template = "target_htree.txt"
 
     def next_id(self):
         self.idnum += 1
         return str(self.idnum)
+
+    def get_xml_location(self, ndSent, div, par, sent):
+        """Figure out where we are in div/par/sent from [ndSent]"""
+
+        try:
+            # Note: lowfat has a <milestone unit="verse" id="book.chapter.verse">
+            #       and div=chapter, par=verse
+            ndMilestone = self.pdx.select_single_node(ndSent,"./child::milestone[@unit='verse']")
+            if ndMilestone != None:
+                loc_id = ndMilestone.get('id')
+                arLoc = loc_id.split(".")
+                div = int(arLoc[1])
+                par = int(arLoc[2])
+                if div != self.div or par != self.par:
+                    sent = 1
+            return div, par, sent
+        except:
+            errHandle.DoError("get_xml_location")
+            return -1,-1,-1
+
+    def get_xml_sent_text(self, ndSent):
+        return self.pdx.select_single_node(ndSent, "./p").text
+
+    def get_xml_pos(self, ndConst):
+        """Return the part-of-speech tag of [ndConst]"""
+
+        postag = ""
+        if ndConst is not None:
+            postag = ndConst.get("class")
+        return postag
+
+    #def get_xml_n(self, ndConst):
+    #    """Return the n tag of [ndConst]"""
+
+    #    ntag = ""
+    #    if ndConst is not None:
+    #        ntag = ndConst.get("n")
+    #    return ntag
+
+    def get_xml_const_txt(self, ndConst):
+        """Return the txt of constituent [ndConst]"""
+
+        try:
+            lText = []
+            # ndWords = self.pdx.select_nodes(ndConst, "./self-or-descendant::w")
+            ndWords = self.pdx.select_selfordescendant(ndConst, "w")
+            for ndWord in ndWords:
+                lText.append(ndWord.text)
+            return " ".join(lText)
+        except:
+            errHandle.DoError("get_xml_const_txt")
+            return None
+
+    def get_xml_features(self, ndNode):
+        """Given the NODE (constituent or word), return a dictionary of features"""
+
+        f = []
+        exclude = ['class']
+        try:
+            # Walk all the attributes of [ndNode]
+            for k,v in ndNode.attrib.items():
+                if k not in exclude:
+                    f.append({'name': k, 'value': v})
+                    #f[k] = v
+        except:
+            errHandle.DoError("get_xml_features")
+            f = None
+        # Return the result
+        return f
 
 
 class ConvertFoliaHtree(ConvertBasic):

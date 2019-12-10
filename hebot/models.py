@@ -315,7 +315,7 @@ class SentenceObj(object):
     parsnt = None       # Sentence number within paragraph    
     lst_hierobj = []    # Table of hierobj elements
 
-    def __init__(self, label, sent, txt="", id=-1, div=None, divpar=None, parsnt=None, **kwargs):
+    def __init__(self, label, sent, textid="", txt="", id=-1, div=None, divpar=None, parsnt=None, **kwargs):
         response = super(SentenceObj, self).__init__(**kwargs)
         self.label = label
         self.div = div
@@ -326,6 +326,7 @@ class SentenceObj(object):
         self.f = []
         self.child = []
         self.type = None
+        self.textid = textid
         # Reset the table of hierobj elements
         self.lst_hierobj = []
         # Return the correct response
@@ -335,7 +336,7 @@ class SentenceObj(object):
         """Return an object representation of me"""
 
         js = dict(label=self.label, div=self.div, par=self.divpar, sent=self.sent, 
-                  pos=self.pos, txt=self.txt, f=self.f, id=self.id)
+                  pos=self.pos, txt=self.txt, f=self.f, id=self.id, textid=self.textid)
         if self.type: js['type'] = self.type
         if self.child:
             children =[]
@@ -676,8 +677,9 @@ class SentenceObj(object):
                                 dst_new_parent.add_child(dst_node, after=dst_left)
 
                             # ========= DEBUGGING ========================
-                            y = json.dumps( target.get_object(), indent=2)
-                            x = target.get_simple()
+                            if debug and debug > 1:
+                                y = json.dumps( target.get_object(), indent=2)
+                                x = target.get_simple()
                             # y = json.dumps(self.get_object(), indent=2)
                             # ============================================
                             if debug and debug > 2: errHandle.Status(target.get_simple())
@@ -781,11 +783,11 @@ class SentenceObj(object):
                         if node.n - last_n > 1:
                             bNumber = False
                             lBack.append("{} d.{}.p.{}.s.{} Number problem: {}...{}".format(
-                                target.div, target.divpar, target.sent,  last_n, node.n)) 
+                                target.textid, target.div, target.divpar, target.sent,  last_n, node.n)) 
                         if node.n < last_n:
                             bOrder = False
-                            lBack.append("d.{}.p.{}.s.{} Order problem: {}...{}".format(
-                                target.div, target.divpar, target.sent,last_n, node.n))
+                            lBack.append("{} d.{}.p.{}.s.{} Order problem: {}...{}".format(
+                                target.textid, target.div, target.divpar, target.sent,last_n, node.n))
                         last_n = node.n
             if len(lBack) > 0:
                 msg = "\n".join(lBack)
@@ -806,40 +808,58 @@ class SentenceObj(object):
                 break
         return not bFound
 
-    def loadsent(sent_obj):
+    def loadsent(sent_obj, textid=None):
         """Load a SentenceObj from the contents of a json object"""
 
         # Validate
         if sent_obj == None: return None
-        # Create a copy with the basic information
-        target = SentenceObj(textid=sent_obj['textid'],
-                             label=sent_obj['label'], 
-                             sent=sent_obj['sent'], 
-                             txt=sent_obj['txt'], 
-                             id=sent_obj['id'], 
-                             div = sent_obj['div'], 
-                             divpar=sent_obj['divpar'])
-        # Walk all the objects hierarchically
-        for child in sent_obj['child']:
-            newnode = target.loadnode(child)
-            target.child.append(newnode)
 
-        # Return the copy
-        return target
+        try:
+            textid = textid if textid != None else sent_obj['textid']
+            if 'par' in sent_obj:
+                divpar = sent_obj['par']
+            else:
+                divpar = sent_obj['divpar']
+            # Create a copy with the basic information
+            target = SentenceObj(textid=textid,
+                                 label=sent_obj['label'], 
+                                 sent=sent_obj['sent'], 
+                                 txt=sent_obj['txt'], 
+                                 id=sent_obj['id'], 
+                                 div = sent_obj['div'], 
+                                 divpar=divpar)
+            # Walk all the objects hierarchically
+            for child in sent_obj['child']:
+                newnode = target.loadnode(child)
+                newnode.parent = target
+                target.child.append(newnode)
+
+            # Return the copy
+            return target
+        except:
+            errHandle.DoError("loadsent")
+            return None
 
     def loadnode(self, node_obj):
 
-        # Create a new node
-        node = HierObj(self.lst_hierobj, pos=node_obj['pos'], txt=node_obj['txt'], id=node_obj['id'])
-        # Add other stuff if available
-        if 'n' in node_obj: node.n = node_obj['n']
-        if 'type' in node_obj: node.type = node_obj['type']
-        if 'f' in node_obj and len(node_obj['f']) > 0: node.f = copy.copy(node_obj['f'])
-        # Add children if available
-        if 'child' in node_obj and len(node_obj['child']) > 0:
-            for child in node_obj['child']:
-                grandchild = loadnode(child)
-                node.child.append(grandchild)
-                grandchild.parent = node
-        # Ready
-        return True
+        try:
+            # Create a new node
+            node = HierObj(self, pos=node_obj['pos'], txt=node_obj['txt'], id=node_obj['id'])
+            # Add other stuff if available
+            if 'n' in node_obj: node.n = node_obj['n']
+            if 'type' in node_obj: node.type = node_obj['type']
+            if 'f' in node_obj and len(node_obj['f']) > 0: node.f = copy.copy(node_obj['f'])
+            # Add children if available
+            if 'child' in node_obj and len(node_obj['child']) > 0:
+                for child in node_obj['child']:
+                    if self.is_top():
+                        grandchild = self.loadnode(child)
+                    else:
+                        grandchild = self.sent_obj.loadnode(child)
+                    node.child.append(grandchild)
+                    grandchild.parent = node
+            # Ready
+            return node
+        except:
+            errHandle.DoError("loadnode")
+            return None

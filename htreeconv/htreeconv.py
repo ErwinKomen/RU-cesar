@@ -12,7 +12,8 @@ import csv, json
 import util                 # This allows using ErrHandle
 from models import *        # This imports HierObj
 from views import ConvertHtreePsdx, ConvertHtreeFolia, ConvertHtreeLowfat,\
-                  ConvertLowfatHtree, ConvertFoliaHtree, ConvertPsdxHtree
+                  ConvertLowfatHtree, ConvertFoliaHtree, ConvertPsdxHtree,\
+                  ConvertHtreeSurface, ConvertSurfaceHtree
                   
 
 errHandle = util.ErrHandle()
@@ -33,7 +34,8 @@ def main(prgName, argv):
         {'type': 'htree-psdx', 'src': '.json', 'dst': '.psdx'},
         {'type': 'htree-folia', 'src': '.json', 'dst': '.folia.xml'},
         {'type': 'htree-lowfat', 'src': '.json', 'dst': '.xml'},
-        {'type': 'lowfat-htree', 'src': '.xml', 'dst': '.json'}
+        {'type': 'lowfat-htree', 'src': '.xml', 'dst': '.json'},
+        {'type': 'htree-surface', 'src': '.json', 'dst': '.json'}
         ]
 
     try:
@@ -111,7 +113,13 @@ def htree_convert(oArgs):
         arConvType = oConv['type'].split("-")
         bForce = oArgs['force']
 
-        if arConvType[0] == "htree":
+        if arConvType[0] == "surface":
+            oConvert = ConvertSurfaceHtree(oArgs['input'])
+            oConvert.do_htree_htree(oArgs['output'], bForce)
+        elif arConvType[1] == "surface":
+            oConvert = ConvertHtreeSurface(oArgs['input'])
+            oConvert.do_htree_htree(oArgs['output'], bForce)
+        elif arConvType[0] == "htree":
             # Create XML from htree
             cls = oFromHtree[arConvType[1]]
             oConvert = cls(oArgs['input'])
