@@ -468,6 +468,9 @@ def etcbc_2017_convert(oArgs):
                                 [str(booknum), str(chapter_num)])
                     verses =  read_table(cur, verse_fields)
 
+                    last_hier_sent = None
+                    prev_hier_sent = None
+
                     # Walk the verses
                     for verse in verses:
                         # Make sure we register the chapter and the verse number
@@ -488,9 +491,6 @@ def etcbc_2017_convert(oArgs):
                                     [str(vs_m_f), str(vs_m_l)])
                         sentences =  read_table(cur, sentence_fields)
                         sent_num = 0
-
-                        last_hier_sent = None
-                        prev_hier_sent = None
 
                         for sentence in sentences:
                             sent_num += 1
@@ -531,6 +531,12 @@ def etcbc_2017_convert(oArgs):
                                 cl_m_l = clause['last_monad']
                                 # And get my ID
                                 clause_id = clause['object_id_d']
+
+                                # ===== debug ========
+                                #if clause_id == 392896:
+                                #    iStop = 1
+                                # ====================
+
                                 # And get the text of this unit
                                 clause_txt = get_text(sentence_table, cl_m_f, cl_m_l)
 
@@ -663,11 +669,19 @@ def etcbc_2017_convert(oArgs):
                                 mother = hier_sent.find(id)
                                 if mother == None:
                                     # Check if the mother is in the *previous* sentence
-                                    mother = prev_hier_sent.find(id)
-                                    if mother:
-                                        # The mother is in the last hier_sent
-                                        prev_hier_sent.insert_sentence(hier_sent)
-                                        hier_sent = prev_hier_sent
+                                    if prev_hier_sent:
+                                        mother = prev_hier_sent.find(id)
+                                        if mother:
+                                            # The mother is in the last hier_sent
+                                            prev_hier_sent.insert_sentence(hier_sent)
+                                            hier_sent = prev_hier_sent
+                                    # If there is still no mother: look for the mother within [child_to_mother]
+                                    if not mother:
+                                        for rela_copy in child_to_mother:
+                                            if not rela_copy is relation:
+                                                mother = rela_copy['obj'].find_id(id)
+                                                if mother:
+                                                    break
                                 if not mother:
                                     msg = "Could not find mother with id={} in hier_sent {}".format(id, sent_num)
                                     errHandle.Status(msg)

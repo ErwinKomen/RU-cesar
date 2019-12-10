@@ -256,7 +256,7 @@ class ConvertBasic():
         This means that we are either surfacing or unraveling
         """
 
-        debug = 4
+        debug = 0
 
         try:
             # Validate
@@ -672,8 +672,9 @@ class ConvertHtreePsdx(ConvertBasic):
         # If there are features at this level, add them
         if feat_list != None and len(feat_list) > 0:
             for feat in feat_list:
-                self.add_feature(xml_this, feat)
-            self.add_features(xml_sent, f)
+                self.add_feature(xml_sent, feat)
+        # Return positively
+        return True
 
     def adapt_main_clause(self, obj):
         """Main clauses must be IP-MAT"""
@@ -762,7 +763,7 @@ class ConvertHtreePsdx(ConvertBasic):
             return None
 
     def add_feature(self, xml_this, feat, type="leaf"):
-        """Add features"""
+        """Add one feature"""
 
         try:
             # Check if there is an <fs> node child
@@ -847,7 +848,101 @@ class ConvertHtreeFolia(ConvertBasic):
 class ConvertHtreeLowfat(ConvertBasic):
     src_ext = ".json"
     dst_ext = ".xml"
+    tag_doc = "book"
+    tag_sent = "sentence"
+    tag_node = "wg"
+    tag_endnode = "w"
     dst_template = "target_lowfat.xml"
+
+    def next_id(self):
+        self.idnum += 1
+        return str(self.idnum)
+
+    def add_sent_details(self, xml_sent, sent_id, text_id, label, txt, div, par, sent, feat_list):
+        """Add details of <sentence> for lowfat
+        
+        Lowfat is pretty easy, but it does need two additional elements at the <sentence> level:
+        1 - <milestone unit="verse" id="Book.ch.vs">Book.ch.vs</milestone>
+        2 - <p>sentence text</p>
+        """
+
+        # (1): no <sentence> attributes are needed
+        self.div = div
+        self.par = par
+        self.sent = sent
+
+        # (2) Add <milestone>
+        bkchvs = "{}.{}.{}".format(text_id, div, par)
+        oAttrs = dict(unit="verse", id=bkchvs)
+        ndMilestone = self.pdx.add_xml_child(xml_sent, "milestone", [
+            atom("attribute", "unit", "verse"),
+            atom("attribute", "id", bkchvs)])
+        ndMilestone.text = bkchvs
+
+        # (3) Add the text in <p>
+        ndP = self.pdx.add_xml_child(xml_sent, "p")
+        ndP.text = txt
+
+        # (4) There can be no features at the level of <sentence>
+
+        # REturn positively
+        return True
+
+    def add_feature(self, xml_this, feat, type="leaf"):
+        """Add one feature"""
+
+        try:
+            # lowfat features are simply added as k/v attributes to the node
+            ndxF = self.pdx.add_xml_attribute(xml_this, feat['name'], feat['value'])
+
+            # Note: the [type] is *not* taken into account
+
+            # Return this feature <f>
+            return ndxF
+        except:
+            errHandle.DoError("views/ConvertHtreeLowfat/add_feature")
+            return None
+
+    def add_endnode(self, xml_this, type, txt, pos, n, feat_list):
+        """Add an end-node to [xml_this]"""
+
+        try:
+            if txt == "":
+                txt = " "
+            if type == "Star":
+                str_position = "{0:08d}".format(n)
+                ndx_node = xml_this
+                txt = pos
+                ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
+                    [atom("attribute", "Type", type),
+                     atom("attribute", "Text", txt),
+                     atom("attribute", "n", str_position)])
+            elif type == "Vern" or type == "Punc" or type == "Punct":
+                ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
+                    [atom("attribute", "Id", self.next_id()), 
+                     atom("attribute", "Label", pos)])
+                str_position = "{0:08d}".format(n)
+                ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
+                    [atom("attribute", "Type", type),
+                     atom("attribute", "Text", txt),
+                     atom("attribute", "n", str_position)])
+            # Process the list of features
+            for feat in feat_list:
+                # Determine the <fs> @type attribute
+                ftype = type
+                if feat['name'] == "lemma":
+                    ftype = "M"
+                    feat['name'] = "l"
+                # Add feature
+                self.add_feature(ndx_node, feat, ftype)
+            # Also add the "n" as feature
+            feat = {"name": "n", "value": str_position}
+            self.add_feature(ndx_node, feat, "etctc")
+            return ndx_node
+        except:
+            errHandle.DoError("views/ConvertHtreeLowfat/add_endnode")
+            return None
+
 
 
 class ConvertPsdxHtree(ConvertBasic):

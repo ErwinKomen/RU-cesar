@@ -90,6 +90,18 @@ class HierObj(object):
     def is_endnode(self):
         return self.type and self.n
 
+    def find_id(self, id):
+        """Find node with [id] recursively"""
+
+        if self.id == id:
+            return self
+        # Otherwise...
+        for child in self.child:
+            if child.find_id(id):
+                return child
+        # Didn't find it
+        return None
+
     def simplify(self):
         """TRy to simplify myself in labels and hierarchically"""
 
