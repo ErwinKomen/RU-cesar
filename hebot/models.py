@@ -301,6 +301,7 @@ class HierObj(object):
 class SentenceObj(object):
     """Sentence object"""
 
+    textid = "" # Name of the text
     label = ""  # Label
     sent = 1    # Sentence number
     pos = ""    # Grammatical category
@@ -487,7 +488,7 @@ class SentenceObj(object):
         try:
 
             # (1) Create a copy with the basic information
-            target = SentenceObj(label=self.label, sent=self.sent, txt=self.txt, id=self.id, div = self.div, divpar=self.divpar)
+            target = SentenceObj(textid=self.textid, label=self.label, sent=self.sent, txt=self.txt, id=self.id, div = self.div, divpar=self.divpar)
             # (2) Collect a list of copies of all 'end' nodes
             for obj in self.lst_hierobj:
                 # Check if this is an end-node
@@ -779,7 +780,7 @@ class SentenceObj(object):
                     else:
                         if node.n - last_n > 1:
                             bNumber = False
-                            lBack.append("d.{}.p.{}.s.{} Number problem: {}...{}".format(
+                            lBack.append("{} d.{}.p.{}.s.{} Number problem: {}...{}".format(
                                 target.div, target.divpar, target.sent,  last_n, node.n)) 
                         if node.n < last_n:
                             bOrder = False
@@ -811,7 +812,8 @@ class SentenceObj(object):
         # Validate
         if sent_obj == None: return None
         # Create a copy with the basic information
-        target = SentenceObj(label=sent_obj['label'], 
+        target = SentenceObj(textid=sent_obj['textid'],
+                             label=sent_obj['label'], 
                              sent=sent_obj['sent'], 
                              txt=sent_obj['txt'], 
                              id=sent_obj['id'], 

@@ -517,7 +517,7 @@ def etcbc_2017_convert(oArgs):
                             child_to_mother = []
 
                             # Start a hierarchical object for this sentence
-                            hier_sent = SentenceObj(label=label, sent=sent_num, txt=sentence_txt, div=ch_num, divpar=vs_num)
+                            hier_sent = SentenceObj(textid=bookname, label=label, sent=sent_num, txt=sentence_txt, div=ch_num, divpar=vs_num)
 
                             # ALTERNATIVE: collect the CLAUSES under this [sentence_id]
                             cur.execute("select * from clause_objects where (mdf_functional_parent = ?) order by first_monad", 
