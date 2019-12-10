@@ -272,7 +272,7 @@ class HierObj(object):
             errHandle.Status(msg)
             return None
 
-    def following(self):
+    def following(self, bNoStar = True):
         # Get all the nodes that *follow* after me
 
         try:
@@ -288,7 +288,9 @@ class HierObj(object):
                     if child is previous:
                         bFound = True
                     elif bFound:
-                        nodelist.append(child)
+                        # Note: a 'star' constituent has id=-1
+                        if not bNoStar or child.id >=0:
+                            nodelist.append(child)
                 previous = node
             return nodelist
         except:
@@ -522,7 +524,7 @@ class SentenceObj(object):
                 src_word = self.find_endnode(dst_node.n)
 
                 # ============= Debugging ======================
-                if src_word.n == 189:
+                if src_word.n == 35367:
                     iStop = 1
                 # ==============================================
                 
