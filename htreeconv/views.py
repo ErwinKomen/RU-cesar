@@ -43,7 +43,10 @@ class XmlProcessor():
         # Make sure to parse blanks away!!
         parser = ET.XMLParser(remove_blank_text=True)
         sXml = sXml.replace("\n", "")
-        self.xmldocument = ET.fromstring(sXml, parser)
+        try:
+            self.xmldocument = ET.fromstring(sXml, parser)
+        except:
+            self.xmldocument = ET.fromstring(sXml.encode("utf-8"), parser)
 
         # Add a namespace for custom function(s)
         ns = ET.FunctionNamespace(None)
@@ -97,24 +100,28 @@ class XmlProcessor():
     def add_xml_child(self, ndx_parent, s_tag, v_list = None):
         """Add a child under ndx_parent"""
 
-        # Create the child
-        ndx_this = ET.SubElement(ndx_parent, s_tag)
-        # Check what values need to be added
-        if v_list:
-            for oValue in v_list:
-                type = oValue['type']
-                key = oValue['key']
-                value = oValue['value']
+        try:
+            # Create the child
+            ndx_this = ET.SubElement(ndx_parent, s_tag)
+            # Check what values need to be added
+            if v_list:
+                for oValue in v_list:
+                    type = oValue['type']
+                    key = oValue['key']
+                    value = oValue['value']
 
-                # Action depends on the kind of child
-                if type == "attribute":
-                    ndx_this.set(key, value)
-                elif type == "child":
-                    ndx_child = ET.SubElement(ndx_this, key)
-                    ndx_child.text = value
+                    # Action depends on the kind of child
+                    if type == "attribute":
+                        ndx_this.set(key, value)
+                    elif type == "child":
+                        ndx_child = ET.SubElement(ndx_this, key)
+                        ndx_child.text = value
 
-        # Return the created child
-        return ndx_this
+            # Return the created child
+            return ndx_this
+        except:
+            errHandle.DoError("XmlProcessor/add_xml_child")
+            return None
 
     def add_xml_attribute(self, ndx_this, att_name, att_value = None):
         """Add an attribute"""
@@ -145,6 +152,7 @@ class ConvertBasic():
     div = None
     par = None
     sent = None
+    map = {}                # Mapping between end-node @n and surface order
 
     def __init__(self, input_dir, **kwargs):
         response = super(ConvertBasic, self).__init__(**kwargs)
@@ -175,8 +183,12 @@ class ConvertBasic():
                     errHandle.Status("Working on file {}".format(file))
 
                     # Load the JSON file into memory
-                    with open(file, "r") as fp:
-                        oJsonFile = json.load(fp)
+                    try:
+                        with open(file, "r") as fp:
+                            oJsonFile = json.load(fp)
+                    except:
+                        with open(file, "r", encoding="utf-8-sig") as fp:
+                            oJsonFile = json.load(fp)
 
                     # Get the text id
                     text_id = oJsonFile['name']
@@ -377,12 +389,24 @@ class ConvertBasic():
 
             sent_idx = 0
             # Find the XML element in the template that hosts all sentences
-            ndx_sent_host = self.pdx.select_single_node(self.pdx.xmldocument, ".//" + self.tag_doc)
+            if self.pdx.xmldocument.tag == self.tag_doc:
+                ndx_sent_host = self.pdx.xmldocument
+            else:
+                ndx_sent_host = self.pdx.select_single_node(self.pdx.xmldocument, ".//" + self.tag_doc)
+                if ndx_sent_host == None:
+                    ndx_sent_host = self.pdx.select_selfordescendant(self.pdx.xmldocument, self.tag_doc)
+                    if len(ndx_sent_host) > 0:
+                        ndx_sent_host = ndx_sent_host[0]
+
+            div = -1
 
             # Walk the sentences in sent_list
             for sentence in sent_list:
                 # Show where we are
-                errHandle.Status("Processing: d.{}.p.{}.s.{}".format(sentence['div'], sentence['par'], sentence['sent']))
+                # errHandle.Status("Processing: d.{}.p.{}.s.{}".format(sentence['div'], sentence['par'], sentence['sent']))
+                if div != sentence['div']:
+                    errHandle.Status("{} {}".format(text_id, sentence['div']))
+                    div = sentence['div']
 
                 # Get the sentence index
                 object_sent_idx = sentence['sent']
@@ -415,6 +439,9 @@ class ConvertBasic():
             errHandle.DoError("views/create_xml")
             return None
 
+    def map_endnodes(self, ndSent):
+        pass
+
     def create_json(self, text_id, meta, ndList):
         """Create a HTREE json"""
 
@@ -446,6 +473,9 @@ class ConvertBasic():
                 sent = self.sent
                 # Get the correct div/par/sent in a generic way
                 self.div, self.par, self.sent = self.get_xml_location(ndSent, div,par,sent)
+
+                # Possibly prepare the mapping between end-node and surface order
+                self.map_endnodes(ndSent)
                 
                 # Show where we are
                 if debug > 3:
@@ -822,7 +852,7 @@ class ConvertHtreePsdx(ConvertBasic):
             errHandle.DoError("views/ConvertHtreePsdx/add_endnode")
             return None
 
-    def add_node(self, xml_this, txt, pos, feat_list):
+    def add_node(self, xml_this, txt, pos, feat_list, type=None):
         try:
             ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
                 [atom("attribute", "Id", self.next_id()), 
@@ -830,7 +860,7 @@ class ConvertHtreePsdx(ConvertBasic):
             # Process the list of features
             for feat in feat_list:
                 # Determine the <fs> @type attribute
-                ftype = type
+                ftype = "htree" if type == None else type
                 # Add feature
                 self.add_feature(ndx_node, feat, ftype)
             return ndx_node
@@ -904,45 +934,59 @@ class ConvertHtreeLowfat(ConvertBasic):
             return None
 
     def add_endnode(self, xml_this, type, txt, pos, n, feat_list):
-        """Add an end-node to [xml_this]"""
+        """Add an end-node to [xml_this] in LOWFAT"""
 
         try:
             if txt == "":
                 txt = " "
             if type == "Star":
-                str_position = "{0:08d}".format(n)
                 ndx_node = xml_this
                 txt = pos
                 ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
-                    [atom("attribute", "Type", type),
-                     atom("attribute", "Text", txt),
-                     atom("attribute", "n", str_position)])
+                    [atom("attribute", "class", "star")])
+                ndx_endnode.text = txt
             elif type == "Vern" or type == "Punc" or type == "Punct":
-                ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
-                    [atom("attribute", "Id", self.next_id()), 
-                     atom("attribute", "Label", pos)])
-                str_position = "{0:08d}".format(n)
-                ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
-                    [atom("attribute", "Type", type),
-                     atom("attribute", "Text", txt),
-                     atom("attribute", "n", str_position)])
+                ndx_endnode = self.pdx.add_xml_child(xml_this, self.tag_endnode,
+                    [atom("attribute", "class", pos)])
+                ndx_endnode.text = txt
+
+                #ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
+                #    [atom("attribute", "Id", self.next_id()), 
+                #     atom("attribute", "Label", pos)])
+                #str_position = "{0:08d}".format(n)
+                #ndx_endnode = self.pdx.add_xml_child(ndx_node, self.tag_endnode,
+                #    [atom("attribute", "Type", type),
+                #     atom("attribute", "Text", txt),
+                #     atom("attribute", "n", str_position)])
             # Process the list of features
             for feat in feat_list:
-                # Determine the <fs> @type attribute
-                ftype = type
-                if feat['name'] == "lemma":
-                    ftype = "M"
-                    feat['name'] = "l"
-                # Add feature
-                self.add_feature(ndx_node, feat, ftype)
-            # Also add the "n" as feature
-            feat = {"name": "n", "value": str_position}
-            self.add_feature(ndx_node, feat, "etctc")
-            return ndx_node
+                # Add feature (the type is not taken into consideration)
+                if feat['name'] == "n":
+                    ndx_endnode.set("n", feat['value'])
+                else:
+                    self.add_feature(ndx_endnode, feat)
+            # Do *NOT* add the "n" as feature - we already have our own @n
+            x = ET.tostring(xml_this)
+            # REturn the end-node that we have created
+            return ndx_endnode
         except:
             errHandle.DoError("views/ConvertHtreeLowfat/add_endnode")
             return None
 
+    def add_node(self, xml_this, txt, pos, feat_list):
+        """Add a constituent node to [xml_this] in LOWFAT"""
+
+        try:
+            ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
+                [atom("attribute", "class", pos)])
+            # Process the list of features
+            for feat in feat_list:
+                # Add feature
+                self.add_feature(ndx_node, feat)
+            return ndx_node
+        except:
+            errHandle.DoError("views/ConvertHtreeLowfat/add_node")
+            return None
 
 
 class ConvertPsdxHtree(ConvertBasic):
@@ -1003,6 +1047,23 @@ class ConvertLowfatHtree(ConvertBasic):
             errHandle.DoError("get_xml_location")
             return -1,-1,-1
 
+    def map_endnodes(self, ndSent):
+        """Map all the end nodes in ndSent] to where they should be in position"""
+
+        ndLit = self.pdx.select_nodes(ndSent, "./descendant::w")
+        # Create a list from this
+        endnodes = []
+        for node in ndLit:
+            endnodes.append(node.get("n"))
+        # Sort them
+        endnodes.sort()
+        # Create the mapping
+        id = 1
+        for node in endnodes:
+            self.map[node] = id
+            id += 1
+        return True
+
     def get_xml_sent_text(self, ndSent):
         return self.pdx.select_single_node(ndSent, "./p").text
 
@@ -1012,15 +1073,26 @@ class ConvertLowfatHtree(ConvertBasic):
         postag = ""
         if ndConst is not None:
             postag = ndConst.get("class")
+            if postag == None:
+                # See if the constituent has feature "role"
+                role = ndConst.get("role")
+                postag = "none" if role == None else role
         return postag
 
-    #def get_xml_n(self, ndConst):
-    #    """Return the n tag of [ndConst]"""
+    def get_xml_n(self, ndConst):
+        """Return the n tag of [ndConst]"""
 
-    #    ntag = ""
-    #    if ndConst is not None:
-    #        ntag = ndConst.get("n")
-    #    return ntag
+        ntag = -1
+        try:
+            if ndConst is not None:
+                # Get the @n
+                sN = ndConst.get("n")
+                # Find out what the number is from the mapping
+                ntag = self.map[sN]
+            return ntag
+        except:
+            errHandle.DoError("ConvertLowfatHtree/get_xml_n")
+            return -1
 
     def get_xml_const_txt(self, ndConst):
         """Return the txt of constituent [ndConst]"""
