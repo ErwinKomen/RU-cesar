@@ -739,6 +739,8 @@ class LingoDetails(DetailView):
     prefix_type = ""        # Whether the adapt the prefix or not ('simple')
     read_only = False
     mForm = None            # Model form
+    newRedirect = False     # Redirect the page name to a correct one after creating
+    redirectpage = ""       # Where to redirect to
     add = False             # Are we adding a new record or editing an existing one?
 
     def get(self, request, pk=None, *args, **kwargs):
@@ -804,6 +806,9 @@ class LingoDetails(DetailView):
                 sHtml = sHtml.replace("\ufeff", "")
                 data['html'] = sHtml
                 response = JsonResponse(data)
+            elif self.newRedirect and self.redirectpage != "":
+                # Redirect to this page
+                return redirect(self.redirectpage)
             else:
                 # This takes self.template_name...
                 response = self.render_to_response(context)
@@ -873,6 +878,7 @@ class LingoDetails(DetailView):
         # Check this user: is he allowed to UPLOAD data?
         context['authenticated'] = user_is_authenticated(self.request)
         context['is_lingo_editor'] = user_is_ingroup(self.request, 'lingo-editor')
+        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
 
         # Get the parameters passed on with the GET or the POST request
         get = self.request.GET if self.request.method == "GET" else self.request.POST
@@ -1146,6 +1152,11 @@ class ExperimentDo(LingoDetails):
 
         context['exp_data'] = None
         context['exp_valid'] = (instance.status == "val")
+
+        # Indicate that the experiment is not okay for the moment
+        context['exp_okay'] = "no"
+        context['exp_msg'] = "-"
+
         # Provide data based on 'home' field of experiment
         if instance.home == "tcpf":
             pfx = "qans"
@@ -1204,6 +1215,8 @@ class ExperimentDo(LingoDetails):
 
                 # Finished preparing POST data
                 post_finished = True
+                context['exp_okay'] = "yes"
+                
             elif self.request.method == "GET":
                 # Set the random method
                 random_method = "choose_subset"
@@ -1282,6 +1295,12 @@ class ExperimentDo(LingoDetails):
 
                         # Make the combi list available
                         context['exp_parts'] = combi_list
+                        # Getting here means that all is in order
+                        context['exp_okay'] = "yes"
+                    else:
+                        context['exp_msg'] = "The number of selected questions is not correct. It should be: {}".format(self.NUM_PERMU)
+        else:
+            context['exp_msg'] = "Experiment of type '{}' has not been programmed in the code [ExperimentDo] yet".format(instance.home)
 
         # The page to return to
         context['prevpage'] = reverse("exp_list")
@@ -1299,24 +1318,52 @@ class ExperimentDetails(LingoDetails):
     prefix_type = "simple"
     title = "ExperimentDetails"
     rtype = "html"
+    mainitems = []
 
-    def get_context_data(self, **kwargs):
-        # Get the initial context
-        context = super(ExperimentDetails, self).get_context_data(**kwargs)
+    def after_new(self, form, instance):
+        """Action to be performed after adding a new item"""
 
-        # Who am I?
-        currentuser = self.request.user
+        # Set a redirect page
+        if instance != None:
+            # Make sure we do a page redirect
+            self.newRedirect = True
+            self.redirectpage = reverse('exp_details', kwargs={'pk': instance.id})
+        return True, ""
 
-        # Add some information
-        context['is_lingo_editor'] = user_is_ingroup(self.request, "lingo-editor")
-        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
-        
+    def add_to_context(self, context, instance):
         # The name of this current position
         context['intro_breadcrumb'] = "Experiment details"
 
         # The page to return to
         context['prevpage'] = reverse('exp_list')
 
+        if instance:
+            # The related objects are the list of question belonging to this experiment
+            related_objects = []
+
+            # This tag in: sermon.notes
+            questions = dict(title='Questions that are part of this experiment',
+                             addbutton='Add question data',
+                             addurl=reverse('qdata_add'),
+                             type="qdata")
+        
+            # Show the list of sermons that contain this tag
+            qs = instance.experiment_qdatas.all().order_by('qmeta')
+            if qs.count() > 0:
+                rel_list =[]
+                for item in qs:
+                    rel_item = []
+                    rel_item.append({'value': item.qmeta, 'title': 'View this question', 'link': reverse('qdata_details', kwargs={'pk': item.id})})
+                    rel_item.append({'value': item.qtopic})
+                    rel_item.append({'value': item.qtext})
+                    rel_item.append({'value': item.get_include_display()})
+                    rel_list.append(rel_item)
+                questions['rel_list'] = rel_list
+                questions['columns'] = ['Meta', 'Topic', 'Text', 'Include']
+            # Add the questions - no matter how many there are
+            related_objects.append(questions)
+
+            context['related_objects'] = related_objects
         # Return the total context
         return context
 
@@ -1471,7 +1518,10 @@ class ParticipantDetails(BasicLingo):
             if experiment != None:
                 sFields = experiment.ptcpfields
                 if sFields != None and sFields != "":
-                    ptcpfields = json.loads(sFields)
+                    try:
+                        ptcpfields = json.loads(sFields)
+                    except:
+                        pass
         # if it is empty, put all fields in there
         if len(ptcpfields) == 0:
             ptcpfields = ['age','gender', 'engfirst', 'lngfirst', 'lngother', 'edu']
@@ -1527,6 +1577,18 @@ class QdataDetailsView(LingoDetails):
             {'type': 'plain', 'label': "Topic response:", 'value': instance.qcorr},
             {'type': 'plain', 'label': "Include:", 'value': instance.get_include_display()}
             ]
+
+        # Adapt the 'listview' to point to the details view of the associated experiment
+        context['listview'] = reverse('exp_details', kwargs={'pk': instance.experiment.id})
+
+        # Provide the correct breadcrumbs
+        breadcrumbs = []
+        breadcrumbs.append(dict(name="Home", url=reverse('lingo_home')))
+        breadcrumbs.append(dict(name="Experiments", url=reverse('exp_list')))
+        breadcrumbs.append(dict(name=instance.experiment.title, url=reverse('exp_details', kwargs={'pk': instance.experiment.id})))
+        breadcrumbs.append(dict(name=instance.qmeta, url=""))
+        context['breadcrumbs'] = breadcrumbs
+
         # Return the context we have made
         return context
 

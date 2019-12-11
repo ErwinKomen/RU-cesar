@@ -1,0 +1,52 @@
+﻿{% load i18n %}
+<!-- Lists of related items -->
+{% for related in related_objects %}
+  <div class="row">
+    <div class="col-md-12">
+
+      <!-- Title and add button -->
+      <form>
+        <h3>
+          {% if related.rel_list|length > 0 %}
+            <span title="List of {{related.type}} items">{{related.title}}</span>
+          {% endif %}
+          {% if is_lingo_editor %}
+            <span id="add_{{related.type}}" class="pull-right">
+              {% csrf_token %}
+              <a class="btn btn-xs jumbo-3" role="button" 
+                  href="{{related.addurl}}">
+                <span class="glyphicon glyphicon-plus"></span>{{related.addbutton}}
+              </a>
+            </span>
+          {% endif %}
+        </h3>
+      </form>
+
+      {% if related.rel_list|length > 0 %}
+        <!-- List of related items -->
+        <table class="func-view compact-simple" style="width: 100%;">
+          <thead>
+            <tr>{% for col in related.columns %}<th>{{col}}</th>{% endfor %}</tr>
+          </thead>
+          <tbody>
+            {% for relrow in related.rel_list %}
+            <tr class="form-row">
+              {% for relcol in relrow %}
+                <td {% if relcol.title %}title="{{relcol.title}}"{% endif %}
+                    {% if relcol.link %}class="clickable" {% endif %}
+                    >
+                  {% if relcol.link %}<a href="{{relcol.link}}" class="tablelink">{{relcol.value}}</a>
+                  {% else %}
+                    {% if relcol.value %}{{relcol.value|truncatewords:10|safe}}{% if relcol.value|wordcount > 10 %}...{% endif %}{% endif %}
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+
+  </div>
+{% endfor %}

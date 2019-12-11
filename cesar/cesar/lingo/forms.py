@@ -25,6 +25,10 @@ class ExperimentForm(ModelForm):
         super(ExperimentForm, self).__init__(*args, **kwargs)
         #self.fields['title'].required = False
         #self.fields['home'].required = False
+        self.fields['home'].required = False
+        self.fields['msg'].required = False
+        self.fields['title'].required = False
+        
         self.fields['status'].required = False
         self.fields['status'].choices = build_abbr_list(EXPERIMENT_STATUS)
 

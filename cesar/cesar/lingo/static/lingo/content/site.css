@@ -1027,3 +1027,12 @@ td.editable:hover, span.editable:hover {
   background-color: lightyellow;
   color: darkgreen;
 }
+
+a.tablelink {
+  color: black;
+  text-decoration: none;
+}
+a.tablelink:hover {
+  background-color: yellow;
+  cursor: pointer;
+}

@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.forms import Textarea
+from django.core.urlresolvers import reverse
+from django.shortcuts import redirect
 
 from cesar.lingo.models import *
 from cesar.lingo.forms import *
@@ -40,6 +42,21 @@ class ExperimentAdmin(admin.ModelAdmin):
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
         }
 
+    def response_post_save_change(self, request, obj):
+        # Return to the details view on saving
+        sUrl = redirect( reverse('exp_details', args=[obj.id]) )
+        return sUrl
+
+    def response_add(self, request, obj, post_url_continue = None):
+        # Return to the experiment list view
+        sUrl = redirect(reverse('exp_list'))
+        return sUrl
+
+    def response_delete(self, request, obj_display, obj_id):
+        sUrl = redirect(reverse('exp_list'))
+        return sUrl
+
+
 class QdataAdmin(admin.ModelAdmin):
     """Display and edit [Question Data] definitions"""
 
@@ -50,6 +67,21 @@ class QdataAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
         }
+
+    def response_post_save_change(self, request, obj):
+        # Return to the details view on saving
+        sUrl = redirect( reverse('qdata_details', args=[obj.id]) )
+        return sUrl
+
+    def response_add(self, request, obj, post_url_continue = None):
+        # Return to the details view of the experiment
+        sUrl = redirect(reverse('exp_details', args=[obj.experiment.id]))
+        return sUrl
+
+    def response_delete(self, request, obj_display, obj_id):
+        sUrl = redirect(reverse('exp_list'))
+        return sUrl
+
 
 class ResponseAdmin(admin.ModelAdmin):
     """Display and edit [Response] objects from participants"""
