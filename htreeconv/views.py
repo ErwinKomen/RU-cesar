@@ -13,10 +13,20 @@ from models import *        # This imports HierObj
 
 errHandle = util.ErrHandle()
 
+book = ['MAT','MRK','LUK','JHN','ACT','ROM','1CO','2CO','GAL','EPH','PHP','COL',\
+        '1TH','2TH','1TI','2TI','TIT','PHM','HEB','JAS','1PE','2PE','1JN','2JN','3JN','JUD','REV']
+
 
 def atom(type, key, value):
     obj = dict(type=type, key=key, value=value)
     return obj
+
+def get_book_abbr(file):
+    sName = os.path.basename(file)
+    arName = sName.split("-")
+    bkno = int(arName[0])-1
+    abbr = book[bkno]
+    return abbr
 
 
 class XmlProcessor():
@@ -166,7 +176,7 @@ class ConvertBasic():
         self.env = jinja2.Environment(loader=self.file_loader)
         return response
 
-    def do_htree_xml(self, output_dir, force=False):
+    def do_htree_xml(self, output_dir, force=False, sBook=None):
         """Convert files from htree source to XML destination"""
 
         try:
@@ -212,7 +222,7 @@ class ConvertBasic():
             errHandle.DoError("views/do_htree_xml")
             return None
 
-    def do_xml_htree(self, output_dir, force=False):
+    def do_xml_htree(self, output_dir, force=False, sBook=None):
         """Convert files from XML source to Htree destination"""
 
         try:
@@ -262,7 +272,7 @@ class ConvertBasic():
             errHandle.DoError("views/do_xml_htree")
             return None
 
-    def do_htree_htree(self, output_dir, force=False):
+    def do_htree_htree(self, output_dir, force=False, sBook=None):
         """Convert files from htree source to htree destination
         
         This means that we are either surfacing or unraveling
@@ -278,82 +288,85 @@ class ConvertBasic():
 
             # Walk all source files
             for file in self.lst_src:
-                # Determine the output file name
-                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
+                # Determine the book name
+                abbr = get_book_abbr(file)
+                if sBook == None or sBook == abbr:
+                    # Determine the output file name
+                    outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
 
-                # Check if it already exists and whether we should overwrite
-                if not os.path.exists(outfile) or force:
-                    # Show where we are
-                    errHandle.Status("Working on file {}".format(file))
-
-                    # Load the JSON file into memory
-                    try:
-                        with open(file, "r") as fp:
-                            oJsonFile = json.load(fp)
-                    except:
-                        with open(file, "r", encoding="utf-8-sig") as fp:
-                            oJsonFile = json.load(fp)
-
-                    # Get the text id
-                    text_id = oJsonFile['name']
-                    meta = None
-                    if 'meta' in oJsonFile: meta = oJsonFile['meta']
-
-                    # Create a context for the template
-                    context = dict()
-                    # Possibly add metadata, if this has been supplied
-                    context['meta'] = meta
-                    context['text_id'] = text_id
-
-                    # Allow ancestor to add to context
-                    context = self.add_to_context(context)
-
-                    sentence_list = []
-
-                    # Other initializations for one file
-                    self.id_word = 1
-                    self.id_node = 1
-                    div = -1
-
-                    # Walk all source sentences
-                    for sentence in oJsonFile['sentence_list']:
-                        # Properly read the source sentence
-                        oSentSrc = SentenceObj.loadsent(sentence, text_id)
-                        # oSentDst = {}
-                        sSentDst = ""
-
+                    # Check if it already exists and whether we should overwrite
+                    if not os.path.exists(outfile) or force:
                         # Show where we are
-                        if debug > 3:
-                            errHandle.Status("{} {}:{} s={}".format(text_id, oSentSrc.div, oSentSrc.divpar, oSentSrc.sent))
-                        if div != oSentSrc.div:
-                            errHandle.Status("{} {}".format(text_id, oSentSrc.div))
-                            div = oSentSrc.div
+                        errHandle.Status("Working on file {}".format(file))
 
-                        # Create the destination sentence from the source one
-                        if self.action == "to-surface":
-                            oSent, msg = oSentSrc.copy_surface()
-                            sSentDst = json.dumps(oSent.get_object(), indent=2)
-                        elif self.action == "from-surface":
-                            # TODO make code here
-                            pass
+                        # Load the JSON file into memory
+                        try:
+                            with open(file, "r") as fp:
+                                oJsonFile = json.load(fp)
+                        except:
+                            with open(file, "r", encoding="utf-8-sig") as fp:
+                                oJsonFile = json.load(fp)
 
-                        # Add to the destination
-                        sentence_list.append(sSentDst)
+                        # Get the text id
+                        text_id = oJsonFile['name']
+                        meta = None
+                        if 'meta' in oJsonFile: meta = oJsonFile['meta']
 
-                    # Add the sentence list to the context
-                    context['sentence_list'] = sentence_list
+                        # Create a context for the template
+                        context = dict()
+                        # Possibly add metadata, if this has been supplied
+                        context['meta'] = meta
+                        context['text_id'] = text_id
 
-                    # Create a JSON string based on this context
-                    template = self.env.get_template(self.dst_template)
-                    sJson = template.render(context)
+                        # Allow ancestor to add to context
+                        context = self.add_to_context(context)
 
-                    # Save the string as UTF8
-                    with open(outfile, "w", encoding="utf8") as f:
-                        errHandle.Status("Saving text {}".format(text_id))
-                        f.write(sJson)
+                        sentence_list = []
 
-                else:
-                    errHandle.Status("Skipping file {}".format(outfile))
+                        # Other initializations for one file
+                        self.id_word = 1
+                        self.id_node = 1
+                        div = -1
+
+                        # Walk all source sentences
+                        for sentence in oJsonFile['sentence_list']:
+                            # Properly read the source sentence
+                            oSentSrc = SentenceObj.loadsent(sentence, text_id)
+                            # oSentDst = {}
+                            sSentDst = ""
+
+                            # Show where we are
+                            if debug > 3:
+                                errHandle.Status("{} {}:{} s={}".format(text_id, oSentSrc.div, oSentSrc.divpar, oSentSrc.sent))
+                            if div != oSentSrc.div:
+                                errHandle.Status("{} {}".format(text_id, oSentSrc.div))
+                                div = oSentSrc.div
+
+                            # Create the destination sentence from the source one
+                            if self.action == "to-surface":
+                                oSent, msg = oSentSrc.copy_surface()
+                                sSentDst = json.dumps(oSent.get_object(), indent=2)
+                            elif self.action == "from-surface":
+                                # TODO make code here
+                                pass
+
+                            # Add to the destination
+                            sentence_list.append(sSentDst)
+
+                        # Add the sentence list to the context
+                        context['sentence_list'] = sentence_list
+
+                        # Create a JSON string based on this context
+                        template = self.env.get_template(self.dst_template)
+                        sJson = template.render(context)
+
+                        # Save the string as UTF8
+                        with open(outfile, "w", encoding="utf8") as f:
+                            errHandle.Status("Saving text {}".format(text_id))
+                            f.write(sJson)
+
+                    else:
+                        errHandle.Status("Skipping file {}".format(outfile))
 
             # Return positively
             return 1

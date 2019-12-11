@@ -28,6 +28,7 @@ def main(prgName, argv):
     dirInput = ''   # input directory
     dirOutput = ''  # output directory
     sType = ""      # the type of conversion
+    sBook = None    # Possible book
     bForce = False  # Force means: overwrite
     oConv = None    # Conversion object
     conv_type = [
@@ -39,11 +40,11 @@ def main(prgName, argv):
         ]
 
     try:
-        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion> [-f]'
+        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion> [-f] [-b <book>]'
         # get all the arguments
         try:
             # Get arguments and options
-            opts, args = getopt.getopt(argv, "hi:o:t:f", ["-inputdir=", "-outputdir=", "-type=", "-force"])
+            opts, args = getopt.getopt(argv, "hi:o:t:fb:", ["-inputdir=", "-outputdir=", "-type=", "-force", "-book="])
         except getopt.GetoptError:
             print(sSyntax)
             sys.exit(2)
@@ -56,6 +57,8 @@ def main(prgName, argv):
                 dirInput = arg
             elif opt in ("-o", "--outputdir"):
                 dirOutput = arg
+            elif opt in ("-b", "--book"):
+                sBook = arg
             elif opt in ("-t", "--type"):
                 sType = arg
                 for item in conv_type: 
@@ -84,6 +87,7 @@ def main(prgName, argv):
         oArgs = {'input': dirInput,
                  'output': dirOutput,
                  'force': bForce,
+                 'book': sBook, 
                  'conv': oConv}
         if (not htree_convert(oArgs)) :
             errHandle.DoError("Could not complete")
@@ -112,23 +116,24 @@ def htree_convert(oArgs):
         oConv = oArgs['conv']
         arConvType = oConv['type'].split("-")
         bForce = oArgs['force']
+        sBook = oArgs['book']
 
         if arConvType[0] == "surface":
             oConvert = ConvertSurfaceHtree(oArgs['input'])
-            oConvert.do_htree_htree(oArgs['output'], bForce)
+            oConvert.do_htree_htree(oArgs['output'], bForce, sBook)
         elif arConvType[1] == "surface":
             oConvert = ConvertHtreeSurface(oArgs['input'])
-            oConvert.do_htree_htree(oArgs['output'], bForce)
+            oConvert.do_htree_htree(oArgs['output'], bForce, sBook)
         elif arConvType[0] == "htree":
             # Create XML from htree
             cls = oFromHtree[arConvType[1]]
             oConvert = cls(oArgs['input'])
-            oConvert.do_htree_xml(oArgs['output'], bForce)
+            oConvert.do_htree_xml(oArgs['output'], bForce, sBook)
         elif arConvType[1] == "htree":
             # Create htree from XML
             cls = oToHtree[arConvType[0]]
             oConvert = cls(oArgs['input'])
-            oConvert.do_xml_htree(oArgs['output'], bForce)
+            oConvert.do_xml_htree(oArgs['output'], bForce, sBook)
         else:
             # Stage 1: convert to htree
             arHtreeFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])
