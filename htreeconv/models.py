@@ -653,15 +653,25 @@ class SentenceObj(object):
                                         
                                         # Depends on [dst_right]
                                         if dst_right and dst_right in dst_common.child:
+
+                                            method = "Normal"
+
                                             if dst_right in following:
-                                                # Process all the following elements in the same way
-                                                for follows in following:
-                                                    prev_parent = follows.parent
-                                                    # A new ICH node needs to be created
+                                                if method == "Dec12":
+                                                    # Add ich to the actual destination
                                                     iIchCounter += 1
-                                                    dst_common.add_ich(iIchCounter, follows)
-                                                    dst_new_parent.add_child(follows)
-                                                dst_left = follows
+                                                    dst_new_parent.add_ich(iIchCounter, dst_node)
+                                                    # Make sure that 'common' now becomes the parent
+                                                    dst_new_parent = dst_common
+                                                else:
+                                                    # Process all the following elements in the same way
+                                                    for follows in following:
+                                                        prev_parent = follows.parent
+                                                        # A new ICH node needs to be created
+                                                        iIchCounter += 1
+                                                        dst_common.add_ich(iIchCounter, follows)
+                                                        dst_new_parent.add_child(follows)
+                                                    dst_left = follows
                                             else:
                                                 prev_parent = dst_right.parent
                                                 # A new ICH node needs to be created
