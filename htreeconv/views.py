@@ -19,9 +19,9 @@ book_ot = {'genesis': 'GEN', 'exodus': 'EXO', 'leviticus': 'LEV', 'numbers': 'NU
     'deuteronomy': 'DEU', 'joshua': 'JOS', 'judges': 'JDG', 'ruth': 'RUT', \
     '1_samuel': '1SA', '2_samuel': '2SA', '1_kings': '1KI', '2_kings': '2KI', \
     '1_chronicles': '1CH', '2_chronicles': '2CH', 'ezra': 'EZR', 'nehemiah': 'NEH', \
-    'esther': 'EST', 'job': 'JOB', 'psalms': 'PSA', 'ecclesiastes': 'ECC', \
+    'esther': 'EST', 'job': 'JOB', 'psalms': 'PSA', 'proverbs': 'PRO', 'ecclesiastes': 'ECC', \
     'song_of_songs': 'SNG', 'isaiah': 'ISA', 'jeremiah': 'JER', 'lamentations': 'LAM', \
-    'ezekiel': 'EZK', 'daniel': 'DAN', 'hosea': 'HOS', 'joel': 'JOL', 'amos': 'AMO', \
+    'ezekiel': 'EZK', 'daniel': 'DAN', 'hosea': 'HOS', 'joel': 'JOL', 'amos': 'AMO', 'nahum': 'NAH', \
     'obadiah': 'OBA', 'jonah': 'JON', 'micah': 'MIC', 'habakkuk': 'HAB', \
     'zephaniah': 'ZEP', 'haggai': 'HAG', 'zechariah': 'ZEC', 'malachi': 'MAL'
     }
