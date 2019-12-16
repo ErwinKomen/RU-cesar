@@ -31,6 +31,7 @@ def main(prgName, argv):
     sBook = None    # Possible book
     bForce = False  # Force means: overwrite
     oConv = None    # Conversion object
+    debug = None    # Debugging
     conv_type = [
         {'type': 'htree-psdx', 'src': '.json', 'dst': '.psdx'},
         {'type': 'htree-folia', 'src': '.json', 'dst': '.folia.xml'},
@@ -40,11 +41,11 @@ def main(prgName, argv):
         ]
 
     try:
-        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion> [-f] [-b <book>]'
+        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion> [-f] [-b <book>] [-d <level>]'
         # get all the arguments
         try:
             # Get arguments and options
-            opts, args = getopt.getopt(argv, "hi:o:t:fb:", ["-inputdir=", "-outputdir=", "-type=", "-force", "-book="])
+            opts, args = getopt.getopt(argv, "hi:o:t:fb:d:", ["-inputdir=", "-outputdir=", "-type=", "-force", "-book=", "-debug="])
         except getopt.GetoptError:
             print(sSyntax)
             sys.exit(2)
@@ -59,6 +60,11 @@ def main(prgName, argv):
                 dirOutput = arg
             elif opt in ("-b", "--book"):
                 sBook = arg
+            elif opt in ("-d", "--debug"):
+                try:
+                    debug = int(arg)
+                except:
+                    debug = 10
             elif opt in ("-t", "--type"):
                 sType = arg
                 for item in conv_type: 
@@ -88,6 +94,7 @@ def main(prgName, argv):
                  'output': dirOutput,
                  'force': bForce,
                  'book': sBook, 
+                 'debug': debug,
                  'conv': oConv}
         if (not htree_convert(oArgs)) :
             errHandle.DoError("Could not complete")
@@ -117,23 +124,26 @@ def htree_convert(oArgs):
         arConvType = oConv['type'].split("-")
         bForce = oArgs['force']
         sBook = oArgs['book']
+        debug = oArgs['debug']
 
         if arConvType[0] == "surface":
+            # Convert 'surfaced' Htree into 'plain' Htree (not taking word order in account)
             oConvert = ConvertSurfaceHtree(oArgs['input'])
-            oConvert.do_htree_htree(oArgs['output'], bForce, sBook)
+            oConvert.do_htree_htree(oArgs['output'], bForce, sBook, debug)
         elif arConvType[1] == "surface":
+            # Convert un-ordered Htree into 'surfaced' Htree
             oConvert = ConvertHtreeSurface(oArgs['input'])
-            oConvert.do_htree_htree(oArgs['output'], bForce, sBook)
+            oConvert.do_htree_htree(oArgs['output'], bForce, sBook, debug)
         elif arConvType[0] == "htree":
             # Create XML from htree
             cls = oFromHtree[arConvType[1]]
             oConvert = cls(oArgs['input'])
-            oConvert.do_htree_xml(oArgs['output'], bForce, sBook)
+            oConvert.do_htree_xml(oArgs['output'], bForce, sBook, debug)
         elif arConvType[1] == "htree":
             # Create htree from XML
             cls = oToHtree[arConvType[0]]
             oConvert = cls(oArgs['input'])
-            oConvert.do_xml_htree(oArgs['output'], bForce, sBook)
+            oConvert.do_xml_htree(oArgs['output'], bForce, sBook, debug)
         else:
             # Stage 1: convert to htree
             arHtreeFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])

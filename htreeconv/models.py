@@ -651,27 +651,21 @@ class SentenceObj(object):
                                     elif method == "common_ancestor":
                                         dst_common, dst_left, dst_right = target.get_common_ancestor(dst_new_parent, dst_prec_endnode)
                                         
-                                        # Depends on [dst_right]
-                                        if dst_right and dst_right in dst_common.child:
+                                        method = "Normal"
+                                        method = "Dec12"
 
-                                            method = "Normal"
+                                        # Depends on [dst_right]
+                                        if method == "Normal" and dst_right and dst_right in dst_common.child:
 
                                             if dst_right in following:
-                                                if method == "Dec12":
-                                                    # Add ich to the actual destination
+                                                # Process all the following elements in the same way
+                                                for follows in following:
+                                                    prev_parent = follows.parent
+                                                    # A new ICH node needs to be created
                                                     iIchCounter += 1
-                                                    dst_new_parent.add_ich(iIchCounter, dst_node)
-                                                    # Make sure that 'common' now becomes the parent
-                                                    dst_new_parent = dst_common
-                                                else:
-                                                    # Process all the following elements in the same way
-                                                    for follows in following:
-                                                        prev_parent = follows.parent
-                                                        # A new ICH node needs to be created
-                                                        iIchCounter += 1
-                                                        dst_common.add_ich(iIchCounter, follows)
-                                                        dst_new_parent.add_child(follows)
-                                                    dst_left = follows
+                                                    dst_common.add_ich(iIchCounter, follows)
+                                                    dst_new_parent.add_child(follows)
+                                                dst_left = follows
                                             else:
                                                 prev_parent = dst_right.parent
                                                 # A new ICH node needs to be created
@@ -696,18 +690,22 @@ class SentenceObj(object):
                                 iStop = 1
 
                             # Add the dst_node we have as child to [dst_new_parent] after [dst_left]
-                            if dst_test == None or not dst_left:
-                                dst_new_parent.add_child(dst_node)
-                            else:
-                                dst_new_parent.add_child(dst_node, after=dst_left)
+                            use_old_system = False
+                            if use_old_system:
+                                if dst_test == None or not dst_left:
+                                    dst_new_parent.add_child(dst_node)
+                                else:
+                                    dst_new_parent.add_child(dst_node, after=dst_left)
+                            dst_new_parent.add_child(dst_node)
 
                             # ========= DEBUGGING ========================
-                            if debug and debug > 1:
+                            if debug and debug > 11:
                                 y = json.dumps( target.get_object(), indent=2)
                                 x = target.get_simple()
                             # y = json.dumps(self.get_object(), indent=2)
                             # ============================================
-                            if debug and debug > 2: errHandle.Status(target.get_simple())
+                            if debug and debug > 2: 
+                                errHandle.Status(target.get_simple())
 
                 # Keep the destination node for later
                 dst_previous_node = target.find_endnode(src_word.n)
@@ -853,6 +851,8 @@ class SentenceObj(object):
                                  id=sent_obj['id'], 
                                  div = sent_obj['div'], 
                                  divpar=divpar)
+            if 'child' not in sent_obj:
+                return None
             # Walk all the objects hierarchically
             for child in sent_obj['child']:
                 newnode = target.loadnode(child)

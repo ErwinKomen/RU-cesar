@@ -15,6 +15,16 @@ errHandle = util.ErrHandle()
 
 book = ['MAT','MRK','LUK','JHN','ACT','ROM','1CO','2CO','GAL','EPH','PHP','COL',\
         '1TH','2TH','1TI','2TI','TIT','PHM','HEB','JAS','1PE','2PE','1JN','2JN','3JN','JUD','REV']
+book_ot = {'genesis': 'GEN', 'exodus': 'EXO', 'leviticus': 'LEV', 'numbers': 'NUM', \
+    'deuteronomy': 'DEU', 'joshua': 'JOS', 'judges': 'JDG', 'ruth': 'RUT', \
+    '1_samuel': '1SA', '2_samuel': '2SA', '1_kings': '1KI', '2_kings': '2KI', \
+    '1_chronicles': '1CH', '2_chronicles': '2CH', 'ezra': 'EZR', 'nehemiah': 'NEH', \
+    'esther': 'EST', 'job': 'JOB', 'psalms': 'PSA', 'ecclesiastes': 'ECC', \
+    'song_of_songs': 'SNG', 'isaiah': 'ISA', 'jeremiah': 'JER', 'lamentations': 'LAM', \
+    'ezekiel': 'EZK', 'daniel': 'DAN', 'hosea': 'HOS', 'joel': 'JOL', 'amos': 'AMO', \
+    'obadiah': 'OBA', 'jonah': 'JON', 'micah': 'MIC', 'habakkuk': 'HAB', \
+    'zephaniah': 'ZEP', 'haggai': 'HAG', 'zechariah': 'ZEC', 'malachi': 'MAL'
+    }
 
 
 def atom(type, key, value):
@@ -24,8 +34,14 @@ def atom(type, key, value):
 def get_book_abbr(file):
     sName = os.path.basename(file)
     arName = sName.split("-")
-    bkno = int(arName[0])-1
-    abbr = book[bkno]
+    if len(arName) == 1:
+        # THis is the old testament: Get the book number and abbreviation
+        sName = sName.replace(".json", "")
+        abbr = book_ot[sName.lower()]
+    else:
+        # THis is the NT
+        bkno = int(arName[0])-1
+        abbr = book[bkno]
     return abbr
 
 
@@ -176,7 +192,7 @@ class ConvertBasic():
         self.env = jinja2.Environment(loader=self.file_loader)
         return response
 
-    def do_htree_xml(self, output_dir, force=False, sBook=None):
+    def do_htree_xml(self, output_dir, force=False, sBook=None, debug=None):
         """Convert files from htree source to XML destination"""
 
         try:
@@ -184,37 +200,40 @@ class ConvertBasic():
 
             # Walk all source files
             for file in self.lst_src:
-                # Determine the output file name
-                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
+                # Determine the book name
+                abbr = get_book_abbr(file)
+                if sBook == None or sBook == abbr:
+                    # Determine the output file name
+                    outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
 
-                # Check if it already exists and whether we should overwrite
-                if not os.path.exists(outfile) or force:
-                    # Show where we are
-                    errHandle.Status("Working on file {}".format(file))
+                    # Check if it already exists and whether we should overwrite
+                    if not os.path.exists(outfile) or force:
+                        # Show where we are
+                        errHandle.Status("Working on file {}".format(file))
 
-                    # Load the JSON file into memory
-                    try:
-                        with open(file, "r") as fp:
-                            oJsonFile = json.load(fp)
-                    except:
-                        with open(file, "r", encoding="utf-8-sig") as fp:
-                            oJsonFile = json.load(fp)
+                        # Load the JSON file into memory
+                        try:
+                            with open(file, "r") as fp:
+                                oJsonFile = json.load(fp)
+                        except:
+                            with open(file, "r", encoding="utf-8-sig") as fp:
+                                oJsonFile = json.load(fp)
 
-                    # Get the text id
-                    text_id = oJsonFile['name']
-                    meta = None
-                    if 'meta' in oJsonFile: meta = oJsonFile['meta']
+                        # Get the text id
+                        text_id = oJsonFile['name']
+                        meta = None
+                        if 'meta' in oJsonFile: meta = oJsonFile['meta']
 
-                    # Create an XML from the information we have
-                    xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
+                        # Create an XML from the information we have
+                        xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
 
-                    # Save this one
-                    # outfile = file.replace(self.src_ext,self.dst_ext)
-                    with open(outfile, "w", encoding="utf-8") as fp:
-                        str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")
-                        fp.write(str_output)
-                else:
-                    errHandle.Status("Skipping file {}".format(outfile))
+                        # Save this one
+                        # outfile = file.replace(self.src_ext,self.dst_ext)
+                        with open(outfile, "w", encoding="utf-8") as fp:
+                            str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")
+                            fp.write(str_output)
+                    else:
+                        errHandle.Status("Skipping file {}".format(outfile))
 
             # Return positively
             return 1
@@ -222,7 +241,7 @@ class ConvertBasic():
             errHandle.DoError("views/do_htree_xml")
             return None
 
-    def do_xml_htree(self, output_dir, force=False, sBook=None):
+    def do_xml_htree(self, output_dir, force=False, sBook=None, debug=None):
         """Convert files from XML source to Htree destination"""
 
         try:
@@ -233,38 +252,41 @@ class ConvertBasic():
 
             # Walk all source files
             for file in self.lst_src:
-                # Determine the output file name
-                outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
+                # Determine the book name
+                abbr = get_book_abbr(file)
+                if sBook == None or sBook == abbr:
+                    # Determine the output file name
+                    outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
 
-                # Check if it already exists and whether we should overwrite
-                if not os.path.exists(outfile) or force:
-                    # Show where we are
-                    errHandle.Status("Working on file {}".format(file))
+                    # Check if it already exists and whether we should overwrite
+                    if not os.path.exists(outfile) or force:
+                        # Show where we are
+                        errHandle.Status("Working on file {}".format(file))
 
-                    # Load the XML file into memory
-                    self.pdx = XmlProcessor()
-                    xmldoc = self.pdx.loadfile(file)
-                    ndSent = self.pdx.select_nodes(xmldoc, "./descendant-or-self::{}".format(self.tag_sent))
+                        # Load the XML file into memory
+                        self.pdx = XmlProcessor()
+                        xmldoc = self.pdx.loadfile(file)
+                        ndSent = self.pdx.select_nodes(xmldoc, "./descendant-or-self::{}".format(self.tag_sent))
                     
-                    # Get the text id
-                    text_id = os.path.basename(file).replace(self.src_ext, "")
-                    meta = None
+                        # Get the text id
+                        text_id = os.path.basename(file).replace(self.src_ext, "")
+                        meta = None
 
-                    # Other initializations for one file
-                    self.id_word = 1
-                    self.id_node = 1
+                        # Other initializations for one file
+                        self.id_word = 1
+                        self.id_node = 1
 
-                    #oJsonFile = dict(name=text_id, meta=meta)
+                        #oJsonFile = dict(name=text_id, meta=meta)
 
-                    # Create an XML from the information we have
-                    sXml = self.create_json(text_id, meta, ndSent)
+                        # Create an XML from the information we have
+                        sXml = self.create_json(text_id, meta, ndSent)
 
-                    # Write the object to the file
-                    with open(outfile, "w", encoding="utf-8") as f:
-                        errHandle.Status("Saving text {}".format(text_id))
-                        f.write(sXml)
-                else:
-                    errHandle.Status("Skipping file {}".format(outfile))
+                        # Write the object to the file
+                        with open(outfile, "w", encoding="utf-8") as f:
+                            errHandle.Status("Saving text {}".format(text_id))
+                            f.write(sXml)
+                    else:
+                        errHandle.Status("Skipping file {}".format(outfile))
 
             # Return positively
             return 1
@@ -272,13 +294,13 @@ class ConvertBasic():
             errHandle.DoError("views/do_xml_htree")
             return None
 
-    def do_htree_htree(self, output_dir, force=False, sBook=None):
+    def do_htree_htree(self, output_dir, force=False, sBook=None, debug=None):
         """Convert files from htree source to htree destination
         
         This means that we are either surfacing or unraveling
         """
 
-        debug = 0
+        if debug == None: debug = 0
 
         try:
             # Validate
@@ -332,26 +354,32 @@ class ConvertBasic():
                         for sentence in oJsonFile['sentence_list']:
                             # Properly read the source sentence
                             oSentSrc = SentenceObj.loadsent(sentence, text_id)
-                            # oSentDst = {}
-                            sSentDst = ""
-
-                            # Show where we are
-                            if debug > 3:
-                                errHandle.Status("{} {}:{} s={}".format(text_id, oSentSrc.div, oSentSrc.divpar, oSentSrc.sent))
-                            if div != oSentSrc.div:
-                                errHandle.Status("{} {}".format(text_id, oSentSrc.div))
-                                div = oSentSrc.div
-
-                            # Create the destination sentence from the source one
-                            if self.action == "to-surface":
-                                oSent, msg = oSentSrc.copy_surface()
-                                sSentDst = json.dumps(oSent.get_object(), indent=2)
-                            elif self.action == "from-surface":
-                                # TODO make code here
+                            if oSentSrc == None:
                                 pass
+                            else:
+                                sSentDst = ""
 
-                            # Add to the destination
-                            sentence_list.append(sSentDst)
+                                # Show where we are
+                                if debug > 3:
+                                    errHandle.Status("{} {}:{} s={}".format(text_id, oSentSrc.div, oSentSrc.divpar, oSentSrc.sent))
+                                if div != oSentSrc.div:
+                                    errHandle.Status("{} {}".format(text_id, oSentSrc.div))
+                                    div = oSentSrc.div
+
+                                # Debugging LUKE d.1.p.7.s.1
+                                if oSentSrc.div == 1 and oSentSrc.divpar == 7 and oSentSrc.sent == 1:
+                                    iStop = 1
+
+                                # Create the destination sentence from the source one
+                                if self.action == "to-surface":
+                                    oSent, msg = oSentSrc.copy_surface(debug)
+                                    sSentDst = json.dumps(oSent.get_object(), indent=2)
+                                elif self.action == "from-surface":
+                                    # TODO make code here
+                                    pass
+
+                                # Add to the destination
+                                sentence_list.append(sSentDst)
 
                         # Add the sentence list to the context
                         context['sentence_list'] = sentence_list
@@ -371,7 +399,7 @@ class ConvertBasic():
             # Return positively
             return 1
         except:
-            errHandle.DoError("views/do_htree_xml")
+            errHandle.DoError("views/do_htree_htree")
             return None
                 
     def create_xml(self, text_id, meta, sent_list):

@@ -78,7 +78,7 @@ def main(prgName, argv) :
     # get all the arguments
     try:
           # Get arguments and options
-          opts, args = getopt.getopt(argv, "hi:o:b:s:l:d:", ["-inputfile=", "-outputdir=", "-book=", "-surface=", "-location=", "-debug", "-force"])
+          opts, args = getopt.getopt(argv, "hi:o:b:s:l:d:f", ["-inputfile=", "-outputdir=", "-book=", "-surface=", "-location=", "-debug", "-force"])
     except getopt.GetoptError:
           print(sSyntax)
           sys.exit(2)
@@ -695,8 +695,10 @@ def etcbc_2017_convert(oArgs):
                             # Simplification of the tree
                             hier_sent.simplify()
 
-                            # Add the object to the list of sentences
-                            sentence_list.append(hier_sent.get_object())
+                            old_method = False
+                            if old_method:
+                                # Add the object to the list of sentences
+                                sentence_list.append(hier_sent.get_object())
 
                             # Keep a copy of the last sentence
                             prev_hier_sent = copy.copy(hier_sent)
@@ -727,10 +729,6 @@ def etcbc_2017_convert(oArgs):
                                             last_hier_sent = None
                                         
 
-                                        ## DEBUGGING
-                                        #x = hier_sent.get_simple()
-                                        #y = last_hier_sent.get_simple()
-
                                     else:
                                         # Get a surface representation of the sentence
                                         surface_sent, msg = hier_sent.copy_surface(debug)
@@ -740,6 +738,29 @@ def etcbc_2017_convert(oArgs):
                                         else:
                                             # We have the message
                                             errHandle.Status("Could not create surface copy [b]: {}".format(msg))
+                            else:
+                                # We are *not* surfacing, but we do want the order to be correct
+                                # Check if we can already do this one
+                                
+                                if not SentenceObj.is_complete(hier_sent):
+                                    # Keep this one to use it the next time
+                                    last_hier_sent = copy.copy(hier_sent)
+                                    
+                                else:
+                                    if last_hier_sent != None:
+                                        # Add the new sentence
+                                        last_hier_sent.insert_sentence(hier_sent)
+
+                                        # Check if it is now complete
+                                        if last_hier_sent.is_complete():
+                                            # Yes, complete: so add to the list
+                                            sentence_list.append(last_hier_sent.get_object())
+                                            # Reset last one
+                                            last_hier_sent = None
+                                    else:
+                                        # Everything is alright, just process this sentence
+                                        sentence_list.append(hier_sent.get_object())
+
 
                 # Create the object of this book
                 book_obj = dict(sentence_list=sentence_list, name=bookname)
