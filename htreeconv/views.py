@@ -222,15 +222,20 @@ class ConvertBasic():
                         # Get the text id
                         text_id = oJsonFile['name']
                         meta = None
-                        if 'meta' in oJsonFile: meta = oJsonFile['meta']
+                        if 'meta' in oJsonFile: 
+                            meta = oJsonFile['meta']
+                        else:
+                            meta = self.create_meta(text_id, abbr)
 
                         # Create an XML from the information we have
                         xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
 
+                        doctype = self.get_xml_doctype()
+
                         # Save this one
                         # outfile = file.replace(self.src_ext,self.dst_ext)
                         with open(outfile, "w", encoding="utf-8") as fp:
-                            str_output = ET.tostring(xmldoc, xml_declaration=True, encoding="utf-8", pretty_print=True).decode("utf-8")
+                            str_output = ET.tostring(xmldoc, xml_declaration=True, doctype=doctype, encoding="utf-8", pretty_print=True).decode("utf-8")
                             fp.write(str_output)
                     else:
                         errHandle.Status("Skipping file {}".format(outfile))
@@ -401,6 +406,9 @@ class ConvertBasic():
         except:
             errHandle.DoError("views/do_htree_htree")
             return None
+
+    def get_xml_doctype(self):
+        return None
                 
     def create_xml(self, text_id, meta, sent_list):
         """Create an XML based on the destination template"""
@@ -479,6 +487,9 @@ class ConvertBasic():
         except:
             errHandle.DoError("views/create_xml")
             return None
+
+    def create_meta(self, text_id, abbr):
+        return None
 
     def map_endnodes(self, ndSent):
         pass
@@ -908,6 +919,11 @@ class ConvertHtreePsdx(ConvertBasic):
         except:
             errHandle.DoError("views/ConvertHtreePsdx/add_node")
             return None
+
+    def create_meta(self, text_id, abbr):
+        meta = {}
+
+        return meta
         
 
 class ConvertHtreeFolia(ConvertBasic):
@@ -1017,17 +1033,39 @@ class ConvertHtreeLowfat(ConvertBasic):
     def add_node(self, xml_this, txt, pos, feat_list):
         """Add a constituent node to [xml_this] in LOWFAT"""
 
+        oFirst = {'AdjP': 'adj', 'AdvP': 'adv', 'PP': 'adv'}
+        oSecond = {'Subj': 's', 'Objc': 'o', 'Cmpl': 'o'}
+
         try:
             ndx_node = self.pdx.add_xml_child(xml_this, self.tag_node, 
                 [atom("attribute", "class", pos)])
             # Process the list of features
+            bHasRole = False
             for feat in feat_list:
                 # Add feature
                 self.add_feature(ndx_node, feat)
+                # Note if this was @role
+                if feat['name'] == "role": bHasRole = True
+            # Check if there was a 'role' in the list of features
+            if not bHasRole:
+                # Try to derive the 'role' from the POS-tag
+                arPos = pos.split("-")
+                role = ""
+                if len(arPos) > 1:
+                    if arPos[0] in oFirst:
+                        role = oFirst[arPos[0]]
+                    elif arPos[1] in oSecond:
+                        role = oSecond[arPos[1]]
+                if role != "":
+                    feat = dict(name="role", value=role)
+                    self.add_feature(ndx_node, feat)
             return ndx_node
         except:
             errHandle.DoError("views/ConvertHtreeLowfat/add_node")
             return None
+
+    def get_xml_doctype(self):
+        return "<?xml-stylesheet href=\"treedown.css\"?>"
 
 
 class ConvertPsdxHtree(ConvertBasic):
