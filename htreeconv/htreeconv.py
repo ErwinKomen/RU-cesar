@@ -30,6 +30,7 @@ def main(prgName, argv):
     sType = ""      # the type of conversion
     sBook = None    # Possible book
     bForce = False  # Force means: overwrite
+    bCmdi = False   # Add CMDI file
     oConv = None    # Conversion object
     debug = None    # Debugging
     conv_type = [
@@ -45,7 +46,7 @@ def main(prgName, argv):
         # get all the arguments
         try:
             # Get arguments and options
-            opts, args = getopt.getopt(argv, "hi:o:t:fb:d:", ["-inputdir=", "-outputdir=", "-type=", "-force", "-book=", "-debug="])
+            opts, args = getopt.getopt(argv, "hi:o:t:fcb:d:", ["-inputdir=", "-outputdir=", "-type=", "-force", "-cmdi", "-book=", "-debug="])
         except getopt.GetoptError:
             print(sSyntax)
             sys.exit(2)
@@ -72,6 +73,8 @@ def main(prgName, argv):
                         oConv = item ; break
             elif opt in ("-f", "--force"):
                 bForce = True
+            elif opt in ("-c", "--cmdi"):
+                bCmdi = True
 
         # Check if all arguments are there
         if (dirInput == '' or dirOutput == "" or oConv == None):
@@ -93,6 +96,7 @@ def main(prgName, argv):
         oArgs = {'input': dirInput,
                  'output': dirOutput,
                  'force': bForce,
+                 'cmdi': bCmdi,
                  'book': sBook, 
                  'debug': debug,
                  'conv': oConv}
@@ -123,6 +127,7 @@ def htree_convert(oArgs):
         oConv = oArgs['conv']
         arConvType = oConv['type'].split("-")
         bForce = oArgs['force']
+        bCmdi = oArgs['cmdi']
         sBook = oArgs['book']
         debug = oArgs['debug']
 
@@ -138,7 +143,7 @@ def htree_convert(oArgs):
             # Create XML from htree
             cls = oFromHtree[arConvType[1]]
             oConvert = cls(oArgs['input'])
-            oConvert.do_htree_xml(oArgs['output'], bForce, sBook, debug)
+            oConvert.do_htree_xml(oArgs['output'], bForce, sBook, bCmdi, debug)
         elif arConvType[1] == "htree":
             # Create htree from XML
             cls = oToHtree[arConvType[0]]

@@ -174,6 +174,7 @@ class ConvertBasic():
     id_node = 0
     id_word = 0
     dst_template = None
+    cmdi_template = "target_cmdi.xml"
     pdx = None
     div = None
     par = None
@@ -192,8 +193,14 @@ class ConvertBasic():
         self.env = jinja2.Environment(loader=self.file_loader)
         return response
 
-    def do_htree_xml(self, output_dir, force=False, sBook=None, debug=None):
-        """Convert files from htree source to XML destination"""
+    def do_htree_xml(self, output_dir, force=False, sBook=None, cmdi=False, debug=None):
+        """Convert files from htree source to XML destination
+        
+        If the [cmdi] option is set, then an additional .cmdi.xml file is produced
+        """
+        outfile = ""
+        outcmdi = ""
+        cmdi_ext = ".cmdi.xml"
 
         try:
             # Get the metadata information
@@ -203,8 +210,14 @@ class ConvertBasic():
                 # Determine the book name
                 abbr = get_book_abbr(file)
                 if sBook == None or sBook == abbr:
+                    # Get my bare file name
+                    bare = os.path.basename(file).replace(self.src_ext,"")
                     # Determine the output file name
                     outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
+
+                    # Possibly think of a CMDI file
+                    if cmdi:
+                        outcmdi = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext, cmdi_ext ))
 
                     # Check if it already exists and whether we should overwrite
                     if not os.path.exists(outfile) or force:
@@ -225,10 +238,12 @@ class ConvertBasic():
                         if 'meta' in oJsonFile: 
                             meta = oJsonFile['meta']
                         else:
-                            meta = self.create_meta(text_id, abbr)
+                            meta = self.create_meta(text_id, abbr, bare)
 
                         # Create an XML from the information we have
-                        xmldoc = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
+                        xmldoc, words = self.create_xml(text_id, meta, oJsonFile['sentence_list'])
+                        if meta:
+                            meta['words'] = words
 
                         doctype = self.get_xml_doctype()
 
@@ -237,6 +252,14 @@ class ConvertBasic():
                         with open(outfile, "w", encoding="utf-8") as fp:
                             str_output = ET.tostring(xmldoc, xml_declaration=True, doctype=doctype, encoding="utf-8", pretty_print=True).decode("utf-8")
                             fp.write(str_output)
+
+                        # Possibly also create a Metadata file .cmdi.xml
+                        if cmdi and meta != None:
+                            context = dict(meta=meta)
+                            template = self.env.get_template(self.cmdi_template)
+                            sXml = template.render(context)
+                            with open(outcmdi, "w", encoding="utf-8") as fp:
+                                fp.write(sXml)
                     else:
                         errHandle.Status("Skipping file {}".format(outfile))
 
@@ -449,6 +472,8 @@ class ConvertBasic():
 
             div = -1
 
+            words = 0
+
             # Walk the sentences in sent_list
             for sentence in sent_list:
                 # Show where we are
@@ -472,6 +497,8 @@ class ConvertBasic():
                 for clause in sentence['child']:
                     # Possibly adapt this clause, because it must be a main clause
                     self.adapt_main_clause(clause)
+                    # Get and add the number of words
+                    words += self.words_in_clause(clause)
                     # Add this clause under tag_sent
                     self.add_clause(ndxSentence, clause)
                 # Any post-processing on the XML
@@ -483,16 +510,19 @@ class ConvertBasic():
             # Return the document
             xmldoc = self.pdx.xmldocument
             
-            return xmldoc
+            return xmldoc, words
         except:
             errHandle.DoError("views/create_xml")
             return None
 
-    def create_meta(self, text_id, abbr):
+    def create_meta(self, text_id, abbr, bare):
         return None
 
     def map_endnodes(self, ndSent):
         pass
+
+    def words_in_clause(self, clause):
+        return 0
 
     def create_json(self, text_id, meta, ndList):
         """Create a HTREE json"""
@@ -764,6 +794,23 @@ class ConvertHtreePsdx(ConvertBasic):
         obj['pos'] = "IP-MAT-" + obj['pos']
         return True
 
+    def words_in_clause(self, obj):
+        words = []
+
+        def get_words(obj):
+            if 'type' in obj and obj['type'] == "Vern":
+                words.append(obj)
+            if 'child' in obj:
+                for child in obj['child']:
+                    get_words(child)
+
+        # Get all the word objects into a list
+        get_words(obj)
+
+        # Return the size of this list
+        return len(words)
+
+
     def adapt_main_xml(self, ndx_this):
         """This is the equivalent of [eTreeSentence] in Cesax
         
@@ -920,9 +967,34 @@ class ConvertHtreePsdx(ConvertBasic):
             errHandle.DoError("views/ConvertHtreePsdx/add_node")
             return None
 
-    def create_meta(self, text_id, abbr):
+    def create_meta(self, text_id, abbr, bare):
         meta = {}
-
+        meta['id'] = bare
+        part = ""
+        if abbr:
+            if abbr in book:
+                part = "nt"
+            else:
+                part = "ot"
+        if part:
+            meta['texttype'] = "bible"
+            meta['texttitle'] = abbr
+            meta['textclass'] = part
+            if part == "ot":
+                meta['project'] = "HebOT"
+                meta['collname'] = "ETCBC 2017 Hebrew Bible"
+                meta['collcode'] = "ETCBC_2017"
+                meta['lngname'] = "Hebrew"
+                meta['lngethno'] = "heb"  
+            else:
+                meta['project'] = "GrkNT"
+                meta['collname'] = "Society for Biblical Literature GNT"
+                meta['collcode'] = "SBLGNT"
+                meta['lngname'] = "Greek"
+                meta['lngethno'] = "grk"
+            meta['sourcecontinent'] = "Asia"
+            meta['sourcecountry'] = "Israel"
+            meta['translated'] = "No"
         return meta
         
 

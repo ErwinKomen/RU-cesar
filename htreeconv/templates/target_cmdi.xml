@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CMD xmlns="http://www.clarin.eu/cmd/"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" CMDVersion="1.1"
+     xsi:schemaLocation="http://www.clarin.eu/cmd/ http://catalog.clarin.eu/ds/ComponentRegistry/rest/registry/profiles/clarin.eu:cr1:p_1328259700943/xsd">
+  <Header/>
+  <Resources>
+    <ResourceProxyList>
+      <ResourceProxy id="{{meta.id}}">
+        <ResourceType mimetype="xml">Resource</ResourceType>
+        <ResourceRef></ResourceRef>
+      </ResourceProxy>
+    </ResourceProxyList>
+    <JournalFileProxyList />
+    <ResourceRelationList />
+  </Resources>
+  <Components>
+    <SoNaRcorpus>
+      <Text ComponentId="clarin.eu:cr1:c_1328259700942">
+        <ProjectName>{{meta.project}}</ProjectName>
+        <CollectionName>{{meta.collname}}</CollectionName>
+        <CollectionCode>{{meta.collcode}}</CollectionCode>
+        <CollectionDescription>{{meta.colldescr}}</CollectionDescription>
+        <TextTitle>{{meta.texttitle}}</TextTitle>
+        <TextSubTitle>{{meta.textsubtitle}}</TextSubTitle>
+        <TextIntro>{{meta.textintro}}</TextIntro>
+        <TextDescription>{{meta.textdescr}}</TextDescription>
+        <TextType>{{meta.texttype}}</TextType>
+        <TextClass>{{meta.textclass}}</TextClass>
+        <TextKeywords ComponentId="clarin.eu:cr1:c_1328259700939">
+        </TextKeywords>
+        <TotalSize ComponentId="clarin.eu:cr1:c_1271859438114">
+          <Number>{{meta.words}}</Number>
+          <SizeUnit>word tokens</SizeUnit>
+        </TotalSize>
+        <Language ComponentId="clarin.eu:cr1:c_1271859438111">
+          <LanguageName>{{meta.lngname}}</LanguageName>
+          <ISO639 ComponentId="clarin.eu:cr1:c_1271859438110">
+            <iso-639-3-code>{{meta.lngethno}}</iso-639-3-code>
+          </ISO639>
+        </Language>
+        <License ComponentId="clarin.eu:cr1:c_1328259700915">
+          <LicenseCode></LicenseCode>
+          <LicenseType></LicenseType>
+          <LicenseDetails></LicenseDetails>
+          <LicenseDate></LicenseDate>
+        </License>
+        <Source ComponentId="clarin.eu:cr1:c_1328259700940">
+          <SourceName></SourceName>
+          <Continent>{{meta.sourcecontinent}}</Continent>
+          <Country>{{meta.sourcecountry}}</Country>
+          <SourceLanguageIdentification></SourceLanguageIdentification>
+        </Source>
+        <Author ComponentId="clarin.eu:cr1:c_1328259700913">
+          <Name>{{meta.author}}</Name>
+          <Pseudonym></Pseudonym>
+          <Sex>{{meta.authorgender}}</Sex>
+          <Age>{{meta.authorage}}</Age>
+          <MotherTongue></MotherTongue>
+          <ResidencePlace>
+            <Country>{{meta.authorcountry}}</Country>
+            <Town>{{meta.authorcity}}</Town>
+          </ResidencePlace>
+        </Author>
+        <Translation ComponentId="clarin.eu:cr1:c_1328259700921">
+          <Translated>{{meta.translated}}</Translated>
+          <TranslatorName>{{meta.transname}}</TranslatorName>
+          <OriginalLanguage>{{meta.translng}}</OriginalLanguage>
+        </Translation>
+        <Annotationtypes-SoNaR>
+          <AnnotationType-SoNaR>Token</AnnotationType-SoNaR>
+        </Annotationtypes-SoNaR>
+      </Text>
+    </SoNaRcorpus>
+  </Components>
+</CMD>
