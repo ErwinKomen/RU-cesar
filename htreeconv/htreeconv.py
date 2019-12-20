@@ -14,6 +14,7 @@ from models import *        # This imports HierObj
 from views import ConvertHtreePsdx, ConvertHtreeFolia, ConvertHtreeLowfat,\
                   ConvertLowfatHtree, ConvertFoliaHtree, ConvertPsdxHtree,\
                   ConvertHtreeSurface, ConvertSurfaceHtree
+from hebviews import etcbc_2017_convert
                   
 
 errHandle = util.ErrHandle()
@@ -28,6 +29,10 @@ def main(prgName, argv):
     dirInput = ''   # input directory
     dirOutput = ''  # output directory
     sType = ""      # the type of conversion
+    l_div = -1
+    l_par = -1
+    l_sen = -1
+    location = None
     sBook = None    # Possible book
     bForce = False  # Force means: overwrite
     bCmdi = False   # Add CMDI file
@@ -42,7 +47,7 @@ def main(prgName, argv):
         ]
 
     try:
-        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion> [-f] [-b <book>] [-d <level>]'
+        sSyntax = prgName + ' -i <input file> -o <output directory> -t <type of conversion> [-f] [-b <book>] [-l <d.N.p.M.s.P>] [-d <level>]'
         # get all the arguments
         try:
             # Get arguments and options
@@ -61,6 +66,8 @@ def main(prgName, argv):
                 dirOutput = arg
             elif opt in ("-b", "--book"):
                 sBook = arg
+            elif opt in ("-l", "--location"):
+                location = arg
             elif opt in ("-d", "--debug"):
                 try:
                     debug = int(arg)
@@ -87,6 +94,21 @@ def main(prgName, argv):
         if not os.path.exists(dirOutput):
             errHandle.DoError("Output directory does not exist", True)
 
+        # Possibly read the location
+        if location != "":
+            arLoc = location.split(".")
+            idx = 0
+            while idx * 2 < len(arLoc):
+                part = arLoc[idx*2]
+                number = arLoc[idx*2+1]
+                idx += 1
+                if part == "d":
+                    l_div = int(number)
+                elif part == "p":
+                    l_par = int(number)
+                elif part == "s":
+                    l_sen = int(number)
+
         # Continue with the program
         errHandle.Status('Input is "' + dirInput + '"')
         errHandle.Status('Output is "' + dirOutput + '"')
@@ -100,6 +122,9 @@ def main(prgName, argv):
                  'book': sBook, 
                  'debug': debug,
                  'conv': oConv}
+        if l_div >=0: oArgs['div'] = l_div
+        if l_par >=0: oArgs['par'] = l_par
+        if l_sen >=0: oArgs['sen'] = l_sen
         if (not htree_convert(oArgs)) :
             errHandle.DoError("Could not complete")
             return False
@@ -145,10 +170,14 @@ def htree_convert(oArgs):
             oConvert = cls(oArgs['input'])
             oConvert.do_htree_xml(oArgs['output'], bForce, sBook, bCmdi, debug)
         elif arConvType[1] == "htree":
-            # Create htree from XML
-            cls = oToHtree[arConvType[0]]
-            oConvert = cls(oArgs['input'])
-            oConvert.do_xml_htree(oArgs['output'], bForce, sBook, debug)
+            if arConvType[0] == "etcbc":
+                # Convert from Hebrew ETCBC2017 to Htree
+                response = etcbc_2017_convert(oArgs)
+            else:
+                # Create htree from XML
+                cls = oToHtree[arConvType[0]]
+                oConvert = cls(oArgs['input'])
+                oConvert.do_xml_htree(oArgs['output'], bForce, sBook, debug)
         else:
             # Stage 1: convert to htree
             arHtreeFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])
