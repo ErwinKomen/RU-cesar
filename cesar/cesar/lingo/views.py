@@ -1266,44 +1266,78 @@ class ExperimentDo(LingoDetails):
                         # Make the combi list available
                         context['exp_parts'] = combi_list
                 elif self.random_method == "small_set":
-                    # Create a list of all permutations
-                    qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic' )
-                    if len(qs_texts) == self.NUM_PERMU:
-                        combi_list = []
-                        if self.permu_method == "permutations":
-                            # Create all permutations of TWO texts
-                            pms = [comb for comb in itertools.permutations(qs_texts,2)]
-                        elif self.permu_method == "combinations":
-                            # Create all non-repeated sorted combinations
-                            pms = [comb for comb in itertools.combinations(qs_texts,2)]
+                    # Get the statistics for this experiment
+                    statistics = instance.statistics()
+                    if statistics['status'] == "ok":
+                        # Create a list of all permutations
+                        qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic' )
+                        if len(qs_texts) == self.NUM_PERMU:
+                            combi_list = []
+                            if self.permu_method == "permutations":
+                                # Create all permutations of TWO texts
+                                pms = [comb for comb in itertools.permutations(qs_texts,2)]
+                            elif self.permu_method == "combinations":
+                                # Create all non-repeated sorted combinations
+                                pms = [comb for comb in itertools.combinations(qs_texts,2)]
 
-                        # Choose NUM_RESPONSES random combinations from  the total
-                        text_selection = random.sample(pms, self.NUM_RESPONSES)
-                        for idx in range(self.NUM_RESPONSES):
-                            left = text_selection[idx][0]
-                            right = text_selection[idx][1]
-                            # Create and fill a combi object
-                            combi = {}
-                            # 1: left part
-                            combi['left_id'] = left['id']
-                            combi['left'] = left['qtext']
-                            combi['left_topic'] = left['qtopic']
-                            # 2: right part
-                            combi['right_id'] = right['id']
-                            combi['right'] = right['qtext']
-                            combi['right_topic'] = right['qtopic']
-                            # 3: Add the form from the formset
-                            form = formset[idx]
-                            combi['form'] = form
-                            # Add this to the combi=list
-                            combi_list.append(combi)
+                            # Make a set from which all texts that have note been done in this round
+                            pms_copy = []
+                            round = statistics['maxfreq']
+                            for selection in pms:
+                                # Check if 'selection' already occurs with frequency 'round' in the currently available answers
+                                item = next( iter([x for x in statistics['pairs'] if x['freq'] == round and x['text1'] == selection[0]['id'] and x['text2'] == selection[1]['id'] ]), None)
+                                if item:
+                                    # Show we are skipping
+                                    errHandle.Status("Skipping text combination {}-{}".format(selection[0]['id'], selection[1]['id']))
+                                    pass
+                                else:
+                                    pms_copy.append(selection)
 
-                        # Make the combi list available
-                        context['exp_parts'] = combi_list
-                        # Getting here means that all is in order
-                        context['exp_okay'] = "yes"
+                            # Check if the resulting pms_copy is not too small
+                            if len(pms_copy) >= self.NUM_RESPONSES:
+                                # We can take [pms_copy] completely
+                                text_selection = random.sample(pms_copy, self.NUM_RESPONSES)
+                            elif len(pms_copy) == 0:
+                                # We take [pms] completely
+                                text_selection = random.sample(pms, self.NUM_RESPONSES)
+                            else:
+                                # First take some from [pms_copy] 
+                                text_sel_part1 = random.shuffle(pms_copy)
+                                # and then the remainder
+                                remainder = self.NUM_RESPONSES - len(pms_copy)
+                                text_sel_part2 = random.sample(pms, remainder)
+                                # Combine them
+                                text_selection = text_sel_part1 + text_sel_part2
+
+                            # Choose NUM_RESPONSES random combinations from  the total
+                            # text_selection = random.sample(pms, self.NUM_RESPONSES)
+                            for idx in range(self.NUM_RESPONSES):
+                                left = text_selection[idx][0]
+                                right = text_selection[idx][1]
+                                # Create and fill a combi object
+                                combi = {}
+                                # 1: left part
+                                combi['left_id'] = left['id']
+                                combi['left'] = left['qtext']
+                                combi['left_topic'] = left['qtopic']
+                                # 2: right part
+                                combi['right_id'] = right['id']
+                                combi['right'] = right['qtext']
+                                combi['right_topic'] = right['qtopic']
+                                # 3: Add the form from the formset
+                                form = formset[idx]
+                                combi['form'] = form
+                                # Add this to the combi=list
+                                combi_list.append(combi)
+
+                            # Make the combi list available
+                            context['exp_parts'] = combi_list
+                            # Getting here means that all is in order
+                            context['exp_okay'] = "yes"
+                        else:
+                            context['exp_msg'] = "The number of selected questions is not correct. It should be: {}".format(self.NUM_PERMU)
                     else:
-                        context['exp_msg'] = "The number of selected questions is not correct. It should be: {}".format(self.NUM_PERMU)
+                        context['exp_msg'] = statistics['msg']
         else:
             context['exp_msg'] = "Experiment of type '{}' has not been programmed in the code [ExperimentDo] yet".format(instance.home)
 

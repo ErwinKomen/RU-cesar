@@ -241,6 +241,49 @@ class Experiment(models.Model):
         
         return len(ptcp_list)
 
+    def statistics(self):
+        """Provide experiment-dependant statistics"""
+
+        oBack = {'status': "ok"}
+        try:
+            if self.home == "tcpf":
+                # Get all the answers to this experiment so far
+                pairs = []
+                freqs = []
+                maxfreq = 0
+                qs = Response.objects.filter(experiment = self)
+                for obj in qs:
+                    if obj.answer != None and obj.answer != "":
+                        answer = json.loads(obj.answer)
+                        pair = dict(text1=int(answer['text1_id']), text2=int(answer['text2_id']), freq=1)
+                        bFound = False
+                        for item in pairs:
+                            id_1 = int(item['text1'])
+                            id_2 = int(item['text2'])
+                            if id_1 == pair['text1']  and id_2 == pair['text2']:
+                                # Found it
+                                item['freq'] += 1
+                                bFound = True
+                                if item['freq'] > maxfreq: maxfreq = item['freq']
+                                break
+                        if pair['freq'] > maxfreq: maxfreq = pair['freq']
+                        if not bFound:
+                            pairs.append(pair)
+                oBack['maxfreq'] = maxfreq
+                for freq in range(maxfreq):
+                    freqs.append(0)
+                for pair in pairs:
+                    freqs[pair['freq']-1] += 1
+                oBack['freqs'] = freqs
+                oBack['pairs'] = pairs
+        except:
+            msg = errHandle.get_error_message()
+            oBack['status'] = "error"
+            oBack['msg'] = msg
+
+        # Return the statistics
+        return oBack
+
 
 class Qdata(models.Model):
     """Question data for a particular experiment"""
