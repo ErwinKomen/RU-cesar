@@ -737,6 +737,11 @@ class SentenceListView(ListView):
         context['text'] = self.text
         context['linecount'] = self.entrycount
 
+        lng = self.text.part.corpus.get_lng_display()
+        context['fontsize'] = ""
+        if "heb" in lng or "grk" in lng:
+            context['fontsize'] = "font-size: large;"
+
         # Set the prefix
         context['app_prefix'] = APP_PREFIX
 
@@ -874,6 +879,9 @@ class SentenceDetailView(DetailView):
                    'locs': sentence.identifier,
                    'locw': '',
                    'type': 'syntax_svg_tree'}
+        context['fontsize'] = ""
+        if "heb" in options['lng'] or "grk" in options['lng']:
+            context['fontsize'] = "font-size: large;"
         oInfo = get_crpp_sent_info(options)
         if oInfo != None and oInfo['status'] == "ok":
             # Make sure that 'object' sections are translated to proper JSON
@@ -993,9 +1001,6 @@ class TextDetailInfo(View):
             return False
         else:
             return True
-
-
-
 
 
 class TextDetailView(DetailView):
