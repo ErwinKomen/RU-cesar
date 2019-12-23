@@ -1119,6 +1119,10 @@ class ExperimentDo(LingoDetails):
     rtype = "html"
     read_only = True
     correct = ["ja", "j", "yes", "y", "true", "t"]
+    random_method = "small_set"     # Options: "choose_subset", "small_set"
+    permu_method = "permutations"   # options: "combinations", "permutations"
+                                    # combinations('ABCD', 2) >> AB AC AD BC BD CD
+                                    # permutations('ABCD', 2) >> AB AC AD BA BC BD CA CB CD DA DB DC
     NUM_RESPONSES = 10
     NUM_PERMU = 10
     NUM_TEXTS = 25
@@ -1218,9 +1222,6 @@ class ExperimentDo(LingoDetails):
                 context['exp_okay'] = "yes"
                 
             elif self.request.method == "GET":
-                # Set the random method
-                random_method = "choose_subset"
-                random_method = "small_set"
 
                 # Make sure the participant id is passed on
                 ip = "{}_{}".format(self.request.META.get('REMOTE_ADDR'), self.request.META.get('REMOTE_HOST'))
@@ -1234,7 +1235,7 @@ class ExperimentDo(LingoDetails):
                 # Create a formset for the answer forms
                 formset = self.AnswerFormset(prefix=pfx)
                 context['answer_formset'] = formset
-                if random_method == "choose_subset":
+                if self.random_method == "choose_subset":
                     # Get a list of texts
                     qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic' )
                     if len(qs_texts) == self.NUM_TEXTS:
@@ -1264,13 +1265,17 @@ class ExperimentDo(LingoDetails):
                             combi_list.append(combi)
                         # Make the combi list available
                         context['exp_parts'] = combi_list
-                elif random_method == "small_set":
+                elif self.random_method == "small_set":
                     # Create a list of all permutations
                     qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic' )
                     if len(qs_texts) == self.NUM_PERMU:
                         combi_list = []
-                        # Create all permutations of TWO texts
-                        pms = [comb for comb in itertools.combinations(qs_texts,2)]
+                        if self.permu_method == "permutations":
+                            # Create all permutations of TWO texts
+                            pms = [comb for comb in itertools.permutations(qs_texts,2)]
+                        elif self.permu_method == "combinations":
+                            # Create all non-repeated sorted combinations
+                            pms = [comb for comb in itertools.combinations(qs_texts,2)]
 
                         # Choose NUM_RESPONSES random combinations from  the total
                         text_selection = random.sample(pms, self.NUM_RESPONSES)
