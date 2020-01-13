@@ -1415,6 +1415,7 @@ class ExperimentEdit(BasicLingo):
     prefix = "exp"
     need_authentication = False
     form_objects = [{'form': ExperimentForm, 'prefix': prefix, 'readonly': False}]
+    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'email']
 
     def add_to_context(self, context):
         # Who am I?
@@ -1431,12 +1432,29 @@ class ExperimentEdit(BasicLingo):
     def before_save(self, prefix, request, instance = None, form = None):
         # Who am I?
         currentuser = self.request.user
+        bChanged = False
         # Adapt the history of the instance
         if instance != None:
+            # Get the cleaned data of the form
+            cleaned = form.cleaned_data
+            oMeta = {}
+            ptcpfields = []
             # Any adaptations should happen here
+            for meta in self.meta_fields:
+                # Look for the values
+                bInclude = (cleaned["meta_{}_include".format(meta)] == "y")
+                sText = cleaned["meta_{}_text".format(meta)]
+                # Add these values in the meta object
+                oMeta[meta] = dict(include=bInclude, text=sText)
+                if bInclude:
+                    ptcpfields.append(meta)
+            # Adjust the values for experiment
+            form.instance.ptcpfields = json.dumps(ptcpfields)
+            form.instance.metafields = json.dumps(oMeta)
+            bChanged = True
 
-            # Signal that saving is needed
-            return False    # Change into "TRUE" if changes are made
+        # Signal that saving is needed
+        return bChanged    # Change into "TRUE" if changes are made
 
 
 class ExperimentDownload(BasicLingo):
@@ -1514,6 +1532,7 @@ class ParticipantDetails(BasicLingo):
     title = "Participant"
     need_authentication = False
     ptcpfields = ""
+    metafields = ""
     form_objects = [{'form': ParticipantForm, 'prefix': 'ptcp', 'readonly': False}]
 
     def is_custom_valid(self, prefix, form):
@@ -1561,10 +1580,19 @@ class ParticipantDetails(BasicLingo):
                         ptcpfields = json.loads(sFields)
                     except:
                         pass
+                sMeta = experiment.metafields
+                if sMeta != None and sMeta != "":
+                    try:
+                        metafields = json.loads(sMeta)
+                    except:
+                        pass
         # if it is empty, put all fields in there
         if len(ptcpfields) == 0:
             ptcpfields = ['age','gender', 'engfirst', 'lngfirst', 'lngother', 'edu']
         self.ptcpfields = ptcpfields
+        if len(metafields) == 0:
+            metafields = {}
+        self.metafields = metafields
         return True
 
     def add_to_context(self, context):
@@ -1579,6 +1607,16 @@ class ParticipantDetails(BasicLingo):
         # Find out which participant fields need to be shown
         if self.ptcpfields != "":
             context['ptcpfields'] = self.ptcpfields
+        if self.metafields != None:
+            # oMeta = json.loads(self.metafields)
+            oMeta = self.metafields
+            frm_this = self.form_objects[0]['forminstance']
+            metalist = []
+            for key,value in oMeta.items():
+                if key in frm_this.fields:
+                    oMeta[key]['field'] = frm_this.fields[key]
+                    metalist.append(oMeta[key])
+            context['metafields'] = metalist
 
         if 'experiment_id' in self.qd:
             context['experiment_id'] = self.qd['experiment_id']

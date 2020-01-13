@@ -14,6 +14,15 @@
 
 	<h3>Beantwoord de volgende vragen</h3>
 
+  {% for metaitem in metafields %}
+    {% if metaitem.include %}
+      <div class="form-group row">
+        <div class="col-md-4" align="right">{{metaitem.text}}</div>
+        <div class="col-md-8" align="left">{{metaitem.field|escape|safe}}</div>
+      </div>
+    {% endif %}
+  {% endfor %}
+
   <!-- participant detail: ptcpid-->
   {% if 'ptcp' in ptcpfields %}
   <div class="form-group row">

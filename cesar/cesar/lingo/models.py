@@ -210,6 +210,8 @@ class Experiment(models.Model):
     consent = models.TextField("Informed consent", blank=True, null=True)
     # [0-1] the fields in the Participant model that need to be asked
     ptcpfields = models.TextField("Participant fields", default="[]", blank=True)
+    # [0-1] full metadata specification
+    metafields = models.TextField("Participant metadata", default = "{}", blank=True)
     # [1] the status of this message (can e.g. be 'archived')
     status = models.CharField("Status", choices=build_abbr_list(EXPERIMENT_STATUS), 
                               max_length=5)
@@ -283,6 +285,51 @@ class Experiment(models.Model):
 
         # Return the statistics
         return oBack
+
+    def get_meta(self, field):
+        sBack = ""
+        if self.metafields != "":
+            oMeta = json.loads(self.metafields)
+            if field in oMeta:
+                oField = oMeta[field]
+                sBack = "Include: {}, Text: {}".format(oField['include'], oField['text'])
+        return sBack
+
+    def set_meta(self, field, bInclude, sText):
+        if self.metafields != "":
+            oMeta = json.loads(self.metafields)
+            oMeta[field] = dict(include=bInclude, text=sText)
+            # Store the result
+            self.metafields = json.dumps(oMeta)
+            self.save()
+
+    
+    def meta_ptcpid_display(self):
+        return self.get_meta("ptcpid")
+
+    def meta_age_display(self):
+        return self.get_meta("age")
+
+    def meta_gender_display(self):
+        return self.get_meta("gender")
+
+    def meta_engfirst_display(self):
+        return self.get_meta("engfirst")
+
+    def meta_lngfirst_display(self):
+        return self.get_meta("lngfirst")
+
+    def meta_lngother_display(self):
+        return self.get_meta("lngother")
+
+    def meta_eduother_display(self):
+        return self.get_meta("eduother")
+
+    def meta_edu_display(self):
+        return self.get_meta("edu")
+
+    def meta_email_display(self):
+        return self.get_meta("email")
 
 
 class Qdata(models.Model):

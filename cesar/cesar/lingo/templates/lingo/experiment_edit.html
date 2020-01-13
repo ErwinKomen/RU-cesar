@@ -106,5 +106,172 @@
       </td>
     </tr>
 
+    <!-- Buttons with optional information -->
+    <tr class="">
+      <td valign="top">
+        <a class="btn btn-xs jumbo-1" role="button" title="Show/Hide participant metadata specification" 
+           data-toggle="collapse" data-target=".lingo-meta" onclick_org="ru.cesar.lingo.argrow_click(this, 'lingo-meta');">Participant Metadata</a>
+      </td>
+      <td>
+        <table>
+          <!-- Metadata for each participant -->
+
+          <!-- Metadata: ptcpid -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Participant id</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_ptcpid_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_ptcpid_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_ptcpid_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: age -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Age</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_age_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_age_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_age_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: gender -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Gender</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_gender_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_gender_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_gender_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: engfirst -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">English as L1</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_engfirst_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_engfirst_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_engfirst_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: lngfirst -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">First language</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_lngfirst_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_lngfirst_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_lngfirst_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: lngother -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Other language(s)</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_lngother_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_lngother_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_lngother_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: eduother -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Specifiable education</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_eduother_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_eduother_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_eduother_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: edu -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Education</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_edu_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_edu_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_edu_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: email -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">E-mail</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_email_display}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_email_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_email_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+
   </table>
 </form>

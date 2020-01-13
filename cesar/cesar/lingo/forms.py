@@ -10,6 +10,19 @@ from django.forms.widgets import Textarea
 from cesar.lingo.models import *
 
 class ExperimentForm(ModelForm):
+    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'email']
+    meta_initial = [
+        "Wat is uw participant ID?",
+        "Wat is uw leeftijd?",
+        "Wat is uw geslacht?",
+        "Is Engels uw moedertaal?",
+        "Wat is uw eerste taal?",
+        "Welke andere talen kent u?",
+        "Anders: ",
+        "Wat is uw hoogste school?",
+        "Wat is uw email adres (optioneel)?"
+        ]
+
     class Meta:
         model = Experiment
         fields = ['title', 'home', 'msg', 'consent', 'ptcpfields', 'status' ]
@@ -23,14 +36,38 @@ class ExperimentForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ExperimentForm, self).__init__(*args, **kwargs)
-        #self.fields['title'].required = False
-        #self.fields['home'].required = False
         self.fields['home'].required = False
         self.fields['msg'].required = False
         self.fields['title'].required = False
         
         self.fields['status'].required = False
         self.fields['status'].choices = build_abbr_list(EXPERIMENT_STATUS)
+
+        # Get the instance
+        instance = None
+        oMeta = None
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+            oMeta = json.loads(instance.metafields)
+            
+        for idx, fname in enumerate(self.meta_fields):
+            fld_include = "meta_{}_include".format(fname)
+            fld_text = "meta_{}_text".format(fname)
+            self.fields[fld_include] = forms.ChoiceField(required=False, widget= forms.Select(attrs={'style': 'width: 100%;'}))
+            self.fields[fld_text] = forms.CharField(label=fname, max_length=255, required=False, 
+                                                    widget = forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Text for field: [{}]'.format(fname)}))
+            self.fields[fld_include].choices = build_abbr_list(EXPERIMENT_YESNO, language="nld", maybe_empty=True)
+            # Set initial values
+            if instance:
+                oMetaField = oMeta[fname]
+                # Take initial values from instance
+                self.fields[fld_include].initial = "y" if oMetaField['include'] else "n"
+                self.fields[fld_text].initial = oMetaField['text']
+            else:
+                self.fields[fld_include].initial = "y"
+                self.fields[fld_text].initial = self.meta_initial[idx]
+
+        # self.fields['meta_ptcpid_include'].choices = build_abbr_list(EXPERIMENT_YESNO, language="nld", maybe_empty=True)
 
 
 
