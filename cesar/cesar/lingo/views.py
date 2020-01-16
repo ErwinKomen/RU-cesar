@@ -1588,7 +1588,7 @@ class ParticipantDetails(BasicLingo):
                         pass
         # if it is empty, put all fields in there
         if len(ptcpfields) == 0:
-            ptcpfields = ['age','gender', 'engfirst', 'lngfirst', 'lngother', 'edu']
+            ptcpfields = ['ptcpid', 'age','gender', 'engfirst', 'lngfirst', 'lngother', 'edu']
         self.ptcpfields = ptcpfields
         if len(metafields) == 0:
             metafields = {}
@@ -1596,30 +1596,40 @@ class ParticipantDetails(BasicLingo):
         return True
 
     def add_to_context(self, context):
-        # make sure to add the ID for this participant to what we return
-        context['participant_id'] = ""
-        if 'instance' in self.form_objects[0]:
-            instance = self.form_objects[0]['instance']
-            if instance != None:
-                context['participant_id'] = instance.id
-            # TODO: See if we need to add any warning message
+        oErr = ErrHandle()
 
-        # Find out which participant fields need to be shown
-        if self.ptcpfields != "":
-            context['ptcpfields'] = self.ptcpfields
-        if self.metafields != None:
-            # oMeta = json.loads(self.metafields)
-            oMeta = self.metafields
-            frm_this = self.form_objects[0]['forminstance']
-            metalist = []
-            for key,value in oMeta.items():
-                if key in frm_this.fields:
-                    oMeta[key]['field'] = frm_this.fields[key]
-                    metalist.append(oMeta[key])
-            context['metafields'] = metalist
+        try:
+            # make sure to add the ID for this participant to what we return
+            context['participant_id'] = ""
+            if 'instance' in self.form_objects[0]:
+                instance = self.form_objects[0]['instance']
+                if instance != None:
+                    context['participant_id'] = instance.id
+                # TODO: See if we need to add any warning message
 
-        if 'experiment_id' in self.qd:
-            context['experiment_id'] = self.qd['experiment_id']
+            # Find out which participant fields need to be shown
+            if self.ptcpfields != "":
+                context['ptcpfields'] = self.ptcpfields
+            if self.metafields != None:
+                # oMeta = json.loads(self.metafields)
+                oMeta = self.metafields
+                frm_this = self.form_objects[0]['forminstance']
+                metalist = []
+                for key,value in oMeta.items():
+                    if key in frm_this.fields:
+                        # oMeta[key]['field'] = frm_this.fields[key]
+                        oMeta[key]['field'] = frm_this[key]
+                        oMeta[key]['name'] = key
+                        if key == "edu":
+                            oMeta[key]['field2'] = frm_this['eduother']
+                        metalist.append(oMeta[key])
+                context['metafields'] = metalist
+
+            if 'experiment_id' in self.qd:
+                context['experiment_id'] = self.qd['experiment_id']
+        except:
+            msg = oErr.get_error_message()
+            iStop = 1
 
         return context
 

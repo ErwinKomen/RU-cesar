@@ -58,7 +58,7 @@ class ExperimentForm(ModelForm):
                                                     widget = forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Text for field: [{}]'.format(fname)}))
             self.fields[fld_include].choices = build_abbr_list(EXPERIMENT_YESNO, language="nld", maybe_empty=True)
             # Set initial values
-            if instance:
+            if instance and fname in oMeta:
                 oMetaField = oMeta[fname]
                 # Take initial values from instance
                 self.fields[fld_include].initial = "y" if oMetaField['include'] else "n"

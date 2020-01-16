@@ -292,18 +292,60 @@ class Experiment(models.Model):
             oMeta = json.loads(self.metafields)
             if field in oMeta:
                 oField = oMeta[field]
-                sBack = "Include: {}, Text: {}".format(oField['include'], oField['text'])
+                # sBack = "Include: {}, Text: {}".format(oField['include'], oField['text'])
+                if oField['include']:
+                    sBack = oField['text']
+                else:
+                    sBack = "<i>(Not included)</i>"
         return sBack
 
     def set_meta(self, field, bInclude, sText):
         if self.metafields != "":
             oMeta = json.loads(self.metafields)
-            oMeta[field] = dict(include=bInclude, text=sText)
+            oMeta[field] = dict(include=bInclude, text=sText, name=field)
             # Store the result
             self.metafields = json.dumps(oMeta)
             self.save()
 
+    def meta_include(self, field):
+        bInclude = False
+        if self.metafields != "":
+            oMeta = json.loads(self.metafields)
+            if field in oMeta:
+                oField = oMeta[field]
+                bInclude = oField['include']
+        return 1 if bInclude else 0 
+
+    def meta_ptcpid_include(self): 
+        return self.meta_include("ptcpid")
     
+    def meta_age_include(self): 
+        return self.meta_include("age")
+    
+    def meta_gender_include(self): 
+        return self.meta_include("gender")
+    
+    def meta_engfirst_include(self): 
+        return self.meta_include("engfirst")
+    
+    def meta_lngfirst_include(self): 
+        return self.meta_include("lngfirst")
+    
+    def meta_lngother_include(self): 
+        return self.meta_include("lngother")
+    
+    def meta_eduother_include(self): 
+        return self.meta_include("eduother")
+    
+    def meta_edu_include(self): 
+        return self.meta_include("edu")
+    
+    def meta_email_include(self): 
+        return self.meta_include("email")
+    
+    def meta_display_include(self):
+        return self.get_meta("ptcpid")
+
     def meta_ptcpid_display(self):
         return self.get_meta("ptcpid")
 

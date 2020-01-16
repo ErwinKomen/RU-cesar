@@ -18,78 +18,89 @@
     {% if metaitem.include %}
       <div class="form-group row">
         <div class="col-md-4" align="right">{{metaitem.text}}</div>
-        <div class="col-md-8" align="left">{{metaitem.field|escape|safe}}</div>
+        <div class="col-md-8" align="left">
+          {% if metaitem.name == "edu" %}
+            <!-- Usual list of education -->
+            <div class="edu-list" onchange="ru.cesar.lingo.edu_check(this);">{{metaitem.field}}</div>
+            <!-- Alternative specification of education -->
+            <div class="edu-spec hidden">{{metaitem.field2}}</div>
+          {% elif metaitem.name != "eduother" %}
+            {{metaitem.field}}
+          {% endif %}
+        </div>
       </div>
     {% endif %}
   {% endfor %}
 
-  <!-- participant detail: ptcpid-->
-  {% if 'ptcp' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">What is your Participant ID?</div>
-    <div class="col-md-8" align="left">{{ptcpForm.ptcpid}}</div>
-  </div>
-  {% endif %}
-
-  <!-- participant detail: age -->
-  {% if 'age' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">Wat is uw leeftijd?</div>
-    <div class="col-md-8" align="left">{{ptcpForm.age}}</div>
-  </div>
-  {% endif %}
-
-  <!-- participant detail: gender -->
-  {% if 'gender' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">Wat is uw geslacht?</div>
-    <div class="col-md-8" align="left">{{ptcpForm.gender}}</div>
-  </div>
-  {% endif %}
-
-  <!-- participant detail: English first -->
-  {% if 'engfirst' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">Is Engels uw moedertaal?</div>
-    <div class="col-md-8" align="left">{{ptcpForm.engfirst}}</div>
-  </div>
-  {% endif %}
-
-  <!-- participant detail: First language -->
-  {% if 'lngfirst' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">Wat is uw moedertaal?</div>
-    <div class="col-md-8" align="left">{{ptcpForm.lngfirst}}</div>
-  </div>
-  {% endif %}
-
-  <!-- participant detail: Other L -->
-  {% if 'lngother' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">Welke andere talen spreekt u?</div>
-    <div class="col-md-8" align="left">{{ptcpForm.lngother}}</div>
-  </div>
-  {% endif %}
-
-  <!-- participant detail: education -->
-  {% if 'edu' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">Op welk schooltype geeft u les?</div>
-    <div class="col-md-8" align="left">
-      <!-- Usual list of education -->
-      <div class="edu-list" onchange="ru.cesar.lingo.edu_check(this);">{{ptcpForm.edu}}</div>
-      <!-- Alternative specification of education -->
-      <div class="edu-spec hidden">{{ptcpForm.eduother}}</div>
+  {% if 0 %}
+    <!-- participant detail: ptcpid-->
+    {% if 'ptcp' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">What is your Participant ID?</div>
+      <div class="col-md-8" align="left">{{ptcpForm.ptcpid}}</div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  <!-- participant detail: EMAIL (optional) -->
-  {% if 'email' in ptcpfields %}
-  <div class="form-group row">
-    <div class="col-md-4" align="right">Wat is uw e-mailadres? (alleen als u mee wilt dingen naar de boekenbon van €50)</div>
-    <div class="col-md-8" align="left">{{ptcpForm.email}}</div>
-  </div>
+    <!-- participant detail: age -->
+    {% if 'age' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">Wat is uw leeftijd?</div>
+      <div class="col-md-8" align="left">{{ptcpForm.age}}</div>
+    </div>
+    {% endif %}
+
+    <!-- participant detail: gender -->
+    {% if 'gender' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">Wat is uw geslacht?</div>
+      <div class="col-md-8" align="left">{{ptcpForm.gender}}</div>
+    </div>
+    {% endif %}
+
+    <!-- participant detail: English first -->
+    {% if 'engfirst' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">Is Engels uw moedertaal?</div>
+      <div class="col-md-8" align="left">{{ptcpForm.engfirst}}</div>
+    </div>
+    {% endif %}
+
+    <!-- participant detail: First language -->
+    {% if 'lngfirst' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">Wat is uw moedertaal?</div>
+      <div class="col-md-8" align="left">{{ptcpForm.lngfirst}}</div>
+    </div>
+    {% endif %}
+
+    <!-- participant detail: Other L -->
+    {% if 'lngother' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">Welke andere talen spreekt u?</div>
+      <div class="col-md-8" align="left">{{ptcpForm.lngother}}</div>
+    </div>
+    {% endif %}
+
+    <!-- participant detail: education -->
+    {% if 'edu' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">Op welk schooltype geeft u les?</div>
+      <div class="col-md-8" align="left">
+        <!-- Usual list of education -->
+        <div class="edu-list" onchange="ru.cesar.lingo.edu_check(this);">{{ptcpForm.edu}}</div>
+        <!-- Alternative specification of education -->
+        <div class="edu-spec hidden">{{ptcpForm.eduother}}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- participant detail: EMAIL (optional) -->
+    {% if 'email' in ptcpfields %}
+    <div class="form-group row">
+      <div class="col-md-4" align="right">Wat is uw e-mailadres? (alleen als u mee wilt dingen naar de boekenbon van €50)</div>
+      <div class="col-md-8" align="left">{{ptcpForm.email}}</div>
+    </div>
+    {% endif %}
   {% endif %}
 
   <!-- Room for a warning message -->
