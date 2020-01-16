@@ -320,3 +320,5 @@ ModelManifest.xml
 /cesar/cesar.lingo.js
 /hebot/__pycache__
 /htreeconv/__pycache__
+/cesar/cesar/ds2/migrations
+/cesar/cesar/ds2/__pycache__

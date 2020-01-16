@@ -19,6 +19,14 @@ from cesar.tsg.views import *
 # The CesarLingo application
 from cesar.lingo.views import *
 
+# Django-select2 testing
+from cesar.ds2.forms import (
+    AddressChainedSelect2WidgetForm, AlbumModelSelect2WidgetForm,
+    HeavySelect2MultipleWidgetForm, HeavySelect2WidgetForm,
+    ModelSelect2TagWidgetForm, Select2WidgetForm
+)
+from cesar.ds2.views import TemplateFormView, heavy_data_1, heavy_data_2
+
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
 
@@ -147,6 +155,19 @@ urlpatterns = [
     url(r'^ajax/function/download/(?P<object_id>\d+)/$', ResearchDownloadFunction.as_view(), name='function_download'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^signup/$', cesar.browser.views.signup, name='signup'),
+
+    # For working with ModelWidgets from the select2 package https://django-select2.readthedocs.io
+    url(r'^select2/', include('django_select2.urls')),
+
+    # ds2 app
+    url(r'^ds2/select2_widget', TemplateFormView.as_view(form_class=Select2WidgetForm), name='select2_widget'),
+    url(r'^ds2/heavy_select2_widget', TemplateFormView.as_view(form_class=HeavySelect2WidgetForm), name='heavy_select2_widget'),
+    url(r'^ds2/heavy_select2_multiple_widget', TemplateFormView.as_view(form_class=HeavySelect2MultipleWidgetForm, success_url='/'), name='heavy_select2_multiple_widget'),
+    url(r'^ds2/model_select2_widget', TemplateFormView.as_view(form_class=AlbumModelSelect2WidgetForm), name='model_select2_widget'),
+    url(r'^ds2/model_select2_tag_widget', TemplateFormView.as_view(form_class=ModelSelect2TagWidgetForm), name='model_select2_tag_widget'),
+    url(r'^ds2/model_chained_select2_widget', TemplateFormView.as_view(form_class=AddressChainedSelect2WidgetForm), name='model_chained_select2_widget'),
+    url(r'^ds2/heavy_data_1', heavy_data_1, name='heavy_data_1'),
+    url(r'^ds2/heavy_data_2', heavy_data_2, name='heavy_data_2'),
 
     url(r'^login/$',
         django.contrib.auth.views.login,
