@@ -1485,8 +1485,18 @@ class ExperimentDownload(BasicLingo):
         data = ""
         lCsv = []
         oErr = ErrHandle()
-        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender', 'Email', 'Start', 'Finish']
+        # headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender', 'Email', 'Start', 'Finish']
+        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Start', 'Finish']
+        columns = {"age": "Age", "edu": "Education", "email": "Email", "gender": "Gender", "ptcpid": "Other ptcp ID", "engfirst": "L1 English", "lngfirst": "L1", "lngother": "Languages"}
+
+
         try:
+            # Add the headers for the fields that must be included for this experiment
+            ptcpfields = json.loads(self.obj.ptcpfields)
+            for field in ptcpfields:
+                if field != "eduother":
+                    headers.append(columns[field])
+
             # Start with the header
             oLine = "\t".join(headers)
             lCsv.append(oLine)
@@ -1510,10 +1520,26 @@ class ExperimentDownload(BasicLingo):
 
                 education = participant.get_edu()
 
-                sLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-                    participant.id, answer['text1'], answer['text2'], identified1, identified2, 
-                    answer['preference'], education, participant.age, participant.gender, participant.email, 
-                    participant.created, obj.created)
+                # Start creating the line for the CSV
+                line = []
+                line.append("{}".format(participant.id))
+                line.append("{}".format(answer['text1']))
+                line.append("{}".format(answer['text2']))
+                line.append("{}".format(identified1))
+                line.append("{}".format(identified2))
+                line.append("{}".format(answer['preference']))
+                line.append("{}".format(participant.created))
+                line.append("{}".format(obj.created))
+
+                # Add the required information in ptcpfields
+                for field in ptcpfields:
+                    if field == "edu":
+                        value = education
+                        line.append("{}".format(education))
+                    elif field != "eduother":
+                        line.append("{}".format(getattr(participant, field)))
+                    #sLine = "{}\t{}".format(sLine, value)
+                sLine = "\t".join(line)
                 lCsv.append(sLine)
 
             # REturn the whole
@@ -1542,7 +1568,7 @@ class ParticipantDetails(BasicLingo):
 
         # Iterate over the necessary fields
         for item in self.ptcpfields:
-            if (form.cleaned_data[item] == None or form.cleaned_data[item] == "") and (item != "email"):
+            if (form.cleaned_data[item] == None or form.cleaned_data[item] == "") and (item != "email") and (item != "eduother"):
                 bValid = False
                 self.arErr.append("Hoe zit het met {}?".format(form.fields[item].label))
             elif item == "age":

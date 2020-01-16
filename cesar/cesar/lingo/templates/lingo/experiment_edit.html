@@ -52,7 +52,7 @@
       <td  style="width: 100%;">
         <div class="view-mode">{{expForm.home.value}}</div>
         {% if is_lingo_editor %}
-          <div class="edit-mode hidden">{{expForm.home}}</div>
+          <div class="edit-mode hidden" title="This is the 'code' for the experiment. Default is [tcpf]">{{expForm.home}}</div>
         {% endif %}
       </td>
     </tr>
@@ -82,10 +82,7 @@
     <tr class="form-row">
       <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Participant fields to be included</td>
       <td style="width: 100%;" valign="top">
-        <div class="view-mode">{% if expForm.instance.ptcpfields %}{{expForm.instance.ptcpfields}}{% else %}-{% endif %}</div>
-        {% if is_lingo_editor %}
-          <div class="edit-mode hidden">{{expForm.ptcpfields}}</div>
-        {% endif %}
+        <div class="any-mode">{% if expForm.instance.ptcpfields %}{{expForm.instance.ptcpfields}}{% else %}-{% endif %}</div>
       </td>
     </tr>
 

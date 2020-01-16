@@ -200,7 +200,7 @@ class Experiment(models.Model):
     created = models.DateTimeField(default=datetime.now)
     saved = models.DateTimeField(null=True, blank=True)
     # [1] The URL to this experiment
-    home = models.CharField("Home page part",  max_length=MAX_TEXT_LEN)
+    home = models.CharField("Home page part",  max_length=MAX_TEXT_LEN, default="tcpf")
 
     # [0-1] optional time after which this should not be shown anymore
     until = models.DateTimeField("Remove at", null=True, blank=True)

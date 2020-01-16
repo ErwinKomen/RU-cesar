@@ -26,11 +26,13 @@ class ExperimentForm(ModelForm):
     class Meta:
         model = Experiment
         fields = ['title', 'home', 'msg', 'consent', 'ptcpfields', 'status' ]
-        widgets={'title':   forms.TextInput(attrs={'style': 'width: 100%;'}),
-                 'home':    forms.TextInput(attrs={'style': 'width: 20%;'}),
-                 'msg':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;'}),
+        widgets={'title':   forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Title as will appear in the list of experiments'}),
+                 'home':    forms.TextInput(attrs={'style': 'width: 20%;', 'placeholder': 'Experiment code (default is [tcpf])'}),
+                 'msg':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;', 
+                                                    'placeholder': 'Purpose of this experiment (for your own administration)'}),
                  'ptcpfields':  forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;'}),
-                 'consent':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;'}),
+                 'consent':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;', 
+                                                    'placeholder': 'Consent statement that any participant will need to agree with. This can also contain an explanation of the experiment.'}),
                  'status':      forms.Select()
                  }
 

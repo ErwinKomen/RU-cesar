@@ -15,7 +15,7 @@
 	<h3>Beantwoord de volgende vragen</h3>
 
   {% for metaitem in metafields %}
-    {% if metaitem.include %}
+    {% if metaitem.include and metaitem.name != "eduother" %}
       <div class="form-group row">
         <div class="col-md-4" align="right">{{metaitem.text}}</div>
         <div class="col-md-8" align="left">
