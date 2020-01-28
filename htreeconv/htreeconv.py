@@ -95,7 +95,7 @@ def main(prgName, argv):
             errHandle.DoError("Output directory does not exist", True)
 
         # Possibly read the location
-        if location != "":
+        if location and location != "":
             arLoc = location.split(".")
             idx = 0
             while idx * 2 < len(arLoc):

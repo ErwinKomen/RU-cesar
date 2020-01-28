@@ -179,7 +179,7 @@ class HierObj(object):
             msg = get_error_message()
             return False
 
-    def add_child(self, node, after=None):
+    def add_child(self, node, after=None, start=False):
         """Add [node] as child under [self], optionally after [after]"""
 
         try:
@@ -199,6 +199,8 @@ class HierObj(object):
                     newparent.child.append(node)
                 else:
                     newparent.child.insert(idx+1, node)
+            elif start:
+                newparent.child.insert(0, node)
             else:
                 newparent.child.append(node)
             node.parent = newparent
@@ -207,7 +209,7 @@ class HierObj(object):
             msg = get_error_message()
             return False
 
-    def add_ich(self, iIchCounter, dst_node):
+    def add_ich(self, iIchCounter, dst_node, after=None):
         """Add an *ICH*-n node under [self] and adapt the POS of dst_node"""
 
         try:
@@ -216,9 +218,66 @@ class HierObj(object):
             dst_ich_node = HierObj(target, "*ICH*-{}".format(iIchCounter), "", parent=dst_ich_parent)
             dst_ich_node.type = "Star"
             dst_ich_parent.child.append(dst_ich_node)
-            self.add_child(dst_ich_parent)
+            self.add_child(dst_ich_parent, after=after)
             # (3.2) THe category of the destination gets a "-n" attached
             dst_node.pos = "{}-{}".format(dst_node.pos, iIchCounter)
+            return True
+        except:
+            msg = get_error_message()
+            return False
+
+    def preceding_sibling(self):
+        """Get my immediately preceding sibling"""
+
+        try:
+            # Validate
+            if self == None: return None
+            if self.parent == None: return None
+            parent = self.parent
+            prev = None
+            for ch in self.parent.child:
+                if ch is self:
+                    return prev
+                prev = ch
+            return prev
+        except:
+            msg = get_error_message()
+            return None
+        
+    def copy_ich(self, iIchCounter, dst_node, after=None, start=False):
+        """THe new location of dst_node is under [self], after [after]. Replace original with*ICH*-n node"""
+
+        try:
+            # Need to have the sentence object
+            target = dst_node.sent_obj
+
+            # Get my preceding sibling and my parent
+            prev = dst_node.preceding_sibling()
+            parent = dst_node.parent
+
+            # Add the [dst_node] to the correct new location
+            if after:
+                self.add_child(dst_node, after=after)
+            elif start:
+                self.add_child(dst_node, start=True)
+            else:
+                self.add_child(dst_node)
+
+            # Create an ICH node
+            dst_ich_parent = HierObj(target, dst_node.pos, "", parent = self)
+            dst_ich_node = HierObj(target, "*ICH*-{}".format(iIchCounter), "", parent=dst_ich_parent)
+            dst_ich_node.type = "Star"
+            dst_ich_parent.add_child(dst_ich_node)
+
+            # Make sure it ends up where the previous [dst_node] was
+            if prev:
+                parent.add_child(dst_ich_parent, after=prev)
+            else:
+                parent.add_child(dst_ich_parent, start=True)
+
+            # Adapt the POS of the moved dst_node
+            dst_node.pos = "{}-{}".format(dst_node.pos, iIchCounter)
+
             return True
         except:
             msg = get_error_message()
@@ -320,8 +379,9 @@ class SentenceObj(object):
     txt = ""    # The text associated with this instance
     type = None # The type, if it is an end-node (Punct, Vern, Star)
     id = -1     # Numerical identifier as used within the DB-system
-    f = []      # List of features
-    child = []  # List of child HierObj instances
+    ich_count = 0       # ICH counter
+    f = []              # List of features
+    child = []          # List of child HierObj instances
     div = None          # Division number
     divpar = None       # Paragraph number within division
     parsnt = None       # Sentence number within paragraph    
@@ -753,6 +813,100 @@ class SentenceObj(object):
                 # Provide a message to the user
                 errHandle.Status(msg)                
                 x = self.get_simple()
+            # Return the copy
+            return target, ""
+        except:
+            msg = get_error_message()
+            return None, msg
+
+    def do_correct(self, node):
+        """Make sure that [node] ends up between n-1 and n+1"""
+
+        try:
+            # Figure out what my number is
+            n = node.n
+            
+            # Get my preceding and following end nodes
+            prev = node.get_endnode('precedes', n, sametop=True)
+            next = node.get_endnode('follows', n, sametop=True)
+
+            if prev and next:
+                # Get the nearest common ancestor between prev and next
+                com, left, right = self.get_common_ancestor(prev, next)
+
+                if com:
+                    # Add a copy of [node] under [com] with endnode *ICH*-n
+                    #   and also emend the POS tag of [node]
+                    self.ich_count += 1
+                    if left == None:
+                        # It must come right at the beginning
+                        com.copy_ich(self.ich_count, node, start=True)
+                    else:
+                        com.copy_ich(self.ich_count, node, after=left)
+                else:
+                    errHandle.DoError("do_correct: com is empty")
+            else:
+                errHandle.DoError("do_correct: prev or next is empty")
+            return True, ""
+        except:
+            msg = get_error_message()
+            return False, msg
+
+    def copy_surface_new(self, debug=None):
+        """Copy myself, perform surfacing on that copy"""
+
+        try:
+            # Make a deep copy of myself
+            target = copy.deepcopy(self)
+
+            # Walk all 'sentences' within me
+            for hobj in target.child:
+                # Reset the ich counter
+                target.ich_count = 0
+                # Get all the end nodes
+                endnodes = []
+                endnodes = hobj.get_endnodes(endnodes)
+
+                # Walk all the endnodes in the order we received them
+                prev = None
+                for endnode in endnodes:
+                    if prev != None and endnode.is_endnode() and prev.n > endnode.n:
+
+                        # Get the picture before
+                        if debug and debug > 1: 
+                            before = target.get_simple()
+
+                        # Perform the correction
+                        if endnode.n == 1:
+                            # If we are getting an order 2-1, then it's easier to correct n=2, which should come between [1...3]
+                            result, msg = target.do_correct(prev)
+                        else:
+                            # Otherwise try to place the [endnode] in the correct window
+                            result, msg = target.do_correct(endnode)
+
+                        # Get the result how it looks like
+                        if debug and debug > 1: 
+                            after = target.get_simple()
+
+                    # Keep track of the previous endnode
+                    prev = endnode
+
+                if debug and debug > 1:
+                    # Perform an evaluation of the result
+                    msg = SentenceObj.evaluate(target)
+                    if msg != None and msg != "":
+                        # look at [after]
+                        x = target.get_simple()
+                        y = self.get_simple()
+                        iStop = 1
+
+
+            # Perform an evaluation of the result
+            msg = SentenceObj.evaluate(target)
+            if msg != None and msg != "":
+                # Provide a message to the user
+                errHandle.Status(msg)                
+                x = target.get_simple()
             # Return the copy
             return target, ""
         except:

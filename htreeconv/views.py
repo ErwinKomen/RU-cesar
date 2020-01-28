@@ -32,17 +32,24 @@ def atom(type, key, value):
     return obj
 
 def get_book_abbr(file):
-    sName = os.path.basename(file)
-    arName = sName.split("-")
-    if len(arName) == 1:
-        # THis is the old testament: Get the book number and abbreviation
-        sName = sName.replace(".json", "")
-        abbr = book_ot[sName.lower()]
-    else:
-        # THis is the NT
-        bkno = int(arName[0])-1
-        abbr = book[bkno]
-    return abbr
+    try:
+        sName = os.path.basename(file)
+        arName = sName.split("-")
+        abbr = ""
+        if len(arName) == 1:
+            # THis is the old testament: Get the book number and abbreviation
+            sName = sName.replace(".json", "").lower()
+            if sName in book_ot:
+                abbr = book_ot[sName]
+        else:
+            # THis is the NT
+            bkno = int(arName[0])-1
+            abbr = book[bkno]
+        return abbr
+    except:
+        msg = errHandle.get_error_message()
+        errHandle.DoError("get_book_abbr")
+        return ""
 
 
 class XmlProcessor():
@@ -340,7 +347,7 @@ class ConvertBasic():
             for file in self.lst_src:
                 # Determine the book name
                 abbr = get_book_abbr(file)
-                if sBook == None or sBook == abbr:
+                if abbr != "" and (sBook == None or sBook == abbr):
                     # Determine the output file name
                     outfile = os.path.join(output_dir, os.path.basename(file).replace(self.src_ext,self.dst_ext))
 
@@ -401,6 +408,9 @@ class ConvertBasic():
                                 # Create the destination sentence from the source one
                                 if self.action == "to-surface":
                                     oSent, msg = oSentSrc.copy_surface(debug)
+                                    sSentDst = json.dumps(oSent.get_object(), indent=2)
+                                elif self.action == "to-surface-new":
+                                    oSent, msg = oSentSrc.copy_surface_new(debug)
                                     sSentDst = json.dumps(oSent.get_object(), indent=2)
                                 elif self.action == "from-surface":
                                     # TODO make code here
@@ -1154,7 +1164,7 @@ class ConvertHtreeSurface(ConvertBasic):
     dst_ext = ".json"
     idnum = 0
     dst_template = "target_htree.txt"
-    action = "to-surface"
+    action = "to-surface-new" # "to-surface"
 
 
 class ConvertSurfaceHtree(ConvertBasic):
