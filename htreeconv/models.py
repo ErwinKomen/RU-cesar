@@ -826,9 +826,14 @@ class SentenceObj(object):
             # Figure out what my number is
             n = node.n
             
-            # Get my preceding and following end nodes
+            # Get my immediately preceding and following end nodes
             prev = node.get_endnode('precedes', n, sametop=True)
             next = node.get_endnode('follows', n, sametop=True)
+
+            bForceStart = False
+            if prev == None:
+                prev = next.parent
+                bForceStart = True
 
             if prev and next:
                 # Get the nearest common ancestor between prev and next
@@ -838,7 +843,7 @@ class SentenceObj(object):
                     # Add a copy of [node] under [com] with endnode *ICH*-n
                     #   and also emend the POS tag of [node]
                     self.ich_count += 1
-                    if left == None:
+                    if bForceStart or left == None:
                         # It must come right at the beginning
                         com.copy_ich(self.ich_count, node, start=True)
                     else:
@@ -856,6 +861,11 @@ class SentenceObj(object):
         """Copy myself, perform surfacing on that copy"""
 
         try:
+            # ============= Debugging ========================
+            if self.div == 1 and self.divpar == 26 and self.sent == 1:
+                iStop = 1
+            # ================================================
+
             # Make a deep copy of myself
             target = copy.deepcopy(self)
 
@@ -863,13 +873,15 @@ class SentenceObj(object):
             for hobj in target.child:
                 # Reset the ich counter
                 target.ich_count = 0
+
                 # Get all the end nodes
                 endnodes = []
                 endnodes = hobj.get_endnodes(endnodes)
+                prev = None
+                bPrevReset = False
 
                 # Walk all the endnodes in the order we received them
-                prev = None
-                for endnode in endnodes:
+                for idx, endnode in enumerate(endnodes):
                     if prev != None and endnode.is_endnode() and prev.n > endnode.n:
 
                         # Get the picture before
@@ -879,17 +891,25 @@ class SentenceObj(object):
                         # Perform the correction
                         if endnode.n == 1:
                             # If we are getting an order 2-1, then it's easier to correct n=2, which should come between [1...3]
-                            result, msg = target.do_correct(prev)
+                            # But: if we have the order [2, 3, 1], then [1] should be corrected, not [3]
+                            # OLD result, msg = target.do_correct(prev)
+                            result, msg = target.do_correct(endnode)
+                            # break
                         else:
                             # Otherwise try to place the [endnode] in the correct window
                             result, msg = target.do_correct(endnode)
+                            # break
+
+                        # Adapt the 'prev'
+                        bPrevReset = True
 
                         # Get the result how it looks like
                         if debug and debug > 1: 
                             after = target.get_simple()
 
                     # Keep track of the previous endnode
-                    prev = endnode
+                    if not bPrevReset: 
+                        prev = endnode
 
                 if debug and debug > 1:
                     # Perform an evaluation of the result
