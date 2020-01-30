@@ -295,8 +295,11 @@ class HierObj(object):
         # Return what we have
         return endnodes
         
-    def get_endnode(self, type, n = None, sametop = False, sentence = False):
-        """Get the end-node according to type ('first', 'last')"""
+    def get_endnode(self, type, n = None, sametop = False, sentence = False, until = False):
+        """Get the end-node according to type ('first', 'last')
+        
+        until - True if 'precedes' should only be done until the node with [n]
+        """
 
         node = self
         try:
@@ -326,6 +329,8 @@ class HierObj(object):
                         if endnode.n > nsmall and endnode.n < n and endnode.status != "later":
                             node = endnode
                             nsmall = node.n
+                        if until and endnode.n == n:
+                            break
                 elif type == "follows":
                     node = None
                     nsmall = 0
@@ -333,6 +338,27 @@ class HierObj(object):
                         if endnode.n > n and endnode.status != "later":
                             node = endnode
                             break
+                elif type == "first-preceding":
+                    node = None
+                    prev = None
+                    for endnode in endnodes:
+                        if endnode.n and endnode.n == n:
+                            node = prev
+                            break
+                        prev = endnode
+                    # ======= DEBUG =========
+                    if node == None:
+                        iStop = 1
+                elif type == "first-following":
+                    node = None
+                    for idx, endnode in enumerate(endnodes):
+                        if endnode.n and endnode.n == n:
+                            if idx + 1 < len(endnodes):
+                                node = endnodes[idx+1]
+                            break
+                    # ======= DEBUG =========
+                    if node == None:
+                        iStop = 1
             # Found anything?
             if node and node.is_endnode():
                 return node
@@ -549,6 +575,10 @@ class SentenceObj(object):
         except:
             msg = errHandle.get_error_message()
             return msg
+
+    def get_location(self):
+        sLoc = "d{}.p{}.s{}".format(self.div, self.divpar, self.sent)
+        return sLoc
 
     def copy_surface(self, debug = None):
         """Create a copy of me, putting discontinuous constituents in surface word order"""
@@ -827,8 +857,10 @@ class SentenceObj(object):
             n = node.n
             
             # Get my immediately preceding and following end nodes
-            prev = node.get_endnode('precedes', n, sametop=True)
+            prev = node.get_endnode('precedes', n, sametop=True, until=True)
             next = node.get_endnode('follows', n, sametop=True)
+            # prev = node.get_endnode('first-preceding', n, sametop=True)
+            # next = node.get_endnode('first-following', n, sametop=True)
 
             bForceStart = False
             if prev == None:
@@ -861,13 +893,17 @@ class SentenceObj(object):
         """Copy myself, perform surfacing on that copy"""
 
         try:
+            sent_loc = self.get_location()
+            if debug and debug >= 1:
+                errHandle.Status("Working on: {}".format(sent_loc))
             # ============= Debugging ========================
-            if self.div == 1 and self.divpar == 26 and self.sent == 1:
+            if sent_loc == "d3.p23.s1":
                 iStop = 1
             # ================================================
 
             # Make a deep copy of myself
-            target = copy.deepcopy(self)
+            # target = copy.deepcopy(self)
+            target = self
 
             # Walk all 'sentences' within me
             for hobj in target.child:
@@ -882,11 +918,23 @@ class SentenceObj(object):
 
                 # Walk all the endnodes in the order we received them
                 for idx, endnode in enumerate(endnodes):
+                    # ========== DEBUG =============================
+                    if sent_loc == "d5.p19.s1":
+                        iStop = 1
+
+                    # Make sure that we initially do not have a reset of [prev]
+                    bPrevReset = False
+
+                    # Check if this should be treated
                     if prev != None and endnode.is_endnode() and prev.n > endnode.n:
 
                         # Get the picture before
-                        if debug and debug > 1: 
+                        if debug and debug > 2: 
                             before = target.get_simple()
+
+                        if debug and debug >= 1:
+                            # Show what we are correcting
+                            errHandle.Status("{} correcting n={}".format(sent_loc, endnode.n))
 
                         # Perform the correction
                         if endnode.n == 1:
@@ -904,7 +952,7 @@ class SentenceObj(object):
                         bPrevReset = True
 
                         # Get the result how it looks like
-                        if debug and debug > 1: 
+                        if debug and debug > 2: 
                             after = target.get_simple()
 
                     # Keep track of the previous endnode
@@ -931,6 +979,7 @@ class SentenceObj(object):
             return target, ""
         except:
             msg = get_error_message()
+            errHandle.DoError("copy_surface_new")
             return None, msg
 
     def is_complete(self, sorted=True):

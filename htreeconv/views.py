@@ -411,7 +411,11 @@ class ConvertBasic():
                                     sSentDst = json.dumps(oSent.get_object(), indent=2)
                                 elif self.action == "to-surface-new":
                                     oSent, msg = oSentSrc.copy_surface_new(debug)
-                                    sSentDst = json.dumps(oSent.get_object(), indent=2)
+                                    if oSent == None:
+                                        errHandle.DoError("ConvertBasic says {}".format(msg))
+                                        sSentDst = ""
+                                    else:
+                                        sSentDst = json.dumps(oSent.get_object(), indent=2)
                                 elif self.action == "from-surface":
                                     # TODO make code here
                                     pass
