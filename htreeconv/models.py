@@ -179,8 +179,8 @@ class HierObj(object):
             msg = get_error_message()
             return False
 
-    def add_child(self, node, after=None, start=False):
-        """Add [node] as child under [self], optionally after [after]"""
+    def add_child(self, node, after=None, before=None, start=False):
+        """Add [node] as child under [self], optionally after [after] or before [before]"""
 
         try:
             # Remove it from its previous parent
@@ -190,15 +190,33 @@ class HierObj(object):
             # Add it as child to new parent
             newparent = self
             if after:
+                # Need to move the node after [after]
                 idx = -1
+                # Get the index of after
                 for i, item in enumerate(newparent.child):
                     if item is after:
                         idx = i
                         break
+                # Now figure out where to put it
                 if idx < 0 or i >= len(newparent.child):
+                    # The index is not one of the children --> append it 
                     newparent.child.append(node)
                 else:
                     newparent.child.insert(idx+1, node)
+            elif before:
+                # Need to move the node before [before]
+                idx = -1
+                # Get the index of before
+                for i, item in enumerate(newparent.child):
+                    if item is before:
+                        idx = i
+                        break
+                # Now figure out where to put it
+                if idx < 0 or i >= len(newparent.child):
+                    # The index is not one of the children --> append it 
+                    newparent.child.append(node)
+                else:
+                    newparent.child.insert(idx, node)
             elif start:
                 newparent.child.insert(0, node)
             else:
@@ -244,7 +262,7 @@ class HierObj(object):
             msg = get_error_message()
             return None
         
-    def copy_ich(self, iIchCounter, dst_node, after=None, start=False):
+    def copy_ich(self, iIchCounter, dst_node, after=None, before=None, start=False):
         """THe new location of dst_node is under [self], after [after]. Replace original with*ICH*-n node"""
 
         try:
@@ -260,6 +278,8 @@ class HierObj(object):
                 self.add_child(dst_node, after=after)
             elif start:
                 self.add_child(dst_node, start=True)
+            elif before:
+                self.add_child(dst_node, before=before)
             else:
                 self.add_child(dst_node)
 
@@ -272,6 +292,8 @@ class HierObj(object):
             # Make sure it ends up where the previous [dst_node] was
             if prev:
                 parent.add_child(dst_ich_parent, after=prev)
+            #elif before:
+            #    parent.add_child(dst_ich_parent, before=before)
             else:
                 parent.add_child(dst_ich_parent, start=True)
 
@@ -282,6 +304,49 @@ class HierObj(object):
         except:
             msg = get_error_message()
             return False
+
+    def do_order(self):
+        """Check if the order of the children is okay, and if not: re-arrange
+        In all cases: return boolean Okay flag, first @n and last @n
+        """
+
+        try:
+            # Validate
+            if self==None: return True, -1, -1
+            if self.is_endnode(): return True, self.n, self.n
+            # Check each of the children
+            leftmost = None
+            rightmost = None
+            prev_right = None
+            for idx, ch in enumerate(self.child):
+                # Get the leftmost @n and rightmost @n of this child
+                bOkay, left, right = ch.do_order()
+                if leftmost == None: leftmost = left
+                # Compare with @n of previous child
+                if prev_right:
+                    if prev_left > right and prev_right > left and prev_right > right:
+                        # Place the child before the previous one
+                        parent = self
+                        parent.child.remove(ch)
+                        parent.child.insert(idx-1, ch)
+                        # Now [prev_right] remains as it is
+                        # But we need to adapt the current left and right
+                        right = prev_right
+                        left = prev_left
+                    else:
+                        # set prev_right
+                        prev_right = right
+                        prev_left = left
+                else:
+                    # set prev_right
+                    prev_right = right
+                    prev_left = left
+            if rightmost == None: rightmost = right
+            return True, leftmost, rightmost
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.DoError("do_order")
+            return False, -1, -1
 
     def get_endnodes(self, endnodes):
         """Return a list of endnodes under me"""
@@ -339,6 +404,7 @@ class HierObj(object):
                             node = endnode
                             break
                 elif type == "first-preceding":
+                    if n == None: n = self.n
                     node = None
                     prev = None
                     for endnode in endnodes:
@@ -350,6 +416,7 @@ class HierObj(object):
                     if node == None:
                         iStop = 1
                 elif type == "first-following":
+                    if n == None: n = self.n
                     node = None
                     for idx, endnode in enumerate(endnodes):
                         if endnode.n and endnode.n == n:
@@ -849,7 +916,22 @@ class SentenceObj(object):
             msg = get_error_message()
             return None, msg
 
-    def do_correct(self, node):
+    def has_intervening_endnodes(self, left, right):
+        """Check if there are any intervening endnodes between left and right"""
+
+        bHasIntervenor = False
+        # Validate
+        if left == None or right == None: return False
+        # Get the endnode following left
+        next = left.get_endnode("first-following", sametop=True)
+        if next:
+            # There is an entervenor if next.n does not equal right.n
+            bHasIntervenor = (next.n != right.n)
+        else:
+            bHasIntervenor = False
+        return bHasIntervenor
+
+    def do_correct(self, node, sit_status = None):
         """Make sure that [node] ends up between n-1 and n+1"""
 
         try:
@@ -857,31 +939,50 @@ class SentenceObj(object):
             n = node.n
             
             # Get my immediately preceding and following end nodes
-            prev = node.get_endnode('precedes', n, sametop=True, until=True)
+            # prev = node.get_endnode('precedes', n, sametop=True, until=True)
+            prev = node.get_endnode('precedes', n, sametop=True)
             next = node.get_endnode('follows', n, sametop=True)
-            # prev = node.get_endnode('first-preceding', n, sametop=True)
-            # next = node.get_endnode('first-following', n, sametop=True)
 
             bForceStart = False
+            bMoveLast = False
             if prev == None:
                 prev = next.parent
                 bForceStart = True
+            elif next == None:
+                # The target of the node should be: 
+                #  append as child after the common ancestor of:
+                #  (1) [prev]
+                #  (2) last endnode
+                next = node.get_endnode('last', sametop=True)
+                bMoveLast = True
 
             if prev and next:
-                # Get the nearest common ancestor between prev and next
-                com, left, right = self.get_common_ancestor(prev, next)
-
-                if com:
-                    # Add a copy of [node] under [com] with endnode *ICH*-n
-                    #   and also emend the POS tag of [node]
-                    self.ich_count += 1
-                    if bForceStart or left == None:
-                        # It must come right at the beginning
-                        com.copy_ich(self.ich_count, node, start=True)
-                    else:
-                        com.copy_ich(self.ich_count, node, after=left)
+                # Check for a special situation...
+                if self.has_intervening_endnodes(prev, next):
+                    iStop = 1
+                    # THe landing site will be: preceding child of the parent of [next]
+                    com = next.parent
+                    com.copy_ich(self.ich_count, node, before=next)
                 else:
-                    errHandle.DoError("do_correct: com is empty")
+                    # Get the nearest common ancestor between prev and next
+                    com, left, right = self.get_common_ancestor(prev, next)
+
+                    if com:
+                        # Add a copy of [node] under [com] with endnode *ICH*-n
+                        #   and also emend the POS tag of [node]
+                        self.ich_count += 1
+                        if bForceStart or left == None:
+                            # It must come right at the beginning
+                            com.copy_ich(self.ich_count, node, start=True)
+                        elif bMoveLast:
+                            com.copy_ich(self.ich_count, node)
+                        elif sit_status == "larger":
+                            # Need to move ahead, make sure we don't lag behind
+                            com.copy_ich(self.ich_count, node, before=right)
+                        else:
+                            com.copy_ich(self.ich_count, node, after=left)
+                    else:
+                        errHandle.DoError("do_correct: com is empty")
             else:
                 errHandle.DoError("do_correct: prev or next is empty")
             return True, ""
@@ -889,17 +990,66 @@ class SentenceObj(object):
             msg = get_error_message()
             return False, msg
 
+    def normalize_order(self):
+        """When needed re-arrange nodes to have a continuously increasing order in @n"""
+
+        try:
+            # Walk all children
+            for hobj in self.child:
+                # Order this child
+                bOkay, left, right = hobj.do_order()
+                if not bOkay:
+                    errHandle.Status("Could not order")
+                    return False
+            # Signal all went well
+            return True
+        except:
+            msg = get_error_message()
+            errHandle.DoError("normalize_order")
+            return False
+
+
     def copy_surface_new(self, debug=None):
         """Copy myself, perform surfacing on that copy"""
+
+        def situation(prev, endnode, endnodes, idx):
+            """Describe the situation we are in"""
+
+            sBack = None
+            sSent = ""
+            if endnode.is_endnode():
+                if prev == None:
+                    # THis is the first node: it must be smaller than the next one
+                    is_last = (idx == len(endnodes) - 1 )
+                    next_n = 0 if is_last else endnodes[idx+1].n
+                    if not is_last and endnode.n > next_n:
+                        sBack = "larger"
+                        lSent = [x.n for x in endnodes]
+                        sSent = json.dumps(lSent)
+                else:
+                    if prev.n > endnode.n:
+                        sBack = "smaller"
+                    else:
+                        is_last = (idx == len(endnodes) - 1 )
+                        next_n = 0 if is_last else endnodes[idx+1].n
+                        if not is_last and prev.n + 1 < endnode.n and next_n + 1 < endnode.n :
+                            sBack = "larger"
+                            lSent = [x.n for x in endnodes]
+                            sSent = json.dumps(lSent)
+
+            return sBack, sSent
 
         try:
             sent_loc = self.get_location()
             if debug and debug >= 1:
                 errHandle.Status("Working on: {}".format(sent_loc))
             # ============= Debugging ========================
-            if sent_loc == "d3.p23.s1":
+            if sent_loc == "d9.p18.s1":
                 iStop = 1
             # ================================================
+
+            # Normalize the order as much as possible *without* ICH movements
+            if not self.normalize_order(): return None, "Normalization problem"
 
             # Make a deep copy of myself
             # target = copy.deepcopy(self)
@@ -919,34 +1069,43 @@ class SentenceObj(object):
                 # Walk all the endnodes in the order we received them
                 for idx, endnode in enumerate(endnodes):
                     # ========== DEBUG =============================
-                    if sent_loc == "d5.p19.s1":
+                    if sent_loc == "d1.p65.s1":
                         iStop = 1
 
                     # Make sure that we initially do not have a reset of [prev]
                     bPrevReset = False
 
                     # Check if this should be treated
-                    if prev != None and endnode.is_endnode() and prev.n > endnode.n:
-
+                    sit_status, sSent = situation(prev, endnode, endnodes, idx)
+                    if sit_status:
                         # Get the picture before
                         if debug and debug > 2: 
                             before = target.get_simple()
 
                         if debug and debug >= 1:
                             # Show what we are correcting
-                            errHandle.Status("{} correcting n={}".format(sent_loc, endnode.n))
+                            errHandle.Status("{} correcting n={} for {} {}".format(sent_loc, endnode.n, sit_status, sSent))
 
-                        # Perform the correction
-                        if endnode.n == 1:
-                            # If we are getting an order 2-1, then it's easier to correct n=2, which should come between [1...3]
-                            # But: if we have the order [2, 3, 1], then [1] should be corrected, not [3]
-                            # OLD result, msg = target.do_correct(prev)
-                            result, msg = target.do_correct(endnode)
-                            # break
-                        else:
-                            # Otherwise try to place the [endnode] in the correct window
-                            result, msg = target.do_correct(endnode)
-                            # break
+                        result, msg = target.do_correct(endnode, sit_status)
+
+                        ## Check out what to correct
+                        #if idx < len(endnodes)-1 and prev.n > endnodes[idx+1].n:
+                        #    # THere are two (or more) items lower than [prev] ==> prev is the culprit
+                        #    result, msg = target.do_correct(prev)
+                        #else:
+                        #    result, msg = target.do_correct(endnode)
+                        ## Perform the correction
+                        #if endnode.n == 1:
+                        #    # If we are getting an order 2-1, then it's easier to correct n=2, which should come between [1...3]
+                        #    # But: if we have the order [2, 3, 1], then [1] should be corrected, not [3]
+                        #    result, msg = target.do_correct(prev)
+                        #    # result, msg = target.do_correct(endnode)
+                        #    # break
+                        #else:
+                        #    # Otherwise try to place the [endnode] in the correct window
+                        #    # result, msg = target.do_correct(endnode)
+                        #    result, msg = target.do_correct(prev)
+                        #    # break
 
                         # Adapt the 'prev'
                         bPrevReset = True
