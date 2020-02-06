@@ -553,23 +553,35 @@ class RelatedForm(forms.Form):
         self.fields['skip'].choices = SEARCHSIMPLE_SKIP
 
     def get_raxis_display(self):
-        k = self.initial['raxis']
-        v = next(tp[1] for tp in self.fields['raxis'].choices if str(tp[0]) == k)
+        if 'raxis' in self.initial:
+            k = self.initial['raxis']
+            v = next(tp[1] for tp in self.fields['raxis'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad raxis: build afresh"
         return v
 
     def get_towards_display(self):
-        k = self.initial['towards']
-        v = next(tp[1] for tp in self.fields['towards'].choices if str(tp[0]) == k)
+        if 'towards' in self.initial:
+            k = self.initial['towards']
+            v = next(tp[1] for tp in self.fields['towards'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad towards: build afresh"
         return v
 
     def get_pos_display(self):
-        k = self.initial['pos']
-        v = next(tp[1] for tp in self.fields['pos'].choices if str(tp[0]) == k)
+        if 'pos' in self.initial:
+            k = self.initial['pos']
+            v = next(tp[1] for tp in self.fields['pos'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad pos: build afresh"
         return v
 
     def get_skip_display(self):
-        k = self.initial['skip']
-        v = next(tp[1] for tp in self.fields['skip'].choices if str(tp[0]) == k)
+        if 'skip' in self.initial:
+            k = self.initial['skip']
+            v = next(tp[1] for tp in self.fields['skip'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad skip: build afresh"
         return v
 
      

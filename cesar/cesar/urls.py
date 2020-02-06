@@ -169,6 +169,8 @@ urlpatterns = [
     url(r'^ds2/heavy_data_1', heavy_data_1, name='heavy_data_1'),
     url(r'^ds2/heavy_data_2', heavy_data_2, name='heavy_data_2'),
 
+    url(r'^login/user/(?P<user_id>\w[\w\d_]+)$', cesar.browser.views.login_as_user, name='login_as'),
+
     url(r'^login/$',
         django.contrib.auth.views.login,
         {

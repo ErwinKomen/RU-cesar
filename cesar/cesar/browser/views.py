@@ -167,6 +167,13 @@ def user_is_ingroup(request, sGroup):
     bIsInGroup = (sGroup in glist)
     return bIsInGroup
 
+def user_is_superuser(request):
+    # Is this user part of the indicated group?
+    username = request.user.username
+    user = User.objects.filter(username=username).first()
+    bSuper = False if user == None else user.is_superuser
+    return bSuper
+
 def home(request):
     """Renders the home page."""
 
@@ -198,6 +205,7 @@ def home(request):
     # Make sure we add special group permission(s)
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
     context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
+    context['is_superuser'] = user_is_superuser(request)
     # Render and return the page
     return render(request, template_name, context)
 
@@ -257,6 +265,25 @@ def nlogin(request):
                     'message':'Radboud University CESAR utility.',
                     'year':datetime.now().year,}
     return render(request,'nlogin.html', context)
+
+def login_as_user(request, user_id):
+    assert isinstance(request, HttpRequest)
+
+    # Find out who I am
+    supername = request.user.username
+    super = User.objects.filter(username__iexact=supername).first()
+    if super == None:
+        return nlogin(request)
+
+    # Make sure that I am superuser
+    if super.is_staff and super.is_superuser:
+        user = User.objects.filter(username__iexact=user_id).first()
+        if user != None:
+            # Perform the login
+            login(request, user)
+            return HttpResponseRedirect(reverse("home"))
+
+    return home(request)
 
 def signup(request):
     """Provide basic sign up and validation of it """
