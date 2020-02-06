@@ -36,6 +36,8 @@ class HierObj(object):
     child = []      # List of child HierObj instances
     parent = None   # Each object may be part of another
     status = ""     # Possible status (not used initially)
+    first = 0       # the @n of the first endnode
+    last = 0        # the @n of the last endnode
     # sent_obj = None # The sentence object to which I am related
 
     def __init__(self, sent_obj, pos, txt="", parent=None, id=-1, **kwargs):
@@ -341,11 +343,50 @@ class HierObj(object):
                     # set prev_right
                     prev_right = right
                     prev_left = left
+            # Possibly correct rightmost
             if rightmost == None: rightmost = right
+
+            # Return 
             return True, leftmost, rightmost
         except:
             msg = errHandle.get_error_message()
             errHandle.DoError("do_order")
+            return False, -1, -1
+
+    def do_number(self):
+        """Look up and set the @first and @last numbers recursively"""
+
+        try:
+            # Validate
+            if self==None: return True, -1, -1
+
+            # Obvious case: this is an end node
+            if self.is_endnode(): 
+                # Set my own first, last
+                n = self.n
+                self.first = n
+                self.last = n
+                return True, n, n
+
+            # Check each of the children
+            leftmost = None
+            rightmost = None
+            for ch in self.child:
+                # Perform numbering for this child
+                bOkay, left, right = ch.do_number()
+                # Keep track of leftmost and rightmost
+                if left and leftmost==None or left < leftmost: leftmost = left
+                if right and rightmost == None or right > rightmost: rightmost = right
+
+            # Store for this node
+            self.first = leftmost
+            self.last = rightmost
+
+            # Return 
+            return True, leftmost, rightmost
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.DoError("do_number")
             return False, -1, -1
 
     def get_endnodes(self, endnodes):
@@ -462,6 +503,16 @@ class HierObj(object):
             return []
 
 
+class GoalObj(object):
+    """A gap between otherwise consecutive nodes"""
+
+    parent = None   # the parent HierObj
+    prev = None     # the daughter HierObj just before the gap
+    next = None     # The daughter HierObj that follows, and that, therefore, is just following the gap
+    first = 0       # the first @n that a constituent in this gap may have (= prev.n + 1)
+    last = 0        # the last @n that a constituent in this gap may have (= next.n -1)
+
+    
 class SentenceObj(object):
     """Sentence object"""
 
@@ -1008,10 +1059,10 @@ class SentenceObj(object):
             errHandle.DoError("normalize_order")
             return False
 
-
     def copy_surface_new(self, debug=None):
         """Copy myself, perform surfacing on that copy"""
 
+        # Local routine
         def situation(prev, endnode, endnodes, idx):
             """Describe the situation we are in"""
 
@@ -1039,6 +1090,10 @@ class SentenceObj(object):
 
             return sBack, sSent
 
+        # Other initializations
+        surface_method = "endnode_focused"
+        surface_method = "twopass_topdown"
+
         try:
             sent_loc = self.get_location()
             if debug and debug >= 1:
@@ -1051,8 +1106,7 @@ class SentenceObj(object):
             # Normalize the order as much as possible *without* ICH movements
             if not self.normalize_order(): return None, "Normalization problem"
 
-            # Make a deep copy of myself
-            # target = copy.deepcopy(self)
+            # Continue to work with myself (sentenceobj) as 'target'
             target = self
 
             # Walk all 'sentences' within me
@@ -1060,64 +1114,89 @@ class SentenceObj(object):
                 # Reset the ich counter
                 target.ich_count = 0
 
-                # Get all the end nodes
-                endnodes = []
-                endnodes = hobj.get_endnodes(endnodes)
-                prev = None
-                bPrevReset = False
+                if surface_method == "endnode_focused":
 
-                # Walk all the endnodes in the order we received them
-                for idx, endnode in enumerate(endnodes):
-                    # ========== DEBUG =============================
-                    if sent_loc == "d1.p65.s1":
-                        iStop = 1
-
-                    # Make sure that we initially do not have a reset of [prev]
+                    # Get all the end nodes
+                    endnodes = []
+                    endnodes = hobj.get_endnodes(endnodes)
+                    prev = None
                     bPrevReset = False
 
-                    # Check if this should be treated
-                    sit_status, sSent = situation(prev, endnode, endnodes, idx)
-                    if sit_status:
-                        # Get the picture before
-                        if debug and debug > 2: 
-                            before = target.get_simple()
+                    # Walk all the endnodes in the order we received them
+                    for idx, endnode in enumerate(endnodes):
+                        # ========== DEBUG =============================
+                        if sent_loc == "d1.p65.s1":
+                            iStop = 1
 
-                        if debug and debug >= 1:
-                            # Show what we are correcting
-                            errHandle.Status("{} correcting n={} for {} {}".format(sent_loc, endnode.n, sit_status, sSent))
+                        # Make sure that we initially do not have a reset of [prev]
+                        bPrevReset = False
 
-                        result, msg = target.do_correct(endnode, sit_status)
+                        # Check if this should be treated
+                        sit_status, sSent = situation(prev, endnode, endnodes, idx)
+                        if sit_status:
+                            # Get the picture before
+                            if debug and debug > 2: 
+                                before = target.get_simple()
 
-                        ## Check out what to correct
-                        #if idx < len(endnodes)-1 and prev.n > endnodes[idx+1].n:
-                        #    # THere are two (or more) items lower than [prev] ==> prev is the culprit
-                        #    result, msg = target.do_correct(prev)
-                        #else:
-                        #    result, msg = target.do_correct(endnode)
-                        ## Perform the correction
-                        #if endnode.n == 1:
-                        #    # If we are getting an order 2-1, then it's easier to correct n=2, which should come between [1...3]
-                        #    # But: if we have the order [2, 3, 1], then [1] should be corrected, not [3]
-                        #    result, msg = target.do_correct(prev)
-                        #    # result, msg = target.do_correct(endnode)
-                        #    # break
-                        #else:
-                        #    # Otherwise try to place the [endnode] in the correct window
-                        #    # result, msg = target.do_correct(endnode)
-                        #    result, msg = target.do_correct(prev)
-                        #    # break
+                            if debug and debug >= 1:
+                                # Show what we are correcting
+                                errHandle.Status("{} correcting n={} for {} {}".format(sent_loc, endnode.n, sit_status, sSent))
 
-                        # Adapt the 'prev'
-                        bPrevReset = True
+                            result, msg = target.do_correct(endnode, sit_status)
 
-                        # Get the result how it looks like
-                        if debug and debug > 2: 
-                            after = target.get_simple()
+                            ## Check out what to correct
+                            #if idx < len(endnodes)-1 and prev.n > endnodes[idx+1].n:
+                            #    # THere are two (or more) items lower than [prev] ==> prev is the culprit
+                            #    result, msg = target.do_correct(prev)
+                            #else:
+                            #    result, msg = target.do_correct(endnode)
+                            ## Perform the correction
+                            #if endnode.n == 1:
+                            #    # If we are getting an order 2-1, then it's easier to correct n=2, which should come between [1...3]
+                            #    # But: if we have the order [2, 3, 1], then [1] should be corrected, not [3]
+                            #    result, msg = target.do_correct(prev)
+                            #    # result, msg = target.do_correct(endnode)
+                            #    # break
+                            #else:
+                            #    # Otherwise try to place the [endnode] in the correct window
+                            #    # result, msg = target.do_correct(endnode)
+                            #    result, msg = target.do_correct(prev)
+                            #    # break
 
-                    # Keep track of the previous endnode
-                    if not bPrevReset: 
-                        prev = endnode
+                            # Adapt the 'prev'
+                            bPrevReset = True
 
+                            # Get the result how it looks like
+                            if debug and debug > 2: 
+                                after = target.get_simple()
+
+                        # Keep track of the previous endnode
+                        if not bPrevReset: 
+                            prev = endnode
+
+                elif surface_method == "twopass_topdown":
+                    # Perform the two-pass topdown method of surfacing
+
+                    # Preparation for phase #1:
+                    lst_goal = []   # List of GoalObj
+                    lst_const = []  # List of HierObj
+                    # Make sure all first/last numbers are set correctly
+                    bOkay, first, last = hobj.do_number()
+
+                    # Phase #1: topdown evaluation and filling of [goal_nodes]
+                    bOkay = hobj.do_goaling(lst_const, lst_goal)
+                    iStop = 1
+
+                    # Phase #2: process all the items in [goal_nodes]
+                    for goal in lst_goal:
+                        # Look through the constituents for the most appropriate place to go to
+                        bFound = False
+                        for const in lst_const:
+                            # Check if this 
+                            pass
+
+
+                # Depending on the debug-level: evaluate the result of this part
                 if debug and debug > 1:
                     # Perform an evaluation of the result
                     msg = SentenceObj.evaluate(target)
@@ -1128,12 +1207,13 @@ class SentenceObj(object):
                         iStop = 1
 
 
-            # Perform an evaluation of the result
+            # Perform an evaluation of the result for the *whole* sentence
             msg = SentenceObj.evaluate(target)
             if msg != None and msg != "":
                 # Provide a message to the user
                 errHandle.Status(msg)                
                 x = target.get_simple()
+
             # Return the copy
             return target, ""
         except:
