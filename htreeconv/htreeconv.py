@@ -51,7 +51,7 @@ def main(prgName, argv):
         # get all the arguments
         try:
             # Get arguments and options
-            opts, args = getopt.getopt(argv, "hi:o:t:fcb:d:", ["-inputdir=", "-outputdir=", "-type=", "-force", "-cmdi", "-book=", "-debug="])
+            opts, args = getopt.getopt(argv, "hi:o:t:fcb:d:l:", ["-inputdir=", "-outputdir=", "-type=", "-force", "-cmdi", "-book=", "-debug="])
         except getopt.GetoptError:
             print(sSyntax)
             sys.exit(2)
