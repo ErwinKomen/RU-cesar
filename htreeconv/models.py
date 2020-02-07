@@ -38,6 +38,8 @@ class HierObj(object):
     status = ""     # Possible status (not used initially)
     first = 0       # the @n of the first endnode
     last = 0        # the @n of the last endnode
+    level = 0       # Depth level
+    discontinuous = False
     # sent_obj = None # The sentence object to which I am related
 
     def __init__(self, sent_obj, pos, txt="", parent=None, id=-1, **kwargs):
@@ -353,7 +355,7 @@ class HierObj(object):
             errHandle.DoError("do_order")
             return False, -1, -1
 
-    def do_number(self):
+    def do_number(self, level):
         """Look up and set the @first and @last numbers recursively"""
 
         try:
@@ -369,25 +371,173 @@ class HierObj(object):
                 return True, n, n
 
             # Check each of the children
-            leftmost = None
-            rightmost = None
+            smallest = None
+            largest = None
+            first = None
+            last = None
             for ch in self.child:
                 # Perform numbering for this child
-                bOkay, left, right = ch.do_number()
-                # Keep track of leftmost and rightmost
-                if left and leftmost==None or left < leftmost: leftmost = left
-                if right and rightmost == None or right > rightmost: rightmost = right
+                bOkay, left, right = ch.do_number(level + 1)
+
+                # Keep track of first/last
+                if first == None and left != None: first = left
+                if right != None: last = right
+
+                # Keep track of smallest and largest
+                if left:
+                    if smallest:
+                       if left < smallest: smallest = left
+                    else:
+                        smallest = left
+                if right:
+                    if largest:
+                        if right > largest: largest = right
+                    else:
+                        largest = right
 
             # Store for this node
-            self.first = leftmost
-            self.last = rightmost
+            self.first = first
+            self.last = last
+            self.level = level
+
+            # Check if this is a continuous node
+            self.discontinuous = (smallest != first or largest != last)
+            if not self.discontinuous and len(self.child) == 1 and self.child[0].discontinuous:
+                self.discontinuous = True
+            if self.discontinuous:
+                iStop = 1
 
             # Return 
-            return True, leftmost, rightmost
+            return True, first, last
         except:
             msg = errHandle.get_error_message()
             errHandle.DoError("do_number")
             return False, -1, -1
+
+    def do_goaling(self, lst_goal):
+        """Visit all constituents recursively, checking for 'holes'
+        
+        Visit each node and look at the children of that node.
+        For each child:
+        - Does the end of the previous child match with the start of the current one?
+        - Does the end of the current child match with the start of the next one?
+        """
+
+        try:
+            # Validate
+            if self==None: return True
+
+            # Obvious case: this is an end node
+            if self.is_endnode():
+                # An endnode doesn't have children, so we're okay
+                return True
+
+            # Visit all children (if there are any)
+            prev = None
+            next = None
+            numch = len(self.child)
+            for idx, ch in enumerate(self.child):
+                # Check for a gap in this child
+                result = ch.do_goaling(lst_goal)
+                if not result: return False
+
+                # Check for the presence of a 'GAP'
+                if prev and prev.last and ch.first:
+                    if prev.last + 1 < ch.first:
+                        # There is a gap between the previous one and me
+                        # Store the gap with its characterstics
+                        oGap = GoalObj(parent=self, prev=prev, next=ch, first=prev.last+1, last=ch.first-1)
+                        lst_goal.append(oGap)
+
+                # Go to the next phase
+                prev = ch
+
+            # Return 
+            return True
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.DoError("do_goaling")
+            return False
+
+    def get_gap(self):
+        """Visit all constituents recursively, checking for 'holes'
+        
+        Visit each node and look at the children of that node.
+        For each child:
+        - Does the end of the previous child match with the start of the current one?
+        - Does the end of the current child match with the start of the next one?
+        """
+
+        try:
+            # Look for a list of gaps
+            lst_goal = []
+            result = self.do_goaling(lst_goal)
+            if not result:
+                return False, None
+
+            if len(lst_goal) > 0:
+                # Walk all goals and look for the 'deepest'
+                level = -1
+                oGap = None
+                for obj in lst_goal:
+                    if obj.parent.level > level:
+                        level = obj.parent.level
+                        oGap = obj
+                # Return the winner
+                return True, oGap
+            # Return 
+            return True, None
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.DoError("get_gap")
+            return False, None
+
+    def get_gap_old(self):
+        """Visit all constituents recursively, checking for 'holes'
+        
+        Visit each node and look at the children of that node.
+        For each child:
+        - Does the end of the previous child match with the start of the current one?
+        - Does the end of the current child match with the start of the next one?
+        """
+
+        try:
+            # Validate
+            if self==None: return True, None
+
+            # Obvious case: this is an end node
+            if self.is_endnode():
+                # An endnode doesn't have children, so we're okay
+                return True, None
+
+            # Visit all children (if there are any)
+            prev = None
+            next = None
+            numch = len(self.child)
+            for idx, ch in enumerate(self.child):
+                # Check for a gap in this child
+                result, obj = ch.get_gap()
+                if not result: return False, None
+                if obj != None: return True, obj
+
+                # Check for the presence of a 'GAP'
+                if prev and prev.last and ch.first:
+                    if prev.last + 1 < ch.first:
+                        # There is a gap between the previous one and me
+                        # Store the gap with its characterstics
+                        oGap = GoalObj(parent=self, prev=prev, next=ch, first=prev.last+1, last=ch.first-1)
+                        # Return this gap
+                        return True, oGap
+
+                # Go to the next phase
+                prev = ch
+
+            # Return 
+            return True, None
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.DoError("get_gap")
+            return False, None
 
     def get_endnodes(self, endnodes):
         """Return a list of endnodes under me"""
@@ -511,6 +661,18 @@ class GoalObj(object):
     next = None     # The daughter HierObj that follows, and that, therefore, is just following the gap
     first = 0       # the first @n that a constituent in this gap may have (= prev.n + 1)
     last = 0        # the last @n that a constituent in this gap may have (= next.n -1)
+    source = None   # The constituent that needs to move here
+
+    def __init__(self, parent, prev, next, first, last, **kwargs):
+        # Do the standard stuff
+        response = super(GoalObj, self).__init__(**kwargs)
+        # Note the characteristics
+        self.parent = parent
+        self.prev = prev
+        self.next = next
+        self.first = first
+        self.last = last
+        return response
 
     
 class SentenceObj(object):
@@ -1092,14 +1254,14 @@ class SentenceObj(object):
 
         # Other initializations
         surface_method = "endnode_focused"
-        surface_method = "twopass_topdown"
+        surface_method = "topdown"
 
         try:
             sent_loc = self.get_location()
             if debug and debug >= 1:
                 errHandle.Status("Working on: {}".format(sent_loc))
             # ============= Debugging ========================
-            if sent_loc == "d9.p18.s1":
+            if sent_loc == "d4.p6.s1":
                 iStop = 1
             # ================================================
 
@@ -1174,27 +1336,56 @@ class SentenceObj(object):
                         if not bPrevReset: 
                             prev = endnode
 
-                elif surface_method == "twopass_topdown":
+                elif surface_method == "topdown":
                     # Perform the two-pass topdown method of surfacing
 
-                    # Preparation for phase #1:
-                    lst_goal = []   # List of GoalObj
-                    lst_const = []  # List of HierObj
-                    # Make sure all first/last numbers are set correctly
-                    bOkay, first, last = hobj.do_number()
+                    # Phase #2: topdown evaluation and filling of [goal_nodes]
+                    bOkay = False
+                    while not bOkay:
+                        # Phase #1: determine first/last numbers of all constituents
+                        bOkay, first, last = hobj.do_number(0)
+                        # Check for a goal to process
+                        result, oGoal = hobj.get_gap()
+                        if not result:
+                            bOkay = False
+                        elif oGoal == None:
+                            bOkay = True
+                        else:
+                            # Look for a match for this gap
+                            oMatch = target.get_match(oGoal.first, oGoal.last)
+                            if oMatch == None:
+                                pass
+                            else:
+                                # We can now do the ICH placement
+                                target.ich_count += 1
+                                # Action depends on the situation
+                                oGoal.parent.copy_ich(target.ich_count, oMatch, after=oGoal.prev)
+                                bOkay = False
 
-                    # Phase #1: topdown evaluation and filling of [goal_nodes]
-                    bOkay = hobj.do_goaling(lst_const, lst_goal)
-                    iStop = 1
+                    #lst_goal = []
+                    #bOkay = hobj.do_goaling(lst_goal)
+                    #iStop = 1
 
-                    # Phase #2: process all the items in [goal_nodes]
-                    for goal in lst_goal:
-                        # Look through the constituents for the most appropriate place to go to
-                        bFound = False
-                        for const in lst_const:
-                            # Check if this 
-                            pass
+                    ## Phase #3: process all the items in [goal_nodes]
+                    #for goal in lst_goal:
+                    #    # Look through the constituents for the most appropriate place to go to
+                    #    bFound = False
+                    #    for const in self.lst_hierobj:
+                    #        # Check if this constituent fits the gap
+                    #        if const.first == goal.first and const.last == goal.last:
+                    #            bFound = True
+                    #            goal.source = const
+                    #    if not bFound:
+                    #        iStop = 1
 
+                    ## Phase #4: perform the ICH placements
+                    #for goal in lst_goal:
+                    #    # Validate
+                    #    if goal.source != None:
+                    #        # We can now do the ICH placement
+                    #        target.ich_count += 1
+                    #        # Action depends on the situation
+                    #        goal.parent.copy_ich(target.ich_count, goal.source, after=goal.prev)
 
                 # Depending on the debug-level: evaluate the result of this part
                 if debug and debug > 1:
@@ -1247,6 +1438,41 @@ class SentenceObj(object):
             msg = errHandle.get_error_message()
             errHandle.Status(msg)
             return False
+
+    def get_match(self, first, last):
+        # Look through the constituents for the most appropriate place to go to
+        bFound = False
+        first_best = None
+        last_best = None
+        best = None
+        try:
+            for const in self.lst_hierobj:
+                if not const.discontinuous:
+                    # Check if this constituent fits the gap
+                    if const.first and const.last and const.first == first and const.last == last:
+                        bFound = True
+                        return const
+                    elif const.first and const.last and const.first >= first and const.last <= last:
+                        # Check if we already have a second best
+                        if best:
+                            # Check if this one is better
+                            if const.last - const.first > last_best - first_best:
+                                # This one is larger
+                                first_best = const.first
+                                last_best = const.last
+                                best = const
+                        else:
+                            # This really is the first
+                            first_best = const.first
+                            last_best = const.last
+                            best = const
+
+            # Otherwise
+            return best
+        except:
+            msg = errHandle.get_error_message()
+            errHandle.Status(msg)
+            return None
         
     def evaluate(target):
         """Check if the sentence in target is ok. If not: provide a report"""
