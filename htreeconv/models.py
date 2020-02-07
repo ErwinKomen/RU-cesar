@@ -322,13 +322,15 @@ class HierObj(object):
             leftmost = None
             rightmost = None
             prev_right = None
+            left = None
+            right = None
             for idx, ch in enumerate(self.child):
                 # Get the leftmost @n and rightmost @n of this child
                 bOkay, left, right = ch.do_order()
                 if leftmost == None: leftmost = left
                 # Compare with @n of previous child
                 if prev_right:
-                    if prev_left > right and prev_right > left and prev_right > right:
+                    if right and left and prev_left > right and prev_right > left and prev_right > right:
                         # Place the child before the previous one
                         parent = self
                         parent.child.remove(ch)
@@ -1271,6 +1273,10 @@ class SentenceObj(object):
             # Continue to work with myself (sentenceobj) as 'target'
             target = self
 
+            # First make sure to number everything initially
+            for hobj in target.child:
+                bOkay, first, last = hobj.do_number(1)
+
             # Walk all 'sentences' within me
             for hobj in target.child:
                 # Reset the ich counter
@@ -1343,7 +1349,7 @@ class SentenceObj(object):
                     bOkay = False
                     while not bOkay:
                         # Phase #1: determine first/last numbers of all constituents
-                        bOkay, first, last = hobj.do_number(0)
+                        bOkay, first, last = hobj.do_number(1)
                         # Check for a goal to process
                         result, oGoal = hobj.get_gap()
                         if not result:
@@ -1361,31 +1367,6 @@ class SentenceObj(object):
                                 # Action depends on the situation
                                 oGoal.parent.copy_ich(target.ich_count, oMatch, after=oGoal.prev)
                                 bOkay = False
-
-                    #lst_goal = []
-                    #bOkay = hobj.do_goaling(lst_goal)
-                    #iStop = 1
-
-                    ## Phase #3: process all the items in [goal_nodes]
-                    #for goal in lst_goal:
-                    #    # Look through the constituents for the most appropriate place to go to
-                    #    bFound = False
-                    #    for const in self.lst_hierobj:
-                    #        # Check if this constituent fits the gap
-                    #        if const.first == goal.first and const.last == goal.last:
-                    #            bFound = True
-                    #            goal.source = const
-                    #    if not bFound:
-                    #        iStop = 1
-
-                    ## Phase #4: perform the ICH placements
-                    #for goal in lst_goal:
-                    #    # Validate
-                    #    if goal.source != None:
-                    #        # We can now do the ICH placement
-                    #        target.ich_count += 1
-                    #        # Action depends on the situation
-                    #        goal.parent.copy_ich(target.ich_count, goal.source, after=goal.prev)
 
                 # Depending on the debug-level: evaluate the result of this part
                 if debug and debug > 1:
