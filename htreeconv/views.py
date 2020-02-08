@@ -734,8 +734,9 @@ class ConvertBasic():
                 ndx_node = self.add_node(xml_parent, obj['txt'], obj['pos'], obj['f'] )
 
                 # Process the children
-                for oChild in obj['child']:
-                    self.add_clause(ndx_node, oChild)
+                if 'child' in obj:
+                    for oChild in obj['child']:
+                        self.add_clause(ndx_node, oChild)
 
             # Return the element that has been made
             return oBack
