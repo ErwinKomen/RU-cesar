@@ -270,6 +270,10 @@ class HierObj(object):
         """THe new location of dst_node is under [self], after [after]. Replace original with*ICH*-n node"""
 
         try:
+            # DEBUG
+            if dst_node.parent.is_top():
+                iStop = 11
+
             # Need to have the sentence object
             target = dst_node.sent_obj
 
@@ -287,22 +291,27 @@ class HierObj(object):
             else:
                 self.add_child(dst_node)
 
-            # Create an ICH node
-            dst_ich_parent = HierObj(target, dst_node.pos, "", parent = self)
-            dst_ich_node = HierObj(target, "*ICH*-{}".format(iIchCounter), "", parent=dst_ich_parent)
-            dst_ich_node.type = "Star"
-            dst_ich_parent.add_child(dst_ich_node)
-
-            # Make sure it ends up where the previous [dst_node] was
-            if prev:
-                parent.add_child(dst_ich_parent, after=prev)
-            #elif before:
-            #    parent.add_child(dst_ich_parent, before=before)
+            # What if 'parent' is already at the top?
+            if parent.is_top():
+                # instead of an ICH copy, this is a plain move
+                pass
             else:
-                parent.add_child(dst_ich_parent, start=True)
+                # Create an ICH node
+                dst_ich_parent = HierObj(target, dst_node.pos, "", parent = self)
+                dst_ich_node = HierObj(target, "*ICH*-{}".format(iIchCounter), "", parent=dst_ich_parent)
+                dst_ich_node.type = "Star"
+                dst_ich_parent.add_child(dst_ich_node)
 
-            # Adapt the POS of the moved dst_node
-            dst_node.pos = "{}-{}".format(dst_node.pos, iIchCounter)
+                # Make sure it ends up where the previous [dst_node] was
+                if prev:
+                    parent.add_child(dst_ich_parent, after=prev)
+                #elif before:
+                #    parent.add_child(dst_ich_parent, before=before)
+                else:
+                    parent.add_child(dst_ich_parent, start=True)
+
+                # Adapt the POS of the moved dst_node
+                dst_node.pos = "{}-{}".format(dst_node.pos, iIchCounter)
 
             return True
         except:
@@ -318,37 +327,66 @@ class HierObj(object):
             # Validate
             if self==None: return True, -1, -1
             if self.is_endnode(): return True, self.n, self.n
-            # Check each of the children
-            leftmost = None
-            rightmost = None
-            prev_right = None
-            left = None
-            right = None
-            for idx, ch in enumerate(self.child):
-                # Get the leftmost @n and rightmost @n of this child
-                bOkay, left, right = ch.do_order()
-                if leftmost == None: leftmost = left
-                # Compare with @n of previous child
-                if prev_right:
-                    if right and left and prev_left > right and prev_right > left and prev_right > right:
-                        # Place the child before the previous one
-                        parent = self
-                        parent.child.remove(ch)
-                        parent.child.insert(idx-1, ch)
-                        # Now [prev_right] remains as it is
-                        # But we need to adapt the current left and right
-                        right = prev_right
-                        left = prev_left
+
+            bContinue = False
+            while not bContinue:
+                # Check each of the children
+                leftmost = None
+                rightmost = None
+                prev_right = None
+                left = None
+                right = None
+                lst_child = []
+                bContinue = True
+                for idx, ch in enumerate(self.child):
+                    # Get the leftmost @n and rightmost @n of this child
+                    bOkay, left, right = ch.do_order()
+
+                    # Store intermediate results
+                    lst_child.append({'node': ch, 'left': left, 'right': right})
+
+                    if leftmost == None: leftmost = left
+                    # Compare with @n of previous child
+                    if prev_right:
+                        if right and left and prev_left > right and prev_right > left and prev_right > right:
+                            # Find out where to place the child
+                            bFound = False
+                            for idx_new, new in enumerate(lst_child):
+                                if new['left'] > right:
+                                    # Need to place it before [new]
+                                    parent = self
+                                    parent.child.remove(ch)
+                                    parent.child.insert(idx_new, ch)
+                                    # Signal we found it
+                                    bFound = True
+                                    bContinue = False
+                                    break
+                            if not bFound:
+                                # Place the child before the previous one
+                                parent = self
+                                parent.child.remove(ch)
+                                parent.child.insert(idx-1, ch)
+                                # Now [prev_right] remains as it is
+                            # We need to adapt the current left and right
+                            right = prev_right
+                            left = prev_left
+                            # Break out of the FOR-loop
+                            bContinue = False
+                            break
+                        else:
+                            # set prev_right
+                            prev_right = right
+                            prev_left = left
+                            # Signal that we may continue
+                            #bContinue = True
                     else:
                         # set prev_right
                         prev_right = right
                         prev_left = left
-                else:
-                    # set prev_right
-                    prev_right = right
-                    prev_left = left
-            # Possibly correct rightmost
-            if rightmost == None: rightmost = right
+                        # Signal that we may continue
+                        #bContinue = True
+                # Possibly correct rightmost
+                if rightmost == None: rightmost = right
 
             # Return 
             return True, leftmost, rightmost
@@ -378,6 +416,11 @@ class HierObj(object):
             first = None
             last = None
             for ch in self.child:
+
+                # DEBUG
+                if ch.id == 177075:
+                    iStop = 1
+
                 # Perform numbering for this child
                 bOkay, left, right = ch.do_number(level + 1)
 
@@ -437,22 +480,31 @@ class HierObj(object):
             # Visit all children (if there are any)
             prev = None
             next = None
+            current_first = None
+            prev_last = None
             numch = len(self.child)
             for idx, ch in enumerate(self.child):
                 # Check for a gap in this child
                 result = ch.do_goaling(lst_goal)
                 if not result: return False
 
+                # Determin what my first @n is
+                if ch.first == None and prev != None:
+                    current_first = prev.last
+                else:
+                    current_first = ch.first
+
                 # Check for the presence of a 'GAP'
-                if prev and prev.last and ch.first:
-                    if prev.last + 1 < ch.first:
+                if prev and prev_last and current_first:
+                    if prev_last + 1 < current_first:
                         # There is a gap between the previous one and me
                         # Store the gap with its characterstics
-                        oGap = GoalObj(parent=self, prev=prev, next=ch, first=prev.last+1, last=ch.first-1)
+                        oGap = GoalObj(parent=self, prev=prev, next=ch, first=prev_last+1, last=current_first-1)
                         lst_goal.append(oGap)
 
                 # Go to the next phase
                 prev = ch
+                if prev.last: prev_last = prev.last
 
             # Return 
             return True
@@ -1263,7 +1315,7 @@ class SentenceObj(object):
             if debug and debug >= 1:
                 errHandle.Status("Working on: {}".format(sent_loc))
             # ============= Debugging ========================
-            if sent_loc == "d4.p6.s1":
+            if sent_loc == "d8.p35.s1":
                 iStop = 1
             # ================================================
 
