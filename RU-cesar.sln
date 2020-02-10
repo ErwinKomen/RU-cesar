@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "cesar", "cesar\cesar.pyproj", "{797AEBA2-6308-4BC8-9676-E0A2F3B20DD2}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "anon", "anon\anon.pyproj", "{D565A16B-3481-4B3C-8554-8308D2D5D15F}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "hebot", "hebot\hebot.pyproj", "{8B9AFFDA-919D-4001-9F82-FC844F0A23BB}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "htreeconv", "htreeconv\htreeconv.pyproj", "{5944FFAA-6A7E-48B5-85E5-E9EA5E5F45A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,12 @@ Global
 		{797AEBA2-6308-4BC8-9676-E0A2F3B20DD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{797AEBA2-6308-4BC8-9676-E0A2F3B20DD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{797AEBA2-6308-4BC8-9676-E0A2F3B20DD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D565A16B-3481-4B3C-8554-8308D2D5D15F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D565A16B-3481-4B3C-8554-8308D2D5D15F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B9AFFDA-919D-4001-9F82-FC844F0A23BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B9AFFDA-919D-4001-9F82-FC844F0A23BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5944FFAA-6A7E-48B5-85E5-E9EA5E5F45A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5944FFAA-6A7E-48B5-85E5-E9EA5E5F45A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
