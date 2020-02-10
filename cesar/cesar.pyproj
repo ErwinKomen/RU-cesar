@@ -55,6 +55,16 @@
     <Compile Include="cesar\doc\tests.py" />
     <Compile Include="cesar\doc\views.py" />
     <Compile Include="cesar\doc\__init__.py" />
+    <Compile Include="cesar\ds2\admin.py" />
+    <Compile Include="cesar\ds2\apps.py" />
+    <Compile Include="cesar\ds2\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cesar\ds2\migrations\__init__.py" />
+    <Compile Include="cesar\ds2\models.py" />
+    <Compile Include="cesar\ds2\tests.py" />
+    <Compile Include="cesar\ds2\views.py" />
+    <Compile Include="cesar\ds2\__init__.py" />
     <Compile Include="cesar\lingo\admin.py" />
     <Compile Include="cesar\lingo\apps.py" />
     <Compile Include="cesar\lingo\forms.py">
@@ -132,6 +142,9 @@
     <Folder Include="cesar\doc\migrations\" />
     <Folder Include="cesar\doc\templates\" />
     <Folder Include="cesar\doc\templates\doc\" />
+    <Folder Include="cesar\ds2\" />
+    <Folder Include="cesar\ds2\migrations\" />
+    <Folder Include="cesar\ds2\templates\" />
     <Folder Include="cesar\lingo\" />
     <Folder Include="cesar\lingo\migrations\" />
     <Folder Include="cesar\lingo\static\" />
@@ -197,6 +210,7 @@
     <Content Include="cesar\doc\templates\doc\foliadocs_view.html" />
     <Content Include="cesar\doc\templates\doc\import_brys.html" />
     <Content Include="cesar\doc\templates\doc\import_docs.html" />
+    <Content Include="cesar\ds2\templates\form.html" />
     <Content Include="cesar\lingo\static\lingo\content\bootstrap.min.css" />
     <Content Include="cesar\lingo\static\lingo\content\lingo.css" />
     <Content Include="cesar\lingo\static\lingo\content\ru-base.css" />
@@ -217,9 +231,11 @@
     <Content Include="cesar\lingo\templates\lingo\download_status.html" />
     <Content Include="cesar\lingo\templates\lingo\experiment_done.html" />
     <Content Include="cesar\lingo\templates\lingo\experiment_edit.html" />
+    <Content Include="cesar\lingo\templates\lingo\qdata_list.html" />
     <Content Include="cesar\lingo\templates\lingo\index.html" />
     <Content Include="cesar\lingo\templates\lingo\layout.html" />
     <Content Include="cesar\lingo\templates\lingo\participant.html" />
+    <Content Include="cesar\lingo\templates\lingo\related_objects.html" />
     <Content Include="cesar\lingo\templates\lingo\topnav.html" />
     <Content Include="cesar\seeker\static\seeker\scripts\cesar.seeker.js" />
     <Content Include="cesar\seeker\static\seeker\scripts\xhr2.js" />
@@ -279,6 +295,8 @@
     <Content Include="cesar\seeker\templates\seeker\result_part_2.html" />
     <Content Include="cesar\seeker\templates\seeker\result_part_1.html" />
     <Content Include="cesar\seeker\templates\seeker\variable_details.html" />
+    <Content Include="cesar\lingo\templates\lingo\breadcrumb_list.html" />
+    <Content Include="cesar\lingo\templates\lingo\generic_details.html" />
     <Content Include="cesar\templates\nlogin.html" />
     <Content Include="cesar\seeker\templates\seeker\research_details.html" />
     <Content Include="cesar\seeker\templates\seeker\research_part_6.html" />

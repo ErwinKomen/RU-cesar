@@ -25,6 +25,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="hebviews.py" />
     <Compile Include="htreeconv.py" />
     <Compile Include="models.py" />
     <Compile Include="util.py" />
