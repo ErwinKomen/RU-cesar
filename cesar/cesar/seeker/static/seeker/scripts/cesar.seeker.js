@@ -4072,8 +4072,10 @@ var ru = (function ($, ru) {
        *   Save a simple search
        *
        */
-      simple_save: function (elStart) {
+      simple_save: function (elStart, savetype) {
         var sDivProgress = "#research_progress",
+            sDivBare = "#baresimple_result",
+            sSimpleType = "project",
             ajaxurl = "",
             response = null,
             frm = null,
@@ -4093,6 +4095,31 @@ var ru = (function ($, ru) {
           // Gather the information
           frm = $(elStart).closest("form");
           if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+          if (savetype == undefined) { savetype = "project"; }
+          switch (savetype) {
+            case "bare":
+              sDivProgress = "#baresimple_result";
+              sSimpleType = "simple search";
+              // pass on the list of possible 'towards' names
+              if (loc_towards.length === 0) {
+                // Double check this list
+                bChecked = true;
+                $("#related_constituents tr.rel-form").not(".empty-form").find("td.rel-name input").each(function (k, el) {
+                  loc_towards.push($(el).val());
+                });
+              }
+              data.push({ "name": "ltowards", "value": JSON.stringify(loc_towards) });
+              // Prepare what we see
+              $(sDivProgress).parent().find(".pre-save").removeClass("hidden");
+              $(sDivProgress).parent().find(".post-save").html("");
+              $(sDivProgress).parent().find(".post-save").removeClass("hidden");
+              break;
+            default:
+              sDivProgress = "#research_progress";
+              sSimpleType = "project";
+              break;
+          }
 
           // Make a call to the ajaxurl
           $.post(ajaxurl, data, function (response) {
@@ -4121,16 +4148,21 @@ var ru = (function ($, ru) {
               sUrl = response['editurl'];
               // Create a response
               lHtml.push("<div>");
-              lHtml.push("<p>The simple search has been saved as project ["+sSaveName+"]</p>");
+              lHtml.push("<p>The simple search has been saved as "+ sSimpleType +" <span class='badge'>"+sSaveName+"</span></p>");
               lHtml.push("<p>");
-              lHtml.push("<a type='button' title='open the new project' class='btn btn-success btn-xs'");
-              lHtml.push(" href=\""+sUrl+"\">");
-              lHtml.push(" <span class='glyphicon glyphicon-folder-open' aria-hidden='true'></span>");
-              lHtml.push("</a>");
-              lHtml.push("</p>");
+              switch (savetype) {
+                case "project":
+                  lHtml.push("<a type='button' title='open the new project' class='btn btn-success btn-xs'");
+                  lHtml.push(" href=\"" + sUrl + "\">");
+                  lHtml.push(" <span class='glyphicon glyphicon-folder-open' aria-hidden='true'></span>");
+                  lHtml.push("</a>");
+                  lHtml.push("</p>");
+                  break;
+              }
               lHtml.push("</div>");
               // Show the responses
               $(sDivProgress).html(lHtml.join("\n"));
+              $(sDivProgress).parent().find(".pre-save").addClass("hidden");
               // Remove the SAVE as advise
               $("#save_as").addClass("hidden");
             }
@@ -4560,7 +4592,7 @@ var ru = (function ($, ru) {
        *   Action when user clicks an element that requires toggling a target
        *
        */
-      toggle_click: function (elThis, class_to_close) {
+      toggle_click: function (elThis, class_to_close, class_to_open) {
         var elGroup = null,
             elTarget = null,
             sStatus = "";
@@ -4573,11 +4605,17 @@ var ru = (function ($, ru) {
             // Show it if needed
             if ($("#"+elTarget).hasClass("hidden")) {
               $("#" + elTarget).removeClass("hidden");
+              if (class_to_open !== undefined && class_to_open !== "") {
+                $("." + class_to_open).removeClass("hidden");
+              }
             } else {
               $("#" + elTarget).addClass("hidden");
               // Check if there is an additional class to close
               if (class_to_close !== undefined && class_to_close !== "") {
                 $("." + class_to_close).addClass("hidden");
+              }
+              if (class_to_open !== undefined && class_to_open !== "") {
+                $("." + class_to_open).removeClass("hidden");
               }
             }
           }

@@ -4806,6 +4806,46 @@ def research_simple(request):
     else:
         return None
 
+def get_related(qd):
+    """Get the list of related"""
+
+    sRelated = ""
+    bResult = True
+
+    # Adapt the 'RelatedForm' with the information from lTowards
+    lTmp = json.loads(qd.get('ltowards', '[]'))
+    lTowards = [(x['name'], x['value']) for x in lTmp if x['name'] != ""]
+
+    # Get the 'simplerel' formset from the input
+    formset = RelatedFormset(qd, prefix='simplerel')
+    for form in formset:
+        form.fields['towards'].choices = lTowards
+    # if formset.is_valid():
+    bResetRelated = False
+    if formset != None:
+        # Check for validness
+        if formset.is_valid():
+            # Everything okay, continue
+            if formset.total_form_count() == 0:
+                bResetRelated = True
+            else:
+                lRelated = []
+                # Walk the forms in the formset
+                for rel_form in formset:
+                    if rel_form.is_valid():
+                        # Process the information in this form
+                        # oFields = rel_form.cleaned_data
+                        oFields = copy.copy(rel_form.cleaned_data)
+                        # lRelated.append({"name": oFields['name'], "cat": oFields['cat'], "raxis": oFields['raxis'], "towards": oFields['towards']})
+                        lRelated.append(oFields)
+                sRelated = json.dumps(lRelated)
+        else:
+            # One of the forms is not valid, got to do something about it
+            bResult = False
+            sRelated = formset.errors
+    return bResult, sRelated
+
+
 def modify_simple_search(research, qd):
     """Modify and save the research on the basis of the info we get"""
 
@@ -4996,6 +5036,70 @@ def research_simple_save(request):
                 data['html'] = "First execute a simple search"
         else:
             data['html'] = "First define and execute a simple search"
+
+    # Return the information
+    return JsonResponse(data)
+
+
+def research_simple_baresave(request):
+    """Given a simple search *definition*, save this definition under the name provided"""
+
+    # Initialisations
+    arErr = []
+    simplename = SIMPLENAME     # Name of the simple project
+    data = {'status': 'error', 'html': 'nothing'}
+
+    # This only works for action POST
+    if request.method == "POST":
+
+        # There should be a parameter: savename
+        params = request.POST
+        if 'savebaresimple' not in params:
+            data['html'] = "Need parameter [savebaresimple]"
+            return JsonResponse(data)
+        sBareSaveName = params['savebaresimple']
+        overwrite = (params.get("overwrite", "false") == "true")
+
+        # Get the correct owner
+        owner = User.objects.filter(Q(username=request.user)).first()
+
+        # Check if the user is authenticated
+        if owner == None or not request.user.is_authenticated:
+            # Simply redirect to the home page
+            return redirect('nlogin')
+        
+        # Get the 'simple' project of this owner
+        lstQ = []
+        lstQ.append(Q(owner=owner))
+        lstQ.append(Q(name=simplename))
+        obj = Research.objects.filter(*lstQ).first()
+        # Double check to see if the search has run
+        if obj != None:
+            # Get the search parameters
+            oSearch = dict(targetType=params.get("targetType", "w"),
+                           searchwords=params.get("searchwords", ""),
+                           searchcql=params.get("searchcql", ""),
+                           searchpos=params.get("searchpos", ""),
+                           searchexc=params.get("searchexc", ""),
+                           searchlemma=params.get("searchlemma", "") )
+            # Get the related ones
+            bOkay, sRelated = get_related(params)
+            if bOkay:
+                oSearch['related'] = sRelated
+
+                # Now save [oSearch] with [sBareSaveName]
+                research, msg = Research.create_simple(oSearch, sBareSaveName, owner, overwrite)
+
+                if research == None:
+                    data['html'] = msg
+                else:
+                    # Show all went well
+                    data['status'] = "ok"
+                    data['name'] = research.name
+            else:
+                data['html'] = sRelated
+        else:
+            data['html'] = "First define a simple search"
 
     # Return the information
     return JsonResponse(data)

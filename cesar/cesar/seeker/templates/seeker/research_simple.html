@@ -14,8 +14,21 @@
   <!-- Contents -->
   <div class="container body-content">    
     <h3>
+      <!-- Main title -->
       <span id="search_mode">Simple search</span>
+      <!-- buttons to the right-->
       <span class="pull-right">
+
+        <!-- Button to save a simple search -->
+        <a class="btn jumbo-3 btn-xs"
+           id="simple_save_switch"
+           targetid="keep_simple_search"
+           title="Show the simple search save dialog"
+           onclick="ru.cesar.seeker.toggle_click(this, 'post-save', 'pre-save');">
+          <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
+        </a>
+
+        <!-- button to switch extended/simple search -->
         <a class="btn btn-success btn-xs" 
            id="search_mode_switch"
            title="Switch to extended search" 
@@ -260,7 +273,48 @@
 
             </div>
 
+            <!-- Empty space -->
             <div>&nbsp;</div>
+
+            <!-- Room to save a simple search -->
+            <div id="keep_simple_search" class="hidden">
+
+              <!-- Naming-->
+              <div class="pre-save">
+                <table style="width: 100%;">
+                  <tbody>
+                    <tr class="tablefield">
+                      <!-- Label-->
+                      <td class="tdnowrap vmiddle">Name:</td>
+                      <!-- Room for the name -->
+                      <td style="width: 100%;">
+                        <input id="id_savebaresimple" name="savebaresimple" value="" type="text">
+                      </td>
+                      <!-- Button -->
+                      <td align="right">
+                        <button type="button" class="btn jumbo-3" id="simple_baresaveas" 
+                                title="Save simple search with this name"
+                                ajaxurl="{% url 'simple_baresave' %}"
+                                onclick="ru.cesar.seeker.simple_save(this, 'bare');">Save</button>
+                      </td>
+                    </tr>
+                    <tr class="tablefield">
+                      <td class="tdnowrap vmiddle">Overwrite if exists</td>
+                      <td align="left">
+                        <input id="id_overwrite" name="overwrite" type="checkbox" value="true" checked="" />
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Results -->
+              <div id="baresimple_result" class="post-save">
+
+              </div>
+
+            </div>
           </div>
         </div>
 
@@ -360,13 +414,14 @@
       </form>
 
       <div class="row container">
+        <!-- Progress-->
         <div class="col-md-9 panel panel-default">
           <span><b>Progress</b></span>
           <!-- Save button is shown upon completion -->
           <span id="save_as" class="pull-right hidden">
-                <a class="btn jumbo-1 btn-xs" title="let me save this search" 
+                <a class="btn jumbo-1 btn-xs" title="let me save this search as an ADVANCED search" 
                    targetid="save-as-service"
-                   onclick="ru.cesar.seeker.toggle_click(this);">keep this search...</a>
+                   onclick="ru.cesar.seeker.toggle_click(this);">keep this as advanced search...</a>
 
           </span>
 

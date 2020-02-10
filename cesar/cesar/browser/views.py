@@ -333,8 +333,6 @@ def sync_crpp(request):
     # Add the information in the 'context' of the web page
     return render(request, template_name, context)
 
-
-
 def sync_crpp_start(request):
     """Synchronize information FROM /crpp"""
 

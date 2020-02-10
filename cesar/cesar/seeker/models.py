@@ -797,8 +797,7 @@ class Gateway(models.Model):
         except:
             sMsg = oErr.get_error_message()
             return False, sMsg
-
-
+        
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
 
@@ -1173,6 +1172,7 @@ class VarDef(Variable):
         except:
             sMsg = oErr.get_error_message()
             return False, "Vardef check_order: {}".format(sMsg)
+
 
 class GlobalVariable(Variable):
     """Each research project may have any number of global (static) variables"""
@@ -3230,6 +3230,53 @@ class Research(models.Model):
       self.saved = timezone.now()
       response = super(Research, self).save(force_insert, force_update, using, update_fields)
       return response
+
+    def create_simple(oSearch, name, owner, overwrite=False):
+        """Create a simple search based on the parameters in oSearch"""
+
+        obj = None
+        msg = ""
+        try:
+            if oSearch != None:
+                # Look for the correct research project
+                qs = Research.objects.filter(owner=owner, name=name)
+                if qs.count() > 0 and not overwrite:
+                    # This name is already in use -- warn the user
+                    obj=None
+                    msg = "The project [{}] already exists. First delete it if you want to import this version.".format(name)
+                else:
+                    # Get the target type
+                    targetType = oSearch['targetType']
+
+                    if overwrite and qs.count() > 0:
+                        # Retreive the correct object
+                        obj = qs.first()
+                        # Set the gateway
+                        gateway = obj.gateway
+                        gateway.description = json.dumps(oSearch)
+                        gateway.save()
+                        # Adapt the object's parameters
+                        obj.purpose = "Derived from simple search"
+                        obj.targetType = targetType
+                        
+                    else:
+                        # Create a new gateway
+                        gateway = Gateway.objects.create()
+                        gateway.name = "simple"
+                        gateway.description = json.dumps(oSearch)
+                        gateway.save()
+                        # Create a new project
+                        obj = Research.objects.create(name=name, purpose="Derived from simple search", 
+                                       targetType=targetType, gateway=gateway,
+                                       owner=owner)
+                    # Save the Research project
+                    obj.save()
+        except:
+            msg = errHandle.get_error_message()
+            obj=None
+
+        # Return the object that has been created
+        return obj, msg
 
     def gateway_name(self):
         return self.gateway.name
