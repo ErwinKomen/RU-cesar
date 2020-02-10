@@ -16,6 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <CommandLineArguments>-i "c:/etc/database/bhs4.sqlite3" -o "d:/data files/corpora/bible/heb_ot/htree" -b EXO -s "d:/data files/corpora/bible/heb_ot/surface" -d 4 -l "d.13.p.21.s.1"</CommandLineArguments>
+    <CommandLineArguments>-i "d:/data files/corpora/bible/heb_ot/etcbc_2017/bhs4.sqlite3" -o "d:/data files/corpora/bible/heb_ot/test2/htree" -b EST -f</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
