@@ -4075,6 +4075,7 @@ var ru = (function ($, ru) {
       simple_save: function (elStart, savetype) {
         var sDivProgress = "#research_progress",
             sDivBare = "#baresimple_result",
+            sDivName = "#search_simple_name",
             sSimpleType = "project",
             ajaxurl = "",
             response = null,
@@ -4157,6 +4158,10 @@ var ru = (function ($, ru) {
                   lHtml.push(" <span class='glyphicon glyphicon-folder-open' aria-hidden='true'></span>");
                   lHtml.push("</a>");
                   lHtml.push("</p>");
+                  break;
+                case "bare":
+                  // Make sure the name gets displayed properly
+                  $(sDivName).html(sSaveName);
                   break;
               }
               lHtml.push("</div>");

@@ -4644,12 +4644,17 @@ def research_simple(request):
     simplename = SIMPLENAME     # Name of the simple project
     oErr = ErrHandle()
     sTargetType = "w"
+    # Get the correct owner
+    owner = User.objects.filter(Q(username=request.user)).first()
+
+    # Get a list of searches
+    qs_simple = Research.objects.filter(owner=owner, gateway__name="simple").exclude(name=SIMPLENAME)
+
+    # Get parameters
+    qd = request.GET if request.method == "GET" else request.POST
 
     # Action depends on GET or POST
     if request.method == "GET": 
-
-        # Get the correct owner
-        owner = User.objects.filter(Q(username=request.user)).first()
 
         # Check if the user is authenticated
         if owner == None or not request.user.is_authenticated:
@@ -4755,6 +4760,7 @@ def research_simple(request):
             search_count = search_count,
             part_list=get_partlist(request),
             partchoice = partchoice,
+            simple_list = qs_simple,
             error_list=error_list
             )
 
@@ -4765,9 +4771,6 @@ def research_simple(request):
     elif request.method == "POST":
         # The POST method is reserved for MODIFYING an existing simple search
         data = {'status': 'ok', 'html': ''}
-
-        # Get the correct owner
-        owner = User.objects.filter(Q(username=request.user)).first()
 
         # Check if the user is authenticated
         if owner == None or not request.user.is_authenticated:
@@ -4844,7 +4847,6 @@ def get_related(qd):
             bResult = False
             sRelated = formset.errors
     return bResult, sRelated
-
 
 def modify_simple_search(research, qd):
     """Modify and save the research on the basis of the info we get"""
@@ -5085,7 +5087,8 @@ def research_simple_baresave(request):
             # Get the related ones
             bOkay, sRelated = get_related(params)
             if bOkay:
-                oSearch['related'] = sRelated
+                related = [] if sRelated == "" else json.loads(sRelated)
+                oSearch['related'] = related
 
                 # Now save [oSearch] with [sBareSaveName]
                 research, msg = Research.create_simple(oSearch, sBareSaveName, owner, overwrite)

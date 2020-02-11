@@ -1,5 +1,5 @@
 """
-The classes in this models.py are used by the Python application hebot
+The classes in this models.py are used in htreeconv and hebviews
 
 """
 
@@ -1315,8 +1315,8 @@ class SentenceObj(object):
             if debug and debug >= 1:
                 errHandle.Status("Working on: {}".format(sent_loc))
             # ============= Debugging ========================
-            if sent_loc == "d8.p35.s1":
-                iStop = 1
+            #if sent_loc == "d8.p35.s1":
+            #    iStop = 1
             # ================================================
 
             # Normalize the order as much as possible *without* ICH movements
