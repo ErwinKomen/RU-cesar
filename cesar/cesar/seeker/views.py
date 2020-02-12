@@ -4780,24 +4780,37 @@ def research_simple(request):
         try:
             # Get the parameters
             qd = request.POST
-            # Get the correct research project FOR THIS USER
-            lstQ = []
-            lstQ.append(Q(owner=owner))
-            lstQ.append(Q(name=SIMPLENAME))
-            research = Research.objects.filter(*lstQ).first()
-            if research == None:
-                # There is no simple research project to adapt
-                data['status'] = 'error'
-                data['html'] = "research_simple cannot find a Research project that should be adapted"
-            else:
-                # Found the research
-                if modify_simple_search(research, qd):
-                    # We are okay
-                    data['html'] = "The simple project has been adapted"
-                else:
-                    # Something went wrong
+
+            # Try to load the form
+            simpleform = SimpleSearchForm(qd)
+            if simpleform.is_valid():
+
+                # See if it has a different name now
+                simplename = simpleform.cleaned_data["baresimple"]
+                if simplename == "": simplename = SIMPLENAME
+
+                # Get the correct research project FOR THIS USER
+                lstQ = []
+                lstQ.append(Q(owner=owner))
+                lstQ.append(Q(name=simplename))
+                research = Research.objects.filter(*lstQ).first()
+                if research == None:
+                    # There is no simple research project to adapt
                     data['status'] = 'error'
-                    data['html'] = "research_simple: modify_simple_search returns with an error"
+                    data['html'] = "research_simple cannot find a Research project that should be adapted"
+                else:
+                    # Found the research
+                    if modify_simple_search(research, qd, simpleform.cleaned_data):
+                        # We are okay
+                        data['html'] = "The simple project has been adapted"
+                    else:
+                        # Something went wrong
+                        data['status'] = 'error'
+                        data['html'] = "research_simple: modify_simple_search returns with an error"
+            else:
+                # There are errors in the form
+                data['status'] = 'error'
+                data['html'] = "Simple form errors: {}".format(simpleform.errors)
             
         except:
             data['status'] = 'error'
@@ -4848,7 +4861,7 @@ def get_related(qd):
             sRelated = formset.errors
     return bResult, sRelated
 
-def modify_simple_search(research, qd):
+def modify_simple_search(research, qd, data = None):
     """Modify and save the research on the basis of the info we get"""
 
     # Sanity checking
@@ -4857,9 +4870,24 @@ def modify_simple_search(research, qd):
 
     oErr = ErrHandle()
 
+    # Check if we have the data
+    if data == None:
+        # Clean the form and get the data
+        form = SimpleSearchForm(qd)
+        if form.is_valid():
+            data = form.cleaned_data
+
     # Continue
-    if "targetType" in qd:
+    if data != None and "targetType" in data:
+        # Make sure the targettype is set correctly
         research.targetType = qd.get("targetType", "w")
+        # Make sure the stype is set correctly too
+        research.stype = STYPE_SIMPLE
+        #  Possibly adapt the name of this search
+        simplename = SIMPLENAME
+        if 'baresimple' in data and data['baresimple'] != "":
+            simplename = data['baresimple']
+        research.name = simplename
         # Save the adapted research
         research.save()
         
@@ -4982,7 +5010,7 @@ def research_simple_save(request):
 
     # Initialisations
     arErr = []
-    simplename = SIMPLENAME     # Name of the simple project
+    simplename = SIMPLENAME     # Name of the simple project - this is by default the standard name
     data = {'status': 'error', 'html': ''}
 
     # This only works for action POST
@@ -4994,6 +5022,10 @@ def research_simple_save(request):
             data['html'] = "Need parameter [savename]"
             return JsonResponse(data)
         sSaveName = params['savename']
+
+        # Check if this has a particular name
+        sSearchName = params.get("baresimple", "")
+        if sSearchName != "": simplename = sSearchName
 
         # Get the correct owner
         owner = User.objects.filter(Q(username=request.user)).first()
@@ -5042,6 +5074,57 @@ def research_simple_save(request):
     # Return the information
     return JsonResponse(data)
 
+def read_simple_form(qd):
+    """Read the forms in the research query data and transform them into a simple search object"""
+
+    oSearch = {}
+    bOkay = False
+    msg = ""
+    oErr = ErrHandle()
+    try:
+        # Read the form
+        simpleform = SimpleSearchForm(qd)
+        if simpleform.is_valid():
+            # Get the data
+            cleaned_data = simpleform.cleaned_data
+            # Unpack the data
+            baresimple = cleaned_data['baresimple']
+            simplename = SIMPLENAME
+            searchwords = cleaned_data['searchwords']
+            searchcql = cleaned_data['searchcql']
+            searchpos = cleaned_data['searchpos']
+            searchexc = cleaned_data['searchexc']
+            searchlemma = cleaned_data['searchlemma']
+            targetType = cleaned_data['targetType']
+            overwrite = (qd.get("overwrite", "false") == "true")
+
+            # Adaptations of the data
+            if targetType == "": targetType = "w"
+
+            if baresimple != "":
+                # Get the search parameters
+                oSearch = dict(name=baresimple, targetType=targetType, searchwords=searchwords, searchcql=searchcql,
+                                searchpos=searchpos, searchexc=searchexc, searchlemma=searchlemma )
+                # Get the related ones
+                bOkay, sRelated = get_related(qd)
+                if bOkay:
+                    related = [] if sRelated == "" else json.loads(sRelated)
+                    oSearch['related'] = related
+                    bOkay = True
+                else:
+                    # Creating related goes wrong
+                    oSearch['msg']  = sRelated
+            else:
+                # No name has been specified
+                oSearch['msg'] = "When using 'Save as', a name is required"
+        else:
+            # form error
+            oSearch['msg'] = "There are errors: {}".format(simpleform.errors)
+    except:
+        oSearch['msg'] = oErr.get_error_message()
+
+    # Return our result
+    return bOkay, oSearch
 
 def research_simple_baresave(request):
     """Given a simple search *definition*, save this definition under the name provided"""
@@ -5051,58 +5134,39 @@ def research_simple_baresave(request):
     simplename = SIMPLENAME     # Name of the simple project
     data = {'status': 'error', 'html': 'nothing'}
 
+    # Get the correct owner
+    owner = User.objects.filter(Q(username=request.user)).first()
+
+    # Check if the user is authenticated
+    if owner == None or not request.user.is_authenticated:
+        # Simply redirect to the home page
+        return redirect('nlogin')        
+            
     # This only works for action POST
     if request.method == "POST":
 
         # There should be a parameter: savename
         params = request.POST
-        if 'savebaresimple' not in params:
-            data['html'] = "Need parameter [savebaresimple]"
-            return JsonResponse(data)
-        sBareSaveName = params['savebaresimple']
         overwrite = (params.get("overwrite", "false") == "true")
 
-        # Get the correct owner
-        owner = User.objects.filter(Q(username=request.user)).first()
+        # Read the form
+        bOkay, oSearch = read_simple_form(params)
+        if bOkay:
+            baresimple = oSearch['name']
+            # Now save [oSearch] with [baresimple]
+            research, msg = Research.create_simple(oSearch, baresimple, owner, overwrite)
 
-        # Check if the user is authenticated
-        if owner == None or not request.user.is_authenticated:
-            # Simply redirect to the home page
-            return redirect('nlogin')
-        
-        # Get the 'simple' project of this owner
-        lstQ = []
-        lstQ.append(Q(owner=owner))
-        lstQ.append(Q(name=simplename))
-        obj = Research.objects.filter(*lstQ).first()
-        # Double check to see if the search has run
-        if obj != None:
-            # Get the search parameters
-            oSearch = dict(targetType=params.get("targetType", "w"),
-                           searchwords=params.get("searchwords", ""),
-                           searchcql=params.get("searchcql", ""),
-                           searchpos=params.get("searchpos", ""),
-                           searchexc=params.get("searchexc", ""),
-                           searchlemma=params.get("searchlemma", "") )
-            # Get the related ones
-            bOkay, sRelated = get_related(params)
-            if bOkay:
-                related = [] if sRelated == "" else json.loads(sRelated)
-                oSearch['related'] = related
-
-                # Now save [oSearch] with [sBareSaveName]
-                research, msg = Research.create_simple(oSearch, sBareSaveName, owner, overwrite)
-
-                if research == None:
-                    data['html'] = msg
-                else:
-                    # Show all went well
-                    data['status'] = "ok"
-                    data['name'] = research.name
+            if research == None:
+                data['html'] = msg
             else:
-                data['html'] = sRelated
+                # Show all went well
+                data['status'] = "ok"
+                data['name'] = research.name
         else:
-            data['html'] = "First define a simple search"
+            if 'msg' in oSearch:
+                data['html'] = oSearch['msg']
+            else:
+                data['html'] = "Could not read the simple form"
 
     # Return the information
     return JsonResponse(data)

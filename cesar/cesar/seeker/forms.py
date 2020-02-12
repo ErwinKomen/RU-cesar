@@ -516,6 +516,10 @@ class QuantorSearchForm(ModelForm):
 
 
 class SimpleSearchForm(forms.Form):
+    baresimple = forms.CharField(label=_("Name"), required=False,
+                    widget=forms.TextInput(attrs={'placeholder': 'Name', 'style': 'width: 100%;'}))
+    description = forms.CharField(label=_("Description"), required=False,
+                    widget=forms.TextInput(attrs={'placeholder': 'Description', 'style': 'width: 100%;'}))
     targetType = forms.ChoiceField(label=_("Search type"), choices=TARGET_TYPE_CHOICES, required = True)
     searchwords = forms.CharField(label=_("Word(s) to be found"), required=False)
     searchlemma = forms.CharField(label=_("Lemma to be found"), required=False)

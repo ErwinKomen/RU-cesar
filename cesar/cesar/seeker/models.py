@@ -48,6 +48,13 @@ TARGET_TYPE_CHOICES = (
     (CONSTITUENT_ORIENTED, 'Constituent(s)'),
     (EXTENDED_SEARCH, 'Extended'),
 )
+STYPE_PLAIN = "p"
+STYPE_SIMPLE = "s"
+STYPE_CHOICES = (
+    ('0', '----'),
+    (STYPE_PLAIN, 'Plain'),
+    (STYPE_SIMPLE, 'Simple')
+)
 
 
 
@@ -3173,8 +3180,11 @@ class Research(models.Model):
     # [1] Purpose of this research
     purpose = models.TextField("Purpose")
     # [1] The main type of this research: is it word oriented or constituent oriented?
-    targetType = models.CharField("Main element type", choices=TARGET_TYPE_CHOICES, 
-                              max_length=5)
+    targetType = models.CharField("Main element type", choices=TARGET_TYPE_CHOICES, max_length=5)
+    # [1] The search type: simple, plain, ...
+    stype = models.CharField("Search type", choices=STYPE_CHOICES, max_length=5, default="p")
+    # [0-1] A stringified JSON representation of the search, if it is simple
+    compact = models.TextField("Compressed specification", null=True, blank=True)
     # [1] Each research project has a 'gateway': a specification for the $search element
     gateway = models.OneToOneField(Gateway, blank=False, null=False)
     # [1] Each research project has its owner: obligatory, but not to be selected by the user himself
@@ -3238,6 +3248,9 @@ class Research(models.Model):
         msg = ""
         try:
             if oSearch != None:
+                # Compact it
+                sSearch = json.dumps(oSearch)
+
                 # Look for the correct research project
                 qs = Research.objects.filter(owner=owner, name=name)
                 if qs.count() > 0 and not overwrite:
@@ -3251,10 +3264,10 @@ class Research(models.Model):
                     if overwrite and qs.count() > 0:
                         # Retreive the correct object
                         obj = qs.first()
-                        # Set the gateway
-                        gateway = obj.gateway
-                        gateway.description = json.dumps(oSearch)
-                        gateway.save()
+                        # Save the compact representation
+                        obj.compact = sSearch
+                        # Change the stype accordingly
+                        obj.stype = STYPE_SIMPLE
                         # Adapt the object's parameters
                         obj.purpose = "Derived from simple search"
                         obj.targetType = targetType
@@ -3263,11 +3276,12 @@ class Research(models.Model):
                         # Create a new gateway
                         gateway = Gateway.objects.create()
                         gateway.name = "simple"
-                        gateway.description = json.dumps(oSearch)
+                        gateway.description = "simple search as described in research.compact"
                         gateway.save()
                         # Create a new project
                         obj = Research.objects.create(name=name, purpose="Derived from simple search", 
                                        targetType=targetType, gateway=gateway,
+                                       stype=STYPE_SIMPLE, compact=sSearch,
                                        owner=owner)
                     # Save the Research project
                     obj.save()
