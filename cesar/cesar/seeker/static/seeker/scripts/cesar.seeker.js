@@ -4611,7 +4611,7 @@ var ru = (function ($, ru) {
             if ($("#"+elTarget).hasClass("hidden")) {
               $("#" + elTarget).removeClass("hidden");
               if (class_to_open !== undefined && class_to_open !== "") {
-                $("." + class_to_open).removeClass("hidden");
+                $("." + class_to_open).addClass("hidden");
               }
             } else {
               $("#" + elTarget).addClass("hidden");

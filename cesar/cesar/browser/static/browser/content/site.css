@@ -1019,6 +1019,17 @@ table tbody tr td.clickable:hover, table tbody tr.clickable td:hover {
   background-color: lightgoldenrodyellow ;
 }
 
+a.nostyle:link, a.nostyle:visited {
+    text-decoration: inherit;
+    color: inherit;
+    cursor: inherit;
+}
+
+td a.nostyle {
+  display: block;
+}
+
+
 /* TSG specific */
 td.editable, span.editable {
   cursor: pointer;

@@ -91,7 +91,7 @@ urlpatterns = [
 
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),
     url(r'^seek/wizard/new/$', cesar.seeker.views.research_edit, name='seeker_define'),
-    url(r'^seek/wizard/simple/$', cesar.seeker.views.research_simple, name='seeker_simple'),
+    url(r'^seek/wizard/simple(?:/(?P<pk>\d+))?/$', cesar.seeker.views.research_simple, name='seeker_simple'),
     url(r'^seek/wizard/simple/save/$', cesar.seeker.views.research_simple_save, name='simple_save'),
     url(r'^seek/wizard/simple/baresave/$', cesar.seeker.views.research_simple_baresave, name='simple_baresave'),
     url(r'^seek/wizard/import/$', cesar.seeker.views.import_json, name='import_file'),

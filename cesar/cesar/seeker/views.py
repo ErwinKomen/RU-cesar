@@ -4635,7 +4635,7 @@ def research_edit(request, object_id=None):
     #   or editing the existing project
     return render(request, template, context)
 
-def research_simple(request):
+def research_simple(request, pk=None):
     """Allow the user to specify a simple search"""
 
     # Initialisations
@@ -4647,8 +4647,9 @@ def research_simple(request):
     # Get the correct owner
     owner = User.objects.filter(Q(username=request.user)).first()
 
-    # Get a list of searches
-    qs_simple = Research.objects.filter(owner=owner, gateway__name="simple").exclude(name=SIMPLENAME)
+    # Get a list of SIMPLE searches
+    # qs_simple = Research.objects.filter(owner=owner, gateway__name="simple").exclude(name=SIMPLENAME)
+    qs_simple = Research.objects.filter(owner=owner, stype=STYPE_SIMPLE).exclude(name=SIMPLENAME)
 
     # Get parameters
     qd = request.GET if request.method == "GET" else request.POST
@@ -4661,74 +4662,95 @@ def research_simple(request):
             # Simply redirect to the home page
             return redirect('nlogin')
 
-        # Get the 'simple' project of this owner
-        lstQ = []
-        lstQ.append(Q(owner=owner))
-        lstQ.append(Q(name=simplename))
-        obj = Research.objects.filter(*lstQ).first()
+        # Initialisations
         partchoice = None
-        if obj == None:
-            gateway = Gateway(name="simple")
-            gateway.save()
-            obj = Research(name=simplename, purpose="simple", targetType=sTargetType,
-                           gateway=gateway, owner=owner)
-            obj.save()
-        else:
-            # There already is a search: find its associated part
-            basket = Basket.objects.filter(research=obj).order_by('-saved').first()
-            if basket != None:
-                partchoice = basket.part.id
-        object_id = obj.id
-
+        obj = None
         # Initially the 'related' formset is empty
         related_formset = None
+
+        # Get the correct research object
+        if pk != None:
+            obj = Research.objects.filter(id=pk).first()
+        if pk == None or obj == None:
+            # Get the 'simple' project of this owner
+            lstQ = []
+            lstQ.append(Q(owner=owner))
+            lstQ.append(Q(name=simplename))
+            obj = Research.objects.filter(*lstQ).first()
+            if obj == None:
+                gateway = Gateway(name="simple")
+                gateway.save()
+                obj = Research(name=simplename, purpose="simple", targetType=sTargetType,
+                               gateway=gateway, owner=owner)
+                obj.save()
+            else:
+                # There already is a search: find its associated part
+                basket = Basket.objects.filter(research=obj).order_by('-saved').first()
+                if basket != None:
+                    partchoice = basket.part.id
+            # Create a form based on this research object
+            simpleform = SimpleSearchForm()
+            simpleform.fields["targetType"].initial = obj.targetType
+            simpleform.fields["searchwords"].initial = ""
+            simpleform.fields["searchpos"].initial = ""
+            simpleform.fields["searchlemma"].initial = ""
+            simpleform.fields["searchexc"].initial = ""
+            simpleform.fields["searchrel"].initial = ""
+            simpleform.fields["searchcql"].initial = ""
+            simpleform.fields["baresimple"].initial = ""
+            cns = obj.gateway.constructions.first()
+            if cns != None and cns.search != None:
+                svalue = cns.search.value
+                if obj.targetType == "w":
+                    # Simple word search
+                    simpleform.fields["searchwords"].initial = svalue
+                elif obj.targetType == "c":
+                    # Constituent category search
+                    simpleform.fields["searchpos"].initial = svalue
+                elif obj.targetType == "q":     # Cesar CQL
+                    simpleform.fields["searchcql"].initial = svalue
+                else:
+                    # This should be targettype "e" (extended)
+                    # Extended search: at least 'lemma' or 'constituent', and possibly also 'word'
+                    simpleform.fields["searchwords"].initial = svalue
+                    simpleform.fields["searchpos"].initial = cns.search.category
+                    simpleform.fields["searchexc"].initial = cns.search.exclude
+                    simpleform.fields["searchlemma"].initial = cns.search.lemma
+
+                if cns.search.related != None and cns.search.related != "":
+                    # Treat 'related'
+                    simpleform.fields["searchrel"].initial = cns.search.related
+                    # Fill the 'related' formset with data from [related]
+                    lSearchRelated = json.loads(cns.search.related)
+                    related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
+                    lTowards = [("search", "Search Hit")]
+                    i = 0
+                    for form in related_formset:
+                        form.fields['towards'].choices = lTowards
+                        # Make sure 'name' is in there
+                        if 'name' in lSearchRelated[i]:
+                            sDvar = lSearchRelated[i]['name']
+                            tThis = (sDvar, sDvar)
+                            lTowards.append( tThis )
+                        i += 1
+        else:
+            # Get the information from the simple search
+            oSearch = json.loads(obj.compact)
+            # Fill the simple search form with the information in oSearch
+            simpleform = SimpleSearchForm()
+            simpleform.fields["targetType"].initial = oSearch['targetType']
+            simpleform.fields["searchwords"].initial = oSearch['searchwords']
+            simpleform.fields["searchpos"].initial = oSearch['searchpos']
+            simpleform.fields["searchlemma"].initial = oSearch['searchlemma']
+            simpleform.fields["searchexc"].initial = oSearch['searchexc']
+            simpleform.fields["searchexc"].initial = oSearch['searchexc']
+            simpleform.fields["searchcql"].initial = oSearch['searchcql']
+            simpleform.fields["baresimple"].initial = oSearch['name']
+
+        object_id = obj.id
+
         # Prepare a related formset without initial data
         related_formset = RelatedFormset(prefix='simplerel')
-
-        # Create a form based on this research object
-        simpleform = SimpleSearchForm()
-        simpleform.fields["targetType"].initial = obj.targetType
-        simpleform.fields["searchwords"].initial = ""
-        simpleform.fields["searchpos"].initial = ""
-        simpleform.fields["searchlemma"].initial = ""
-        simpleform.fields["searchexc"].initial = ""
-        simpleform.fields["searchrel"].initial = ""
-        simpleform.fields["searchcql"].initial = ""
-        cns = obj.gateway.constructions.first()
-        if cns != None and cns.search != None:
-            svalue = cns.search.value
-            if obj.targetType == "w":
-                # Simple word search
-                simpleform.fields["searchwords"].initial = svalue
-            elif obj.targetType == "c":
-                # Constituent category search
-                simpleform.fields["searchpos"].initial = svalue
-            elif obj.targetType == "q":     # Cesar CQL
-                simpleform.fields["searchcql"].initial = svalue
-            else:
-                # This should be targettype "e" (extended)
-                # Extended search: at least 'lemma' or 'constituent', and possibly also 'word'
-                simpleform.fields["searchwords"].initial = svalue
-                simpleform.fields["searchpos"].initial = cns.search.category
-                simpleform.fields["searchexc"].initial = cns.search.exclude
-                simpleform.fields["searchlemma"].initial = cns.search.lemma
-
-            if cns.search.related != None and cns.search.related != "":
-                # Treat 'related'
-                simpleform.fields["searchrel"].initial = cns.search.related
-                # Fill the 'related' formset with data from [related]
-                lSearchRelated = json.loads(cns.search.related)
-                related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
-                lTowards = [("search", "Search Hit")]
-                i = 0
-                for form in related_formset:
-                    form.fields['towards'].choices = lTowards
-                    # Make sure 'name' is in there
-                    if 'name' in lSearchRelated[i]:
-                        sDvar = lSearchRelated[i]['name']
-                        tThis = (sDvar, sDvar)
-                        lTowards.append( tThis )
-                    i += 1
 
         intro_message = "Make a simple search"
         intro_breadcrumb = "Simple"
@@ -5147,7 +5169,8 @@ def research_simple_baresave(request):
 
         # There should be a parameter: savename
         params = request.POST
-        overwrite = (params.get("overwrite", "false") == "true")
+        # overwrite = (params.get("overwrite", "false") == "true")
+        overwrite = True
 
         # Read the form
         bOkay, oSearch = read_simple_form(params)

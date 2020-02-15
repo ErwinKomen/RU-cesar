@@ -20,15 +20,6 @@
       <!-- buttons to the right-->
       <span class="pull-right">
 
-        <!-- Button to save a simple search -->
-        <a class="btn jumbo-3 btn-xs"
-           id="simple_save_switch"
-           targetid="keep_simple_search"
-           title="Show the simple search save dialog"
-           onclick="ru.cesar.seeker.toggle_click(this, 'post-save', 'pre-save');">
-          <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
-        </a>
-
         <!-- button to switch extended/simple search -->
         <a class="btn btn-success btn-xs" 
            id="search_mode_switch"
@@ -78,243 +69,257 @@
 
                 <!-- hidden input-->
                 <div id="" class="hidden">
-                    <input id="id_targetType" name="targetType" type="text" value="{{simpleform.targetType.value}}" />
-                    <input name="is_simple_search" type="text" value="yes" />
+                  <input id="id_targetType" name="targetType" type="text" value="{{simpleform.targetType.value}}" />
+                  <input name="is_simple_search" type="text" value="yes" />
                 </div>
 
                 <!-- Simple search mode -->
                 <div id="search_mode_simple">
-                    <!-- I this has a name, then show it -->
-                    <h4 id="search_simple_name">
-                    <!-- This is filled in for named searches-->
-                    </h4>
+                  <!-- If this has a name, then show it -->
+                  <div>
+                    <span class="pull-right">
+                      <span id="search_simple_name" class="badge hidden jumbo-2">
+                        <!-- This is filled in for named searches-->
+                      </span>
+                    </span>
+                  </div>
 
-                    <!-- Table for input -->
-                    <table class="func-view compact-simple">
+                  <!-- Table for input -->
+                  <table class="func-view compact-simple">
                     <tbody>
-                        <!-- Table header -->
-                        <tr class="tablefield">
-                        <td colspan="4">Search through the texts, looking for... </td>
-                        </tr>
+                      <!-- Name of this search -->
+                      <tr class="tablefield simple-search-named {% if not simpleform.baresimple.value %} hidden{% endif %}">
+                        <td class="tdnowrap vmiddle" title="Name of this search">Name:</td>
+                        <td colspan="3" style="width: 100%;">{{simpleform.baresimple}}</td>
+                      </tr>
 
-                        <!-- Looking for a word -->
-                        <tr id="simple_specify_w" class="tablefield simple-search-1">
+                      <!-- Description of this search -->
+                      <tr class="tablefield simple-search-named {% if not simpleform.baresimple.value %}hidden{% endif %}">
+                        <td class="tdnowrap vmiddle" title="Short description of this search">Description:</td>
+                        <td colspan="3" style="width: 100%;">{{simpleform.description}}</td>
+                      </tr>
+
+                      <!-- Table header + save button(s) -->
+                      <tr class="tablefield">
+                        <td colspan="4">
+                          <span>Search through the texts, looking for... </span>
+                          <!-- Save button-->
+                          <span class="pull-right">
+                            <!-- Prodding question-->
+                            <span id="simple_save_question" {% if simpleform.baresimple.value %}class="hidden"{% endif %}><i>Saving??</i></span>
+                            <!-- Save current search-->
+                            <a id="save_current"
+                                onclick="ru.cesar.seeker.simple_save(this, 'bare');"
+                                ajaxurl="{% url 'simple_baresave' %}"
+                                class="btn btn-xs jumbo-1 simple-search-named {% if not simpleform.baresimple.value %}hidden{% endif %}"
+                                title="Save this simple search">save</a>
+                            <!-- Save as button -->
+                            <a id="save_as"
+                                onclick="ru.cesar.seeker.simple_save(this, 'bare');"
+                                ajaxurl="{% url 'simple_baresave' %}"
+                                class="btn btn-xs jumbo-1 simple-search-named {% if not simpleform.baresimple.value %}hidden{% endif %}"
+                                title="Save simple search under a name">save as ...</a>
+
+                            <!-- Switch between save view and other view -->
+                            <a class="btn jumbo-3 btn-xs"
+                               id="simple_save_switch"
+                               targetid="simple_save_question"
+                               title="Show/hide the simple search save dialog"
+                               onclick="ru.cesar.seeker.toggle_click(this, 'post-save', 'simple-search-named');">
+                              <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
+                            </a>
+                          </span>
+                        </td>
+                      </tr>
+
+                      <!-- Looking for a word -->
+                      <tr id="simple_specify_w" class="tablefield simple-search-1">
                         <td class="tdnowrap vmiddle" title="A word (with wildcards) or a small phrase">Word or phrase:</td>
                         <td colspan="3" style="width: 100%;">{{simpleform.searchwords}}</td>
-                        </tr>
+                      </tr>
 
-                        <!-- Looking for a POS-tag -->
-                        <tr id="simple_specify_c" class="tablefield simple-search-2 hidden">
+                      <!-- Looking for a POS-tag -->
+                      <tr id="simple_specify_c" class="tablefield simple-search-2 hidden">
                         <td class="tdnowrap vmiddle" >Constituent category:</td>
                         <td style="width: 50%;">{{simpleform.searchpos}}</td>
                         <td class="tdnowrap vmiddle" title="A constituent category to be excluded (use wildcards if needed)">Excluding:</td>
                         <td style="width: 50%;">{{simpleform.searchexc}}</td>
-                        </tr>
-                        <!-- Looking for a lemma -->
-                        <tr id="simple_specify_l" class="tablefield simple-search-2 hidden">
+                      </tr>
+
+                      <!-- Looking for a lemma -->
+                      <tr id="simple_specify_l" class="tablefield simple-search-2 hidden">
                         <td class="tdnowrap vmiddle" title="A lemma (use wildcards if needed)">Lemma:</td>
                         <td colspan="3" style="width: 100%;">{{simpleform.searchlemma}}</td>
-                        </tr>
+                      </tr>
 
-                        <!-- Hidden row with a table for related constituent specifications -->
-                        <tr id="related_constituents" class="hidden">
+                      <!-- Hidden row with a table for related constituent specifications -->
+                      <tr id="related_constituents" class="hidden">
                         <td colspan="4">
-                            <table class="">
-                            <thead>
-                                <tr>
-                                <th colspan="2">#</th>
-                                <th style="min-width: 165px;">Name</th>
-                                <th style="width: 100%;">How it is related</th>
-                                <!-- Column for button(s)-->
-                                <th>
-                                    <!-- Provide a button to toggle 'more options' -->
-                                </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Copy from the formset -->
-                                {% for rel_form in related_formset %}
-                                <tr class="form-row rel-form">
-                                <td valign="top" style="min-width: 20px;">
-                                    <span>{{forloop.counter}}</span>
-                                </td>
-                                <td valign="top" style="min-width: 20px;">
-                                    <span class="rel-edit-open">
-                                    <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'open');"><span class="glyphicon glyphicon-pencil"></span></a>
-                                    </span>
-                                    <span class="rel-edit-close hidden">
-                                    <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'close');"><span class="glyphicon glyphicon-ok"></span></a>
-                                    </span>
-                                </td>
-                                <td valign="top" class="rel-name">
-                                    <div class="rel-view-mode kwname">{{rel_form.name.value}}</div>                              
-                                    <div class="rel-edit-mode hidden">{{rel_form.name}}</div>
-                                    <div class="rel-name-err hidden">GIVE A NAME</div>
-                                </td>
-                                <!-- Definition cell -->
-                                <td valign="top">
-                                    <!-- View mode -->
-                                    <div class="rel-view-mode rel-descr">
-                                    {% include 'seeker/related_row.html' with rel_form=rel_form %}
-                                    </div>
-                                    <!-- Edit mode -->
-                                    <div class="rel-edit-mode hidden" >
-                                    <table style="width: 100%;">
-                                        <tbody>
-                                        <tr>
-                                            <td style="min-width: 140px; width: 140px;">it is a</td>
-                                            <td>{{rel_form.raxis}} of <span class="rel-towards">{{rel_form.towards}}</span></td>
-                                            <td align="right">
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Syntactic category" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">C</a>
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Position" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">P</a>
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Text of constituent" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-text');">T</a>
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Lemma" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-lemma');">L</a>
-                                            </td>
-                                        </tr>
-                                        <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{rel_form.cat}}</td></tr>
-                                        <tr class="rel-text hidden"><td>its text is like</td><td colspan="2" style="width: 100%;">{{rel_form.reltext}}</td></tr>
-                                        <tr class="rel-lemma hidden"><td>its lemma is</td><td colspan="2" style="width: 100%;">{{rel_form.rellemma}}</td></tr>
-                                        <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{rel_form.pos}}, skipping {{rel_form.skip}}</td></tr>
-                                        </tbody>
-                                    </table>
-                                    </div>
-                                </td>
-                                <td title="Delete this relation" style="vertical-align: middle;">
-                                    <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
-                                </td>
-                                </tr>
-                                {% endfor %}
+                          <table class="">
+                          <thead>
+                            <tr>
+                            <th colspan="2">#</th>
+                              <th style="min-width: 165px;">Name</th>
+                              <th style="width: 100%;">How it is related</th>
+                              <!-- Column for button(s)-->
+                              <th>
+                                  <!-- Provide a button to toggle 'more options' -->
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <!-- Copy from the formset -->
+                            {% for rel_form in related_formset %}
+                            <tr class="form-row rel-form">
+                              <td valign="top" style="min-width: 20px;">
+                                  <span>{{forloop.counter}}</span>
+                              </td>
+                              <td valign="top" style="min-width: 20px;">
+                                  <span class="rel-edit-open">
+                                  <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'open');"><span class="glyphicon glyphicon-pencil"></span></a>
+                                  </span>
+                                  <span class="rel-edit-close hidden">
+                                  <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'close');"><span class="glyphicon glyphicon-ok"></span></a>
+                                  </span>
+                              </td>
+                              <td valign="top" class="rel-name">
+                                  <div class="rel-view-mode kwname">{{rel_form.name.value}}</div>                              
+                                  <div class="rel-edit-mode hidden">{{rel_form.name}}</div>
+                                  <div class="rel-name-err hidden">GIVE A NAME</div>
+                              </td>
+                              <!-- Definition cell -->
+                              <td valign="top">
+                                  <!-- View mode -->
+                                  <div class="rel-view-mode rel-descr">
+                                  {% include 'seeker/related_row.html' with rel_form=rel_form %}
+                                  </div>
+                                  <!-- Edit mode -->
+                                  <div class="rel-edit-mode hidden" >
+                                  <table style="width: 100%;">
+                                      <tbody>
+                                      <tr>
+                                          <td style="min-width: 140px; width: 140px;">it is a</td>
+                                          <td>{{rel_form.raxis}} of <span class="rel-towards">{{rel_form.towards}}</span></td>
+                                          <td align="right">
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Syntactic category" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">C</a>
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Position" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">P</a>
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Text of constituent" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-text');">T</a>
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Lemma" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-lemma');">L</a>
+                                          </td>
+                                      </tr>
+                                      <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{rel_form.cat}}</td></tr>
+                                      <tr class="rel-text hidden"><td>its text is like</td><td colspan="2" style="width: 100%;">{{rel_form.reltext}}</td></tr>
+                                      <tr class="rel-lemma hidden"><td>its lemma is</td><td colspan="2" style="width: 100%;">{{rel_form.rellemma}}</td></tr>
+                                      <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{rel_form.pos}}, skipping {{rel_form.skip}}</td></tr>
+                                      </tbody>
+                                  </table>
+                                  </div>
+                              </td>
+                              <td title="Delete this relation" style="vertical-align: middle;">
+                                  <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
+                              </td>
+                            </tr>
+                            {% endfor %}
 
-                                <!-- Empty row with related constituent specification-->
-                                <tr class="form-row empty-form rel-form row1">
-                                <td valign="top" style="min-width: 20px;">
-                                    <span>__counter__</span>
-                                </td>
-                                <td valign="top" style="min-width: 20px;">
-                                    <span class="rel-edit-open hidden">
-                                    <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'open');"><span class="glyphicon glyphicon-pencil"></span></a>
-                                    </span>
-                                    <span class="rel-edit-close">
-                                    <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'close');"><span class="glyphicon glyphicon-ok"></span></a>
-                                    </span>
-                                </td>
-                                <td valign="top" class="rel-name">
-                                    <div class="rel-view-mode kwname hidden">{{related_formset.empty_form.name.value}}</div>                              
-                                    <div class="rel-edit-mode">{{related_formset.empty_form.name}}</div>
-                                    <div class="rel-name-err hidden">GIVE A NAME</div>
-                                </td>
-                                <!-- Definition cell -->
-                                <td valign="top">
-                                    <!-- View mode -->
-                                    <div class="rel-view-mode rel-descr hidden">
-                                    <!-- This will be filled in later -->
-                                    </div>
-                                    <!-- Edit mode -->
-                                    <div class="rel-edit-mode" >
-                                    <table style="width: 100%;">
-                                        <tbody>
-                                        <tr>
-                                            <td style="min-width: 140px; width: 140px;">it is a</td>
-                                            <td>{{related_formset.empty_form.raxis}} of <span class="rel-towards">{{related_formset.empty_form.towards}}</span></td>
-                                            <td align="right">
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Syntactic category" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">C</a>
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Position" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">P</a>
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Text of constituent" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-text');">T</a>
-                                            <a class="btn btn-xs jumbo-1" role="button" title="Lemma" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-lemma');">L</a>
-                                            </td>
-                                        </tr>
-                                        <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.cat}}</td></tr>
-                                        <tr class="rel-text hidden"><td>its text is like</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.reltext}}</td></tr>
-                                        <tr class="rel-lemma hidden"><td>its lemma is</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.rellemma}}</td></tr>
-                                        <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{related_formset.empty_form.pos}}, skipping {{related_formset.empty_form.skip}}</td></tr>
-                                        </tbody>
-                                    </table>
-                                    </div>
-                                </td>
-                                <td title="Delete this relation" style="vertical-align: middle; text-align: center;">
-                                    <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
-                                </td>
-                                </tr>
+                            <!-- Empty row with related constituent specification-->
+                            <tr class="form-row empty-form rel-form row1">
+                              <td valign="top" style="min-width: 20px;">
+                                <span>__counter__</span>
+                              </td>
+                              <td valign="top" style="min-width: 20px;">
+                                  <span class="rel-edit-open hidden">
+                                  <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'open');"><span class="glyphicon glyphicon-pencil"></span></a>
+                                  </span>
+                                  <span class="rel-edit-close">
+                                  <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'close');"><span class="glyphicon glyphicon-ok"></span></a>
+                                  </span>
+                              </td>
+                              <td valign="top" class="rel-name">
+                                  <div class="rel-view-mode kwname hidden">{{related_formset.empty_form.name.value}}</div>                              
+                                  <div class="rel-edit-mode">{{related_formset.empty_form.name}}</div>
+                                  <div class="rel-name-err hidden">GIVE A NAME</div>
+                              </td>
+                              <!-- Definition cell -->
+                              <td valign="top">
+                                  <!-- View mode -->
+                                  <div class="rel-view-mode rel-descr hidden">
+                                  <!-- This will be filled in later -->
+                                  </div>
+                                  <!-- Edit mode -->
+                                  <div class="rel-edit-mode" >
+                                  <table style="width: 100%;">
+                                      <tbody>
+                                      <tr>
+                                          <td style="min-width: 140px; width: 140px;">it is a</td>
+                                          <td>{{related_formset.empty_form.raxis}} of <span class="rel-towards">{{related_formset.empty_form.towards}}</span></td>
+                                          <td align="right">
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Syntactic category" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-cat');">C</a>
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Position" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-pos');">P</a>
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Text of constituent" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-text');">T</a>
+                                          <a class="btn btn-xs jumbo-1" role="button" title="Lemma" onclick="ru.cesar.seeker.rel_row_extra(this, 'rel-lemma');">L</a>
+                                          </td>
+                                      </tr>
+                                      <tr class="rel-cat hidden"><td>its syntactic category is</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.cat}}</td></tr>
+                                      <tr class="rel-text hidden"><td>its text is like</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.reltext}}</td></tr>
+                                      <tr class="rel-lemma hidden"><td>its lemma is</td><td colspan="2" style="width: 100%;">{{related_formset.empty_form.rellemma}}</td></tr>
+                                      <tr class="rel-pos hidden"><td>its position is</td><td colspan="2" >{{related_formset.empty_form.pos}}, skipping {{related_formset.empty_form.skip}}</td></tr>
+                                      </tbody>
+                                  </table>
+                                  </div>
+                              </td>
+                              <td title="Delete this relation" style="vertical-align: middle; text-align: center;">
+                                  <a href="#" class="delete-row"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
+                              </td>
+                              </tr>
 
-                                <!-- Row with the PLUS sign-->
-                                <tr class="add-row">
-                                <td colspan="8">
-                                    <span id="add_related_constituent">
-                                    <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add a related constituent</a>
-                                    </span>
-                                </td>
-                                </tr>
+                              <!-- Row with the PLUS sign-->
+                              <tr class="add-row">
+                              <td colspan="8">
+                                  <span id="add_related_constituent">
+                                  <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add a related constituent</a>
+                                  </span>
+                              </td>
+                              </tr>
 
-                            </tbody>
-                            </table>
+                          </tbody>
+                          </table>
                         </td>
-                        </tr>
+                      </tr>
 
-                        <!-- Button row-->
-                        <tr>
+                      <!-- Button row-->
+                      <tr>
                         <td colspan="4">
-                            <span>
+                          <!-- RElated on/off button-->
+                          <span>
                             <a id="add_related"
                                 onclick="ru.cesar.seeker.related_switch(this, 'related_constituents', 'no related');"
                                 targeturl="{% url 'seeker_simple' %}"
                                 class="btn btn-xs jumbo-1"
                                 title="Add related constituents">related</a>
-                            </span>
-                            <!-- Errors while saving -->
-                            <span id="simple_modifying"></span>
-                            <span class="pull-right">
+                          </span>
+
+                          <!-- Errors while saving -->
+                          <span id="simple_modifying"></span>
+
+                          <!-- More or less simple switch -->
+                          <span class="pull-right">
                             <a id="simple_more" 
                                 onclick="ru.cesar.seeker.simple_switch(this, 'more');"
                                 targeturl="{% url 'seeker_simple' %}"
                                 title="Let me to specify more" 
                                 class="btn jumbo-1 btn-xs">more</a>
-                            </span>
+                          </span>
                         </td>
-                        </tr>
+                       </tr>
                     </tbody>
-                    </table>
+                  </table>
                 </div>
 
                 <!-- Empty space -->
                 <div>&nbsp;</div>
 
-                <!-- Room to save a simple search -->
-                <div id="keep_simple_search" class="hidden">
-
-                  <!-- Naming-->
-                  <div class="pre-save">
-                    <table style="width: 100%;">
-                      <tbody>
-                        <tr class="tablefield">
-                          <!-- Label-->
-                          <td class="tdnowrap vmiddle">Name:</td>
-                          <!-- Room for the name -->
-                          <td style="width: 100%;">
-                            <input id="id_baresimple" name="baresimple" value="" type="text">
-                          </td>
-                          <!-- Button -->
-                          <td align="right">
-                            <button type="button" class="btn jumbo-3" id="simple_baresaveas" 
-                                    title="Save simple search with this name"
-                                    ajaxurl="{% url 'simple_baresave' %}"
-                                    onclick="ru.cesar.seeker.simple_save(this, 'bare');">Save</button>
-                          </td>
-                        </tr>
-                        <tr class="tablefield">
-                          <td class="tdnowrap vmiddle">Overwrite if exists</td>
-                          <td align="left">
-                            <input id="id_overwrite" name="overwrite" type="checkbox" value="true" checked="" />
-                          </td>
-                          <td></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-              
-                  <!-- Results -->
-                  <div id="baresimple_result" class="post-save">
-
-                  </div>
+                <!-- Results -->
+                <div id="baresimple_result" class="post-save">
 
                 </div>
 
@@ -356,7 +361,9 @@
                     {% for obj in simple_list %}
                       <tr>
                         <td class="tdnowrap">{{obj.get_targetType_display}}</td>
-                        <td style="width: 100%;">{{obj.name}}</td>
+                        <td style="width: 100%;" class="clickable" >
+                          <a href="{% url 'seeker_simple' obj.id %}" class="nostyle">{{obj.name}}</a>
+                        </td>
                       </tr>
                     {% endfor %}
                   </table>
