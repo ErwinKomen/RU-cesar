@@ -401,7 +401,7 @@ class SeekerListView(ListView):
 
     def render_to_response(self, context, **response_kwargs):
         # helper function...
-        def get_parent_nodeid(glist, instance, groupid):
+        def get_parent_nodeid(glist, instance, groupid, user):
             """Find the parent-group [instance] from glist"""
             # Obvious case
             if glist == [] or instance == None: return groupid
@@ -409,7 +409,7 @@ class SeekerListView(ListView):
             grp = instance.name
             # Yes: look for the correct parent
             for g in glist:
-                if g['group'] == grp:
+                if g['group'] == grp and g['user'] == user:
                     return g['nodeid']
             # Getting here means we haven't found the group
             return groupid
@@ -592,7 +592,7 @@ class SeekerListView(ListView):
                         # Show all groups that have not been shown yet
                         if sGroup == "":
                             # Now show this newly started search-containing group
-                            parent = get_parent_nodeid(resgroup_list, None, groupid)
+                            parent = get_parent_nodeid(resgroup_list, None, groupid, sUser)
                             oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 
                                     'user': sUser, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
                             oGrp['minwidth'] = (oGrp['depth']-2) * 20
@@ -618,7 +618,7 @@ class SeekerListView(ListView):
                                 if grp_depth > max_depth:
                                     max_depth = grp_depth
                                 # Now show this newly started search-containing group
-                                parent = get_parent_nodeid(resgroup_list, this_group.parent, groupid)
+                                parent = get_parent_nodeid(resgroup_list, this_group.parent, groupid, sUser)
                                 oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 
                                         'user': sUser, 'nodeid': nodeid, 'childof': parent, 'depth': grp_depth-1}
                                 oGrp['minwidth'] = (oGrp['depth']-2) * 20
@@ -633,7 +633,7 @@ class SeekerListView(ListView):
                     # Determine what to show
                     sGroupOrUser = sGroup if sGroup != "" else sUser
                     # Create a new item 
-                    parent = get_parent_nodeid(resgroup_list, res_item.group, groupid)
+                    parent = get_parent_nodeid(resgroup_list, res_item.group, groupid, sUser)
                     oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': res_item, 'nodeid': nodeid, 
                             'user': sUser, 'childof': parent, 'depth': depth,
                             'may_read': res_item.has_permission(currentuser, 'r'),
