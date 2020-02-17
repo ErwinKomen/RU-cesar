@@ -2703,6 +2703,7 @@ var ru = (function ($, ru) {
           sMoreLess = $(elStart).attr("mode");
           switch (sMoreLess) {
             case "more":
+            case "less":
               // Check what we are up to
               if ($(".simple-search-2.hidden").length === 0) {
                 // Nothing is hidden, so we are in extended search: return to simple search
@@ -4086,6 +4087,7 @@ var ru = (function ($, ru) {
             sDivBare = "#baresimple_result",
             sDivName = "#search_simple_name",
             sSimpleType = "project",
+            elDetails = "#tabsimpledetails",
             ajaxurl = "",
             response = null,
             frm = null,
@@ -4098,6 +4100,12 @@ var ru = (function ($, ru) {
         try {
           // Clear the errors
           private_methods.errClear();
+
+          // Double check
+          if ($(elDetails).hasClass("hidden")) {
+            $(elDetails).removeClass("hidden");
+            return;
+          }
 
           // obligatory parameter: ajaxurl
           ajaxurl = $(elStart).attr("ajaxurl");

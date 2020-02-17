@@ -464,7 +464,12 @@ class SeekerListView(ListView):
             lstQ.append(~Q(sharegroups__group__in=currentuser.groups.all()))
 
             # research_list = Research.objects.filter(Q(owner=self.request.user) | Q(sharegroups_group))
-            qs = Research.objects.exclude(*lstQ)
+            # qs = Research.objects.exclude(*lstQ)
+            qs = Research.objects.filter(Q(owner=currentuser)|Q(sharegroups__group__in=currentuser.groups.all()))
+
+            #qs2 = Research.objects.filter(Q(owner__username="Sanne")).filter(Q(sharegroups__group__name__in=currentuser.groups.all()))
+            #qs2 = Research.objects.filter(Q(sharegroups__group__in=currentuser.groups.all()))
+            #qs2 = Research.objects.filter(name__iexact="passive clause").filter(Q(sharegroups__group__name__in=["seeker_user"])).first()
 
             # Perform the sorting
             order = [Lower('owner'), '-saved']
@@ -533,6 +538,7 @@ class SeekerListView(ListView):
 
             # Process in the order of users
             for user_id in user_list:
+                grp_list = []   # List of groups that have already been shown
                 # Get projects of this user in an ordered way:
                 # -- only those that are shared with me
                 lstQ = []
@@ -560,7 +566,7 @@ class SeekerListView(ListView):
                 oGrp['minwidth'] = (oGrp['depth']-1) * 20
                 # Add USER-level as group to list
                 resgroup_list.append(oGrp)
-
+                
                 # Set the new parent: the user-group
                 parent = groupid
 
@@ -4665,8 +4671,10 @@ def research_simple(request, pk=None):
         # Initialisations
         partchoice = None
         obj = None
+
         # Initially the 'related' formset is empty
-        related_formset = None
+        related_formset = RelatedFormset(prefix='simplerel')
+
 
         # Get the correct research object
         if pk != None:
@@ -4751,6 +4759,23 @@ def research_simple(request, pk=None):
             # TODO: calculate [searchrel] and [ltowards] from what is in oSearch
             # simpleform.fields["searchrel"].initial = oSearch['searchrel']
 
+            # Get the list of related searches
+            lSearchRelated = oSearch['related']
+            # Make sure the string is saved correctly
+            simpleform.fields["searchrel"].initial = json.dumps(lSearchRelated)
+            # Create the correct formset
+            related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
+            lTowards = [("search", "Search Hit")]
+            i = 0
+            for form in related_formset:
+                form.fields['towards'].choices = lTowards
+                # Make sure 'name' is in there
+                if 'name' in lSearchRelated[i]:
+                    sDvar = lSearchRelated[i]['name']
+                    tThis = (sDvar, sDvar)
+                    lTowards.append( tThis )
+                i += 1
+
         # Determine whether the 'more' part should be shown or not
         show_more = "more"
         more_fields = ["searchpos", "searchlemma", "searchexc"]
@@ -4760,9 +4785,6 @@ def research_simple(request, pk=None):
                 break
 
         object_id = obj.id
-
-        # Prepare a related formset without initial data
-        related_formset = RelatedFormset(prefix='simplerel')
 
         intro_message = "Make a simple search"
         intro_breadcrumb = "Simple"

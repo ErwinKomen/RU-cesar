@@ -321,7 +321,7 @@
           <div class="col-md-3">
 
             <!-- Listview -->
-            <div class="simple-view-list {% if object_id %}hidden{% endif %}" id="tablist">
+            <div class="simple-view-list {% if object_id %}hidden{% endif %}" id="tabsimplelist">
               <!-- Short list of named simple searches -->
               {% if simple_list|length > 0 %}
                 <div class="panel ">
@@ -365,7 +365,7 @@
             </div>
 
             <!-- Name and description details -->
-            <div class="simple-view-details {% if not object_id %}hidden{% endif %}" id="tabdetails">
+            <div class="simple-view-details {% if not object_id %}hidden{% endif %}" id="tabsimpledetails">
               <table class="func-view compact-simple" style="width: 100%;">
                 <tbody>
 

@@ -3362,6 +3362,8 @@ class Research(models.Model):
             oJson = dict(name=self.name, 
                          purpose=self.purpose, 
                          targetType=self.targetType, 
+                         stype=self.stype,
+                         compact=self.compact,
                          owner=self.owner.username,
                          created= get_crpp_date(self.created),
                          saved=get_crpp_date(self.saved))
@@ -3386,6 +3388,8 @@ class Research(models.Model):
         try:
             if oData == None:
                 oData = import_data_file(data_file, arErr)
+                # Turn the array of strings into a large string
+                oData = json.loads("\n".join(oData))
             # Get the name of the new project
             if sName == None:
                 sName = "{}_{}".format(oData['name'], oData['owner'])
@@ -3406,11 +3410,16 @@ class Research(models.Model):
                 gateway.save()
                 # Get the targettype
                 targetType = oData['targetType']
+                # Get the stype
+                stype = "p"
+                if 'stype' in oData: stype = oData['stype']
+                compact = None
+                if 'compact' in oData: compact = oData['compact']
 
                 # Create a new project
                 obj = Research.objects.create(name=sName, purpose=oData['purpose'], 
-                               targetType=targetType, gateway=gateway,
-                               owner=owner)
+                               targetType=targetType, gateway=gateway, stype=stype,
+                               compact=compact, owner=owner)
                 # Save the Research project
                 obj.save()
 
