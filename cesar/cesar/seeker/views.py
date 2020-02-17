@@ -4743,9 +4743,19 @@ def research_simple(request, pk=None):
             simpleform.fields["searchpos"].initial = oSearch['searchpos']
             simpleform.fields["searchlemma"].initial = oSearch['searchlemma']
             simpleform.fields["searchexc"].initial = oSearch['searchexc']
-            simpleform.fields["searchexc"].initial = oSearch['searchexc']
             simpleform.fields["searchcql"].initial = oSearch['searchcql']
             simpleform.fields["baresimple"].initial = oSearch['name']
+
+            # TODO: calculate [searchrel] and [ltowards] from what is in oSearch
+            # simpleform.fields["searchrel"].initial = oSearch['searchrel']
+
+        # Determine whether the 'more' part should be shown or not
+        show_more = "less"
+        more_fields = ["searchpos", "searchlemma", "searchexc"]
+        for field in more_fields:
+            if simpleform.fields[field].initial: 
+                show_more = "more"
+                break
 
         object_id = obj.id
 
@@ -4773,6 +4783,7 @@ def research_simple(request, pk=None):
             object_id = object_id,
             original=obj,
             simpleform=simpleform,
+            show_more=show_more,
             related_formset=related_formset,
             axis_list=axis_list,
             intro_message=intro_message,

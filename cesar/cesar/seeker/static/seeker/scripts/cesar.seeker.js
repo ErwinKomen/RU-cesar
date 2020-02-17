@@ -2386,6 +2386,7 @@ var ru = (function ($, ru) {
         var elSimple = "#search_mode_simple",
             elStart = "#search_mode_switch",
             elLabel = "#search_mode",
+            elMore = "#simple_more",
             elRelated = "#related_constituents",
             elExtend = "#search_mode_extended",
             elForms = "#id_simplerel-TOTAL_FORMS",
@@ -2405,6 +2406,8 @@ var ru = (function ($, ru) {
             case "c":
               // Make sure the the extended searching is shown
               $(".simple-search-2").removeClass("hidden");
+              $(elMore).attr("title", "Let me specify less");
+              $(elMore).html("less");
               // Check if [related_constituents] should be shown or not
               if (iForms > 0) {
                 // Show related
@@ -2418,6 +2421,8 @@ var ru = (function ($, ru) {
             case "w":
               // Make sure the the extended searching is hidden
               $(".simple-search-2").addClass("hidden");
+              $(elMore).attr("title", "Let me specify more");
+              $(elMore).html("more");
               // Check if [related_constituents] should be shown or not
               if (iForms > 0) {
                 // Show related
