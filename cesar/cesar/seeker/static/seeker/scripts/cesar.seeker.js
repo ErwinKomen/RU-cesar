@@ -2689,17 +2689,19 @@ var ru = (function ($, ru) {
        *    Switch in the simple search view
        *
        */
-      simple_switch: function (elStart, sType) {
+      simple_switch: function (elStart) {
         var elTargetType = "#id_targetType",
             elPos = "#id_searchpos",
             elLemma = "#id_searchlemma",
             elExc = "#id_searchexc",
             elRelated = "#related_constituents",
             elForms = "#id_simplerel-TOTAL_FORMS",
+            sMoreLess = "",
             elMore = "#simple_more";
 
         try {
-          switch (sType) {
+          sMoreLess = $(elStart).attr("mode");
+          switch (sMoreLess) {
             case "more":
               // Check what we are up to
               if ($(".simple-search-2.hidden").length === 0) {
@@ -2714,6 +2716,7 @@ var ru = (function ($, ru) {
                 // Make sure the targettype is set correctly
                 $(elTargetType).val("w");
                 $(elMore).html("more");
+                $(elMore).attr("mode", "more");
                 // Remove all rows that are filled
                 $(".rel-form").not(".empty-form").remove();
                 $(elRelated).addClass("hidden");
@@ -2731,6 +2734,7 @@ var ru = (function ($, ru) {
                 // Adapt the button to say we can return to simple search
                 $(elMore).attr("title", "Return to simple search");
                 $(elMore).html("less");
+                $(elMore).attr("mode", "less");
                 // Show related button
                 ru.cesar.seeker.show_related(true);
               }
@@ -4167,6 +4171,7 @@ var ru = (function ($, ru) {
                 case "bare":
                   // Make sure the name gets displayed properly
                   $(sDivName).html(sSaveName);
+                  $(sDivName).addClass("badge");
                   break;
               }
               lHtml.push("</div>");

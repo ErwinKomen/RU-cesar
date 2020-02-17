@@ -4698,6 +4698,7 @@ def research_simple(request, pk=None):
             simpleform.fields["searchrel"].initial = ""
             simpleform.fields["searchcql"].initial = ""
             simpleform.fields["baresimple"].initial = ""
+            simpleform.fields["description"].initial = ""
             cns = obj.gateway.constructions.first()
             if cns != None and cns.search != None:
                 svalue = cns.search.value
@@ -4745,16 +4746,17 @@ def research_simple(request, pk=None):
             simpleform.fields["searchexc"].initial = oSearch['searchexc']
             simpleform.fields["searchcql"].initial = oSearch['searchcql']
             simpleform.fields["baresimple"].initial = oSearch['name']
+            simpleform.fields["description"].initial = "" if "description" not in oSearch else oSearch['description']
 
             # TODO: calculate [searchrel] and [ltowards] from what is in oSearch
             # simpleform.fields["searchrel"].initial = oSearch['searchrel']
 
         # Determine whether the 'more' part should be shown or not
-        show_more = "less"
+        show_more = "more"
         more_fields = ["searchpos", "searchlemma", "searchexc"]
         for field in more_fields:
             if simpleform.fields[field].initial: 
-                show_more = "more"
+                show_more = "less"
                 break
 
         object_id = obj.id
@@ -5107,6 +5109,18 @@ def research_simple_save(request):
     # Return the information
     return JsonResponse(data)
 
+def get_targettype(sWord, sCat, sLemma, sCql):
+    """Determine the targettype based on the information passed on"""
+
+    targetType = "e"
+    if sCql != "": 
+        targetType = "q"
+    elif sWord != "" and sLemma == "" and sCat == "":
+        targetType = "w"
+    elif sWord == "" and sLemma == "" and sCat != "":
+        targetType = "c"
+    return targetType
+
 def read_simple_form(qd):
     """Read the forms in the research query data and transform them into a simple search object"""
 
@@ -5129,15 +5143,17 @@ def read_simple_form(qd):
             searchexc = cleaned_data['searchexc']
             searchlemma = cleaned_data['searchlemma']
             targetType = cleaned_data['targetType']
+            description = cleaned_data['description']
             overwrite = (qd.get("overwrite", "false") == "true")
 
-            # Adaptations of the data
-            if targetType == "": targetType = "w"
+            # Determine the targettype based on the data above
+            # (i.e: overriding what has been determined previously...)
+            targetType = get_targettype(searchwords, searchpos, searchlemma, searchcql)
 
             if baresimple != "":
                 # Get the search parameters
                 oSearch = dict(name=baresimple, targetType=targetType, searchwords=searchwords, searchcql=searchcql,
-                                searchpos=searchpos, searchexc=searchexc, searchlemma=searchlemma )
+                                searchpos=searchpos, searchexc=searchexc, searchlemma=searchlemma, description=description)
                 # Get the related ones
                 bOkay, sRelated = get_related(qd)
                 if bOkay:

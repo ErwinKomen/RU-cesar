@@ -1012,7 +1012,7 @@ select {
     height: auto;
 }
 
-table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, div.clickable:hover {
+table tbody tr td.clickable:hover, table thead tr th.clickable:hover, table tbody tr.clickable td:hover, div.clickable:hover {
   cursor: pointer;
 }
 table tbody tr td.clickable:hover, table tbody tr.clickable td:hover {
