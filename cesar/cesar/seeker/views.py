@@ -3880,7 +3880,7 @@ class ResultDetailView(DetailView):
         context['quantor'] = self.quantor
         context['filters'] = self.basket.get_filters()
         # Check if this is the simple search
-        if research.name == SIMPLENAME:
+        if research.stype == STYPE_SIMPLE or research.name == SIMPLENAME:
             # This is the simple research project - special treatment
             context['search_edit_url'] = reverse("seeker_simple")
             context['search_name'] = "simple"
