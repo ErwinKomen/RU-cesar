@@ -346,7 +346,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\..\..\..\env\cesar\">
+    <Interpreter Include="D:\env\cesar\">
       <Id>{7ba94acf-5e01-4342-84a4-8b03cff7bbb3}</Id>
       <BaseInterpreter>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</BaseInterpreter>
       <Version>3.5</Version>
