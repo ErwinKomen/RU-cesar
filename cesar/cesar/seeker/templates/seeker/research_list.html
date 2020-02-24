@@ -213,6 +213,11 @@
                   <span class="arg-line">
                     <code title="The search project starts with {{grp.prj.get_targetType_display}}">{{grp.prj.targetType}}</code>
                   </span>
+                  {% if grp.prj.stype == "s" %}
+                    <span class="badge jumbo-1">
+                      <a href="{% url 'simple_details' pk=grp.prj.id %}" class="nostyle">simple</a>
+                    </span>
+                  {% endif %}
                   <span class="prj-name"
                         targetid="project-info-{{grp.nodeid}}"
                         onclick="ru.cesar.seeker.toggle_click(this, 'arg-grandchild');">
@@ -312,9 +317,15 @@
                       <div class="col-md-2">
                         <span class="research-item-name ">
                         {% if grp.may_write %}
-                          <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=grp.prj.id %}">
-                            <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
-                          </a>
+                          {% if grp.prj.stype == "s" %}
+                            <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'simple_details' pk=grp.prj.id %}">
+                              <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                            </a>
+                          {% else %}
+                            <a type="button" title="open" class="btn btn-success btn-xs" href="{% url 'seeker_edit' object_id=grp.prj.id %}">
+                              <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                            </a>
+                          {% endif %}
                         {% endif %}
                         </span>
                         {% if grp.may_read %}

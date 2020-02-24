@@ -1,0 +1,151 @@
+{% load i18n %}
+
+{% block scripts %}
+  {% if has_select2 %}{{basic_form.media.css}}{% endif %}
+{% endblock %}
+
+<!-- SermonGold information -->
+<form>
+  {% csrf_token %}
+  <table style="width: 100%;">
+    <tbody>
+      <!-- The row with buttons -->
+      <tr>
+        <td colspan="2"  class="ms editable table">
+          <!-- Provide the necessary buttons: edit, cancel and save -->
+          <div>
+            {% if is_seeker_user %}
+              <!-- Edit button -->
+              <a mode="edit" class="view-mode btn btn-xs jumbo-1"><span class="glyphicon glyphicon-pencil" title="Edit these data"></span></a>
+            {% endif %}
+
+            <!-- Cancel button -->
+            <a mode="cancel" class="edit-mode btn btn-xs jumbo-2 hidden">
+              <span class="glyphicon glyphicon-arrow-left" title="Cancel (do *NOT* save)"></span>
+            </a>
+
+            {% if is_seeker_user %}
+              <!-- Save button -->
+              <a mode="save" class="edit-mode btn btn-xs jumbo-1 hidden" targetid=""
+                 targeturl="{% if basic_form.instance.id %}{{editview}}{% else %}{{addview}}{% endif %}" >
+                <span class="glyphicon glyphicon-ok" title="Save these data">&nbsp;Save</span>
+              </a>
+            {% endif %}
+
+            <!-- Waiting symbol-->
+            <span class="waiting glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+
+            <!-- Little error message room -->
+            <span id="gold_err_msg" class="err-msg"></span>
+
+            {% if is_seeker_user %}
+              <!-- Put the delete button completely to the right-->
+              <a mode="skip" class="view-mode btn btn-xs jumbo-3 pull-right"
+                 onclick="ru.basic.delete_confirm(this);">
+                <span class="glyphicon glyphicon-remove" title="Delete this item"></span>
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Provide a standard possibility to do delete confirmation *without* a popup form -->
+          {% if is_seeker_user %}
+            <div class="delete-confirm hidden selected">
+              <span>Are you sure you would like to delete this item?</span>
+              <span>
+                <!-- The button to cancel deletion -->
+                <a title="Cancel deletion" class="btn btn-xs jumbo-1"
+                   onclick="ru.basic.delete_cancel(this);">Cancel</a>
+                <!-- The actual delete button-->
+                <a mode="delete" title="Delete this item" class="btn btn-xs jumbo-3"
+                   afterurl="{{listview}}"
+                   targetid="sermon_edit"
+                   targeturl="{% if basic_form.instance.id %}{{editview}}{% endif %}">
+                  Delete
+                </a>
+              </span>
+            </div>
+          {% endif %}
+        </td>
+      </tr>
+
+      <!-- Walk all the fields in mainitems -->
+      {% for mainitem in mainitems %}
+        <!-- Check if this may be shown or not -->
+        {% if mainitem.empty != "hide" or mainitem.value != "" %}
+          <tr class="view-row">
+            <!-- Cell with the name of the field-->
+            <td class="tdnowrap" valign="top" {% if mainitem.title %}title="{{mainitem.title}}"{% endif %}>
+              <span>{{mainitem.label}}</span>
+              {% if mainitem.multiple %}
+                <!-- Multiple value field, i.e. select2 -->
+                <span>
+                  <a class="edit-mode hidden btn" onclick="ru.basic.add_new_select2(this, '{{mainitem.fso.prefix}}');">
+                    <span class="glyphicon glyphicon-plus"></span>
+                  </a>
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Cell with the value of the field (or editing) -->
+            <td class="hoverable" {% if mainitem.align %}align="{{mainitem.align}}"{% endif %} 
+                {% if mainitem.title %}title="{{mainitem.title}}"{% endif %} style="width: 100%;">
+
+              {% if mainitem.multiple %}
+                <!-- Multiple instances choosing using Select2 -->
+                <div class="{% if 'field_list' in mainitem %}view-mode{% else %}any-mode{% endif %} ">
+                  {% if mainitem.value|length > 0 %}
+                    {% for subitem in mainitem.value %}
+                      <span class="keyword"><a href="{{mainitem.link}}?{{mainitem.qlist}}={{subitem.id}}">{{subitem.get_label}}</a></span>
+                    {% endfor %}
+                  {% else %}-{% endif %}
+                </div>
+                {% if 'field_list' in mainitem %}
+                  <div class="edit-mode hidden">{{mainitem.field_list}}</div>
+                  {% if is_seeker_user %}
+                    <div class="new-mode hidden" id="{{mainitem.fso.prefix}}_formset">
+                      {% include 'seeker/formset_new.html' with this_formset=mainitem.fso.formsetinstance prefix=mainitem.fso.prefix linkfield=mainitem.fso.linkfield %}
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+              {% else %}
+                <!-- Basic view mode -->
+                <div class="{% if 'field_key' in mainitem %}view-mode{% else %}any-mode{% endif %} ">
+                  {% spaceless %}
+                  {% if mainitem.type == "bold" %}{% if mainitem.link == "" %}<b>{{mainitem.value}}</b>{% else %}<a href="{{mainitem.link}}"><b>{{mainitem.value}}</b></a>{% endif %}
+                  {% elif mainitem.type == "line" %}<div style="white-space: pre-line;">{{mainitem.value|safe}}</div>
+                  {% elif mainitem.type == "safe" %}{{mainitem.value|safe}}
+                  {% elif mainitem.type == "safeline" %}<div style="white-space: pre-line;">{{mainitem.value|safe}}</div>
+                  {% else %}{{mainitem.value}}
+                  {% endif %}
+                  {% endspaceless %}
+                </div>
+
+                <!-- This is where the editable input comes -->
+                {% if 'field_ta' in mainitem and 'key_ta' in mainitem and 'field_key' in mainitem %}
+                  <div class="{{mainitem.key_ta}} hidden">{{mainitem.field_key}}</div>
+                  <div class="edit-mode hidden">{{mainitem.field_ta}}</div>
+                {% elif 'field_key' in mainitem %}
+                  <div class="edit-mode hidden">{{mainitem.field_key}}</div>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+
+      <!-- add the links here -->
+      {% for link in link_objects %}
+        <tr>
+          <td>{{link.name}}</td>
+          <td><a href="{{link.value}}">{{link.label}}</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
+
+
+{% block endcontent %} 
+  {% if has_select2 %}{{basic_form.media.js }}{% endif %}
+{% endblock %}

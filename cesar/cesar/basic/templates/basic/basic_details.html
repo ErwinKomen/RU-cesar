@@ -1,9 +1,15 @@
-﻿{% extends "lingo/layout.html" %}
+{% extends "layout.html" %}
 {% load i18n %}
+
+{% block scripts %}
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'basic/content/basic.css' %}" />
+    <script src="{% static 'basic/scripts/basic.js' %}"></script>
+{% endblock %}
 
 {% block breadcrumbs %}
   <div class="breadcrumbs">
-    {% include 'lingo/breadcrumb_list.html' %}
+    {% include 'breadcrumb_list.html' %}
   </div>
 {% endblock %}
 
@@ -26,37 +32,14 @@
 
             <div class="row">
               <div class="col-md-12">
-                <h3>{{modelname}} details</h3>
+                <h3>{{titlesg}} details</h3>
 
                 {% block detailsview %}{% endblock detailsview %}
-                <!-- Show the main items in a standard way -->
-                <table>
-                  <tbody>
-                    {% for mainitem in mainitems %}
-                      <tr class="view-row">
-                        <td class="tdnowrap" valign="top">{{mainitem.label}}</td>
-                        <td class="hoverable">
-                          {% spaceless %}
-                            {% if mainitem.type == "bold" %}{% if mainitem.link == "" %}<b>{{mainitem.value}}</b>{% else %}<a href="{{mainitem.link}}"><b>{{mainitem.value}}</b></a>{% endif %}
-                            {% elif mainitem.type == "line" %}<div style="white-space: pre-line;">{{mainitem.value|safe}}</div>
-                            {% elif mainitem.type == "safe" %}{{mainitem.value|safe}}
-                            {% elif mainitem.type == "safeline" %}<div style="white-space: pre-line;">{{mainitem.value|safe}}</div>
-                            {% else %}{{mainitem.value}}
-                            {% endif %}
-                          {% endspaceless %}
-                        </td>
-                      </tr>
-                    {% endfor %}
 
-                    <!-- add the links here -->
-                    {% for link in link_objects %}
-                      <tr>
-                        <td>{{link.name}}</td>
-                        <td><a href="{{link.value}}">{{link.label}}</a></td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                <!-- Show the main items in a standard way -->
+                <div id="{{modelname}}_edit">
+                    {% include 'basic/basic_edit.html' %}
+                </div>
               </div>
 
             </div>
@@ -68,7 +51,7 @@
                 {% for section in sections %}
                   <span>
                     <a class="btn btn-xs jumbo-1" role="button" targetid="{{section.id}}" title="Show/Hide {{section.name}}"
-                       onclick="ru.cesar.lingo.toggle_click(this);">{{section.name}}</a>
+                       onclick="ru.basic.toggle_click(this);">{{section.name}}</a>
                   </span>
                 {% endfor %}
                 </div>
@@ -84,7 +67,7 @@
                       {% for item in section.fields %}
                         <tr class="view-row">
                           <td class="tdnowrap" valign="top">{{item.label}}</td>
-                          <td class="hoverable">
+                          <td class="hoverable" {% if item.align %}align="{{item.align}}"{% endif %}>
                             {% spaceless %}
                               {% if item.type == "bold" %}{% if item.link == "" %}<b>{{item.value}}</b>{% else %}<a href="{{item.link}}"><b>{{item.value}}</b></a>{% endif %}
                               {% elif item.type == "line" %}<div style="white-space: pre-line;">{{item.value|safe}}</div>
@@ -113,16 +96,26 @@
                   <!-- List of related items -->
                   <table class="func-view compact-simple" style="width: 100%;">
                     <thead>
-                      <tr>{% for col in related.columns %}<th>{{col}}</th>{% endfor %}</tr>
+                      <tr>
+                        {% if related.use_counter %}<th>#</th>{% endif %}
+                        {% for col in related.columns %}<th>{{col}}</th>{% endfor %}
+                      </tr>
                     </thead>
                     <tbody>
                       {% for relrow in related.rel_list %}
                       <tr class="form-row">
+                        {% if related.use_counter %}<td>{{forloop.counter}}</td>{% endif %}
                         {% for relcol in relrow %}
                           <td {% if relcol.title %}title="{{relcol.title}}"{% endif %}
-                              {% if relcol.link %}class="clickable" onclick="ru.cesar.lingo.goto_url('{{relcol.link}}')"{% endif %}
+                              {% if relcol.link %}class="clickable "{% endif %}
                               >
-                            {% if relcol.value %}{{relcol.value}}{% endif %}
+                            {% if relcol.value %}
+                              {% if relcol.link %}
+                                <a href="{{relcol.link}}" class="nostyle">{{relcol.value|safe}}</a>
+                              {% else %}
+                                {{relcol.value|safe}}
+                              {% endif %}
+                            {% endif %}
                           </td>
                         {% endfor %}
                       </tr>
@@ -138,10 +131,10 @@
 
           <!-- Button for editing (if user has permission) -->
           <div class="col-md-1">
-            {% if is_lingo_editor %}
+            {% if is_seeker_user and admindetails and show_admin %}
               <!-- Edit button -->
               <a mode="edit" class="view-mode btn jumbo-1"
-                  onclick="ru.cesar.lingo.goto_url('{{admindetails}}')">
+                  onclick="ru.basic.goto_url('{{admindetails}}')">
                 <span class="glyphicon glyphicon-pencil" title="Edit these data"></span>
               </a>
             {% endif %}
@@ -167,7 +160,7 @@
 
 
 <script>
-  ru.cesar.lingo.init_events();
+  ru.basic.init_events();
 </script>
 
 {% endblock content %}
