@@ -580,7 +580,8 @@ class Gateway(models.Model):
             targetType = self.research.targetType
             gateway = self
 
-            if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e" or targetType == "w"):
+            # if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e" or targetType == "w"):
+            if self.research.stype == STYPE_SIMPLE and ( targetType == "c" or targetType == "e" or targetType == "w"):
                 # Clear any previous: (a) data-dependant variables, (b) conditions, (c) features
                 if not self.clear_search():
                     # Show error message
@@ -3645,7 +3646,7 @@ class Research(models.Model):
 
             # Check the status = the functions and arguments
             # BUT: skip if it is simplesearch?
-            if self.name != SIMPLENAME:
+            if self.stype != STYPE_SIMPLE and self.name != SIMPLENAME:
                 oArgStatus = self.gateway.get_status()
                 if oArgStatus != None and 'status' in oArgStatus and oArgStatus['status'] != "ok":
                     oBack['status'] = "error"

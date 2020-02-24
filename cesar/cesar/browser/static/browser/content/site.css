@@ -1038,3 +1038,16 @@ td.editable:hover, span.editable:hover {
   background-color: lightyellow;
   color: darkgreen;
 }
+
+
+/* Simple search view */
+table.func-view td .view-mode {
+  font-family: monospace;
+  font-size: 90%;
+  color: darkblue;
+}
+
+table.func-view td .view-mode:hover {
+  background-color: lightyellow;
+}
+

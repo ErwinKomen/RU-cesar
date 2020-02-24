@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_select2',
+    'cesar.basic',
     'cesar.browser',
     'cesar.viewer',
     'cesar.seeker',

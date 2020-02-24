@@ -30,6 +30,7 @@ from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 from io import StringIO
 
+from cesar.basic.views import BasicList
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
 from cesar.seeker.models import SIMPLENAME
@@ -457,19 +458,14 @@ class SeekerListView(ListView):
             authenticated = True
             # Get the correct list of research projects:
             # - All my own projects
-            # - All projects shared with the groups I belong to
+            # - All projects shared with me in the groups I belong to
             my_projects = Research.objects.filter(Q(owner=currentuser))
             lstQ = []
             lstQ.append(~Q(owner=currentuser))
             lstQ.append(~Q(sharegroups__group__in=currentuser.groups.all()))
-
-            # research_list = Research.objects.filter(Q(owner=self.request.user) | Q(sharegroups_group))
-            # qs = Research.objects.exclude(*lstQ)
+    
+            # This is the correct queryset - don't touch it!!!
             qs = Research.objects.filter(Q(owner=currentuser)|Q(sharegroups__group__in=currentuser.groups.all()))
-
-            #qs2 = Research.objects.filter(Q(owner__username="Sanne")).filter(Q(sharegroups__group__name__in=currentuser.groups.all()))
-            #qs2 = Research.objects.filter(Q(sharegroups__group__in=currentuser.groups.all()))
-            #qs2 = Research.objects.filter(name__iexact="passive clause").filter(Q(sharegroups__group__name__in=["seeker_user"])).first()
 
             # Perform the sorting
             order = [Lower('owner'), '-saved']
@@ -676,6 +672,89 @@ class SeekerListView(ListView):
 
         # Make sure the correct URL is being displayed
         return super(SeekerListView, self).render_to_response(context, **response_kwargs)
+
+
+class SimpleListView(BasicList):
+    """List all the currently defined 'simple' searches"""
+
+    model = Research
+    listform = SimpleListForm
+    prefix = "simple"
+    basic_name = "simple"
+    plural_name = "Simple searches"
+    sg_name = "Simple search"
+    basic_add = "simple_details"
+    add_text = "Goto" 
+    has_select2 = False
+    paginate_by = 20
+    bUseFilter = True
+    delete_line = True
+    new_button = False
+    page_function = "ru.basic.search_paged_start"
+    order_cols = ['owner__username', 'name', '', 'created', '']
+    order_default = ['owner__username', 'created', 'name', '', '']
+    order_heads = [{'name': 'Owner',        'order': 'o=1', 'type': 'str', 'custom': 'owner'},
+                   {'name': 'Name',         'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True},
+                   {'name': 'Description',  'order': '',    'type': 'str', 'custom': 'description', 'main': True, 'linkdetails': True},
+                   {'name': 'Created',      'order': 'o=4', 'type': 'str', 'custom': 'created'},
+                   {'name': '', 'order': '', 'type': 'str', 'options': ['delete']}
+                   ]
+    filters = [ {"name": "Name", "id": "filter_name", "enabled": False},]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'name', 'dbfield': 'name', 'keyS': 'name'}]},
+        {'section': 'other', 'filterlist': [
+            {'filter': 'owner', 'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
+            {'filter': 'stype', 'dbfield': 'stype',  'keyS': 'stype'}]}
+        ]
+    custombuttons = []
+
+    def adapt_search(self, fields):
+        # Make sure the owner is set to myself
+        if fields['ownlist'] == None or len(fields['ownlist']) == 0:
+            # Restrict to myself
+            fields['ownlist'] = User.objects.filter(username=self.request.user.username)
+
+            # Only show simple 
+            fields['stype'] = "s"
+        return fields
+
+    def get_queryset(self):
+        # Perform the normal queryset determining
+        qs = super(SimpleListView, self).get_queryset()
+        # Exclude _simplesearch
+        qs = qs.exclude(name=SIMPLENAME)
+        return qs
+    
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        if custom == "owner":
+            sTitle = instance.owner.username
+            html.append("<span style='color: darkgreen; font-size: small;'>{}</span>".format(instance.owner.username[:20]))
+        elif custom == "description":
+            sDescr = instance.purpose
+            sCompact = instance.compact
+            if sCompact:
+                oCompact = json.loads(sCompact)
+                if 'description' in oCompact:
+                    sDescr = oCompact['description']
+            sTitle = sDescr
+
+            html.append("<span style='color: darkblue; font-size: small;'>{}</span>".format(sDescr))
+        elif custom == "created":
+            sTime = instance.created.strftime("%d/%b/%Y %H:%M")
+            html.append("<span style='color: darkgreen; font-size: smaller;'>{}</span>".format(sTime))
+        # Combine the HTML code
+        sBack = "\n".join(html)
+        return sBack, sTitle
+
+    def add_to_context(self, context, initial):
+        # Add a button for the default simple list view
+        context['user_button'] = "<a class='btn btn-xs jumbo-1' role='button' href='{}' title='Go to the default simple search view'>Go Simple</a>".format(reverse('simple_details'))
+        return context
 
 
 def get_changeform_initial_data(model, request):
@@ -3880,9 +3959,9 @@ class ResultDetailView(DetailView):
         context['quantor'] = self.quantor
         context['filters'] = self.basket.get_filters()
         # Check if this is the simple search
-        if research.name == SIMPLENAME:
+        if research.stype == STYPE_SIMPLE or research.name == SIMPLENAME:
             # This is the simple research project - special treatment
-            context['search_edit_url'] = reverse("seeker_simple")
+            context['search_edit_url'] = reverse('simple_details')
             context['search_name'] = "simple"
             context['intro_message'] = "Simple search"
         else:
@@ -4838,36 +4917,52 @@ def research_simple(request, pk=None):
             # Get the parameters
             qd = request.POST
 
-            # Try to load the form
-            simpleform = SimpleSearchForm(qd)
-            if simpleform.is_valid():
+            # See if a specific action is required
+            bReady = False
+            if 'action' in qd:
+                action = qd['action']
+                if action == "delete":
+                    # Delete this item and then return the simple list view
+                    obj = Research.objects.filter(id=pk).first()
+                    if obj:
+                        # Remove it
+                        obj.delete()
+                        # Now return the correct listview
+                        data['afterdelurl'] = reverse('simple_list')
+                        bReady = True
 
-                # See if it has a different name now
-                simplename = simpleform.cleaned_data["baresimple"]
-                if simplename == "": simplename = SIMPLENAME
+            # Are we ready?
+            if not bReady:
+                # Try to load the form
+                simpleform = SimpleSearchForm(qd)
+                if simpleform.is_valid():
 
-                # Get the correct research project FOR THIS USER
-                lstQ = []
-                lstQ.append(Q(owner=owner))
-                lstQ.append(Q(name=simplename))
-                research = Research.objects.filter(*lstQ).first()
-                if research == None:
-                    # There is no simple research project to adapt
-                    data['status'] = 'error'
-                    data['html'] = "research_simple cannot find a Research project that should be adapted"
-                else:
-                    # Found the research
-                    if modify_simple_search(research, qd, simpleform.cleaned_data):
-                        # We are okay
-                        data['html'] = "The simple project has been adapted"
-                    else:
-                        # Something went wrong
+                    # See if it has a different name now
+                    simplename = simpleform.cleaned_data["baresimple"]
+                    if simplename == "": simplename = SIMPLENAME
+
+                    # Get the correct research project FOR THIS USER
+                    lstQ = []
+                    lstQ.append(Q(owner=owner))
+                    lstQ.append(Q(name=simplename))
+                    research = Research.objects.filter(*lstQ).first()
+                    if research == None:
+                        # There is no simple research project to adapt
                         data['status'] = 'error'
-                        data['html'] = "research_simple: modify_simple_search returns with an error"
-            else:
-                # There are errors in the form
-                data['status'] = 'error'
-                data['html'] = "Simple form errors: {}".format(simpleform.errors)
+                        data['html'] = "research_simple cannot find a Research project that should be adapted"
+                    else:
+                        # Found the research
+                        if modify_simple_search(research, qd, simpleform.cleaned_data):
+                            # We are okay
+                            data['html'] = "The simple project has been adapted"
+                        else:
+                            # Something went wrong
+                            data['status'] = 'error'
+                            data['html'] = "research_simple: modify_simple_search returns with an error"
+                else:
+                    # There are errors in the form
+                    data['status'] = 'error'
+                    data['html'] = "Simple form errors: {}".format(simpleform.errors)
             
         except:
             data['status'] = 'error'
@@ -5234,6 +5329,7 @@ def research_simple_baresave(request):
                 # Show all went well
                 data['status'] = "ok"
                 data['name'] = research.name
+                data['view'] = reverse('simple_details', kwargs={'pk': research.id})
         else:
             if 'msg' in oSearch:
                 data['html'] = oSearch['msg']

@@ -88,33 +88,27 @@
                         <span class="pull-right">
                           <span>
                             <a id="switch_to_list"
-                               onclick="ru.cesar.seeker.toggle_click(this, 'simple-view-details', 'simple-view-list');"
+                               href="{% url 'simple_list' %}"
                                class="btn btn-xs jumbo-1"
                                title="Show the list of named simple searches">List of searches</a>
                           </span>
 
-                          <!-- Prodding question-->
-                          <span id="simple_save_question" {% if simpleform.baresimple.value %}class="hidden"{% endif %}><i>Saving??</i></span>
-
-                          <!-- Save current search-->
-                          <a id="save_current"
-                              onclick="ru.cesar.seeker.simple_save(this, 'bare');"
-                              ajaxurl="{% url 'simple_baresave' %}"
-                              class="btn btn-xs jumbo-1 simple-search-named {% if not simpleform.baresimple.value %}hidden{% endif %}"
-                              title="Save this simple search">save</a>
                           <!-- Save as button -->
                           <a id="save_as"
                               onclick="ru.cesar.seeker.simple_save(this, 'bare');"
                               ajaxurl="{% url 'simple_baresave' %}"
-                              class="btn btn-xs jumbo-1 simple-search-named {% if not simpleform.baresimple.value %}hidden{% endif %}"
-                              title="Save simple search under a name">save as ...</a>
+                              class="btn btn-xs jumbo-1 simple-search-named "
+                              title="Save simple search under a name">
+                            {% if simpleform.baresimple.value %}Save{% else %}Save as...{% endif %}
+                          </a>
 
                           <!-- Switch between save view and other view -->
-                          <a class="btn jumbo-3 btn-xs"
+                          <a class="btn jumbo-3 btn-xs hidden"
                               id="simple_save_switch"
                               targetid="simple_save_question"
                               title="Show/hide the simple search save dialog"
-                              onclick="ru.cesar.seeker.toggle_click(this, 'post-save', 'simple-search-named');">
+                              onclick="ru.cesar.seeker.toggle_simple_save(this);"
+                              onclickOLD="ru.cesar.seeker.toggle_click(this, 'post-save', 'simple-search-named');">
                             <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
                           </a>
                         </span>
@@ -282,7 +276,7 @@
                         <span>
                           <a id="add_related"
                               onclick="ru.cesar.seeker.related_switch(this, 'related_constituents', 'no related');"
-                              targeturl="{% url 'seeker_simple' %}"
+                              targeturl="{% url 'simple_details' %}"
                               class="btn btn-xs jumbo-1"
                               title="Add related constituents">related</a>
                         </span>
@@ -295,7 +289,7 @@
                           <a id="simple_more" 
                               mode="{{show_more}}"
                               onclick="ru.cesar.seeker.simple_switch(this);"
-                              targeturl="{% url 'seeker_simple' %}"
+                              targeturl="{% url 'simple_details' %}"
                               title="Let me to specify {{show_more}}" 
                               class="btn jumbo-1 btn-xs">{{show_more}}</a>
                         </span>
@@ -319,29 +313,6 @@
 
           <!-- Name and description -->
           <div class="col-md-3">
-
-            <!-- Listview -->
-            <div class="simple-view-list {% if object_id %}hidden{% endif %}" id="tabsimplelist">
-              <!-- Short list of named simple searches -->
-              {% if simple_list|length > 0 %}
-                <div class="panel ">
-                  <table class="func-view table-hover" style="width: 100%;">
-                    <thead>
-                      <tr>
-                        <th  class="clickable" ><a href="{% url 'seeker_simple' %}" class="nostyle">Back to unnamed search</a></th>
-                      </tr>
-                    </thead>
-                    {% for obj in simple_list %}
-                      <tr>
-                        <td style="width: 100%;" class="clickable" >
-                          <a href="{% url 'seeker_simple' obj.id %}" class="nostyle">{{obj.name}}</a>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </table>
-                </div>
-              {% endif %}
-            </div>
 
             <!-- Extended view -->
             <div class="tab-pane hidden row" id="tabextended">
@@ -368,17 +339,39 @@
             <div class="simple-view-details {% if not object_id %}hidden{% endif %}" id="tabsimpledetails">
               <table class="func-view compact-simple" style="width: 100%;">
                 <tbody>
+                  <!-- Button row -->
+                  <tr class="simple-search-named {% if not simpleform.baresimple.value %} hidden{% endif %}"
+                      targeturl="{% url 'simple_details' %}"
+                      >
+                    <td valign="top" style="min-width: 20px; width: 20px;">
+                      <span class="rel-edit-open view-mode">
+                        <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'open', 'simple');"><span class="glyphicon glyphicon-pencil"></span></a>
+                      </span>
+                      <span class="rel-edit-close edit-mode hidden">
+                        <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'close', 'simple');"><span class="glyphicon glyphicon-ok"></span></a>
+                      </span>
+                    </td>
+                    <td colspan="3">
+
+                    </td>
+                  </tr>
 
                   <!-- Name of this search -->
                   <tr class="tablefield simple-search-named {% if not simpleform.baresimple.value %} hidden{% endif %}">
-                    <td class="tdnowrap vmiddle" valign="top" title="Name of this search">Name:</td>
-                    <td colspan="3" style="width: 100%;">{{simpleform.baresimple}}</td>
+                    <td colspan="2" class="tdnowrap vmiddle" valign="top" title="Name of this search">Name:</td>
+                    <td colspan="2" style="width: 100%;">
+                      <div class="edit-mode hidden">{{simpleform.baresimple}}</div>
+                      <div class="view-mode">{{simpleform.baresimple.value}}</div>
+                    </td>
                   </tr>
 
                   <!-- Description of this search -->
                   <tr class="tablefield simple-search-named {% if not simpleform.baresimple.value %}hidden{% endif %}">
                     <!--<td class="tdnowrap vmiddle" valign="top" title="Short description of this search">Description:</td>-->
-                    <td colspan="4" style="width: 100%;">{{simpleform.description}}</td>
+                    <td colspan="4" style="width: 100%;">
+                      <div class="edit-mode hidden">{{simpleform.description}}</div>
+                      <div class="view-mode">{{simpleform.description.value}}</div>
+                    </td>
                   </tr>
                 </tbody>
               </table>

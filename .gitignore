@@ -322,3 +322,5 @@ ModelManifest.xml
 /htreeconv/__pycache__
 /cesar/cesar/ds2/migrations
 /cesar/cesar/ds2/__pycache__
+/cesar/cesar/basic/migrations
+/cesar/cesar/basic/__pycache__
