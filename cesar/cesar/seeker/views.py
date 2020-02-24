@@ -690,6 +690,7 @@ class SimpleListView(BasicList):
     bUseFilter = True
     delete_line = True
     new_button = False
+    none_on_empty = True
     page_function = "ru.basic.search_paged_start"
     order_cols = ['owner__username', 'name', '', 'created', '']
     order_default = ['owner__username', 'created', 'name', '', '']

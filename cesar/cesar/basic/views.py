@@ -18,6 +18,7 @@ from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
 
 import json
+import fnmatch
 from datetime import datetime
 
 # More specific for Cesar
@@ -117,6 +118,13 @@ def has_list_value(field, obj):
 def has_obj_value(field, obj):
     response = (field != None and field in obj and obj[field] != None)
     return response
+
+def adapt_search(val):
+    # First trim
+    val = val.strip()
+    # Then add start and en matter 
+    val = '^' + fnmatch.translate(val) + '$'
+    return val
 
 def make_search_list(filters, oFields, search_list, qd):
     """Using the information in oFields and search_list, produce a revised filters array and a lstQ for a Queryset"""
@@ -354,6 +362,7 @@ class BasicList(ListView):
     list_fields = []
     uploads = []
     delete_line = False
+    none_on_empty = False
     lst_typeaheads = []
     sort_order = ""
     page_function = "ru.basic.search_paged_start"
@@ -636,6 +645,9 @@ class BasicList(ListView):
             if not bHasListFilters:
                 self.basketview = ("usebasket" in get and get['usebasket'] == "True")
 
+        # Initial setting of qs
+        qs = self.model.objects.none()
+
         # Get the queryset and the filters
         if self.basketview:
             self.basketview = True
@@ -669,7 +681,7 @@ class BasicList(ListView):
                 self.filters, lstQ, self.initial = make_search_list(self.filters, oFields, self.searches, self.qd)
                 
                 # Calculate the final qs
-                if len(lstQ) == 0:
+                if len(lstQ) == 0 and not self.none_on_empty:
                     # Just show everything
                     qs = self.model.objects.all()
                 else:
@@ -681,7 +693,7 @@ class BasicList(ListView):
                             self.bFilter = True
                             break
                     # OLD self.bFilter = True
-            else:
+            elif not self.none_on_empty:
                 # Just show everything
                 qs = self.model.objects.all().distinct()
 
@@ -690,7 +702,8 @@ class BasicList(ListView):
             qs, self.order_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
         else:
             self.basketview = False
-            qs = self.model.objects.all().distinct()
+            if not self.none_on_empty:
+                qs = self.model.objects.all().distinct()
             order = self.order_default
             qs, tmp_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
         self.sort_order = colnum
