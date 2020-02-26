@@ -1962,8 +1962,7 @@ class ResearchPart2(ResearchPart):
                      (prefix == 'cnsconstruction' and self.obj.targetType == "c") or \
                      (prefix == 'extconstruction' and self.obj.targetType == "e") )
 
-
-
+        
 class ResearchPart3(ResearchPart):
     template_name = 'seeker/research_part_3.html'
     MainModel = Research
@@ -4592,6 +4591,7 @@ class ResultDownload(ResearchPart):
         return context
 
 
+# ================================ Other views =========================================================
 
 def research_oview(request, object_id=None):
     """Entry point to show a summary of a search specification"""
