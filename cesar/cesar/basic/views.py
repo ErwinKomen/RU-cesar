@@ -690,7 +690,7 @@ class BasicList(ListView):
                     qs = self.model.objects.filter(*lstQ).distinct()
                     # Only set the [bFilter] value if there is an overt specified filter
                     for filter in self.filters:
-                        if filter['enabled']:
+                        if filter['enabled'] and filter['head_id'] != 'filter_other':
                             self.bFilter = True
                             break
                     # OLD self.bFilter = True
