@@ -8,7 +8,8 @@ var $ = jQuery;
   $(function () {
     $(document).ready(function () {
       // Initialize event listeners
-      ru.basic.init_event_listeners();
+      ru.basic.init_events();
+      // ru.basic.init_typeahead();
 
       // Initialize Bootstrap popover
       // Note: this is used when hovering over the question mark button
@@ -31,6 +32,10 @@ var ru = (function ($, ru) {
     var loc_divErr = "basic_err",
         loc_urlStore = "",      // Keep track of URL to be shown
         loc_bManuSaved = false,
+        KEYS = {
+          BACKSPACE: 8, TAB: 9, ENTER: 13, SHIFT: 16, CTRL: 17, ALT: 18, ESC: 27, SPACE: 32, PAGE_UP: 33, PAGE_DOWN: 34,
+          END: 35, HOME: 36, LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, DELETE: 46
+        },
         dummy = 1;
 
     // Private methods specification
@@ -578,13 +583,33 @@ var ru = (function ($, ru) {
             }
           }
 
+          // Allow "Search on ENTER" from typeahead fields
+          $(".form-row:not(.empty-form) .searching").on("keypress",
+            function (evt) {
+              var key = evt.which,  // Get the KEY information
+                  start = null,
+                  button = null;
+
+              // Look for ENTER
+              if (key === KEYS.ENTER) {
+                // Find the 'Search' button
+                button = $(this).closest("form").find("a[role=button]").last();
+                // Check for the inner text
+                if ($(button)[0].innerText === "Search") {
+                  // Found it
+                  $(button).click();
+                  evt.preventDefault();
+                }
+              }
+          });
+
           // Make sure select2 is initialized correctly
           // NOTE: what about select2_options?
           //    $(".django-select2").djangoSelect2(select2_options);
           $(".django-select2").djangoSelect2();
 
         } catch (ex) {
-          private_methods.errMsg("init_event_listeners", ex);
+          private_methods.errMsg("init_events", ex);
         }
       },
 
@@ -594,10 +619,10 @@ var ru = (function ($, ru) {
        */
       init_typeahead: function () {
         try {
+
           // First destroy them
           $(".typeahead.keywords").typeahead('destroy');
           $(".typeahead.languages").typeahead('destroy');
-
 
           // Type-ahead: KEYWORD -- NOTE: not in a form-row, but in a normal 'row'
           $(".row .typeahead.keywords, tr .typeahead.keywords").typeahead(
@@ -635,26 +660,6 @@ var ru = (function ($, ru) {
           $(".form-row:not(.empty-form) .typeahead").on("keyup",
             function () {
               loc_elInput = $(this);
-            });
-
-          // Allow "Search on ENTER" from typeahead fields
-          $(".form-row:not(.empty-form) .searching").on("keypress",
-            function (evt) {
-              var key = evt.which,  // Get the KEY information
-                  start = null,
-                  button = null;
-
-              // Look for ENTER
-              if (key === KEYS.ENTER) {
-                // Find the 'Search' button
-                button = $(this).closest("form").find("a[role=button]").last();
-                // Check for the inner text
-                if ($(button)[0].innerText === "Search") {
-                  // Found it
-                  $(button).click();
-                  evt.preventDefault();
-                }
-              }
             });
 
           // Make sure the twitter typeahead spans are maximized

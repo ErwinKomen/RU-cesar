@@ -45,7 +45,7 @@
               {% endif %}
             </div>
             <div class="col-md-1 text-right">
-              {% if custombuttons and is_seeker_user %}
+              {% if custombuttons and is_app_editor %}
                 {% for citem in custombuttons %}
                   <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#tab_{{citem.name}}" 
                      role="button" title="{{citem.title}}">
@@ -53,7 +53,7 @@
                   </a>
                 {% endfor %}
               {% endif %}
-              {% if uploads and is_in_tsg %}
+              {% if uploads and is_app_uploader %}
                 <a id="uploadmenu" role="button" title="Importing..." class="btn jumbo-1 btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" onclick="">
                   <span class="glyphicon glyphicon-upload"></span>
                 </a>
@@ -255,7 +255,7 @@
         </form>
 
         <!-- Custom button processing -->
-        {% if custombuttons and is_seeker_user %}
+        {% if custombuttons and is_app_editor %}
           {% for citem in custombuttons %}
             <div id="tab_{{citem.name}}" class="inert collapse">
               {% if "template_name" in citem %}
@@ -267,7 +267,7 @@
 
 
         <!-- Allow importing list items from Excel -->
-        {% if is_in_tsg and uploads %}
+        {% if is_app_uploader and uploads %}
           {% for uitem in uploads %}
             <div id="import_{{uitem.title}}" class="row hidden container">
               <form action="{{uitem.url}}" method="POST" enctype="multipart/form-data">
@@ -307,7 +307,7 @@
 
             <h3>
               <span>{{title|title}}</span>
-              {% if is_seeker_user and new_button %}
+              {% if is_app_editor and new_button %}
                 <span id="add_{{basic_name}}" class="pull-right">
                   {% csrf_token %}
                   <a class="btn btn-xs jumbo-3" role="button" 
@@ -379,7 +379,7 @@
                             {% endif %}
                             {% if field.main %}
                               <!-- Provide a standard possibility to do delete confirmation *without* a popup form -->
-                              {% if delete_line and is_seeker_user %}
+                              {% if delete_line and is_app_editor %}
                                 <div class="delete-confirm hidden selected">
                                   <form>
                                     {% csrf_token %}
@@ -399,7 +399,7 @@
                                   </form>
                                 </div>
                               {% endif %}
-                            {% elif field.delete and is_seeker_user %}
+                            {% elif field.delete and is_app_editor %}
                                 <!-- Put the delete button completely to the right-->
                                 <a mode="skip" class="view-mode btn btn-xs jumbo-1 pull-right"
                                     onclick="ru.basic.delete_confirm(this);">
@@ -437,7 +437,7 @@
       <div class="explanation">
         <p>Dear user, you are <b>not</b> logged in.</p>
         <p>Unfortunately this means that you will not be able to perform any searches.</p>
-        <p>Should you want to work with Cesar, here are your options:
+        <p>Should you want to work with this application, here are your options:
           <ul>
             <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
             <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>

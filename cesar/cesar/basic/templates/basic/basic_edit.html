@@ -14,7 +14,7 @@
         <td colspan="2"  class="ms editable table">
           <!-- Provide the necessary buttons: edit, cancel and save -->
           <div>
-            {% if is_seeker_user %}
+            {% if is_app_editor %}
               <!-- Edit button -->
               <a mode="edit" class="view-mode btn btn-xs jumbo-1"><span class="glyphicon glyphicon-pencil" title="Edit these data"></span></a>
             {% endif %}
@@ -24,7 +24,7 @@
               <span class="glyphicon glyphicon-arrow-left" title="Cancel (do *NOT* save)"></span>
             </a>
 
-            {% if is_seeker_user %}
+            {% if is_app_editor %}
               <!-- Save button -->
               <a mode="save" class="edit-mode btn btn-xs jumbo-1 hidden" targetid=""
                  targeturl="{% if basic_form.instance.id %}{{editview}}{% else %}{{addview}}{% endif %}" >
@@ -38,7 +38,7 @@
             <!-- Little error message room -->
             <span id="gold_err_msg" class="err-msg"></span>
 
-            {% if is_seeker_user %}
+            {% if is_app_editor %}
               <!-- Put the delete button completely to the right-->
               <a mode="skip" class="view-mode btn btn-xs jumbo-3 pull-right"
                  onclick="ru.basic.delete_confirm(this);">
@@ -48,7 +48,7 @@
           </div>
 
           <!-- Provide a standard possibility to do delete confirmation *without* a popup form -->
-          {% if is_seeker_user %}
+          {% if is_app_editor %}
             <div class="delete-confirm hidden selected">
               <span>Are you sure you would like to delete this item?</span>
               <span>
@@ -101,7 +101,7 @@
                 </div>
                 {% if 'field_list' in mainitem %}
                   <div class="edit-mode hidden">{{mainitem.field_list}}</div>
-                  {% if is_seeker_user %}
+                  {% if is_app_editor %}
                     <div class="new-mode hidden" id="{{mainitem.fso.prefix}}_formset">
                       {% include 'seeker/formset_new.html' with this_formset=mainitem.fso.formsetinstance prefix=mainitem.fso.prefix linkfield=mainitem.fso.linkfield %}
                     </div>

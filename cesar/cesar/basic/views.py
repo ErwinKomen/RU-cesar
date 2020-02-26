@@ -21,9 +21,13 @@ import json
 import fnmatch
 from datetime import datetime
 
-# More specific for Cesar
-from cesar.settings import APP_PREFIX
-from cesar.basic.utils import ErrHandle
+# provide error handling
+from .utils import ErrHandle
+
+# Provide application-specific information
+from ..settings import PROJECT_NAME
+app_uploader = "{}_uploader".format(PROJECT_NAME.lower())
+app_editor = "{}_editor".format(PROJECT_NAME.lower())
 
 # Some constants that can be used
 paginateSize = 20
@@ -402,9 +406,6 @@ class BasicList(ListView):
         # Determine the count 
         context['entrycount'] = self.entrycount # self.get_queryset().count()
 
-        # Set the prefix
-        context['app_prefix'] = APP_PREFIX
-
         # Make sure the paginate-values are available
         context['paginateValues'] = paginateValues
 
@@ -540,8 +541,8 @@ class BasicList(ListView):
         # Check if user may upload
         context['is_authenticated'] = user_is_authenticated(self.request)
         context['authenticated'] = context['is_authenticated'] 
-        context['is_in_tsg'] = user_is_ingroup(self.request, 'radboud-tsg')
-        context['is_seeker_user'] = user_is_ingroup(self.request, 'seeker_user')
+        context['is_app_uploader'] = user_is_ingroup(self.request, app_uploader)
+        context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
 
         # Process this visit and get the new breadcrumbs object
         prevpage = reverse('home')
@@ -701,9 +702,9 @@ class BasicList(ListView):
             order = self.order_default
             qs, self.order_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
         else:
+            # No filter and no basked: show all
             self.basketview = False
-            if not self.none_on_empty:
-                qs = self.model.objects.all().distinct()
+            qs = self.model.objects.all().distinct()
             order = self.order_default
             qs, tmp_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
         self.sort_order = colnum
@@ -913,8 +914,8 @@ class BasicDetails(DetailView):
 
         # Check this user: is he allowed to UPLOAD data?
         context['authenticated'] = user_is_authenticated(self.request)
-        context['is_in_tsg'] = user_is_ingroup(self.request, 'radboud-tsg')
-        context['is_seeker_user'] = user_is_ingroup(self.request, 'seeker_user')
+        context['is_app_uploader'] = user_is_ingroup(self.request, app_uploader)
+        context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
         # context['prevpage'] = get_previous_page(self.request) # self.previous
         context['afternewurl'] = ""
 
