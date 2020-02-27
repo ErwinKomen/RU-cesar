@@ -3364,10 +3364,11 @@ class Research(models.Model):
                          purpose=self.purpose, 
                          targetType=self.targetType, 
                          stype=self.stype,
-                         compact=self.compact,
                          owner=self.owner.username,
                          created= get_crpp_date(self.created),
                          saved=get_crpp_date(self.saved))
+            if self.compact and self.compact != "":
+                oJson['compact'] = json.loads(self.compact)
             # Get the gateway stuff
             oGateway = self.gateway.get_json()
             for key in oGateway:
@@ -3415,7 +3416,11 @@ class Research(models.Model):
                 stype = "p"
                 if 'stype' in oData: stype = oData['stype']
                 compact = None
-                if 'compact' in oData: compact = oData['compact']
+                if 'compact' in oData: 
+                    if isinstance(oData['compact'], str):
+                        compact = oData['compact']
+                    else:
+                        compact = json.dumps(oData['compact'])
 
                 # Create a new project
                 obj = Research.objects.create(name=sName, purpose=oData['purpose'], 

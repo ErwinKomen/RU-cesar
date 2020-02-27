@@ -30,7 +30,9 @@ from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 from io import StringIO
 
-from cesar.basic.views import BasicList
+# My own application
+from basic.views import BasicList
+
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
 from cesar.seeker.models import SIMPLENAME
@@ -709,6 +711,9 @@ class SimpleListView(BasicList):
             {'filter': 'stype', 'dbfield': 'stype',  'keyS': 'stype'}]}
         ]
     custombuttons = []
+    uploads = [
+        {'title': 'simple', 'label': 'simple searches', 'url': 'import_file', 'msg': 'Specify the JSON file that contains the CESAR Simple project'}
+        ]
 
     def adapt_search(self, fields):
         # Make sure the owner is set to myself
