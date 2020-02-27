@@ -337,8 +337,12 @@
 
             <!-- Name and description details -->
             <div class="simple-view-details {% if not object_id %}hidden{% endif %}" id="tabsimpledetails">
+              <!-- empty space -->
+              <div class="row">&nbsp;</div>
+
               <table class="func-view compact-simple" style="width: 100%;">
                 <tbody>
+
                   <!-- Button row -->
                   <tr class="simple-search-named {% if not simpleform.baresimple.value %} hidden{% endif %}"
                       targeturl="{% url 'simple_details' %}"
@@ -351,12 +355,8 @@
                         <a href="#" onclick="ru.cesar.seeker.rel_row_edit(this, 'close', 'simple');"><span class="glyphicon glyphicon-ok"></span></a>
                       </span>
                     </td>
-                    <!-- Leave some space -->
-                    <td colspan="2" style="width: 100%;">
-
-                    </td>
                     <!-- Button for downloading -->
-                    <td valign="top" style="min-width: 20px; width: 20px;">
+                    <td colspan="3" valign="top" align="right" style="min-width: 20px; width: 20px;">
                       <a href="#" id="search_download_json"
                          title="Download the simple search as a JSON file"
                          downloadtype="json"

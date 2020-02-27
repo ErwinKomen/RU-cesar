@@ -760,6 +760,9 @@ class SimpleListView(BasicList):
     def add_to_context(self, context, initial):
         # Add a button for the default simple list view
         context['user_button'] = "<a class='btn btn-xs jumbo-1' role='button' href='{}' title='Go to the default simple search view'>Go Simple</a>".format(reverse('simple_details'))
+        # Adapt for CESAR
+        context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
+        context['is_app_uploader'] = user_is_ingroup(self.request, "radboud-tsg")
         return context
 
 
