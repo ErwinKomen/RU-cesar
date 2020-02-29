@@ -15,7 +15,7 @@
     <InterpreterId>{1aac2aa9-662d-4202-87ec-9c552da73bcf}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-i "d:/data files/corpora/bible/heb_ot/etcbc_2017/bhs4.sqlite3" -o "d:/data files/corpora/bible/heb_ot/htree"</CommandLineArguments>
+    <CommandLineArguments>-i "d:/data files/corpora/bible/heb_ot/etcbc_2017/bhs4.sqlite3" -o "d:/data files/corpora/bible/heb_ot/htree" -b RUT -s "d:/data files/corpora/bible/heb_ot/surface" </CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
