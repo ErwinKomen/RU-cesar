@@ -86,7 +86,7 @@
     <!-- The sentence as such -->
     <div class="text-line">
         <span class="line-identifier">{{sentence.order}}</span>
-        <span class="line-text">{{sentence.sent}}</span>
+        <span class="line-text" {% if fontsize %}style="{{fontsize}}"{% endif %}>{{sentence.sent}}</span>
     </div>
     {% if eng %}
       <div class="text-line-eng">{{eng}}</div>

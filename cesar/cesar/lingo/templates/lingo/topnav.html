@@ -22,7 +22,10 @@
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
                          aria-haspopup="true" aria-expanded="false">Experiment<span class="caret"></span></a>
                       <ul class="dropdown-menu">
-                          <li><a href="{% url 'exp_list' %}">List</a></li>
+                        <li><a href="{% url 'exp_list' %}">List</a></li>
+                        {% if is_lingo_editor %}
+                          <li><a href="{% url 'qdata_list' %}" title="All the questions from all the experiments">All questions</a></li>
+                        {% endif %}
                       </ul>
                     </li>
                 </ul>

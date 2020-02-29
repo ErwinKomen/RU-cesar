@@ -4990,6 +4990,19 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * goto_url
+       *   Go to the indicated target URL
+       *
+       */
+      goto_url: function (target) {
+        try {
+          location.href = target;
+        } catch (ex) {
+          private_methods.errMsg("goto_url", ex);
+        }
+      },
+
+      /**
        * process_edit
        *   Switch between edit modes on this <tr>
        *   And if saving is required, then call the [targeturl] to send a POST of the form data

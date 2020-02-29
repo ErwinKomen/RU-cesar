@@ -1012,12 +1012,23 @@ select {
     height: auto;
 }
 
-table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, div.clickable:hover {
+table tbody tr td.clickable:hover, table thead tr th.clickable:hover, table tbody tr.clickable td:hover, div.clickable:hover {
   cursor: pointer;
 }
 table tbody tr td.clickable:hover, table tbody tr.clickable td:hover {
   background-color: lightgoldenrodyellow ;
 }
+
+a.nostyle:link, a.nostyle:visited {
+    text-decoration: inherit;
+    color: inherit;
+    cursor: inherit;
+}
+
+td a.nostyle {
+  display: block;
+}
+
 
 /* TSG specific */
 td.editable, span.editable {
@@ -1027,3 +1038,16 @@ td.editable:hover, span.editable:hover {
   background-color: lightyellow;
   color: darkgreen;
 }
+
+
+/* Simple search view */
+table.func-view td .view-mode {
+  font-family: monospace;
+  font-size: 90%;
+  color: darkblue;
+}
+
+table.func-view td .view-mode:hover {
+  background-color: lightyellow;
+}
+

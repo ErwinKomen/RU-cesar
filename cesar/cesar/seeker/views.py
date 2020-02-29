@@ -30,6 +30,9 @@ from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 from io import StringIO
 
+# My own application
+from basic.views import BasicList
+
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
 from cesar.seeker.models import SIMPLENAME
@@ -401,7 +404,7 @@ class SeekerListView(ListView):
 
     def render_to_response(self, context, **response_kwargs):
         # helper function...
-        def get_parent_nodeid(glist, instance, groupid):
+        def get_parent_nodeid(glist, instance, groupid, user):
             """Find the parent-group [instance] from glist"""
             # Obvious case
             if glist == [] or instance == None: return groupid
@@ -409,7 +412,7 @@ class SeekerListView(ListView):
             grp = instance.name
             # Yes: look for the correct parent
             for g in glist:
-                if g['group'] == grp:
+                if g['group'] == grp and g['user'] == user:
                     return g['nodeid']
             # Getting here means we haven't found the group
             return groupid
@@ -457,14 +460,14 @@ class SeekerListView(ListView):
             authenticated = True
             # Get the correct list of research projects:
             # - All my own projects
-            # - All projects shared with the groups I belong to
+            # - All projects shared with me in the groups I belong to
             my_projects = Research.objects.filter(Q(owner=currentuser))
             lstQ = []
             lstQ.append(~Q(owner=currentuser))
             lstQ.append(~Q(sharegroups__group__in=currentuser.groups.all()))
-
-            # research_list = Research.objects.filter(Q(owner=self.request.user) | Q(sharegroups_group))
-            qs = Research.objects.exclude(*lstQ)
+    
+            # This is the correct queryset - don't touch it!!!
+            qs = Research.objects.filter(Q(owner=currentuser)|Q(sharegroups__group__in=currentuser.groups.all()))
 
             # Perform the sorting
             order = [Lower('owner'), '-saved']
@@ -533,6 +536,7 @@ class SeekerListView(ListView):
 
             # Process in the order of users
             for user_id in user_list:
+                grp_list = []   # List of groups that have already been shown
                 # Get projects of this user in an ordered way:
                 # -- only those that are shared with me
                 lstQ = []
@@ -560,7 +564,7 @@ class SeekerListView(ListView):
                 oGrp['minwidth'] = (oGrp['depth']-1) * 20
                 # Add USER-level as group to list
                 resgroup_list.append(oGrp)
-
+                
                 # Set the new parent: the user-group
                 parent = groupid
 
@@ -586,7 +590,7 @@ class SeekerListView(ListView):
                         # Show all groups that have not been shown yet
                         if sGroup == "":
                             # Now show this newly started search-containing group
-                            parent = get_parent_nodeid(resgroup_list, None, groupid)
+                            parent = get_parent_nodeid(resgroup_list, None, groupid, sUser)
                             oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 
                                     'user': sUser, 'nodeid': nodeid, 'childof': parent, 'depth': depth-1}
                             oGrp['minwidth'] = (oGrp['depth']-2) * 20
@@ -612,7 +616,7 @@ class SeekerListView(ListView):
                                 if grp_depth > max_depth:
                                     max_depth = grp_depth
                                 # Now show this newly started search-containing group
-                                parent = get_parent_nodeid(resgroup_list, this_group.parent, groupid)
+                                parent = get_parent_nodeid(resgroup_list, this_group.parent, groupid, sUser)
                                 oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': None, 
                                         'user': sUser, 'nodeid': nodeid, 'childof': parent, 'depth': grp_depth-1}
                                 oGrp['minwidth'] = (oGrp['depth']-2) * 20
@@ -627,7 +631,7 @@ class SeekerListView(ListView):
                     # Determine what to show
                     sGroupOrUser = sGroup if sGroup != "" else sUser
                     # Create a new item 
-                    parent = get_parent_nodeid(resgroup_list, res_item.group, groupid)
+                    parent = get_parent_nodeid(resgroup_list, res_item.group, groupid, sUser)
                     oGrp = {'group': sGroupOrUser, 'group_path': grp_path, 'prj': res_item, 'nodeid': nodeid, 
                             'user': sUser, 'childof': parent, 'depth': depth,
                             'may_read': res_item.has_permission(currentuser, 'r'),
@@ -670,6 +674,96 @@ class SeekerListView(ListView):
 
         # Make sure the correct URL is being displayed
         return super(SeekerListView, self).render_to_response(context, **response_kwargs)
+
+
+class SimpleListView(BasicList):
+    """List all the currently defined 'simple' searches"""
+
+    model = Research
+    listform = SimpleListForm
+    prefix = "simple"
+    basic_name = "simple"
+    plural_name = "Simple searches"
+    sg_name = "Simple search"
+    basic_add = "simple_details"
+    add_text = "Goto" 
+    has_select2 = False
+    paginate_by = 20
+    bUseFilter = True
+    delete_line = True
+    new_button = False
+    none_on_empty = True
+    page_function = "ru.basic.search_paged_start"
+    order_cols = ['owner__username', 'name', '', 'created', '']
+    order_default = ['owner__username', 'created', 'name', '', '']
+    order_heads = [{'name': 'Owner',        'order': 'o=1', 'type': 'str', 'custom': 'owner'},
+                   {'name': 'Name',         'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True},
+                   {'name': 'Description',  'order': '',    'type': 'str', 'custom': 'description', 'main': True, 'linkdetails': True},
+                   {'name': 'Created',      'order': 'o=4', 'type': 'str', 'custom': 'created'},
+                   {'name': '', 'order': '', 'type': 'str', 'options': ['delete']}
+                   ]
+    filters = [ {"name": "Name", "id": "filter_name", "enabled": False},]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'name', 'dbfield': 'name', 'keyS': 'name'}]},
+        {'section': 'other', 'filterlist': [
+            {'filter': 'owner', 'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
+            {'filter': 'stype', 'dbfield': 'stype',  'keyS': 'stype'}]}
+        ]
+    custombuttons = []
+    uploads = [
+        {'title': 'simple', 'label': 'simple searches', 'url': 'import_file', 'msg': 'Specify the JSON file that contains the CESAR Simple project'}
+        ]
+
+    def adapt_search(self, fields):
+        # Make sure the owner is set to myself
+        if fields['ownlist'] == None or len(fields['ownlist']) == 0:
+            # Restrict to myself
+            fields['ownlist'] = User.objects.filter(username=self.request.user.username)
+
+            # Only show simple 
+            fields['stype'] = "s"
+        return fields
+
+    def get_queryset(self):
+        # Perform the normal queryset determining
+        qs = super(SimpleListView, self).get_queryset()
+        # Exclude _simplesearch
+        qs = qs.exclude(name=SIMPLENAME)
+        return qs
+    
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        if custom == "owner":
+            sTitle = instance.owner.username
+            html.append("<span style='color: darkgreen; font-size: small;'>{}</span>".format(instance.owner.username[:20]))
+        elif custom == "description":
+            sDescr = instance.purpose
+            sCompact = instance.compact
+            if sCompact:
+                oCompact = json.loads(sCompact)
+                if 'description' in oCompact:
+                    sDescr = oCompact['description']
+            sTitle = sDescr
+
+            html.append("<span style='color: darkblue; font-size: small;'>{}</span>".format(sDescr))
+        elif custom == "created":
+            sTime = instance.created.strftime("%d/%b/%Y %H:%M")
+            html.append("<span style='color: darkgreen; font-size: smaller;'>{}</span>".format(sTime))
+        # Combine the HTML code
+        sBack = "\n".join(html)
+        return sBack, sTitle
+
+    def add_to_context(self, context, initial):
+        # Add a button for the default simple list view
+        context['user_button'] = "<a class='btn btn-xs jumbo-1' role='button' href='{}' title='Go to the default simple search view'>Go Simple</a>".format(reverse('simple_details'))
+        # Adapt for CESAR
+        context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
+        context['is_app_uploader'] = user_is_ingroup(self.request, "radboud-tsg")
+        return context
 
 
 def get_changeform_initial_data(model, request):
@@ -1876,8 +1970,7 @@ class ResearchPart2(ResearchPart):
                      (prefix == 'cnsconstruction' and self.obj.targetType == "c") or \
                      (prefix == 'extconstruction' and self.obj.targetType == "e") )
 
-
-
+        
 class ResearchPart3(ResearchPart):
     template_name = 'seeker/research_part_3.html'
     MainModel = Research
@@ -3874,9 +3967,9 @@ class ResultDetailView(DetailView):
         context['quantor'] = self.quantor
         context['filters'] = self.basket.get_filters()
         # Check if this is the simple search
-        if research.name == SIMPLENAME:
+        if research.stype == STYPE_SIMPLE or research.name == SIMPLENAME:
             # This is the simple research project - special treatment
-            context['search_edit_url'] = reverse("seeker_simple")
+            context['search_edit_url'] = reverse('simple_details')
             context['search_name'] = "simple"
             context['intro_message'] = "Simple search"
         else:
@@ -4506,6 +4599,7 @@ class ResultDownload(ResearchPart):
         return context
 
 
+# ================================ Other views =========================================================
 
 def research_oview(request, object_id=None):
     """Entry point to show a summary of a search specification"""
@@ -4635,7 +4729,7 @@ def research_edit(request, object_id=None):
     #   or editing the existing project
     return render(request, template, context)
 
-def research_simple(request):
+def research_simple(request, pk=None):
     """Allow the user to specify a simple search"""
 
     # Initialisations
@@ -4644,86 +4738,141 @@ def research_simple(request):
     simplename = SIMPLENAME     # Name of the simple project
     oErr = ErrHandle()
     sTargetType = "w"
+    # Get the correct owner
+    owner = User.objects.filter(Q(username=request.user)).first()
+
+    # Get a list of SIMPLE searches
+    # qs_simple = Research.objects.filter(owner=owner, gateway__name="simple").exclude(name=SIMPLENAME)
+    qs_simple = Research.objects.filter(owner=owner, stype=STYPE_SIMPLE).exclude(name=SIMPLENAME)
+
+    # Get parameters
+    qd = request.GET if request.method == "GET" else request.POST
 
     # Action depends on GET or POST
     if request.method == "GET": 
-
-        # Get the correct owner
-        owner = User.objects.filter(Q(username=request.user)).first()
 
         # Check if the user is authenticated
         if owner == None or not request.user.is_authenticated:
             # Simply redirect to the home page
             return redirect('nlogin')
 
-        # Get the 'simple' project of this owner
-        lstQ = []
-        lstQ.append(Q(owner=owner))
-        lstQ.append(Q(name=simplename))
-        obj = Research.objects.filter(*lstQ).first()
+        # Initialisations
         partchoice = None
-        if obj == None:
-            gateway = Gateway(name="simple")
-            gateway.save()
-            obj = Research(name=simplename, purpose="simple", targetType=sTargetType,
-                           gateway=gateway, owner=owner)
-            obj.save()
-        else:
-            # There already is a search: find its associated part
-            basket = Basket.objects.filter(research=obj).order_by('-saved').first()
-            if basket != None:
-                partchoice = basket.part.id
-        object_id = obj.id
+        obj = None
 
         # Initially the 'related' formset is empty
-        related_formset = None
-        # Prepare a related formset without initial data
         related_formset = RelatedFormset(prefix='simplerel')
 
-        # Create a form based on this research object
-        simpleform = SimpleSearchForm()
-        simpleform.fields["targetType"].initial = obj.targetType
-        simpleform.fields["searchwords"].initial = ""
-        simpleform.fields["searchpos"].initial = ""
-        simpleform.fields["searchlemma"].initial = ""
-        simpleform.fields["searchexc"].initial = ""
-        simpleform.fields["searchrel"].initial = ""
-        simpleform.fields["searchcql"].initial = ""
-        cns = obj.gateway.constructions.first()
-        if cns != None and cns.search != None:
-            svalue = cns.search.value
-            if obj.targetType == "w":
-                # Simple word search
-                simpleform.fields["searchwords"].initial = svalue
-            elif obj.targetType == "c":
-                # Constituent category search
-                simpleform.fields["searchpos"].initial = svalue
-            elif obj.targetType == "q":     # Cesar CQL
-                simpleform.fields["searchcql"].initial = svalue
-            else:
-                # This should be targettype "e" (extended)
-                # Extended search: at least 'lemma' or 'constituent', and possibly also 'word'
-                simpleform.fields["searchwords"].initial = svalue
-                simpleform.fields["searchpos"].initial = cns.search.category
-                simpleform.fields["searchexc"].initial = cns.search.exclude
-                simpleform.fields["searchlemma"].initial = cns.search.lemma
 
-            if cns.search.related != None and cns.search.related != "":
-                # Treat 'related'
-                simpleform.fields["searchrel"].initial = cns.search.related
-                # Fill the 'related' formset with data from [related]
-                lSearchRelated = json.loads(cns.search.related)
-                related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
-                lTowards = [("search", "Search Hit")]
-                i = 0
-                for form in related_formset:
-                    form.fields['towards'].choices = lTowards
-                    # Make sure 'name' is in there
-                    if 'name' in lSearchRelated[i]:
-                        sDvar = lSearchRelated[i]['name']
-                        tThis = (sDvar, sDvar)
-                        lTowards.append( tThis )
-                    i += 1
+        # Get the correct research object
+        if pk != None:
+            obj = Research.objects.filter(id=pk).first()
+        if pk == None or obj == None:
+            # Get the 'simple' project of this owner
+            lstQ = []
+            lstQ.append(Q(owner=owner))
+            lstQ.append(Q(name=simplename))
+            obj = Research.objects.filter(*lstQ).first()
+            if obj == None:
+                gateway = Gateway(name="simple")
+                gateway.save()
+                obj = Research(name=simplename, purpose="simple", targetType=sTargetType,
+                               gateway=gateway, owner=owner)
+                obj.save()
+            else:
+                # There already is a search: find its associated part
+                basket = Basket.objects.filter(research=obj).order_by('-saved').first()
+                if basket != None:
+                    partchoice = basket.part.id
+            # Create a form based on this research object
+            simpleform = SimpleSearchForm()
+            simpleform.fields["targetType"].initial = obj.targetType
+            simpleform.fields["searchwords"].initial = ""
+            simpleform.fields["searchpos"].initial = ""
+            simpleform.fields["searchlemma"].initial = ""
+            simpleform.fields["searchexc"].initial = ""
+            simpleform.fields["searchrel"].initial = ""
+            simpleform.fields["searchcql"].initial = ""
+            simpleform.fields["baresimple"].initial = ""
+            simpleform.fields["description"].initial = ""
+            cns = obj.gateway.constructions.first()
+            if cns != None and cns.search != None:
+                svalue = cns.search.value
+                if obj.targetType == "w":
+                    # Simple word search
+                    simpleform.fields["searchwords"].initial = svalue
+                elif obj.targetType == "c":
+                    # Constituent category search
+                    simpleform.fields["searchpos"].initial = svalue
+                elif obj.targetType == "q":     # Cesar CQL
+                    simpleform.fields["searchcql"].initial = svalue
+                else:
+                    # This should be targettype "e" (extended)
+                    # Extended search: at least 'lemma' or 'constituent', and possibly also 'word'
+                    simpleform.fields["searchwords"].initial = svalue
+                    simpleform.fields["searchpos"].initial = cns.search.category
+                    simpleform.fields["searchexc"].initial = cns.search.exclude
+                    simpleform.fields["searchlemma"].initial = cns.search.lemma
+
+                if cns.search.related != None and cns.search.related != "":
+                    # Treat 'related'
+                    simpleform.fields["searchrel"].initial = cns.search.related
+                    # Fill the 'related' formset with data from [related]
+                    lSearchRelated = json.loads(cns.search.related)
+                    related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
+                    lTowards = [("search", "Search Hit")]
+                    i = 0
+                    for form in related_formset:
+                        form.fields['towards'].choices = lTowards
+                        # Make sure 'name' is in there
+                        if 'name' in lSearchRelated[i]:
+                            sDvar = lSearchRelated[i]['name']
+                            tThis = (sDvar, sDvar)
+                            lTowards.append( tThis )
+                        i += 1
+        else:
+            # Get the information from the simple search
+            oSearch = json.loads(obj.compact)
+            # Fill the simple search form with the information in oSearch
+            simpleform = SimpleSearchForm()
+            simpleform.fields["targetType"].initial = oSearch['targetType']
+            simpleform.fields["searchwords"].initial = oSearch['searchwords']
+            simpleform.fields["searchpos"].initial = oSearch['searchpos']
+            simpleform.fields["searchlemma"].initial = oSearch['searchlemma']
+            simpleform.fields["searchexc"].initial = oSearch['searchexc']
+            simpleform.fields["searchcql"].initial = oSearch['searchcql']
+            simpleform.fields["baresimple"].initial = oSearch['name']
+            simpleform.fields["description"].initial = "" if "description" not in oSearch else oSearch['description']
+
+            # TODO: calculate [searchrel] and [ltowards] from what is in oSearch
+            # simpleform.fields["searchrel"].initial = oSearch['searchrel']
+
+            # Get the list of related searches
+            lSearchRelated = oSearch['related']
+            # Make sure the string is saved correctly
+            simpleform.fields["searchrel"].initial = json.dumps(lSearchRelated)
+            # Create the correct formset
+            related_formset = RelatedFormset(initial=lSearchRelated, prefix='simplerel')
+            lTowards = [("search", "Search Hit")]
+            i = 0
+            for form in related_formset:
+                form.fields['towards'].choices = lTowards
+                # Make sure 'name' is in there
+                if 'name' in lSearchRelated[i]:
+                    sDvar = lSearchRelated[i]['name']
+                    tThis = (sDvar, sDvar)
+                    lTowards.append( tThis )
+                i += 1
+
+        # Determine whether the 'more' part should be shown or not
+        show_more = "more"
+        more_fields = ["searchpos", "searchlemma", "searchexc"]
+        for field in more_fields:
+            if simpleform.fields[field].initial: 
+                show_more = "less"
+                break
+
+        object_id = obj.id
 
         intro_message = "Make a simple search"
         intro_breadcrumb = "Simple"
@@ -4746,6 +4895,7 @@ def research_simple(request):
             object_id = object_id,
             original=obj,
             simpleform=simpleform,
+            show_more=show_more,
             related_formset=related_formset,
             axis_list=axis_list,
             intro_message=intro_message,
@@ -4755,6 +4905,7 @@ def research_simple(request):
             search_count = search_count,
             part_list=get_partlist(request),
             partchoice = partchoice,
+            simple_list = qs_simple,
             error_list=error_list
             )
 
@@ -4766,9 +4917,6 @@ def research_simple(request):
         # The POST method is reserved for MODIFYING an existing simple search
         data = {'status': 'ok', 'html': ''}
 
-        # Get the correct owner
-        owner = User.objects.filter(Q(username=request.user)).first()
-
         # Check if the user is authenticated
         if owner == None or not request.user.is_authenticated:
             # Simply redirect to the home page
@@ -4777,24 +4925,53 @@ def research_simple(request):
         try:
             # Get the parameters
             qd = request.POST
-            # Get the correct research project FOR THIS USER
-            lstQ = []
-            lstQ.append(Q(owner=owner))
-            lstQ.append(Q(name=SIMPLENAME))
-            research = Research.objects.filter(*lstQ).first()
-            if research == None:
-                # There is no simple research project to adapt
-                data['status'] = 'error'
-                data['html'] = "research_simple cannot find a Research project that should be adapted"
-            else:
-                # Found the research
-                if modify_simple_search(research, qd):
-                    # We are okay
-                    data['html'] = "The simple project has been adapted"
+
+            # See if a specific action is required
+            bReady = False
+            if 'action' in qd:
+                action = qd['action']
+                if action == "delete":
+                    # Delete this item and then return the simple list view
+                    obj = Research.objects.filter(id=pk).first()
+                    if obj:
+                        # Remove it
+                        obj.delete()
+                        # Now return the correct listview
+                        data['afterdelurl'] = reverse('simple_list')
+                        bReady = True
+
+            # Are we ready?
+            if not bReady:
+                # Try to load the form
+                simpleform = SimpleSearchForm(qd)
+                if simpleform.is_valid():
+
+                    # See if it has a different name now
+                    simplename = simpleform.cleaned_data["baresimple"]
+                    if simplename == "": simplename = SIMPLENAME
+
+                    # Get the correct research project FOR THIS USER
+                    lstQ = []
+                    lstQ.append(Q(owner=owner))
+                    lstQ.append(Q(name=simplename))
+                    research = Research.objects.filter(*lstQ).first()
+                    if research == None:
+                        # There is no simple research project to adapt
+                        data['status'] = 'error'
+                        data['html'] = "research_simple cannot find a Research project that should be adapted"
+                    else:
+                        # Found the research
+                        if modify_simple_search(research, qd, simpleform.cleaned_data):
+                            # We are okay
+                            data['html'] = "The simple project has been adapted"
+                        else:
+                            # Something went wrong
+                            data['status'] = 'error'
+                            data['html'] = "research_simple: modify_simple_search returns with an error"
                 else:
-                    # Something went wrong
+                    # There are errors in the form
                     data['status'] = 'error'
-                    data['html'] = "research_simple: modify_simple_search returns with an error"
+                    data['html'] = "Simple form errors: {}".format(simpleform.errors)
             
         except:
             data['status'] = 'error'
@@ -4806,7 +4983,46 @@ def research_simple(request):
     else:
         return None
 
-def modify_simple_search(research, qd):
+def get_related(qd):
+    """Get the list of related"""
+
+    sRelated = ""
+    bResult = True
+
+    # Adapt the 'RelatedForm' with the information from lTowards
+    lTmp = json.loads(qd.get('ltowards', '[]'))
+    lTowards = [(x['name'], x['value']) for x in lTmp if x['name'] != ""]
+
+    # Get the 'simplerel' formset from the input
+    formset = RelatedFormset(qd, prefix='simplerel')
+    for form in formset:
+        form.fields['towards'].choices = lTowards
+    # if formset.is_valid():
+    bResetRelated = False
+    if formset != None:
+        # Check for validness
+        if formset.is_valid():
+            # Everything okay, continue
+            if formset.total_form_count() == 0:
+                bResetRelated = True
+            else:
+                lRelated = []
+                # Walk the forms in the formset
+                for rel_form in formset:
+                    if rel_form.is_valid():
+                        # Process the information in this form
+                        # oFields = rel_form.cleaned_data
+                        oFields = copy.copy(rel_form.cleaned_data)
+                        # lRelated.append({"name": oFields['name'], "cat": oFields['cat'], "raxis": oFields['raxis'], "towards": oFields['towards']})
+                        lRelated.append(oFields)
+                sRelated = json.dumps(lRelated)
+        else:
+            # One of the forms is not valid, got to do something about it
+            bResult = False
+            sRelated = formset.errors
+    return bResult, sRelated
+
+def modify_simple_search(research, qd, data = None):
     """Modify and save the research on the basis of the info we get"""
 
     # Sanity checking
@@ -4815,9 +5031,24 @@ def modify_simple_search(research, qd):
 
     oErr = ErrHandle()
 
+    # Check if we have the data
+    if data == None:
+        # Clean the form and get the data
+        form = SimpleSearchForm(qd)
+        if form.is_valid():
+            data = form.cleaned_data
+
     # Continue
-    if "targetType" in qd:
+    if data != None and "targetType" in data:
+        # Make sure the targettype is set correctly
         research.targetType = qd.get("targetType", "w")
+        # Make sure the stype is set correctly too
+        research.stype = STYPE_SIMPLE
+        #  Possibly adapt the name of this search
+        simplename = SIMPLENAME
+        if 'baresimple' in data and data['baresimple'] != "":
+            simplename = data['baresimple']
+        research.name = simplename
         # Save the adapted research
         research.save()
         
@@ -4940,7 +5171,7 @@ def research_simple_save(request):
 
     # Initialisations
     arErr = []
-    simplename = SIMPLENAME     # Name of the simple project
+    simplename = SIMPLENAME     # Name of the simple project - this is by default the standard name
     data = {'status': 'error', 'html': ''}
 
     # This only works for action POST
@@ -4952,6 +5183,10 @@ def research_simple_save(request):
             data['html'] = "Need parameter [savename]"
             return JsonResponse(data)
         sSaveName = params['savename']
+
+        # Check if this has a particular name
+        sSearchName = params.get("baresimple", "")
+        if sSearchName != "": simplename = sSearchName
 
         # Get the correct owner
         owner = User.objects.filter(Q(username=request.user)).first()
@@ -4996,6 +5231,119 @@ def research_simple_save(request):
                 data['html'] = "First execute a simple search"
         else:
             data['html'] = "First define and execute a simple search"
+
+    # Return the information
+    return JsonResponse(data)
+
+def get_targettype(sWord, sCat, sLemma, sCql):
+    """Determine the targettype based on the information passed on"""
+
+    targetType = "e"
+    if sCql != "": 
+        targetType = "q"
+    elif sWord != "" and sLemma == "" and sCat == "":
+        targetType = "w"
+    elif sWord == "" and sLemma == "" and sCat != "":
+        targetType = "c"
+    return targetType
+
+def read_simple_form(qd):
+    """Read the forms in the research query data and transform them into a simple search object"""
+
+    oSearch = {}
+    bOkay = False
+    msg = ""
+    oErr = ErrHandle()
+    try:
+        # Read the form
+        simpleform = SimpleSearchForm(qd)
+        if simpleform.is_valid():
+            # Get the data
+            cleaned_data = simpleform.cleaned_data
+            # Unpack the data
+            baresimple = cleaned_data['baresimple']
+            simplename = SIMPLENAME
+            searchwords = cleaned_data['searchwords']
+            searchcql = cleaned_data['searchcql']
+            searchpos = cleaned_data['searchpos']
+            searchexc = cleaned_data['searchexc']
+            searchlemma = cleaned_data['searchlemma']
+            targetType = cleaned_data['targetType']
+            description = cleaned_data['description']
+            overwrite = (qd.get("overwrite", "false") == "true")
+
+            # Determine the targettype based on the data above
+            # (i.e: overriding what has been determined previously...)
+            targetType = get_targettype(searchwords, searchpos, searchlemma, searchcql)
+
+            if baresimple != "":
+                # Get the search parameters
+                oSearch = dict(name=baresimple, targetType=targetType, searchwords=searchwords, searchcql=searchcql,
+                                searchpos=searchpos, searchexc=searchexc, searchlemma=searchlemma, description=description)
+                # Get the related ones
+                bOkay, sRelated = get_related(qd)
+                if bOkay:
+                    related = [] if sRelated == "" else json.loads(sRelated)
+                    oSearch['related'] = related
+                    bOkay = True
+                else:
+                    # Creating related goes wrong
+                    oSearch['msg']  = sRelated
+            else:
+                # No name has been specified
+                oSearch['msg'] = "When using 'Save as', a name is required"
+        else:
+            # form error
+            oSearch['msg'] = "There are errors: {}".format(simpleform.errors)
+    except:
+        oSearch['msg'] = oErr.get_error_message()
+
+    # Return our result
+    return bOkay, oSearch
+
+def research_simple_baresave(request):
+    """Given a simple search *definition*, save this definition under the name provided"""
+
+    # Initialisations
+    arErr = []
+    simplename = SIMPLENAME     # Name of the simple project
+    data = {'status': 'error', 'html': 'nothing'}
+
+    # Get the correct owner
+    owner = User.objects.filter(Q(username=request.user)).first()
+
+    # Check if the user is authenticated
+    if owner == None or not request.user.is_authenticated:
+        # Simply redirect to the home page
+        return redirect('nlogin')        
+            
+    # This only works for action POST
+    if request.method == "POST":
+
+        # There should be a parameter: savename
+        params = request.POST
+        # overwrite = (params.get("overwrite", "false") == "true")
+        overwrite = True
+
+        # Read the form
+        bOkay, oSearch = read_simple_form(params)
+        if bOkay:
+            baresimple = oSearch['name']
+            # Now save [oSearch] with [baresimple]
+            research, msg = Research.create_simple(oSearch, baresimple, owner, overwrite)
+
+            if research == None:
+                data['html'] = msg
+            else:
+                # Show all went well
+                data['status'] = "ok"
+                data['name'] = research.name
+                data['view'] = reverse('simple_details', kwargs={'pk': research.id})
+        else:
+            if 'msg' in oSearch:
+                data['html'] = oSearch['msg']
+            else:
+                data['html'] = "Could not read the simple form"
 
     # Return the information
     return JsonResponse(data)

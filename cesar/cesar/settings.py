@@ -19,6 +19,7 @@ hst = socket.gethostbyname(socket.gethostname())
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_NAME = os.path.basename(BASE_DIR)
 WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../writable/database/"))
 if "RU-cesar\\writable" in WRITABLE_DIR:
     # Need another string
@@ -76,12 +77,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_select2',
+    'basic',
     'cesar.browser',
     'cesar.viewer',
     'cesar.seeker',
     'cesar.doc',
     'cesar.tsg',
-    'cesar.lingo'
+    'cesar.lingo',
+    'cesar.ds2'
 ]
 
 # MIDDLEWARE_CLASSES = [

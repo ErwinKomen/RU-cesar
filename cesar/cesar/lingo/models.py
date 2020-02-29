@@ -200,7 +200,7 @@ class Experiment(models.Model):
     created = models.DateTimeField(default=datetime.now)
     saved = models.DateTimeField(null=True, blank=True)
     # [1] The URL to this experiment
-    home = models.CharField("Home page part",  max_length=MAX_TEXT_LEN)
+    home = models.CharField("Home page part",  max_length=MAX_TEXT_LEN, default="tcpf")
 
     # [0-1] optional time after which this should not be shown anymore
     until = models.DateTimeField("Remove at", null=True, blank=True)
@@ -210,6 +210,8 @@ class Experiment(models.Model):
     consent = models.TextField("Informed consent", blank=True, null=True)
     # [0-1] the fields in the Participant model that need to be asked
     ptcpfields = models.TextField("Participant fields", default="[]", blank=True)
+    # [0-1] full metadata specification
+    metafields = models.TextField("Participant metadata", default = "{}", blank=True)
     # [1] the status of this message (can e.g. be 'archived')
     status = models.CharField("Status", choices=build_abbr_list(EXPERIMENT_STATUS), 
                               max_length=5)
@@ -241,6 +243,136 @@ class Experiment(models.Model):
         
         return len(ptcp_list)
 
+    def statistics(self):
+        """Provide experiment-dependant statistics"""
+
+        oBack = {'status': "ok"}
+        try:
+            if self.home == "tcpf":
+                # Get all the answers to this experiment so far
+                pairs = []
+                freqs = []
+                maxfreq = 0
+                qs = Response.objects.filter(experiment = self)
+                for obj in qs:
+                    if obj.answer != None and obj.answer != "":
+                        answer = json.loads(obj.answer)
+                        pair = dict(text1=int(answer['text1_id']), text2=int(answer['text2_id']), freq=1)
+                        bFound = False
+                        for item in pairs:
+                            id_1 = int(item['text1'])
+                            id_2 = int(item['text2'])
+                            if id_1 == pair['text1']  and id_2 == pair['text2']:
+                                # Found it
+                                item['freq'] += 1
+                                bFound = True
+                                if item['freq'] > maxfreq: maxfreq = item['freq']
+                                break
+                        if pair['freq'] > maxfreq: maxfreq = pair['freq']
+                        if not bFound:
+                            pairs.append(pair)
+                oBack['maxfreq'] = maxfreq
+                for freq in range(maxfreq):
+                    freqs.append(0)
+                for pair in pairs:
+                    freqs[pair['freq']-1] += 1
+                oBack['freqs'] = freqs
+                oBack['pairs'] = pairs
+        except:
+            msg = errHandle.get_error_message()
+            oBack['status'] = "error"
+            oBack['msg'] = msg
+
+        # Return the statistics
+        return oBack
+
+    def get_meta(self, field):
+        sBack = ""
+        if self.metafields != "":
+            oMeta = json.loads(self.metafields)
+            if field in oMeta:
+                oField = oMeta[field]
+                # sBack = "Include: {}, Text: {}".format(oField['include'], oField['text'])
+                if oField['include']:
+                    sBack = oField['text']
+                else:
+                    sBack = "<i>(Not included)</i>"
+        return sBack
+
+    def set_meta(self, field, bInclude, sText):
+        if self.metafields != "":
+            oMeta = json.loads(self.metafields)
+            oMeta[field] = dict(include=bInclude, text=sText, name=field)
+            # Store the result
+            self.metafields = json.dumps(oMeta)
+            self.save()
+
+    def meta_include(self, field):
+        bInclude = False
+        if self.metafields != "":
+            oMeta = json.loads(self.metafields)
+            if field in oMeta:
+                oField = oMeta[field]
+                bInclude = oField['include']
+        return 1 if bInclude else 0 
+
+    def meta_ptcpid_include(self): 
+        return self.meta_include("ptcpid")
+    
+    def meta_age_include(self): 
+        return self.meta_include("age")
+    
+    def meta_gender_include(self): 
+        return self.meta_include("gender")
+    
+    def meta_engfirst_include(self): 
+        return self.meta_include("engfirst")
+    
+    def meta_lngfirst_include(self): 
+        return self.meta_include("lngfirst")
+    
+    def meta_lngother_include(self): 
+        return self.meta_include("lngother")
+    
+    def meta_eduother_include(self): 
+        return self.meta_include("eduother")
+    
+    def meta_edu_include(self): 
+        return self.meta_include("edu")
+    
+    def meta_email_include(self): 
+        return self.meta_include("email")
+    
+    def meta_display_include(self):
+        return self.get_meta("ptcpid")
+
+    def meta_ptcpid_display(self):
+        return self.get_meta("ptcpid")
+
+    def meta_age_display(self):
+        return self.get_meta("age")
+
+    def meta_gender_display(self):
+        return self.get_meta("gender")
+
+    def meta_engfirst_display(self):
+        return self.get_meta("engfirst")
+
+    def meta_lngfirst_display(self):
+        return self.get_meta("lngfirst")
+
+    def meta_lngother_display(self):
+        return self.get_meta("lngother")
+
+    def meta_eduother_display(self):
+        return self.get_meta("eduother")
+
+    def meta_edu_display(self):
+        return self.get_meta("edu")
+
+    def meta_email_display(self):
+        return self.get_meta("email")
+
 
 class Qdata(models.Model):
     """Question data for a particular experiment"""
@@ -255,8 +387,8 @@ class Qdata(models.Model):
     qsuggest = models.CharField("Suggested topic", max_length=255, blank=True, default = "")
     # [0-1] Correct response for this topic
     qcorr = models.CharField("Topic response", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "")
-    # [1] The experiment
-    experiment = models.ForeignKey(Experiment)
+    # [1] The experiment. Note: when the experiment is removed, the Qdata is removed too
+    experiment = models.ForeignKey(Experiment, related_name="experiment_qdatas", on_delete=models.CASCADE)
     # [1] Include this one or not
     include = models.CharField("Include text", choices=build_abbr_list(EXPERIMENT_YESNO), max_length=5, blank=True, default = "n")
 

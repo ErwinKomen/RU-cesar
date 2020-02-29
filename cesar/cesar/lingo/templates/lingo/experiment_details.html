@@ -30,23 +30,28 @@
             <h3>General information</h3>
 
             <!-- Experiment Main information -->
-            <div id="tsghandle_edit">
+            <div id="experiment_edit">
               <!-- Note: the correct 'pk' is available in [expForm] -->
               {% include 'lingo/experiment_edit.html' %}
             </div>
 
+            <!-- Room for the related objects -->
+            <div id="experiment_questions">
+              {% include 'lingo/related_objects.html' %}
+            </div>
           </div>
 
         </div>
         <!-- Empty row -->
         <div class="row">&nbsp;</div>
+
       </div>
 
-    {% if authenticated %}
+    {% if authenticated or is_lingo_editor %}
     {% else %}
       <div class="explanation">
         <p>Dear user, you are <b>not</b> logged in.</p>
-        <p>Unfortunately this means that you will not be able to see Lingo Experiment details.</p>
+        <p>Unfortunately this means that you will not be able to see (all the) Lingo Experiment details.</p>
       </div>
     {% endif %}
   </div>

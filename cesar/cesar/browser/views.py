@@ -167,6 +167,13 @@ def user_is_ingroup(request, sGroup):
     bIsInGroup = (sGroup in glist)
     return bIsInGroup
 
+def user_is_superuser(request):
+    # Is this user part of the indicated group?
+    username = request.user.username
+    user = User.objects.filter(username=username).first()
+    bSuper = False if user == None else user.is_superuser
+    return bSuper
+
 def home(request):
     """Renders the home page."""
 
@@ -197,6 +204,8 @@ def home(request):
     context['newsitem_list'] = newsitem_list
     # Make sure we add special group permission(s)
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
+    context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
+    context['is_superuser'] = user_is_superuser(request)
     # Render and return the page
     return render(request, template_name, context)
 
@@ -257,6 +266,25 @@ def nlogin(request):
                     'year':datetime.now().year,}
     return render(request,'nlogin.html', context)
 
+def login_as_user(request, user_id):
+    assert isinstance(request, HttpRequest)
+
+    # Find out who I am
+    supername = request.user.username
+    super = User.objects.filter(username__iexact=supername).first()
+    if super == None:
+        return nlogin(request)
+
+    # Make sure that I am superuser
+    if super.is_staff and super.is_superuser:
+        user = User.objects.filter(username__iexact=user_id).first()
+        if user != None:
+            # Perform the login
+            login(request, user)
+            return HttpResponseRedirect(reverse("home"))
+
+    return home(request)
+
 def signup(request):
     """Provide basic sign up and validation of it """
 
@@ -304,8 +332,6 @@ def sync_crpp(request):
 
     # Add the information in the 'context' of the web page
     return render(request, template_name, context)
-
-
 
 def sync_crpp_start(request):
     """Synchronize information FROM /crpp"""
@@ -736,6 +762,11 @@ class SentenceListView(ListView):
         context['text'] = self.text
         context['linecount'] = self.entrycount
 
+        lng = self.text.part.corpus.get_lng_display()
+        context['fontsize'] = ""
+        if "heb" in lng or "grk" in lng:
+            context['fontsize'] = "font-size: large;"
+
         # Set the prefix
         context['app_prefix'] = APP_PREFIX
 
@@ -873,6 +904,9 @@ class SentenceDetailView(DetailView):
                    'locs': sentence.identifier,
                    'locw': '',
                    'type': 'syntax_svg_tree'}
+        context['fontsize'] = ""
+        if "heb" in options['lng'] or "grk" in options['lng']:
+            context['fontsize'] = "font-size: large;"
         oInfo = get_crpp_sent_info(options)
         if oInfo != None and oInfo['status'] == "ok":
             # Make sure that 'object' sections are translated to proper JSON
@@ -992,9 +1026,6 @@ class TextDetailInfo(View):
             return False
         else:
             return True
-
-
-
 
 
 class TextDetailView(DetailView):

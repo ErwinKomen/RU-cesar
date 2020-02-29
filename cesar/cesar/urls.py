@@ -19,6 +19,14 @@ from cesar.tsg.views import *
 # The CesarLingo application
 from cesar.lingo.views import *
 
+# Django-select2 testing
+from cesar.ds2.forms import (
+    AddressChainedSelect2WidgetForm, AlbumModelSelect2WidgetForm,
+    HeavySelect2MultipleWidgetForm, HeavySelect2WidgetForm,
+    ModelSelect2TagWidgetForm, Select2WidgetForm
+)
+from cesar.ds2.views import TemplateFormView, heavy_data_1, heavy_data_2
+
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
 
@@ -48,6 +56,9 @@ urlpatterns = [
     url(r'^lingo/experiment/download/(?P<pk>\d+)', ExperimentDownload.as_view(), name='exp_download'),
     url(r'^lingo/experiment/participant(?:/(?P<pk>\d+))?/$', ParticipantDetails.as_view(), name='participant'),
 
+    url(r'^lingo/qdata/list', QdataListView.as_view(), name='qdata_list'),
+    url(r'^lingo/qdata/add',  RedirectView.as_view(url='/'+APP_PREFIX+'admin/lingo/qdata/add'), name='qdata_add'),
+    url(r'^lingo/qdata/view(?:/(?P<pk>\d+))?/$', QdataDetailsView.as_view(), name='qdata_details'),
 
     url(r'^crm/contacts', cesar.lingo.views.crm_contacts, name='crm_contacts'),
 
@@ -58,8 +69,10 @@ urlpatterns = [
     url(r'^about', cesar.browser.views.about, name='about'),
     url(r'^short', cesar.browser.views.short, name='short'),
     url(r'^nlogin', cesar.browser.views.nlogin, name='nlogin'),
+
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
+
     url(r'^text/info/(?P<pk>\d+)', TextDetailInfo.as_view(), name='text_info'),
     url(r'^text/list/$', cesar.browser.views.TextListView.as_view(), name='text_list'),
     url(r'^text/view/(?P<pk>\d+)', TextDetailView.as_view(), name='text_view'),
@@ -80,12 +93,16 @@ urlpatterns = [
 
     url(r'^seek/wizard/(?P<object_id>\d+)/$', cesar.seeker.views.research_edit, name='seeker_edit'),
     url(r'^seek/wizard/new/$', cesar.seeker.views.research_edit, name='seeker_define'),
-    url(r'^seek/wizard/simple/$', cesar.seeker.views.research_simple, name='seeker_simple'),
-    url(r'^seek/wizard/simple/save/$', cesar.seeker.views.research_simple_save, name='simple_save'),
     url(r'^seek/wizard/import/$', cesar.seeker.views.import_json, name='import_file'),
     url(r'^seek/wizard/copy/(?P<object_id>\d+)/$', ResearchCopy.as_view(), name='seeker_copy'),
     url(r'^seek/wizard/delete/(?P<object_id>\d+)/$', ResearchDelete.as_view(), name='seeker_delete'),
     url(r'^seek/oview/(?P<object_id>\d+)/$', cesar.seeker.views.research_oview, name='seeker_oview'),
+
+    url(r'^seek/simple/list/$', SimpleListView.as_view(), name='simple_list'),
+    url(r'^seek/simple(?:/(?P<pk>\d+))?/$', cesar.seeker.views.research_simple, name='simple_details'),
+    url(r'^seek/simple(?:/(?P<pk>\d+))?/$', cesar.seeker.views.research_simple, name='simple_edit'),
+    url(r'^seek/simple/save/$', cesar.seeker.views.research_simple_save, name='simple_save'),
+    url(r'^seek/simple/baresave/$', cesar.seeker.views.research_simple_baresave, name='simple_baresave'),
 
     url(r'^seek/result/kwic/(?P<pk>\d+)/$', KwicView.as_view(), name='kwic_result'),
     url(r'^seek/result/kwic/list/(?P<object_id>\d+)/$', KwicListView.as_view(), name='kwic_list'),
@@ -108,10 +125,13 @@ urlpatterns = [
     url(r'^seek/result/delete/(?P<object_id>\d+)/$', ResultDelete.as_view(), name='result_delete'),
 
     url(r'^seek/list/$', SeekerListView.as_view(), name='seeker_list'),
+
     url(r'^function/list/$', FunctionListView.as_view(), name='function_list'),
+
     url(r'^sync/crpp$', cesar.browser.views.sync_crpp, name='crpp'),
     url(r'^sync/crpp/start/$', cesar.browser.views.sync_crpp_start, name='sync_start'),
     url(r'^sync/crpp/progress/$', cesar.browser.views.sync_crpp_progress, name='sync_progress'),
+
     url(r'^ajax/prepare(?:/(?P<object_id>\d+))?/$', ResearchPrepare.as_view(), name='search_prepare'),
     url(r'^ajax/watch(?:/(?P<object_id>\d+))?/$', ResearchWatch.as_view(), name='search_watch'),
     url(r'^ajax/start(?:/(?P<object_id>\d+))?/$', ResearchStart.as_view(), name='search_start'),
@@ -142,8 +162,24 @@ urlpatterns = [
     url(r'^ajax/condition63t(?:/(?P<object_id>\d+))?/$', Condition63t.as_view(), name='condition63t'),
     url(r'^ajax/feature73t(?:/(?P<object_id>\d+))?/$', Feature73t.as_view(), name='feature73t'),
     url(r'^ajax/function/download/(?P<object_id>\d+)/$', ResearchDownloadFunction.as_view(), name='function_download'),
+
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^signup/$', cesar.browser.views.signup, name='signup'),
+
+    # For working with ModelWidgets from the select2 package https://django-select2.readthedocs.io
+    url(r'^select2/', include('django_select2.urls')),
+
+    # ds2 app
+    url(r'^ds2/select2_widget', TemplateFormView.as_view(form_class=Select2WidgetForm), name='select2_widget'),
+    url(r'^ds2/heavy_select2_widget', TemplateFormView.as_view(form_class=HeavySelect2WidgetForm), name='heavy_select2_widget'),
+    url(r'^ds2/heavy_select2_multiple_widget', TemplateFormView.as_view(form_class=HeavySelect2MultipleWidgetForm, success_url='/'), name='heavy_select2_multiple_widget'),
+    url(r'^ds2/model_select2_widget', TemplateFormView.as_view(form_class=AlbumModelSelect2WidgetForm), name='model_select2_widget'),
+    url(r'^ds2/model_select2_tag_widget', TemplateFormView.as_view(form_class=ModelSelect2TagWidgetForm), name='model_select2_tag_widget'),
+    url(r'^ds2/model_chained_select2_widget', TemplateFormView.as_view(form_class=AddressChainedSelect2WidgetForm), name='model_chained_select2_widget'),
+    url(r'^ds2/heavy_data_1', heavy_data_1, name='heavy_data_1'),
+    url(r'^ds2/heavy_data_2', heavy_data_2, name='heavy_data_2'),
+
+    url(r'^login/user/(?P<user_id>\w[\w\d_]+)$', cesar.browser.views.login_as_user, name='login_as'),
 
     url(r'^login/$',
         django.contrib.auth.views.login,

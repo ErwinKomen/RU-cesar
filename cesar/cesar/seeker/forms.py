@@ -5,9 +5,10 @@ Definition of forms for the SEEKER app.
 from django import forms
 #from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.forms import ModelForm, formset_factory, modelformset_factory, BaseFormSet
+from django.forms import ModelForm, formset_factory, modelformset_factory, BaseFormSet, ModelMultipleChoiceField, ModelChoiceField
 from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
+from django_select2.forms import Select2MultipleWidget, ModelSelect2MultipleWidget, ModelSelect2TagWidget, ModelSelect2Widget, HeavySelect2Widget
 from cesar.seeker.widgets import SeekerTextarea
 from cesar.seeker.models import *
 from cesar.browser.models import build_choice_list, get_help
@@ -33,6 +34,23 @@ def init_choices(obj, sFieldName, sSet, maybe_empty=False, bUseAbbr=False):
         else:
             obj.fields[sFieldName].choices = build_choice_list(sSet, maybe_empty=maybe_empty)
         obj.fields[sFieldName].help_text = get_help(sSet)
+
+
+# ========================================= WIDGETS ====================================================
+
+
+class UserWidget(ModelSelect2MultipleWidget):
+    model = User
+    search_fields = [ 'username__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.username
+
+    def get_queryset(self):
+        return User.objects.all().order_by('username').distinct()
+
+
+# ================= FORMS =======================================
 
 
 class VariableForm(ModelForm):
@@ -516,6 +534,12 @@ class QuantorSearchForm(ModelForm):
 
 
 class SimpleSearchForm(forms.Form):
+    baresimple = forms.CharField(label=_("Name"), required=False,
+                    widget=forms.TextInput(attrs={'placeholder': 'Name for this simple search', 'style': 'width: 100%;'}))
+    description = forms.CharField(label=_("Description"), required=False,
+                    widget=forms.Textarea(attrs={'rows': 2, 'cols': 30, 'style': 'height: 100px; width: 100%;',
+                                                 'placeholder': 'Short description of this search'}))
+                    #widget=forms.TextInput(attrs={'placeholder': 'Short description of this search', 'style': 'width: 100%;'}))
     targetType = forms.ChoiceField(label=_("Search type"), choices=TARGET_TYPE_CHOICES, required = True)
     searchwords = forms.CharField(label=_("Word(s) to be found"), required=False)
     searchlemma = forms.CharField(label=_("Lemma to be found"), required=False)
@@ -524,6 +548,30 @@ class SimpleSearchForm(forms.Form):
     searchrel = forms.CharField(label=_("Related constituent(s)"), required = False)
     searchcql = forms.CharField(required = False, widget=SeekerTextarea(attrs={'rows': 3, 'cols': 80, 'style': 'height: 90px;'}))
 
+
+class SimpleListForm(ModelForm):
+    """Form used for displaying and searching through simple searches"""
+
+    ownlist = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=UserWidget(attrs={'data-placeholder': 'Select multiple users...', 'style': 'width: 100%;', 'class': 'searching'}))
+
+    class Meta:
+        model = Research
+        fields = ['name', 'targetType', 'stype', 'compact', 'purpose']
+        widgets={'name':        forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(SimpleListForm, self).__init__(*args, **kwargs)
+        # Some fields are not required
+        self.fields['name'].required = False
+        self.fields['compact'].required = False
+        self.fields['purpose'].required = False
+        self.fields['stype'].required = False
+        self.fields['targetType'].required = False
+        self.fields['ownlist'].queryset = User.objects.all()
+        
 
 class RelatedForm(forms.Form):
     """One 'related' constituent definition for SimpleSearch"""
@@ -553,23 +601,35 @@ class RelatedForm(forms.Form):
         self.fields['skip'].choices = SEARCHSIMPLE_SKIP
 
     def get_raxis_display(self):
-        k = self.initial['raxis']
-        v = next(tp[1] for tp in self.fields['raxis'].choices if str(tp[0]) == k)
+        if 'raxis' in self.initial:
+            k = self.initial['raxis']
+            v = next(tp[1] for tp in self.fields['raxis'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad raxis: build afresh"
         return v
 
     def get_towards_display(self):
-        k = self.initial['towards']
-        v = next(tp[1] for tp in self.fields['towards'].choices if str(tp[0]) == k)
+        if 'towards' in self.initial:
+            k = self.initial['towards']
+            v = next(tp[1] for tp in self.fields['towards'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad towards: build afresh"
         return v
 
     def get_pos_display(self):
-        k = self.initial['pos']
-        v = next(tp[1] for tp in self.fields['pos'].choices if str(tp[0]) == k)
+        if 'pos' in self.initial:
+            k = self.initial['pos']
+            v = next(tp[1] for tp in self.fields['pos'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad pos: build afresh"
         return v
 
     def get_skip_display(self):
-        k = self.initial['skip']
-        v = next(tp[1] for tp in self.fields['skip'].choices if str(tp[0]) == k)
+        if 'skip' in self.initial:
+            k = self.initial['skip']
+            v = next(tp[1] for tp in self.fields['skip'].choices if str(tp[0]) == k)
+        else:
+            v = "Bad skip: build afresh"
         return v
 
      

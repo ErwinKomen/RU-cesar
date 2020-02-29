@@ -45,7 +45,7 @@
         <div class="text-line">
             <span class="line-identifier">{{item.identifier}}</span>
             <!-- possibly add: target="_blank" -->
-            <span class="line-text"><a href="{% url 'text_line' pk=item.pk %}" >{{item.sent}}</a></span>
+            <span class="line-text" {% if fontsize %}style="{{fontsize}}"{% endif %}><a href="{% url 'text_line' pk=item.pk %}" >{{item.sent}}</a></span>
         </div>
         {% endfor %}
       </div>

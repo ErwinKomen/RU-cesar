@@ -113,6 +113,7 @@ var crpstudio = (function ($, crpstudio) {
        */
       render_htable: function(oHtable, sLevel) {
         var lHtml = [],
+            pattern = /[\u0370-\u03FF\u0591-\u05F4]/,
             oConstituent = {},
             oChild = {},
             sStretch = "",
@@ -123,6 +124,7 @@ var crpstudio = (function ($, crpstudio) {
             sColspanL = "",
             sRowClass = "",
             sTxtClass = "",
+            font_larger = "",
             arChild = [],
             arGchild = [],
             iLevel,
@@ -190,14 +192,16 @@ var crpstudio = (function ($, crpstudio) {
             sColspanR = "colspan=\"" + (loc_iMaxLevel - iLevel+1) + "\" ";
             lHtml.push("<td class=\"" + loc_ht6 + "\" " + sColspanR + sStretch + ">");
             lHtml.push("<span class=\"" + loc_ht7 + "\"><code>" + oHtable['pos'] + "</code></span>");
-            // if ('txt' in oHtable) { sText = ""; } else { sText = oHtable['summary']; }
-            // lHtml.push("<span class=\"" + loc_ht8 + "\">" + sText + "</span>");
+
+            font_larger = pattern.test(oHtable['summary']) ? " style=\"font-size: larger;\"" : "";
             sTxtClass = ('txt' in oHtable) ? loc_ht9 : loc_ht8;
-            lHtml.push("<span class=\"" + sTxtClass + "\">" + oHtable['summary'] + "</span>");
+            lHtml.push("<span class=\"" + sTxtClass + "\" "+font_larger+">" + oHtable['summary'] + "</span>");
             lHtml.push("</td>");
-            // [d] Add a <td> for the right part
-            lHtml.push(" <td align=\"right\">");
+            // Get the actual text
             if ('txt' in oHtable) { sText = oHtable['txt']; } else { sText = ""; }
+            font_larger = pattern.test(sText) ? " style=\"font-size: larger;\"" : "" ;
+            // [d] Add a <td> for the right part
+            lHtml.push(" <td class=\"" + sTxtClass + "\" title=\"" + sText + "\" align=\"right\"" + font_larger + ">");
             lHtml.push("  <span>" + sText + "</span>");
             lHtml.push(" </td>");
             // Finish my own row

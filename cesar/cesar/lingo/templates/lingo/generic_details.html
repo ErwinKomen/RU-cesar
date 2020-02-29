@@ -1,0 +1,174 @@
+﻿{% extends "lingo/layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    {% include 'lingo/breadcrumb_list.html' %}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <div>
+    {% if authenticated %}
+      <!-- Upper part of the generic details view interface -->
+      <div class="panel panel-default gold-head subform">
+        <div class="row">&nbsp;</div>
+        <div class="row">
+          <!-- Possibility to go back-->
+          <div class="col-md-1">
+            <a class="btn jumbo-1" 
+               href="{{listview}}"
+               title="Return to the list of items">&lt;&lt;</a>
+          </div>
+
+          <!-- Actual contents -->
+          <div class="col-md-10">
+
+            <div class="row">
+              <div class="col-md-12">
+                <h3>{{modelname}} details</h3>
+
+                {% block detailsview %}{% endblock detailsview %}
+                <!-- Show the main items in a standard way -->
+                <table>
+                  <tbody>
+                    {% for mainitem in mainitems %}
+                      <tr class="view-row">
+                        <td class="tdnowrap" valign="top">{{mainitem.label}}</td>
+                        <td class="hoverable">
+                          {% spaceless %}
+                            {% if mainitem.type == "bold" %}{% if mainitem.link == "" %}<b>{{mainitem.value}}</b>{% else %}<a href="{{mainitem.link}}"><b>{{mainitem.value}}</b></a>{% endif %}
+                            {% elif mainitem.type == "line" %}<div style="white-space: pre-line;">{{mainitem.value|safe}}</div>
+                            {% elif mainitem.type == "safe" %}{{mainitem.value|safe}}
+                            {% elif mainitem.type == "safeline" %}<div style="white-space: pre-line;">{{mainitem.value|safe}}</div>
+                            {% else %}{{mainitem.value}}
+                            {% endif %}
+                          {% endspaceless %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+
+                    <!-- add the links here -->
+                    {% for link in link_objects %}
+                      <tr>
+                        <td>{{link.name}}</td>
+                        <td><a href="{{link.value}}">{{link.label}}</a></td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+
+            {% if sections and sections|length > 1 %}
+              <!-- List of buttons for sections -->
+              <div class="row">
+                <div class="col-md-12">
+                {% for section in sections %}
+                  <span>
+                    <a class="btn btn-xs jumbo-1" role="button" targetid="{{section.id}}" title="Show/Hide {{section.name}}"
+                       onclick="ru.cesar.lingo.toggle_click(this);">{{section.name}}</a>
+                  </span>
+                {% endfor %}
+                </div>
+              </div>
+
+              <!-- Room for each section -->
+              {% for section in sections %}
+                <div id="{{section.id}}" class="hidden panel panel-default">
+                  <!-- Show this section in a standard way -->
+                  <h4>{{section.name}}</h4>
+                  <table>
+                    <tbody>
+                      {% for item in section.fields %}
+                        <tr class="view-row">
+                          <td class="tdnowrap" valign="top">{{item.label}}</td>
+                          <td class="hoverable">
+                            {% spaceless %}
+                              {% if item.type == "bold" %}{% if item.link == "" %}<b>{{item.value}}</b>{% else %}<a href="{{item.link}}"><b>{{item.value}}</b></a>{% endif %}
+                              {% elif item.type == "line" %}<div style="white-space: pre-line;">{{item.value|safe}}</div>
+                              {% elif item.type == "safe" %}{{item.value|safe}}
+                              {% elif item.type == "safeline" %}<div style="white-space: pre-line;">{{item.value|safe}}</div>
+                              {% else %}{{item.value}}
+                              {% endif %}
+                            {% endspaceless %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+
+                    </tbody>
+                  </table>
+                </div>
+              {% endfor %}
+            {% endif %}
+
+
+            <!-- Lists of related items -->
+            {% for related in related_objects %}
+              <div class="row">
+                <div class="col-md-12">
+                  <h4>{{related.title}}</h4>
+
+                  <!-- List of related items -->
+                  <table class="func-view compact-simple" style="width: 100%;">
+                    <thead>
+                      <tr>{% for col in related.columns %}<th>{{col}}</th>{% endfor %}</tr>
+                    </thead>
+                    <tbody>
+                      {% for relrow in related.rel_list %}
+                      <tr class="form-row">
+                        {% for relcol in relrow %}
+                          <td {% if relcol.title %}title="{{relcol.title}}"{% endif %}
+                              {% if relcol.link %}class="clickable" onclick="ru.cesar.lingo.goto_url('{{relcol.link}}')"{% endif %}
+                              >
+                            {% if relcol.value %}{{relcol.value}}{% endif %}
+                          </td>
+                        {% endfor %}
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            {% endfor %}
+
+          </div>
+
+          <!-- Button for editing (if user has permission) -->
+          <div class="col-md-1">
+            {% if is_lingo_editor %}
+              <!-- Edit button -->
+              <a mode="edit" class="view-mode btn jumbo-1"
+                  onclick="ru.cesar.lingo.goto_url('{{admindetails}}')">
+                <span class="glyphicon glyphicon-pencil" title="Edit these data"></span>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="row">&nbsp;</div>
+
+      </div>
+
+    {% else %}
+      <div class="explanation">
+        <p>Dear user, you are <b>not</b> logged in.</p>
+        <p>Unfortunately this means that you will not be able to perform any searches.</p>
+        <p>Should you want to work with Cesar, here are your options:
+          <ul>
+            <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
+            <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>
+          </ul>
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+
+<script>
+  ru.cesar.lingo.init_events();
+</script>
+
+{% endblock content %}
+

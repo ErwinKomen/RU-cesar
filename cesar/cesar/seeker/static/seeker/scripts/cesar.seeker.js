@@ -2386,6 +2386,7 @@ var ru = (function ($, ru) {
         var elSimple = "#search_mode_simple",
             elStart = "#search_mode_switch",
             elLabel = "#search_mode",
+            elMore = "#simple_more",
             elRelated = "#related_constituents",
             elExtend = "#search_mode_extended",
             elForms = "#id_simplerel-TOTAL_FORMS",
@@ -2405,6 +2406,8 @@ var ru = (function ($, ru) {
             case "c":
               // Make sure the the extended searching is shown
               $(".simple-search-2").removeClass("hidden");
+              $(elMore).attr("title", "Let me specify less");
+              $(elMore).html("less");
               // Check if [related_constituents] should be shown or not
               if (iForms > 0) {
                 // Show related
@@ -2418,6 +2421,8 @@ var ru = (function ($, ru) {
             case "w":
               // Make sure the the extended searching is hidden
               $(".simple-search-2").addClass("hidden");
+              $(elMore).attr("title", "Let me specify more");
+              $(elMore).html("more");
               // Check if [related_constituents] should be shown or not
               if (iForms > 0) {
                 // Show related
@@ -2684,18 +2689,21 @@ var ru = (function ($, ru) {
        *    Switch in the simple search view
        *
        */
-      simple_switch: function (elStart, sType) {
+      simple_switch: function (elStart) {
         var elTargetType = "#id_targetType",
             elPos = "#id_searchpos",
             elLemma = "#id_searchlemma",
             elExc = "#id_searchexc",
             elRelated = "#related_constituents",
             elForms = "#id_simplerel-TOTAL_FORMS",
+            sMoreLess = "",
             elMore = "#simple_more";
 
         try {
-          switch (sType) {
+          sMoreLess = $(elStart).attr("mode");
+          switch (sMoreLess) {
             case "more":
+            case "less":
               // Check what we are up to
               if ($(".simple-search-2.hidden").length === 0) {
                 // Nothing is hidden, so we are in extended search: return to simple search
@@ -2709,6 +2717,7 @@ var ru = (function ($, ru) {
                 // Make sure the targettype is set correctly
                 $(elTargetType).val("w");
                 $(elMore).html("more");
+                $(elMore).attr("mode", "more");
                 // Remove all rows that are filled
                 $(".rel-form").not(".empty-form").remove();
                 $(elRelated).addClass("hidden");
@@ -2726,6 +2735,7 @@ var ru = (function ($, ru) {
                 // Adapt the button to say we can return to simple search
                 $(elMore).attr("title", "Return to simple search");
                 $(elMore).html("less");
+                $(elMore).attr("mode", "less");
                 // Show related button
                 ru.cesar.seeker.show_related(true);
               }
@@ -3783,10 +3793,12 @@ var ru = (function ($, ru) {
        *   Start or finish editing of this row
        *
        */
-      rel_row_edit: function (elStart, sAction) {
+      rel_row_edit: function (elStart, sAction, sSimpleName) {
         var elRow = null,
             elPos = null,
             elCat = null,
+            targeturl = "",
+            bSimpleName = (sSimpleName !== undefined && sSimpleName !== ""),
             elRelated = "#related_constituents",
             bNeedOpen = false;
 
@@ -3796,31 +3808,67 @@ var ru = (function ($, ru) {
           // Action switching
           switch (sAction) {
             case "open":    // Hide summary view and enter edit view
-              $(elRow).find(".rel-view-mode, .rel-edit-open").addClass("hidden");
-              $(elRow).find(".rel-edit-mode, .rel-edit-close").removeClass("hidden");
-              // Open up [.rel-cat] if it has a value
-              elCat = $(elRow).find(".rel-cat input").first();
-              if ($(elCat).val() !== "") { $(elRow).find(".rel-cat").removeClass("hidden"); }
-              // Open up [.rel-pos] if it has a value
-              $(elRow).find(".rel-pos select").each( function(idx, el) {
-                if ($(el).val() !== "") { bNeedOpen = true;}
-              });
-              if (bNeedOpen) { $(elRow).find(".rel-pos").removeClass("hidden"); }
+              // Is this closing simple naming?
+              if (bSimpleName) {
+                elRow = $(elStart).closest("table");
+                $(elRow).find(".view-mode").addClass("hidden");
+                $(elRow).find(".edit-mode").removeClass("hidden");
+              } else {
+                $(elRow).find(".rel-view-mode, .rel-edit-open").addClass("hidden");
+                $(elRow).find(".rel-edit-mode, .rel-edit-close").removeClass("hidden");
+                // Open up [.rel-cat] if it has a value
+                elCat = $(elRow).find(".rel-cat input").first();
+                if ($(elCat).val() !== "") { $(elRow).find(".rel-cat").removeClass("hidden"); }
+                // Open up [.rel-pos] if it has a value
+                $(elRow).find(".rel-pos select").each(function (idx, el) {
+                  if ($(el).val() !== "") { bNeedOpen = true; }
+                });
+                if (bNeedOpen) { $(elRow).find(".rel-pos").removeClass("hidden"); }
+              }
               break;
             case "close":   // Hide edit view and enter summary view
-              // Check if all is well
-              if (ru.cesar.seeker.related_view(elRelated)) {
-                $(elRow).find(".rel-view-mode, .rel-edit-open").removeClass("hidden");
-                $(elRow).find(".rel-edit-mode, .rel-edit-close").addClass("hidden");
-                $(elRow).find(".rel-cat, .rel-pos").addClass("hidden");
-                // No errors
-                $(elRow).find(".rel-name-err").addClass("hidden");
-                // Updated related
-                ru.cesar.seeker.simple_update();
+              // Is this closing simple naming?
+              if (bSimpleName) {
+                // Test if a name has been provided
+                if ($("#id_baresimple").val() === "") {
+                  // No name provided: open simple view
+                  targeturl = $(elRow).attr("targeturl");
+                  window.location.href = targeturl;
+                } else {
+                  // A name has been provided: close this view
+                  $(".tablefield.simple-search-named .view-mode").each(function (k, el) {
+                    var elTd = $(el).closest("td"),
+                        value = "";
+
+                    // Get the value
+                    if ($(elTd).find("input").length > 0) {
+                      value = $(elTd).find("input").first().val();
+                    } else if ($(elTd).find("textarea").length > 0) {
+                      value = $(elTd).find("textarea").first().val();
+                    }
+                    // Set the value
+                    $(elTd).find(".view-mode").first().html(value);
+                  });
+                  $(".simple-search-named .edit-mode").addClass("hidden");
+                  $(".simple-search-named .view-mode").removeClass("hidden");
+                  // Make sure the button fits
+                  $("#save_as").html("Save");
+                }
               } else {
-                // SIgnal that the name should be specified
-                $(elRow).find(".rel-name-err").removeClass("hidden");
-                $(elRow).find(".rel-name-err").html(loc_sRelatedErr);
+                // Main stuff: Check if all is well
+                if (ru.cesar.seeker.related_view(elRelated)) {
+                  $(elRow).find(".rel-view-mode, .rel-edit-open").removeClass("hidden");
+                  $(elRow).find(".rel-edit-mode, .rel-edit-close").addClass("hidden");
+                  $(elRow).find(".rel-cat, .rel-pos").addClass("hidden");
+                  // No errors
+                  $(elRow).find(".rel-name-err").addClass("hidden");
+                  // Updated related
+                  ru.cesar.seeker.simple_update();
+                } else {
+                  // SIgnal that the name should be specified
+                  $(elRow).find(".rel-name-err").removeClass("hidden");
+                  $(elRow).find(".rel-name-err").html(loc_sRelatedErr);
+                }
               }
               break;
           }
@@ -4072,8 +4120,13 @@ var ru = (function ($, ru) {
        *   Save a simple search
        *
        */
-      simple_save: function (elStart) {
+      simple_save: function (elStart, savetype) {
         var sDivProgress = "#research_progress",
+            sDivBare = "#baresimple_result",
+            sDivName = "#search_simple_name",
+            sDivBareName = "#id_baresimple",
+            sSimpleType = "project",
+            elDetails = "#tabsimpledetails",
             ajaxurl = "",
             response = null,
             frm = null,
@@ -4087,12 +4140,53 @@ var ru = (function ($, ru) {
           // Clear the errors
           private_methods.errClear();
 
+          // Double check
+          if ($(elDetails).hasClass("hidden")) {
+            $(elDetails).removeClass("hidden");
+            return;
+          }
+
           // obligatory parameter: ajaxurl
           ajaxurl = $(elStart).attr("ajaxurl");
 
           // Gather the information
           frm = $(elStart).closest("form");
           if (frm !== undefined) { data = $(frm).serializeArray(); }
+
+          if (savetype == undefined) { savetype = "project"; }
+          switch (savetype) {
+            case "bare":
+              // Check if there is a name specified
+              if ($(sDivBareName).val() === "") {
+                // No name specified yet: show the Save parameters
+                $(".simple-view-details .edit-mode").removeClass("hidden");
+                $(".simple-view-details .view-mode").addClass("hidden");
+                $(".simple-view-details .simple-search-named").removeClass("hidden");
+                $(".simple-view-details").removeClass("hidden");
+                return;
+              }
+
+              sDivProgress = "#baresimple_result";
+              sSimpleType = "simple search";
+              // pass on the list of possible 'towards' names
+              if (loc_towards.length === 0) {
+                // Double check this list
+                bChecked = true;
+                $("#related_constituents tr.rel-form").not(".empty-form").find("td.rel-name input").each(function (k, el) {
+                  loc_towards.push($(el).val());
+                });
+              }
+              data.push({ "name": "ltowards", "value": JSON.stringify(loc_towards) });
+              // Prepare what we see
+              $(sDivProgress).parent().find(".pre-save").removeClass("hidden");
+              $(sDivProgress).parent().find(".post-save").html("");
+              $(sDivProgress).parent().find(".post-save").removeClass("hidden");
+              break;
+            default:
+              sDivProgress = "#research_progress";
+              sSimpleType = "project";
+              break;
+          }
 
           // Make a call to the ajaxurl
           $.post(ajaxurl, data, function (response) {
@@ -4121,18 +4215,33 @@ var ru = (function ($, ru) {
               sUrl = response['editurl'];
               // Create a response
               lHtml.push("<div>");
-              lHtml.push("<p>The simple search has been saved as project ["+sSaveName+"]</p>");
+              lHtml.push("<p>Reloading <span class='badge'>" + sSaveName + "</span>" + loc_sWaiting + "</p>");
               lHtml.push("<p>");
-              lHtml.push("<a type='button' title='open the new project' class='btn btn-success btn-xs'");
-              lHtml.push(" href=\""+sUrl+"\">");
-              lHtml.push(" <span class='glyphicon glyphicon-folder-open' aria-hidden='true'></span>");
-              lHtml.push("</a>");
-              lHtml.push("</p>");
+              switch (savetype) {
+                case "project":
+                  lHtml.push("<a type='button' title='open the new project' class='btn btn-success btn-xs'");
+                  lHtml.push(" href=\"" + sUrl + "\">");
+                  lHtml.push(" <span class='glyphicon glyphicon-folder-open' aria-hidden='true'></span>");
+                  lHtml.push("</a>");
+                  lHtml.push("</p>");
+                  break;
+                case "bare":
+                  // Make sure the name gets displayed properly
+                  $(sDivName).html(sSaveName);
+                  $(sDivName).addClass("badge");
+                  // Check if we have the VIEW
+                  if ("view" in response) {
+                    window.location.href = response['view'];
+                  }
+                  break;
+              }
               lHtml.push("</div>");
               // Show the responses
               $(sDivProgress).html(lHtml.join("\n"));
-              // Remove the SAVE as advise
-              $("#save_as").addClass("hidden");
+              $(sDivProgress).parent().find(".pre-save").addClass("hidden");
+
+              // Make sure the .simple-view-details is shown correctly
+
             }
           });
 
@@ -4560,7 +4669,7 @@ var ru = (function ($, ru) {
        *   Action when user clicks an element that requires toggling a target
        *
        */
-      toggle_click: function (elThis, class_to_close) {
+      toggle_click: function (elThis, class_to_close, class_to_open) {
         var elGroup = null,
             elTarget = null,
             sStatus = "";
@@ -4573,16 +4682,59 @@ var ru = (function ($, ru) {
             // Show it if needed
             if ($("#"+elTarget).hasClass("hidden")) {
               $("#" + elTarget).removeClass("hidden");
+              if (class_to_open !== undefined && class_to_open !== "") {
+                $("." + class_to_open).addClass("hidden");
+              }
             } else {
               $("#" + elTarget).addClass("hidden");
               // Check if there is an additional class to close
               if (class_to_close !== undefined && class_to_close !== "") {
                 $("." + class_to_close).addClass("hidden");
               }
+              if (class_to_open !== undefined && class_to_open !== "") {
+                $("." + class_to_open).removeClass("hidden");
+              }
             }
           }
         } catch (ex) {
           private_methods.errMsg("toggle_click", ex);
+        }
+      },
+
+      /**
+       * toggle_simple_save
+       *   Action when user clicks the 'save' button to show/hide the simple save information
+       *
+       */
+      toggle_simple_save: function (elThis, class_to_close, class_to_open) {
+        var elGroup = null,
+            elTarget = null,
+            sStatus = "";
+
+        try {
+          // Get the target to be opened
+          elTarget = $(elThis).attr("targetid");
+          // Sanity check
+          if (elTarget !== null) {
+            // Show it if needed
+            if ($("#" + elTarget).hasClass("hidden")) {
+              $("#" + elTarget).removeClass("hidden");
+              if (class_to_open !== undefined && class_to_open !== "") {
+                $("." + class_to_open).addClass("hidden");
+              }
+            } else {
+              $("#" + elTarget).addClass("hidden");
+              // Check if there is an additional class to close
+              if (class_to_close !== undefined && class_to_close !== "") {
+                $("." + class_to_close).addClass("hidden");
+              }
+              if (class_to_open !== undefined && class_to_open !== "") {
+                $("." + class_to_open).removeClass("hidden");
+              }
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("toggle_simple_save", ex);
         }
       },
 

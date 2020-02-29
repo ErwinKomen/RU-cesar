@@ -1,0 +1,8 @@
+﻿{
+  "name": "{{text_id}}",
+  "sentence_list": [
+    {% for sentence in sentence_list %}
+      {{sentence}}{% if loop.index != loop.length %},{% endif %}
+    {% endfor %}
+  ]
+}

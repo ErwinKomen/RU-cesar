@@ -4,7 +4,7 @@ Convert ETCBC_2017 to hierarchical JSON
 This version created by Erwin R. Komen 
 Date: 9/nov/2019 
 """
-import sys, getopt, os.path, importlib
+import sys, os.path
 import os, sys
 import csv, json
 import sqlite3
@@ -55,105 +55,7 @@ BOOKNAMES = [{"mdf_book": 1 , "name": "Genesis", "abbr": "GEN"},
             {"mdf_book": 38 , "name": "Zechariah", "abbr": "ZEC"},
             {"mdf_book": 39 , "name": "Malachi", "abbr": "MAL"}]
 
-# ----------------------------------------------------------------------------------
-# Name :    main
-# Goal :    Main body of the function
-# History:
-# 19/dec/2018    ERK Created
-# ----------------------------------------------------------------------------------
-def main(prgName, argv) :
-  flInput = ''      # input file name
-  dirOutput = ''    # output directory
-  dirSurface = ''   # directory for surfaced htree
-  location = ""     # GO to a specific location
-  bForce = False  # Force means: overwrite
-  debug = None
-  l_div = -1
-  l_par = -1
-  l_sen = -1
-  sBook = None      # Specific book
 
-  try:
-    sSyntax = prgName + ' -i <input file> -o <output directory> [-d] [-b <book abbreviation>] [-s <surface directory>] [-l <d.N.p.M.s.P>] [-f]'
-    # get all the arguments
-    try:
-          # Get arguments and options
-          opts, args = getopt.getopt(argv, "hi:o:b:s:l:d:f", ["-inputfile=", "-outputdir=", "-book=", "-surface=", "-location=", "-debug", "-force"])
-    except getopt.GetoptError:
-          print(sSyntax)
-          sys.exit(2)
-    # Walk all the arguments
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print(sSyntax)
-            sys.exit(0)
-        elif opt in ("-i", "--inputfile"):
-            flInput = arg
-        elif opt in ("-o", "--outputdir"):
-            dirOutput = arg
-        elif opt in ("-b", "--book"):
-            sBook = arg
-        elif opt in ("-d", "--debug"):
-            debug = arg
-        elif opt in ("-s", "--surface"):
-            dirSurface = arg
-        elif opt in ("-l", "--location"):
-            location = arg
-        elif opt in ("-f", "--force"):
-            bForce = True
-    # Check if all arguments are there
-    if (flInput == ''):
-        errHandle.DoError(sSyntax)
-
-    # Check if output directory exists
-    if not os.path.exists(dirOutput):
-        errHandle.DoError("Output directory does not exist", True)
-
-    # Check if surface directory exists
-    if dirSurface != "" and not os.path.exists(dirSurface):
-        errHandle.DoError("Surface directory does not exist", True)
-
-    # Possibly read the location
-    if location != "":
-        arLoc = location.split(".")
-        idx = 0
-        while idx * 2 < len(arLoc):
-            part = arLoc[idx*2]
-            number = arLoc[idx*2+1]
-            idx += 1
-            if part == "d":
-                l_div = int(number)
-            elif part == "p":
-                l_par = int(number)
-            elif part == "s":
-                l_sen = int(number)
-
-    # Continue with the program
-    errHandle.Status('Input is "' + flInput + '"')
-    errHandle.Status('Output is "' + dirOutput + '"')
-    if sBook: errHandle.Status("Book: {}".format(sBook))
-    if dirSurface != "": errHandle  .Status("Surface dir is: {}".format(dirSurface))
-
-    # Call the function that does the job
-    oArgs = {'input':   flInput,
-             'output':  dirOutput,
-             'surface': dirSurface,
-             'force':   bForce,
-             'book':    sBook}
-    if l_div >=0: oArgs['div'] = l_div
-    if l_par >=0: oArgs['par'] = l_par
-    if l_sen >=0: oArgs['sen'] = l_sen
-    if debug: oArgs['d'] = debug
-    if (not etcbc_2017_convert(oArgs)):
-      errHandle.DoError("Could not complete")
-      return False
-    
-      # All went fine  
-    errHandle.Status("Ready")
-  except:
-    # act
-    errHandle.DoError("main")
-    return False
 
 def read_table(cur, field_list, feat_list = None, **kwargs):
     table = []
@@ -363,7 +265,7 @@ def etcbc_2017_convert(oArgs):
 
     try:
         # Debugging?
-        if "d" in oArgs: debug = int(oArgs['d'])
+        if "debug" in oArgs: debug = int(oArgs['debug'])
 
         # Read location
         if "div" in oArgs: l_div = oArgs['div']
@@ -780,11 +682,3 @@ def etcbc_2017_convert(oArgs):
     except:
         errHandle.DoError("etcbc_2017_convert")
         return False
-
-
-# ----------------------------------------------------------------------------------
-# Goal :  If user calls this as main, then follow up on it
-# ----------------------------------------------------------------------------------
-if __name__ == "__main__":
-    # Call the main function with two arguments: program name + remainder
-    main(sys.argv[0], sys.argv[1:])

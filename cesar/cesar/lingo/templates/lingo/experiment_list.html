@@ -22,22 +22,29 @@
         </span>
       </div>
       <div class="col-sm-4 right">
-        {% if is_in_tsg %}
-        <!-- Adding an experiment -->
-        <span id="add_experiment" class="pull-right">
-          <a class="btn btn-xs jumbo-3" role="button"><span class="glyphicon glyphicon-plus"></span>Add an experiment</a>
-        </span>
+        {% if is_lingo_editor %}
+          <!-- Adding an experiment -->
+          <span id="add_experiment" class="pull-right">
+            <a class="btn btn-xs jumbo-3" role="button"
+               onclick="document.getElementById('create_new_experiment').submit();" >
+              <span class="glyphicon glyphicon-plus"></span>Add an experiment
+            </a>
+          </span>
+
+          <!-- Room to have the form-link to create a new sermon for this manuscript -->
+          <div class="hidden" >
+            <form action="{% url 'exp_details' %}" method="post" id="create_new_experiment">
+              {% csrf_token %}
+            </form>
+          </div>
+
         {% endif %}
       </div>
     </div>
     <div class="row">&nbsp;</div>
 
     <!-- Room for errors -->
-    <div id="research_err">
-      {% for item in error_list %}
-      {{item}}
-      {% endfor %}
-    </div>
+    <div id="research_err">{% for item in error_list %}{{item}}{% endfor %}</div>
 
     {% if object_list %}
       {% if is_paginated > 0 %}
@@ -77,8 +84,12 @@
             <tbody>
               {% for item in object_list %}
                 <tr>
-                  <td valign="top" class="clickable tdnowrap">{{item.home}}</td>
-                  <td valign="top" class="clickable tdnowrap">{{item.get_status_displaytd>
+                  <td valign="top" class="clickable tdnowrap">                    
+                    <a class="view-mode" href="{% url 'exp_details' item.id %}">
+                      <span title="View this experiment">{{item.home}}</span>
+                    </a>
+                  </td>
+                  <td valign="top" class="clickable tdnowrap">{{item.get_status_display}}</td>
                   <td valign="top" title="{{item.msg}}" style="width: 100%;">
                     <span>{{item.title}}</span>
                     {% if is_lingo_editor %}<span style="font-size: smaller; color: darkblue;">(There are {{item.resultcount}} results so far)</span>{% endif %}
@@ -93,7 +104,7 @@
                           <input name='downloadtype' id='downloadtype' class='form-control' value='' >
                         </span>
 
-                        {% if is_in_tsg %}
+                        {% if is_lingo_editor %}
                         <a class="view-mode btn btn-xs jumbo-1" href="{% url 'exp_details' item.id %}">
                           <span class="glyphicon glyphicon-pencil" title="Edit this experiment"></span>
                         </a>
@@ -139,8 +150,8 @@
     {% else %}
       <p>No current experiments are available.</p>
       {% if error_msg %}
-      <p>There are no experiments, because there is an error:</p>
-      <code>{{error_msg}}</code>
+        <p>There are no experiments, because there is an error:</p>
+        <code>{{error_msg}}</code>
       {% endif %}
     {% endif %}
 

@@ -48,6 +48,13 @@ TARGET_TYPE_CHOICES = (
     (CONSTITUENT_ORIENTED, 'Constituent(s)'),
     (EXTENDED_SEARCH, 'Extended'),
 )
+STYPE_PLAIN = "p"
+STYPE_SIMPLE = "s"
+STYPE_CHOICES = (
+    ('0', '----'),
+    (STYPE_PLAIN, 'Plain'),
+    (STYPE_SIMPLE, 'Simple')
+)
 
 
 
@@ -573,7 +580,8 @@ class Gateway(models.Model):
             targetType = self.research.targetType
             gateway = self
 
-            if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e" or targetType == "w"):
+            # if self.research.name == SIMPLENAME and ( targetType == "c" or targetType == "e" or targetType == "w"):
+            if self.research.stype == STYPE_SIMPLE and ( targetType == "c" or targetType == "e" or targetType == "w"):
                 # Clear any previous: (a) data-dependant variables, (b) conditions, (c) features
                 if not self.clear_search():
                     # Show error message
@@ -797,8 +805,7 @@ class Gateway(models.Model):
         except:
             sMsg = oErr.get_error_message()
             return False, sMsg
-
-
+        
     def delete(self, using = None, keep_parents = False):
         """Delete all items pointing to me, then delete myself"""
 
@@ -1173,6 +1180,7 @@ class VarDef(Variable):
         except:
             sMsg = oErr.get_error_message()
             return False, "Vardef check_order: {}".format(sMsg)
+
 
 class GlobalVariable(Variable):
     """Each research project may have any number of global (static) variables"""
@@ -3173,8 +3181,11 @@ class Research(models.Model):
     # [1] Purpose of this research
     purpose = models.TextField("Purpose")
     # [1] The main type of this research: is it word oriented or constituent oriented?
-    targetType = models.CharField("Main element type", choices=TARGET_TYPE_CHOICES, 
-                              max_length=5)
+    targetType = models.CharField("Main element type", choices=TARGET_TYPE_CHOICES, max_length=5)
+    # [1] The search type: simple, plain, ...
+    stype = models.CharField("Search type", choices=STYPE_CHOICES, max_length=5, default="p")
+    # [0-1] A stringified JSON representation of the search, if it is simple
+    compact = models.TextField("Compressed specification", null=True, blank=True)
     # [1] Each research project has a 'gateway': a specification for the $search element
     gateway = models.OneToOneField(Gateway, blank=False, null=False)
     # [1] Each research project has its owner: obligatory, but not to be selected by the user himself
@@ -3230,6 +3241,57 @@ class Research(models.Model):
       self.saved = timezone.now()
       response = super(Research, self).save(force_insert, force_update, using, update_fields)
       return response
+
+    def create_simple(oSearch, name, owner, overwrite=False):
+        """Create a simple search based on the parameters in oSearch"""
+
+        obj = None
+        msg = ""
+        try:
+            if oSearch != None:
+                # Compact it
+                sSearch = json.dumps(oSearch)
+
+                # Look for the correct research project
+                qs = Research.objects.filter(owner=owner, name=name)
+                if qs.count() > 0 and not overwrite:
+                    # This name is already in use -- warn the user
+                    obj=None
+                    msg = "The project [{}] already exists. First delete it if you want to import this version.".format(name)
+                else:
+                    # Get the target type
+                    targetType = oSearch['targetType']
+
+                    if overwrite and qs.count() > 0:
+                        # Retreive the correct object
+                        obj = qs.first()
+                        # Save the compact representation
+                        obj.compact = sSearch
+                        # Change the stype accordingly
+                        obj.stype = STYPE_SIMPLE
+                        # Adapt the object's parameters
+                        obj.purpose = "Derived from simple search"
+                        obj.targetType = targetType
+                        
+                    else:
+                        # Create a new gateway
+                        gateway = Gateway.objects.create()
+                        gateway.name = "simple"
+                        gateway.description = "simple search as described in research.compact"
+                        gateway.save()
+                        # Create a new project
+                        obj = Research.objects.create(name=name, purpose="Derived from simple search", 
+                                       targetType=targetType, gateway=gateway,
+                                       stype=STYPE_SIMPLE, compact=sSearch,
+                                       owner=owner)
+                    # Save the Research project
+                    obj.save()
+        except:
+            msg = errHandle.get_error_message()
+            obj=None
+
+        # Return the object that has been created
+        return obj, msg
 
     def gateway_name(self):
         return self.gateway.name
@@ -3301,9 +3363,12 @@ class Research(models.Model):
             oJson = dict(name=self.name, 
                          purpose=self.purpose, 
                          targetType=self.targetType, 
+                         stype=self.stype,
                          owner=self.owner.username,
                          created= get_crpp_date(self.created),
                          saved=get_crpp_date(self.saved))
+            if self.compact and self.compact != "":
+                oJson['compact'] = json.loads(self.compact)
             # Get the gateway stuff
             oGateway = self.gateway.get_json()
             for key in oGateway:
@@ -3325,6 +3390,8 @@ class Research(models.Model):
         try:
             if oData == None:
                 oData = import_data_file(data_file, arErr)
+                # Turn the array of strings into a large string
+                oData = json.loads("\n".join(oData))
             # Get the name of the new project
             if sName == None:
                 sName = "{}_{}".format(oData['name'], oData['owner'])
@@ -3345,11 +3412,20 @@ class Research(models.Model):
                 gateway.save()
                 # Get the targettype
                 targetType = oData['targetType']
+                # Get the stype
+                stype = "p"
+                if 'stype' in oData: stype = oData['stype']
+                compact = None
+                if 'compact' in oData: 
+                    if isinstance(oData['compact'], str):
+                        compact = oData['compact']
+                    else:
+                        compact = json.dumps(oData['compact'])
 
                 # Create a new project
                 obj = Research.objects.create(name=sName, purpose=oData['purpose'], 
-                               targetType=targetType, gateway=gateway,
-                               owner=owner)
+                               targetType=targetType, gateway=gateway, stype=stype,
+                               compact=compact, owner=owner)
                 # Save the Research project
                 obj.save()
 
@@ -3575,7 +3651,7 @@ class Research(models.Model):
 
             # Check the status = the functions and arguments
             # BUT: skip if it is simplesearch?
-            if self.name != SIMPLENAME:
+            if self.stype != STYPE_SIMPLE and self.name != SIMPLENAME:
                 oArgStatus = self.gateway.get_status()
                 if oArgStatus != None and 'status' in oArgStatus and oArgStatus['status'] != "ok":
                     oBack['status'] = "error"
