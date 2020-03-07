@@ -21,7 +21,7 @@ SEARCHMAIN_CNS_FUNCTIONS = (
         ('c-m', 'Category matches'),
         ('c--m', 'Child category matches'),
     )
-SEARCHSIMPLE_POS = [('', 'first'), ('1', 'first'), ('2', 'second'), ('last()', 'last')]
+SEARCHSIMPLE_POS = [('', 'any'), ('1', 'first'), ('2', 'second'), ('last()', 'last')]
 SEARCHSIMPLE_SKIP = [('', 'none'), ('e', 'empty'), ('c', 'conj'), ('e_c', 'empty + conj')]
 
 

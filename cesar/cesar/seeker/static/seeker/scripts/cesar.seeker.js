@@ -2397,6 +2397,8 @@ var ru = (function ($, ru) {
         try {
           // Initially Hide related
           $(elRelated).addClass("hidden");
+          //$(elRelated).html("related constituents");
+          //$(elRelated).attr("title", "Show related");
 
           // Get the number of forms
           iForms = $(elForms).val();
