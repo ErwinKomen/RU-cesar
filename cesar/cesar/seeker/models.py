@@ -679,6 +679,7 @@ class Gateway(models.Model):
                                         arglist.append({"order": 3, "name": "cat_1", "type":"fixed", "value": cat})
                                         lFunc = [ {"function": "get_first_relative_cns", "line": 0, "arglist": arglist}]
                                     else:
+                                        if position == "1f": position = "1"
                                         # Needed: cat_pos
                                         arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
                                         arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
@@ -695,6 +696,7 @@ class Gateway(models.Model):
                                         arglist.append({"order": 4, "name": "cat_1", "type":"fixed", "value": cat})
                                         lFunc = [ {"function": "get_first_cns_cat", "line": 0, "arglist": arglist}]
                                     else:
+                                        if position == "1f": position = "1"
                                         # Needed: cat_skip_pos
                                         arglist.append({"order": 1, "name": "cns_1", "type":cnstype, "value": cnsval})
                                         arglist.append({"order": 2, "name": "rel_1", "type":"raxis", "value": raxis.name})
