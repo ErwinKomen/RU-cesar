@@ -1182,6 +1182,7 @@ class ExperimentDo(LingoDetails):
                         best_text = form.cleaned_data['answer4']
                         text1_id = form.cleaned_data['answer5']
                         text2_id = form.cleaned_data['answer6']
+                        motivation = form.cleaned_data['motivation']
                         # Get the correct participant
                         participant = Participant.objects.filter(id=ptcpid).first()
                         if participant != None:
@@ -1208,6 +1209,7 @@ class ExperimentDo(LingoDetails):
                                 answer['preference_id'] = preference_id
                                 answer['text1_id'] = text1.id
                                 answer['text2_id'] = text2_id
+                                answer['motivation'] = motivation
                                 # Create a response object
                                 response = Response(experiment=self.object, participant=participant, answer= json.dumps(answer), created=timezone.now())
                                 response.save()
@@ -1415,7 +1417,7 @@ class ExperimentEdit(BasicLingo):
     prefix = "exp"
     need_authentication = False
     form_objects = [{'form': ExperimentForm, 'prefix': prefix, 'readonly': False}]
-    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'email']
+    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'teaches', 'email']
 
     def add_to_context(self, context):
         # Who am I?
@@ -1486,8 +1488,9 @@ class ExperimentDownload(BasicLingo):
         lCsv = []
         oErr = ErrHandle()
         # headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender', 'Email', 'Start', 'Finish']
-        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Start', 'Finish']
-        columns = {"age": "Age", "edu": "Education", "email": "Email", "gender": "Gender", "ptcpid": "Other ptcp ID", "engfirst": "L1 English", "lngfirst": "L1", "lngother": "Languages"}
+        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Motivation', 'Start', 'Finish']
+        columns = {"age": "Age", "edu": "Education", "email": "Email", "gender": "Gender", \
+            "ptcpid": "Other ptcp ID", "engfirst": "L1 English", "lngfirst": "L1", "lngother": "Languages"}
 
 
         try:
@@ -1518,6 +1521,8 @@ class ExperimentDownload(BasicLingo):
                 elif 'identified' in answer:
                     identified2 = answer['identified']
 
+                motivation = '(not found)' if 'motivation' not in answer else answer['motivation']
+
                 education = participant.get_edu()
 
                 # Start creating the line for the CSV
@@ -1528,6 +1533,7 @@ class ExperimentDownload(BasicLingo):
                 line.append("{}".format(identified1))
                 line.append("{}".format(identified2))
                 line.append("{}".format(answer['preference']))
+                line.append("{}".format(motivation))
                 line.append("{}".format(participant.created))
                 line.append("{}".format(obj.created))
 

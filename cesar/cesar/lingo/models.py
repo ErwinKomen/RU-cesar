@@ -334,6 +334,9 @@ class Experiment(models.Model):
     def meta_lngother_include(self): 
         return self.meta_include("lngother")
     
+    def meta_teaches_include(self): 
+        return self.meta_include("teaches")
+    
     def meta_eduother_include(self): 
         return self.meta_include("eduother")
     
@@ -363,6 +366,9 @@ class Experiment(models.Model):
 
     def meta_lngother_display(self):
         return self.get_meta("lngother")
+
+    def meta_teaches_display(self):
+        return self.get_meta("teaches")
 
     def meta_eduother_display(self):
         return self.get_meta("eduother")
@@ -419,6 +425,8 @@ class Participant(models.Model):
     eduother = models.TextField("Other education", blank=True, default="")
     # [0-1] Email (optional)
     email = models.CharField("E-mailadres", max_length=MAX_TEXT_LEN, blank=True, default="")
+    # [0-1] Teaches (optional)
+    teaches = models.CharField("Teaches", max_length=MAX_TEXT_LEN, blank=True, default="")
     # [1] Record when it was created
     created = models.DateTimeField(default=timezone.now)
 

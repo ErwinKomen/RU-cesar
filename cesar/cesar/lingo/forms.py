@@ -10,7 +10,7 @@ from django.forms.widgets import Textarea
 from cesar.lingo.models import *
 
 class ExperimentForm(ModelForm):
-    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'email']
+    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'teaches', 'email']
     meta_initial = [
         "Wat is uw participant ID?",
         "Wat is uw leeftijd?",
@@ -20,6 +20,7 @@ class ExperimentForm(ModelForm):
         "Welke andere talen kent u?",
         "Anders: ",
         "Wat is uw hoogste school?",
+        "Welk vak doceert u?",
         "Wat is uw email adres (optioneel)?"
         ]
 
@@ -77,7 +78,7 @@ class ParticipantForm(ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'edu', 'eduother', 'email']
+        fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'edu', 'eduother', 'teaches', 'email']
         widgets={'ptcpid':      forms.TextInput(attrs={'style': 'width: 40%;', 'placeholder':'Jouw participant ID'}),
                  'age':         forms.TextInput(attrs={'style': 'width: 40%;', 'placeholder':'Leeftijd (getal)'}),
                  'gender':      forms.Select(),
@@ -86,6 +87,7 @@ class ParticipantForm(ModelForm):
                  'lngother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Noem de andere talen die u kent'}),
                  'eduother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Beschrijf het schooltype waar u lesgeeft'}),
                  'edu':         forms.Select(),
+                 'teaches':     forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Het vak dat u doceert'}),
                  'email':       forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Uw e-mailadres'})
                  }
 
@@ -111,6 +113,8 @@ class AnswerForm(forms.Form):
     answer7 = forms.CharField(label="Answer7", max_length=255, required=False)
     answer8 = forms.CharField(label="Answer8", max_length=255, required=False)
     answer9 = forms.CharField(label="Answer9", max_length=255, required=False)
+    motivation = forms.CharField(label="Motivation", required=False,
+        widget= forms.TextInput(attrs={'placeholder': 'Toelichting...', 'style': 'width: 100%; background-color: whitesmoke;'}))
 
 
 class QdataListForm(forms.ModelForm):
