@@ -202,6 +202,9 @@ class Experiment(models.Model):
     # [1] The URL to this experiment
     home = models.CharField("Home page part",  max_length=MAX_TEXT_LEN, default="tcpf")
 
+    # [1] The number of questions that need to be asked to each participant
+    responsecount = models.IntegerField("Number of responses per participant", default=10)
+
     # [0-1] optional time after which this should not be shown anymore
     until = models.DateTimeField("Remove at", null=True, blank=True)
     # [1] the explanatory message that needs to be shown (in html)

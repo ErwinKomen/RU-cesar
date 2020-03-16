@@ -67,6 +67,17 @@
       </td>
     </tr>
 
+    <!-- The number of responses per participant -->
+    <tr class="form-row">
+      <td class="hoverable" valign="top"  style="min-width: 150px;">Number of responses</td>
+      <td  style="width: 100%;">
+        <div class="view-mode">{% if expForm.instance.responsecount %}{{expForm.instance.responsecount}}{% else %}-{% endif %}</div>
+        {% if is_lingo_editor %}
+          <div class="edit-mode hidden">{{expForm.responsecount}}</div>
+        {% endif %}
+      </td>
+    </tr>
+
     <!-- Informed consent for this experiment -->
     <tr class="form-row">
       <td class="hoverable" valign="top"  style="min-width: 150px;">Informed consent</td>

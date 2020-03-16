@@ -1123,10 +1123,10 @@ class ExperimentDo(LingoDetails):
     permu_method = "permutations"   # options: "combinations", "permutations"
                                     # combinations('ABCD', 2) >> AB AC AD BC BD CD
                                     # permutations('ABCD', 2) >> AB AC AD BA BC BD CA CB CD DA DB DC
-    NUM_RESPONSES = 10
+    # NUM_RESPONSES = 10
     NUM_PERMU = 10
     NUM_TEXTS = 25
-    AnswerFormset = formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
+    AnswerFormset = None    # formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
 
     def get_context_data(self, **kwargs):
         # Get the initial context
@@ -1160,6 +1160,10 @@ class ExperimentDo(LingoDetails):
         # Indicate that the experiment is not okay for the moment
         context['exp_okay'] = "no"
         context['exp_msg'] = "-"
+
+        # Initialize the formset
+        num_responses = instance.responsecount
+        self.AnswerFormset = formset_factory(AnswerForm, min_num=num_responses, extra=0, )
 
         # Provide data based on 'home' field of experiment
         if instance.home == "tcpf":
@@ -1244,10 +1248,10 @@ class ExperimentDo(LingoDetails):
                         combi_list = []
 
                         # Create data: 20 random texts from the 25
-                        text_selection = random.sample(list(qs_texts), 2 * self.NUM_RESPONSES)
+                        text_selection = random.sample(list(qs_texts), 2 * num_responses)
                         # NOTE: compare the first ten with the second ten
                         # Create a list of text combinations
-                        for idx in range(self.NUM_RESPONSES):
+                        for idx in range(num_responses):
                             left = text_selection[idx]
                             right = text_selection[idx+10]
                             # Create and fill a combi object
@@ -1296,24 +1300,24 @@ class ExperimentDo(LingoDetails):
                                     pms_copy.append(selection)
 
                             # Check if the resulting pms_copy is not too small
-                            if len(pms_copy) >= self.NUM_RESPONSES:
+                            if len(pms_copy) >= num_responses:
                                 # We can take [pms_copy] completely
-                                text_selection = random.sample(pms_copy, self.NUM_RESPONSES)
+                                text_selection = random.sample(pms_copy, num_responses)
                             elif len(pms_copy) == 0:
                                 # We take [pms] completely
-                                text_selection = random.sample(pms, self.NUM_RESPONSES)
+                                text_selection = random.sample(pms, num_responses)
                             else:
                                 # First take some from [pms_copy] 
                                 text_sel_part1 = random.shuffle(pms_copy)
                                 # and then the remainder
-                                remainder = self.NUM_RESPONSES - len(pms_copy)
+                                remainder = num_responses - len(pms_copy)
                                 text_sel_part2 = random.sample(pms, remainder)
                                 # Combine them
                                 text_selection = text_sel_part1 + text_sel_part2
 
                             # Choose NUM_RESPONSES random combinations from  the total
                             # text_selection = random.sample(pms, self.NUM_RESPONSES)
-                            for idx in range(self.NUM_RESPONSES):
+                            for idx in range(num_responses):
                                 left = text_selection[idx][0]
                                 right = text_selection[idx][1]
                                 # Create and fill a combi object
