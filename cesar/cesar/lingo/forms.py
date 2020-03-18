@@ -71,9 +71,6 @@ class ExperimentForm(ModelForm):
                 self.fields[fld_include].initial = "y"
                 self.fields[fld_text].initial = self.meta_initial[idx]
 
-        # self.fields['meta_ptcpid_include'].choices = build_abbr_list(EXPERIMENT_YESNO, language="nld", maybe_empty=True)
-
-
 
 class ParticipantForm(ModelForm):
 

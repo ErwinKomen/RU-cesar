@@ -215,6 +215,8 @@ class Experiment(models.Model):
     ptcpfields = models.TextField("Participant fields", default="[]", blank=True)
     # [0-1] full metadata specification
     metafields = models.TextField("Participant metadata", default = "{}", blank=True)
+    # [1] Show the end button or not?
+    showendbutton = models.TextField("Show the end button", default = "no")
     # [1] the status of this message (can e.g. be 'archived')
     status = models.CharField("Status", choices=build_abbr_list(EXPERIMENT_STATUS), 
                               max_length=5)

@@ -188,11 +188,13 @@
         <div>&nbsp;</div>
 
         <!-- Mogelijkheden om terug te gaan -->
+        {% if showendbutton %}
         <div>
           <span>
             <a class="view-mode btn jumbo-3" href="{% url 'exp_list' %}" title="List all experiments">Experimenten</a>
           </span>
         </div>
+        {% endif %}
       </div>
     </div>
 

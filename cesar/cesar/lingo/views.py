@@ -1161,6 +1161,9 @@ class ExperimentDo(LingoDetails):
         context['exp_okay'] = "no"
         context['exp_msg'] = "-"
 
+        # Allow button "Experimenten" at the end or not
+        context['showendbutton'] = (instance.showendbutton in ['t', 'true', 'y', 'yes'])
+
         # Initialize the formset
         num_responses = instance.responsecount
         self.AnswerFormset = formset_factory(AnswerForm, min_num=num_responses, extra=0, )
@@ -1243,7 +1246,7 @@ class ExperimentDo(LingoDetails):
                 context['answer_formset'] = formset
                 if self.random_method == "choose_subset":
                     # Get a list of texts
-                    qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic' )
+                    qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic', 'qsuggest' )
                     if len(qs_texts) == self.NUM_TEXTS:
                         combi_list = []
 
@@ -1259,11 +1262,11 @@ class ExperimentDo(LingoDetails):
                             # 1: left part
                             combi['left_id'] = left['id']
                             combi['left'] = left['qtext']
-                            combi['left_topic'] = left['qtopic']
+                            combi['left_topic'] = left['qsuggest']
                             # 2: right part
                             combi['right_id'] = right['id']
                             combi['right'] = right['qtext']
-                            combi['right_topic'] = right['qtopic']
+                            combi['right_topic'] = right['qsuggest']
                             # 3: Add the form from the formset
                             form = formset[idx]
                             combi['form'] = form
@@ -1276,7 +1279,7 @@ class ExperimentDo(LingoDetails):
                     statistics = instance.statistics()
                     if statistics['status'] == "ok":
                         # Create a list of all permutations
-                        qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic' )
+                        qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic', 'qsuggest' )
                         if len(qs_texts) == self.NUM_PERMU:
                             combi_list = []
                             if self.permu_method == "permutations":
@@ -1325,11 +1328,11 @@ class ExperimentDo(LingoDetails):
                                 # 1: left part
                                 combi['left_id'] = left['id']
                                 combi['left'] = left['qtext']
-                                combi['left_topic'] = left['qtopic']
+                                combi['left_topic'] = left['qsuggest']
                                 # 2: right part
                                 combi['right_id'] = right['id']
                                 combi['right'] = right['qtext']
-                                combi['right_topic'] = right['qtopic']
+                                combi['right_topic'] = right['qsuggest']
                                 # 3: Add the form from the formset
                                 form = formset[idx]
                                 combi['form'] = form
@@ -1400,11 +1403,12 @@ class ExperimentDetails(LingoDetails):
                     rel_item = []
                     rel_item.append({'value': item.qmeta, 'title': 'View this question', 'link': reverse('qdata_details', kwargs={'pk': item.id})})
                     rel_item.append({'value': item.qtopic})
+                    rel_item.append({'value': item.qsuggest})
                     rel_item.append({'value': item.qtext})
                     rel_item.append({'value': item.get_include_display()})
                     rel_list.append(rel_item)
                 questions['rel_list'] = rel_list
-                questions['columns'] = ['Meta', 'Topic', 'Text', 'Include']
+                questions['columns'] = ['Meta', 'Topic', 'Suggestion', 'Text', 'Include']
             # Add the questions - no matter how many there are
             related_objects.append(questions)
 
@@ -1494,7 +1498,7 @@ class ExperimentDownload(BasicLingo):
         # headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender', 'Email', 'Start', 'Finish']
         headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Motivation', 'Start', 'Finish']
         columns = {"age": "Age", "edu": "Education", "email": "Email", "gender": "Gender", \
-            "ptcpid": "Other ptcp ID", "engfirst": "L1 English", "lngfirst": "L1", "lngother": "Languages"}
+            "ptcpid": "Other ptcp ID", "engfirst": "L1 English", "lngfirst": "L1", "lngother": "Languages", 'teaches': "Teaches"}
 
 
         try:
@@ -1675,11 +1679,12 @@ class QdataListView(BasicListView):
     listform = QdataListForm
     prefix = "qdata"
     template_name = 'lingo/qdata_list.html'
-    order_cols = ['qmeta', 'qtopic', 'qtext', 'include']
+    order_cols = ['qmeta', 'qtopic', 'qsuggest', 'qtext', 'include']
     order_heads = [{'name': 'Meta', 'order': 'o=1', 'type': 'str'}, 
                    {'name': 'Topic', 'order': 'o=2', 'type': 'str'}, 
-                   {'name': 'Text', 'order': 'o=3', 'type': 'str'}, 
-                   {'name': 'Include', 'order': 'o=4', 'type': 'str'}]
+                   {'name': 'Suggestion', 'order': 'o=3', 'type': 'str'}, 
+                   {'name': 'Text', 'order': 'o=4', 'type': 'str'}, 
+                   {'name': 'Include', 'order': 'o=5', 'type': 'str'}]
 
 
 class QdataDetailsView(LingoDetails):
