@@ -1311,7 +1311,9 @@ class ExperimentDo(LingoDetails):
                                 text_selection = random.sample(pms, num_responses)
                             else:
                                 # First take some from [pms_copy] 
-                                text_sel_part1 = random.shuffle(pms_copy)
+                                random.shuffle(pms_copy)
+                                text_sel_part1 = pms_copy
+                                if text_sel_part1 == None: text_sel_part1 = []
                                 # and then the remainder
                                 remainder = num_responses - len(pms_copy)
                                 text_sel_part2 = random.sample(pms, remainder)
