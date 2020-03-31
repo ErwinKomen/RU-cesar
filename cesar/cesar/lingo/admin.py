@@ -88,6 +88,7 @@ class ResponseAdmin(admin.ModelAdmin):
 
     fields = ['experiment', 'participant', 'answer']
     list_display = ['experiment', 'participant', 'answer']
+    list_filter = ['experiment']
     search_fields = ['experiment']
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
