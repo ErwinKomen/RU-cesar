@@ -1,5 +1,5 @@
 body {
-    padding-top: 50px;
+    padding-top: 10px;
     padding-bottom: 20px;
 }
 
@@ -145,4 +145,9 @@ div.inline-group a.add-related {
 .jumbotron {
     padding-top: 20px;
     padding-bottom: 20px;
+    margin-bottom: 0px;
+}
+.jumbotron h1 {
+    margin-top: -5px;
+    margin-bottom: -5px;
 }
