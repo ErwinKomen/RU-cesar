@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d565a16b-3481-4b3c-8554-8308d2d5d15f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>cmdilist.py</StartupFile>
+    <StartupFile>nexiscorona.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -42,6 +42,9 @@
     <Compile Include="metadate.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="nexiscorona.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="processor\anonymizer.py" />
     <Compile Include="processor\entity_mapping\extract_entities.py" />
     <Compile Include="processor\entity_mapping\extract_pos_tags.py" />
@@ -73,8 +76,15 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="letter\" />
+    <Folder Include="letter\css\" />
+    <Folder Include="letter\js\" />
     <Folder Include="processor\" />
     <Folder Include="processor\entity_mapping\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="letter\css\site.css" />
+    <Content Include="letter\elpash.html" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

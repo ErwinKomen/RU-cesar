@@ -13,7 +13,7 @@
     <Name>htreeconv</Name>
     <RootNamespace>htreeconv</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-i "D:/Data Files/Corpora/Bible/Heb_OT/bhsa/htree" -o "D:/Data Files/Corpora/Bible/Heb_OT/bhsa/surfnew" -f -c -t "htree-surface" -b GEN -d 1 </CommandLineArguments>
+    <CommandLineArguments>-i "D:/Data Files/Corpora/Bible/Heb_OT/bhsa/htree" -o "D:/Data Files/Corpora/Bible/Heb_OT/bhsa/surfnew" -f -c -t "htree-surface" -b RUT -d 1 </CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
