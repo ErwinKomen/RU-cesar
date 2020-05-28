@@ -6,6 +6,7 @@ import sys
 import json
 import re
 from django import template
+from django.apps import apps
 from django.db import models, transaction
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpRequest
@@ -14,13 +15,15 @@ from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic.detail import DetailView
 from datetime import datetime
+import os.path, io, shutil
+import tarfile
 
 from cesar.settings import APP_PREFIX
-from cesar.basic.views import BasicList, BasicDetails
+from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
-from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch
+from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm
 from cesar.utils import ErrHandle
 
@@ -624,12 +627,68 @@ class NexisBatchEdit(BasicDetails):
             {'type': 'plain', 'label': "Date:",             'value': instance.created,  'field_key': 'created'},
             {'type': 'plain', 'label': "Number of texts:",  'value': instance.count,    'field_key': 'count'}
             ]
+        context['is_app_editor'] = user_is_ingroup(self.request, "nexis_editor")
         # Return the context we have made
         return context
 
 
 class NexisBatchDetails(NexisBatchEdit):
     rtype = "html"
+
+
+class NexisBatchDownload(BasicPart):
+    MainModel = NexisBatch
+    templat_name = "seeker/download_status.html"
+    dtype = "tar.gz"
+    action = "download"
+
+    def get_data(self, prefix, dtype):
+        gzdata = None
+        oErr = ErrHandle()
+        try:
+            # Who am I?
+            username = self.request.user.username
+            nexisProc = NexisProcessor(username)
+            # What is the directory to use?
+            dir = nexisProc.dir
+            # Get the NexisBatch object
+            batch = self.obj
+            if batch != None:
+                # Determine file name
+                srcdir = os.path.join(dir, "nexisbatch_{}".format(batch.id))
+                # Create dir if not existing
+                os.mkdir(srcdir)
+                # Get all the link objects as files in [srcdir]
+                qs = batch.batchlinks.all()
+                for obj in qs:
+                    # Figure out where to put them
+                    sbare = os.path.join(srcdir,"nexislink_{}".format(str(obj.id).zfill(6)))
+                    fmeta = "{}.meta".format(sbare)
+                    ftext = "{}.txt".format(sbare)
+                    # Write the contents of metadata
+                    oMeta = json.loads(obj.nmeta)
+                    with open(fmeta, "w") as fp:
+                        json.dump(oMeta, fp, indent=2)
+                    # Write the text as UTF8
+                    with io.open(ftext, 'w', encoding='utf8') as fp:
+                        fp.write(obj.nbody)
+
+                # Copy from [srcdir] into tar.gz
+                ofname = "{}.tar.gz".format(srcdir)
+                with tarfile.open(ofname, "w:gz") as tar:
+                    tar.add(srcdir, arcname=os.path.basename(srcdir))
+
+                # Now remove the source directory
+                shutil.rmtree(srcdir)
+
+                # Now read the file as binary data
+                with io.open(ofname, "rb") as fp:
+                    gzdata = fp.read()
+        except:
+            msg = oErr.get_error_message()
+
+        # Return the data
+        return gzdata
 
 
 class NexisListView(BasicList):
@@ -639,15 +698,15 @@ class NexisListView(BasicList):
     listform = NexisBatchForm
     prefix = "nbatch"
     new_button = False      # Don't show a new button, because new items can only be added by downloading
-    plural_name = "Batches"
-    sg_name = "Batch"
+    plural_name = "Batches of Nexis text files"
+    sg_name = "Nexis Batch"
     has_select2 = False     # Don't use Select2 here
     delete_line = True      # Allow deleting a line
     order_cols = ['created', 'count', '']
     order_default = ['-created', 'count']
     order_heads = [{'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created', 'linkdetails': True},
-                   {'name': 'Texts', 'order': 'o=2', 'type': 'int', 'field':  'count', 'linkdetails': True},
-                   {'name': '',      'order': '',    'type': 'str', 'custom': 'links'}]
+                   {'name': 'Texts', 'order': 'o=2', 'type': 'int', 'field':  'count', 'linkdetails': True, 'main': True},
+                   {'name': '',      'order': '',    'type': 'str', 'custom': 'links', 'align': 'right'}]
     filters = [
         {'name': 'Date', 'id': 'filer_created', 'enabled': False}
         ]
@@ -670,11 +729,10 @@ class NexisListView(BasicList):
             sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
         elif custom == "links":
             # Show the download links
-            html.append('<a href="{}"><span class="glyphicon glyphicon-download"><span></a>'.format('aap'))
+            url = reverse('nexisbatch_download', kwargs={'pk': instance.id})
+            html.append('<a href="#" title="Download compressed tar.gz" downloadtype="tar.gz" ajaxurl="{}" onclick="ru.basic.post_download(this);">'.format(url))
+            html.append('<span class="glyphicon glyphicon-download"><span></a>')
             
-                  #<a href="">
-                  #  <span class="glyphicon glyphicon-download"></span>
-                  #</a>
             # COmbineer
             sBack = "\n".join(html)
 
@@ -693,4 +751,8 @@ class NexisListView(BasicList):
 
         # Return standard
         return fields, lstExclude, qAlternative
+
+    def add_to_context(self, context, initial):
+        context['is_app_editor'] = user_is_ingroup(self.request, "nexis_editor")
+        return context
 

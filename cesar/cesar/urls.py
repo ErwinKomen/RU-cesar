@@ -78,6 +78,7 @@ urlpatterns = [
     url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),
     url(r'^doc/nexis/details(?:/(?P<pk>\d+))?/$', NexisBatchDetails.as_view(), name='nexisbatch_details'),
     url(r'^doc/nexis/edit(?:/(?P<pk>\d+))?/$', NexisBatchEdit.as_view(), name='nexisbatch_edit'),
+    url(r'^doc/nexis/download(?:/(?P<pk>\d+))?/$', NexisBatchDownload.as_view(), name='nexisbatch_download'),
 
     url(r'^api/import/concrete/$', cesar.doc.views.import_concrete, name='import_concrete'),
     url(r'^api/import/brysb/$', cesar.doc.views.import_brysbaert, name='import_brysb'),
