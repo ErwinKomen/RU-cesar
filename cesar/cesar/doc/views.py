@@ -7,6 +7,7 @@ import json
 import re
 from django import template
 from django.apps import apps
+from django.contrib.auth.models import User, Group
 from django.db import models, transaction
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpRequest
@@ -27,6 +28,28 @@ from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLin
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm
 from cesar.utils import ErrHandle
 
+# Global debugging 
+bDebug = False
+
+
+def user_is_ingroup(request, sGroup):
+    # Is this user part of the indicated group?
+    username = request.user.username
+    user = User.objects.filter(username=username).first()
+    # glist = user.groups.values_list('name', flat=True)
+
+    # Only look at group if the user is known
+    if user == None:
+        glist = []
+    else:
+        glist = [x.name for x in user.groups.all()]
+
+        # Only needed for debugging
+        if bDebug:
+            ErrHandle().Status("User [{}] is in groups: {}".format(user, glist))
+    # Evaluate the list
+    bIsInGroup = (sGroup in glist)
+    return bIsInGroup
 
 # Views belonging to the Cesar Document Processing app.
 
