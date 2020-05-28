@@ -31,7 +31,8 @@ from openpyxl import Workbook
 from io import StringIO
 
 # My own application
-from basic.views import BasicList
+# from basic.views import BasicList
+from cesar.basic.views import BasicList
 
 from cesar.seeker.forms import *
 from cesar.seeker.models import *
@@ -716,6 +717,10 @@ class SimpleListView(BasicList):
         ]
 
     def adapt_search(self, fields):
+        # Adapt the search to the keywords that *may* be shown
+        lstExclude=None
+        qAlternative = None
+
         # Make sure the owner is set to myself
         if fields['ownlist'] == None or len(fields['ownlist']) == 0:
             # Restrict to myself
@@ -723,15 +728,13 @@ class SimpleListView(BasicList):
 
             # Only show simple 
             fields['stype'] = "s"
-        return fields
 
-    def get_queryset(self):
-        # Perform the normal queryset determining
-        qs = super(SimpleListView, self).get_queryset()
-        # Exclude _simplesearch
-        qs = qs.exclude(name=SIMPLENAME)
-        return qs
-    
+        # Make sure SimplName is excluded
+        lstExclude = [ Q(name=SIMPLENAME) ]
+        
+        # Return all that needs be
+        return fields, lstExclude, qAlternative
+
     def get_field_value(self, instance, custom):
         sBack = ""
         sTitle = ""

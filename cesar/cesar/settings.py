@@ -78,14 +78,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_select2',
-    'basic',
+    # 'basic',
+    'cesar.basic',
     'cesar.browser',
     'cesar.viewer',
     'cesar.seeker',
     'cesar.doc',
     'cesar.tsg',
-    'cesar.lingo',
-    'cesar.ds2'
+    'cesar.lingo'
 ]
 
 # MIDDLEWARE_CLASSES = [

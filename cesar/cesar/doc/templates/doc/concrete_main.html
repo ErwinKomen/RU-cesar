@@ -22,7 +22,7 @@
     <!-- Dashboard to select input file(s) and then allow downloading the results -->
     <div id="import_docs" class="row" >
       <div class="col-md-9 panel panel-default">
-      <form action="{% url 'import_docs' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+      <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
         {% csrf_token %}
         <!-- Need username and password for the CLAM client webservice -->
         <div class="row">
@@ -51,7 +51,7 @@
                   <td colspan="2" align="right">
                     <a class="btn btn-sm jumbo-1"
                        targetid="docs_data_import"
-                       targeturl="{% url 'import_docs' %}"
+                       targeturl="{% url 'import_concrete' %}"
                        syncurl="{% url 'sync_progress' %}?synctype=docs" 
                        onclick="ru.cesar.seeker.import_post(this);"
                        >Start</a>
@@ -163,14 +163,14 @@
                       <a href="#" id="fdocs_download_tree"
                          title="JS object notation"
                           downloadtype="json"
-                          ajaxurl="{% url 'docs_download' pk=otext.id %}"
+                          ajaxurl="{% url 'concrete_download' pk=otext.id %}"
                           onclick="ru.cesar.seeker.post_download(this);" >json</a>
                     </li>
                     <li class="fdos_host">
                       <a href="#" id="fdocs_download_tree"
                          title="Tab-separated values"
                           downloadtype="tsv"
-                          ajaxurl="{% url 'docs_download' pk=otext.id %}"
+                          ajaxurl="{% url 'concrete_download' pk=otext.id %}"
                           onclick="ru.cesar.seeker.post_download(this);" >tsv</a>
                     </li>
                     <!-- <li role="separator" class="divider"></li>-->
@@ -178,7 +178,7 @@
                       <a href="#" id="fdocs_download_htable"
                          title="Microsoft Excel / Open Office "
                           downloadtype="excel"
-                          ajaxurl="{% url 'docs_download' pk=otext.id %}"
+                          ajaxurl="{% url 'concrete_download' pk=otext.id %}"
                           onclick="ru.cesar.seeker.post_download(this);" >Excel</a>
                     </li>
                   </ul>

@@ -19,14 +19,6 @@ from cesar.tsg.views import *
 # The CesarLingo application
 from cesar.lingo.views import *
 
-# Django-select2 testing
-from cesar.ds2.forms import (
-    AddressChainedSelect2WidgetForm, AlbumModelSelect2WidgetForm,
-    HeavySelect2MultipleWidgetForm, HeavySelect2WidgetForm,
-    ModelSelect2TagWidgetForm, Select2WidgetForm
-)
-from cesar.ds2.views import TemplateFormView, heavy_data_1, heavy_data_2
-
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
 
@@ -80,11 +72,16 @@ urlpatterns = [
     url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
     url(r'^text/syntax/download/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='syntax_download'),
 
-    url(r'^doc/main/$', cesar.doc.views.docmain, name='doc_main'),
-    url(r'^doc/download/(?P<pk>\d+)/$', FoliaDocumentDetailView.as_view(), name='docs_download'),
+    url(r'^doc/concrete/$', cesar.doc.views.concrete_main, name='concrete_main'),
+    url(r'^doc/concrete/download/(?P<pk>\d+)/$', FoliaDocumentDetailView.as_view(), name='concrete_download'),
+    url(r'^doc/nexis/$', cesar.doc.views.nexis_main, name='nexis_main'),
+    url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),
+    url(r'^doc/nexis/details(?:/(?P<pk>\d+))?/$', NexisBatchDetails.as_view(), name='nexisbatch_details'),
+    url(r'^doc/nexis/edit(?:/(?P<pk>\d+))?/$', NexisBatchEdit.as_view(), name='nexisbatch_edit'),
 
-    url(r'^api/import/docs/$', cesar.doc.views.import_docs, name='import_docs'),
+    url(r'^api/import/concrete/$', cesar.doc.views.import_concrete, name='import_concrete'),
     url(r'^api/import/brysb/$', cesar.doc.views.import_brysbaert, name='import_brysb'),
+    url(r'^api/import/nexis/$', cesar.doc.views.import_nexis, name='import_nexis'),
 
     url(r'^tsg/handle/sync', cesar.tsg.views.tsgsync, name='tsg_sync'),
     url(r'^tsg/handle/list', TsgHandleListView.as_view(), name='tsg_list'),
@@ -168,16 +165,6 @@ urlpatterns = [
 
     # For working with ModelWidgets from the select2 package https://django-select2.readthedocs.io
     url(r'^select2/', include('django_select2.urls')),
-
-    # ds2 app
-    url(r'^ds2/select2_widget', TemplateFormView.as_view(form_class=Select2WidgetForm), name='select2_widget'),
-    url(r'^ds2/heavy_select2_widget', TemplateFormView.as_view(form_class=HeavySelect2WidgetForm), name='heavy_select2_widget'),
-    url(r'^ds2/heavy_select2_multiple_widget', TemplateFormView.as_view(form_class=HeavySelect2MultipleWidgetForm, success_url='/'), name='heavy_select2_multiple_widget'),
-    url(r'^ds2/model_select2_widget', TemplateFormView.as_view(form_class=AlbumModelSelect2WidgetForm), name='model_select2_widget'),
-    url(r'^ds2/model_select2_tag_widget', TemplateFormView.as_view(form_class=ModelSelect2TagWidgetForm), name='model_select2_tag_widget'),
-    url(r'^ds2/model_chained_select2_widget', TemplateFormView.as_view(form_class=AddressChainedSelect2WidgetForm), name='model_chained_select2_widget'),
-    url(r'^ds2/heavy_data_1', heavy_data_1, name='heavy_data_1'),
-    url(r'^ds2/heavy_data_2', heavy_data_2, name='heavy_data_2'),
 
     url(r'^login/user/(?P<user_id>\w[\w\d_]+)$', cesar.browser.views.login_as_user, name='login_as'),
 

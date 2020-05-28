@@ -1,0 +1,56 @@
+﻿{% load i18n %}
+
+  {% if statuscode == "completed" %}
+  <div class="row">
+    <div class='col-md-9 panel panel-default'>
+      <div class="">
+        <div class="row">
+          <div class="col-md-10">A list of {{results|length}} (text) files has been processed.</div>
+          <div class="col-md-2">
+            <a class="btn btn-sm jumbo-1" href="{% url 'nexisbatch_list' %}">Continue...</a>
+          </div>
+        </div>
+        <!-- Results section -->
+        <div id="nexis_results" class="row">
+          <div class="col-md-12">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Name</th><th>Title</th><th>Newspaper</th><th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for obj in results %}
+                  <tr>
+                    <td>{{forloop.counter}}</td>
+                    <td>{{obj.name}}</td>
+                    <td>{{obj.metadata.title}}</td>
+                    <td>{{obj.metadata.newspaper}}</td>
+                    <td>{{obj.metadata.date}}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="col-md-offset-1 col-md-2">
+      <!-- For future purposes -->
+    </div>
+  </div>
+
+
+  {% endif %}
+
+  <!-- Any errors are shown here too-->
+  <div class="errors">
+    {% if error_list and statuscode != "error" %} 
+      <h4>Errors:</h4>
+      <div>statuscode = {{statuscode}}</div>
+      {% for item in error_list %}
+        <div class="error-item">{{item}}</div>
+      {% endfor %}
+    {% endif %}
+  </div>

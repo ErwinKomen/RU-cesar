@@ -16,20 +16,24 @@ from django.views.generic.detail import DetailView
 from datetime import datetime
 
 from cesar.settings import APP_PREFIX
+from cesar.basic.views import BasicList, BasicDetails
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
-from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert
-from cesar.doc.forms import UploadFilesForm, UploadOneFileForm
+from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch
+from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm
 from cesar.utils import ErrHandle
 
 
 # Views belonging to the Cesar Document Processing app.
-def docmain(request):
+
+# ========== CONCRETENESS ==============================
+
+def concrete_main(request):
     """The main page of working with documents."""
 
     assert isinstance(request, HttpRequest)
-    template = 'doc/doc_main.html'
+    template = 'doc/concrete_main.html'
     frmUpload = UploadFilesForm()
     frmBrysb = UploadOneFileForm()
     superuser = request.user.is_superuser
@@ -41,7 +45,7 @@ def docmain(request):
         else:
             obj = json.loads(item.concr)
             obj['id'] = item.id
-            # obj['download'] = reverse('docs_download', kwargs={'pk': item.id})
+            # obj['download'] = reverse('concrete_download', kwargs={'pk': item.id})
             text_list.append(obj)
     context = {'title': 'Document processing',
                'frmUpload': frmUpload,
@@ -49,6 +53,7 @@ def docmain(request):
                'superuser': superuser,
                'message': 'Radboud University CESAR',
                'textlist': text_list,
+               'intro_breadcrumb': 'Concreteness',
                'year': datetime.now().year}
     return render(request, template, context)
 
@@ -191,7 +196,7 @@ def import_brysbaert(request):
     # Return the information
     return JsonResponse(data)
 
-def import_docs(request):
+def import_concrete(request):
     """Import one or more TEXT (utf8) files that need to be transformed into FoLiA with FROG"""
 
     # Initialisations
@@ -423,3 +428,269 @@ class FoliaDocumentDetailView(DetailView):
 
         # Return what we have
         return context
+
+
+# ================ NEXIS UNI ===========================
+def nexis_main(request):
+    """The main page of working with Nexis Uni documents."""
+
+    # Initializations
+    template = 'doc/nexis_main.html'
+    frmUpload = UploadNexisForm()
+
+    # Make sure this is just a HTTP request
+    assert isinstance(request, HttpRequest)
+
+    # Other initializations
+    superuser = request.user.is_superuser
+    username = request.user.username
+
+    # Get a list of processed batches
+    nd = NexisDocs.get_obj(username)
+    batch_list = []
+    if nd != None:
+        batch_list = nd.ndocsbatches.all().order_by("-created")
+
+
+
+    # Create the context
+    context = {'title': 'Document processing',
+               'frmUpload': frmUpload,
+               'superuser': superuser,
+               'message': 'Radboud University CESAR',
+               'batchlist': batch_list,
+               'intro_breadcrumb': 'Nexis Uni',
+               'year': datetime.now().year}
+    
+    # Render the template as HTML
+    return render(request, template, context)
+
+def import_nexis(request):
+    """Import one or more TEXT (utf8) files that need to be transformed into FoLiA with FROG"""
+
+    # Initialisations
+    # NOTE: do ***not*** add a breakpoint until *AFTER* form.is_valid
+    arErr = []
+    error_list = []
+    transactions = []
+    data = {'status': 'ok', 'html': ''}
+    template_name = 'doc/import_nexis.html'
+    obj = None
+    data_file = ""
+    bClean = False
+    statuscode = ""
+    username = request.user.username
+    oErr = ErrHandle()
+    re_number = re.compile( r"^\d[.,\d]*$")
+
+    # Check if the user is authenticated and if it is POST
+    if request.user.is_authenticated and request.method == 'POST':
+
+        # Remove previous status object for this user
+        Status.objects.filter(user=username).delete()
+        # Create a status object
+        oStatus = Status(user=username, type="docs", status="preparing", msg="please wait")
+        oStatus.save()
+
+        # Other initialisations
+        lmeta = []
+        
+        form = UploadNexisForm(request.POST, request.FILES)
+        lResults = []
+        if form.is_valid():
+            # NOTE: from here a breakpoint may be inserted!
+            print('import_nexis: valid form')
+
+            # Initialisations
+            nd = None   # NexisDocs
+
+            # Get the contents of the imported file
+            files = request.FILES.getlist('files_field')
+            if files != None:
+                # Create a NexisBatch
+                batch, msg = NexisBatch.create(username=username)
+                for data_file in files:
+                    filename = data_file.name
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        arErr.append("No source file specified for the selected project")
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+                        sBare = arFile[0].strip().replace(" ", "_")
+
+                        # Check the bare file name
+                        if re_number.match(sBare):
+                            # Invalid filename
+                            statuscode = "error"
+                            msg = "Please change the filename. It should start with a character."
+                            arErr.append(msg)
+                            oResult = {'status': 'error', 'msg': msg}
+                        else:
+
+                            # Further processing depends on the extension
+                            oResult = None
+                            if extension == "doc" or extension == "docx" or extension == "xml":
+                                # Cannot process these
+                                oResult = {'status': 'error', 'msg': 'cannot process non-text files'}
+                            else:
+                                # Assume this is a text file: create a froglink
+                                fl, msg = NexisLink.create(name=sBare, username=username, batch=batch)
+                                if fl == None:
+                                    # Some error occurred
+                                    statuscode = "error"
+                                    oStatus.set("error", msg=msg)
+                                    # Break out of the for-loop
+                                    break
+                                # Read and convert into folia.xml
+                                oResult = fl.read_doc(username, data_file, filename, arErr, oStatus=oStatus)
+                                # Possibly get the link to the owner's NexisDocs
+                                if nd == None:
+                                    # Get the foliadocs link
+                                    nd = fl.ndocs
+                                # Add the meta data
+                                oResult['metadata'] = json.loads(fl.nmeta)
+                                oResult['name'] = fl.name
+
+                                # Show where we are
+                                statuscode = "completed"
+
+                        if oResult == None:
+                            arErr.append("There was an error. No manuscripts have been added")
+                        else:
+                            lResults.append(oResult)
+            if statuscode == "error":
+                data['status'] = "error"
+            else:
+                # Set the number of files in this batch
+                iCount = batch.batchlinks.all().count()
+                batch.count = iCount
+                batch.save()
+                # Show we are ready
+                oStatus.set("ready", msg="Read all files")
+            # Get a list of errors
+            error_list = [str(item) for item in arErr if len(str(item)) > 0]
+
+            # Create the context
+            context = dict(
+                statuscode=statuscode,
+                results=lResults,
+                object=nd,
+                error_list=error_list
+                )
+
+            if len(arErr) == 0 or len(arErr[0]) == 0:
+                # Get the HTML response
+                data['html'] = render_to_string(template_name, context, request)
+            else:
+                lHtml = []
+                lHtml.append("There are errors in importing this doc")
+                for item in arErr:
+                    lHtml.append("<br />- {}".format(str(item)))
+                data['html'] = "\n".join(lHtml)
+
+
+        else:
+            data['html'] = 'invalid form: {}'.format(form.errors)
+            data['status'] = "error"
+    else:
+        data['html'] = 'Only use POST and make sure you are logged in'
+        data['status'] = "error"
+ 
+    # Return the information
+    return JsonResponse(data)
+
+
+class NexisBatchEdit(BasicDetails):
+    """Details view for one batch"""
+
+    model = NexisBatch
+    mForm = NexisBatchForm
+    prefix = "nbatch"
+    title = "BatchEdit"
+    rtype = "json"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Date:",             'value': instance.created,  'field_key': 'created'},
+            {'type': 'plain', 'label': "Number of texts:",  'value': instance.count,    'field_key': 'count'}
+            ]
+        # Return the context we have made
+        return context
+
+
+class NexisBatchDetails(NexisBatchEdit):
+    rtype = "html"
+
+
+class NexisListView(BasicList):
+    """Search and list nexis batches"""
+
+    model = NexisBatch
+    listform = NexisBatchForm
+    prefix = "nbatch"
+    new_button = False      # Don't show a new button, because new items can only be added by downloading
+    plural_name = "Batches"
+    sg_name = "Batch"
+    has_select2 = False     # Don't use Select2 here
+    delete_line = True      # Allow deleting a line
+    order_cols = ['created', 'count', '']
+    order_default = ['-created', 'count']
+    order_heads = [{'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created', 'linkdetails': True},
+                   {'name': 'Texts', 'order': 'o=2', 'type': 'int', 'field':  'count', 'linkdetails': True},
+                   {'name': '',      'order': '',    'type': 'str', 'custom': 'links'}]
+    filters = [
+        {'name': 'Date', 'id': 'filer_created', 'enabled': False}
+        ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'created',   'dbfield':  'created',  'keyS': 'created'}
+            ]},
+        {'section': 'other', 'filterlist': [
+            {'filter': 'ndocs',     'fkfield': 'ndocs',  'keyFk': 'ndocs'}]}
+        ]
+    uploads = [{"title": "nbatch", "label": "Batch", "url": "import_nexis", "msg": "Upload Nexis text files", "type": "multiple"}]
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        # Figure out what to show
+        if custom == "created":
+            sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
+        elif custom == "links":
+            # Show the download links
+            html.append('<a href="{}"><span class="glyphicon glyphicon-download"><span></a>'.format('aap'))
+            
+                  #<a href="">
+                  #  <span class="glyphicon glyphicon-download"></span>
+                  #</a>
+            # COmbineer
+            sBack = "\n".join(html)
+
+        # Retourneer wat kan
+        return sBack, sTitle
+
+    def adapt_search(self, fields):
+        # Initialisations
+        lstExclude=None
+        qAlternative = None
+        # Make sure only batches are shown for which this user is the owner
+        username = self.request.user.username
+        ndocs = NexisDocs.objects.filter(owner=username).first()
+        if ndocs != None:
+            fields['ndocs'] = ndocs
+
+        # Return standard
+        return fields, lstExclude, qAlternative
+

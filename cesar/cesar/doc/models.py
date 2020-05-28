@@ -39,6 +39,15 @@ MAXPARAMLEN = 100
 MAXPATH = 256
 FROGPORT = 8020
 
+def get_crpp_date(dtThis):
+    """Convert datetime to string"""
+
+    # Model: yyyy-MM-dd'T'HH:mm:ss
+    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+    return sDate
+
+
+
 
 class FoliaDocs(models.Model):
     """Set of folia-encoded documents"""
@@ -560,51 +569,6 @@ class FoliaProcessor():
         # Return what has happened
         return bReturn, sMsg
 
-    #def parse_sentence(self, sSentence, sType):
-    #    """Process one sentence and return appropriate JSON"""
-
-    #    oErr = ErrHandle()
-    #    parsed_output = []
-    #    try:
-    #        # Action depends on sType
-    #        if sType == "client":
-    #            if not self.frogClient:
-    #                return False, []
-    #            # This produces one chunk of FoLiA
-    #            tuple_list = self.frogClient.process(sSentence)
-    #            for item in tuple_list:
-    #                # Take apart the tuple into an object
-    #                obj = {}
-    #                if len(item) > 4:
-    #                    # We have almost all information
-    #                    obj['text'] = item[0]
-    #                    obj['lemma'] = item[1]
-    #                    obj['morph'] = item[2]
-    #                    obj['pos'] = item[3]
-    #                    obj['ner'] = item[4]
-    #                    obj['chunker'] = item[5]
-    #                    obj['head'] = item[6]
-    #                    obj['drel'] = item[7]
-    #                else:
-    #                    # We only have: text, lemma, morph, pos
-    #                    obj['text'] = item[0]
-    #                    obj['lemma'] = item[1]
-    #                    obj['morph'] = item[2]
-    #                    obj['pos'] = item[3]
-    #                parsed_output.append(obj)
-    #        elif sType == "local":
-    #            token_list = frog.process(sLine)
-    #            # Copy to parsed_output
-    #            parsed_output = json.loads(json.dumps(token_list))
-    #        else:
-    #            return False, []
-    #        # REturn the total parsed output
-    #        return True, parsed_output
-    #    except:
-    #        sMsg = oErr.get_error_message()
-    #        oErr.DoError("parse_sentence")
-    #        return False, [sMsg]
-        
 
 class Brysbaert(models.Model):
     """Information from the Brysbaert list of concreteness
@@ -656,3 +620,310 @@ class Brysbaert(models.Model):
         return True
 
 
+# ======================= NEXIS UNI =======================
+
+class NexisDocs(models.Model):
+    """Set of text files for Nexis research"""
+    
+    # [1] These belong to a particular user
+    owner = models.ForeignKey(User, editable=False)
+
+    def __str__(self):
+        return self.owner.username
+
+    def get_obj(username):
+        nd = None
+        owner = User.objects.filter(username=username).first()
+        if owner != None:
+            nd = NexisDocs.objects.filter(owner=owner).first()
+        return nd
+
+
+class NexisBatch(models.Model):
+    """A batch is a set of files that have been uploaded on a certain time"""
+
+    # [1] Each Batch has been created at one point in time
+    created = models.DateTimeField(default=timezone.now)
+    # [0-1] Eatch batch has a number of files
+    count = models.IntegerField("Number of files", default=0)
+    # [1] Each batch belongs to a set of docs (that belong to an owner)
+    ndocs = models.ForeignKey(NexisDocs, related_name="ndocsbatches", on_delete=models.CASCADE)
+
+    def __str__(self):
+        sBack = str(self.created)
+        return sBack
+
+    def create(username):
+        """Possibly create a new batch for user [username]"""
+
+        errHandle = ErrHandle()
+
+        try:
+            # Get the correct user
+            owner = User.objects.filter(username=username).first()
+
+            # Find a NexisDocs instance for this user
+            fd = NexisDocs.objects.filter(owner=owner).first()
+            if fd == None:
+                fd = NexisDocs(owner=owner)
+                fd.save()
+
+            # Create it
+            obj = NexisBatch(ndocs=fd)
+            obj.save()
+            # Return the result 
+            return obj, ""
+        except:
+            errHandle.DoError("NexisBatch/create")
+            return None, errHandle.get_error_message()
+
+
+class NexisLink(models.Model):
+    """Basic information from a Nexis text file: text + metadata"""
+
+    # [1] Each froglink centers around a file that is uploaded, processed and made available
+    name = models.CharField("Name to be used for this file", max_length=MAXPARAMLEN)
+    # [0-1] Full name is the full path of the txt-file on the server
+    fullname = models.CharField("Full path of this file", max_length=MAXPATH, null=True, blank=True)
+    # [0-1] Text metadata as stringified JSON object
+    nmeta = models.TextField("Nexis metadata", null=True, blank=True)
+    # [0-1] Text body
+    nbody = models.TextField("Nexis text", null=True, blank=True)
+    # [1] Each Froglink has been created at one point in time
+    created = models.DateTimeField(default=timezone.now)
+
+    # [1] Each link belongs to a set of docs (that belong to an owner)
+    ndocs = models.ForeignKey(NexisDocs, related_name="nexisdocuments")
+    # [1] Each nexislink should belong to a batch
+    batch = models.ForeignKey(NexisBatch, null=True, on_delete=models.CASCADE, related_name="batchlinks")
+
+    def __str__(self):
+        return self.name
+
+    def create(name, username, batch):
+        """Possibly create a new item [name] for user [username]"""
+
+        errHandle = ErrHandle()
+
+        try:
+            # Get the correct user
+            owner = User.objects.filter(username=username).first()
+
+            # Find a NexisDocs instance for this user
+            fd = NexisDocs.objects.filter(owner=owner).first()
+            if fd == None:
+                fd = NexisDocs(owner=owner)
+                fd.save()
+
+            #obj = NexisLink.objects.filter(name=name).first()
+            #if obj == None:
+            # Just always Create it
+            obj = NexisLink(name=name, ndocs=fd, batch=batch)
+            obj.save()
+            # Return the result 
+            return obj, ""
+        except:
+            errHandle.DoError("NexisLink/create")
+            return None, errHandle.get_error_message()
+
+    def read_doc(self, username, data_file, filename, arErr, xmldoc=None, sName = None, oStatus = None):
+        """Import a text file, split in text and metadata and store that in the NexisLink instance
+        
+        The syntax of a file:
+            <nexisdoc> := <metadata> <body> <footer>
+
+            <metadata> := <title> <newspaper> <date> <copyright> <meta>*
+
+            <title> := $line NL
+            <newspaper> := $line NL
+            <date> := $line NL
+            <copyright := $line NL
+
+            <meta> := <keyword> ‘:’ <metatext> NL
+            <keyword> := ‘Section’ | ‘Length’ | ‘Byline’ | ‘Highlight’
+            <metatext> := $line ( NL $line )*
+
+            <body> := ‘Body’ NL ( $line NL )*
+
+            <footer> := <loaddate> <eod>
+            <loaddate> := ‘Load-Date:’ $line NL
+            <eod> := ‘End of Document’ NL
+        """
+
+        def skip_empty_lines(lst, idx):
+            while idx < len(lst) and lst[idx] == "": idx += 1
+            return idx
+
+        def get_line_item(lst, idx):
+            item = lst[idx]
+            idx += 1
+            while idx < len(lst) and lst[idx] == "": idx += 1
+            return idx, item
+
+        def get_line_meta(lst, idx):
+            key = ""
+            value = ""
+            try:
+                item = lst[idx]
+                if ":" in item:
+                    colon = item.index(":")
+                    key = item[:colon]
+                    value = item[colon+1:].strip()
+                    # Go to the next line
+                    idx += 1
+                    # Check if the next line is not empty
+                    while idx < len(lst) and lst[idx] != "" and ":" not in lst[idx]:
+                        value = "{} {}".format(value, lst[idx])
+                        idx += 1
+                    while idx < len(lst) and lst[idx] == "": idx += 1
+
+                return idx, key, value
+            except:
+                sError = errHandle.get_error_message()
+                return -1, "", ""
+
+        oBack = {'status': 'ok', 'count': 0, 'msg': "", 'user': username}
+        errHandle = ErrHandle()
+        oDoc = None
+        iCount = 0
+        inputType = "nexistext"
+        nexisProc = NexisProcessor(username)
+
+        try:
+
+            # Read and create basis-folia
+            oResult = nexisProc.basis_text(filename, data_file)
+            if not oResult['okay']:
+                # There was some kind of error
+                oBack['status'] = 'error'
+                oBack['msg'] = "basis_text load error: {}".format( oResult['msg'])
+            else:
+                # DEBUG: show the frog location
+                errHandle.Status("DEBUG: basis_text has been read")
+
+                # Get the metadata and the body
+                lst_meta = oResult['metadata']
+                lst_body = oResult['body']
+
+                # Process the metadata
+                oMeta = {}
+                # Skip empty lines
+                iLine = skip_empty_lines(lst_meta, 0)
+                # Get the title, newspaper, date and copyright
+                iLine, oMeta['title'] = get_line_item(lst_meta, iLine)
+                iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine)
+                iLine, oMeta['newsdate'] = get_line_item(lst_meta, iLine)
+                iLine, oMeta['copyright'] = get_line_item(lst_meta, iLine)
+                # Get any more metadata
+                while iLine < len(lst_meta) and ":" in lst_meta[iLine]:
+                    # Extract one meta element
+                    iLine, key, value = get_line_meta(lst_meta, iLine)
+                    if key != "" and value != "":
+                        oMeta[key.lower()] = value
+                # Any last line left?
+                if iLine == len(lst_meta)-1 and ":" not in lst_meta[iLine]:
+                    # There is still one final line -- not sure what that is though
+                    oMeta['last'] = lst_meta[iLine]
+
+                self.nmeta = json.dumps( oMeta)
+                self.nbody = "\n".join(lst_body)
+                self.save()
+                iCount += 1
+                oBack['name'] = self.name
+                oBack['title'] = oMeta['title']
+
+            # Make sure the requester knows how many have been added
+            oBack['count'] = iCount   # The number of files added
+
+        except:
+            sError = errHandle.get_error_message()
+            oBack['status'] = 'error'
+            oBack['msg'] = sError
+
+        # Return the object that has been created
+        return oBack
+    
+
+class NexisProcessor():
+    """Functions to help create or process a nexis uni document"""
+
+    docstr = ""         # The identifier of this document
+    username = ""       # The owner of this document
+    dir = ""            # Directory for the output
+    basicf = ""         # If any: where the basis folia is
+    frogClient = None   
+    frog = None
+    doc = None
+    re_single = None
+    re_double = None
+
+    def __init__(self, username):
+        # Check and/or create the appropriate directory for the user
+        dir = os.path.abspath(os.path.join( WRITABLE_DIR, username))
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+        # Set the dir locally
+        self.dir = dir
+        # Set regex
+        self.re_single = re.compile(u"[‘’´]")
+        self.re_double = re.compile(u"[“”]")
+
+    def basis_text(self, filename, data_contents):
+
+        errHandle = ErrHandle()
+        oBack = dict(okay=True)
+        try:
+            # Read file into array
+            lines = []
+            bFirst = True
+            for line in data_contents:
+                sLine = line.decode("utf-8").strip()
+                if bFirst:
+                    sLine = sLine.replace(u'\ufeff', '')
+                    bFirst = False
+                # Change curly quotes
+                sLine = self.re_single.sub("'", sLine)
+                sLine = self.re_double.sub('"', sLine)
+                # Insert a space before ".." or "..."
+                sLine = sLine.replace("..", " ..")
+                lines.append(sLine)
+
+            # Check and/or create the appropriate directory for the user
+            dir = self.dir
+
+            # create a folia document with a numbered id
+            docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
+            # Make sure we remember the docstr
+            self.docstr = docstr
+
+            # Split into metadata and body
+            iBodyStart = -1
+            iBodyEnd = -1
+            iLoadDate = -1
+            iMetaEnd = -1
+            loaddate = None
+            for idx, line in enumerate(lines):
+                if line.startswith( "Body"):
+                    iBodyStart = idx + 1
+                    while lines[iBodyStart] == "":
+                        iBodyStart += 1
+                    iMetaEnd = idx - 1
+                elif line.startswith("End of Document"):
+                    iBodyEnd = idx - 1
+                elif line.startswith("Load-Date:"):
+                    iLoadDate = idx - 1
+                    colon = line.index(":") + 1
+                    loaddate = line[colon:].strip()
+            # If there is a loaddate, then that is the end of the body
+            if iLoadDate >= 0: iBodyEnd = iLoadDate
+
+            # Get the Meta and the body
+            oBack['metadata'] = lines[:iMetaEnd]
+            oBack['body'] = lines[iBodyStart:iBodyEnd]
+            oBack['loaddate'] = loaddate
+        except:
+            oBack['msg'] = errHandle.get_error_message()
+            errHandle.DoError("basis_text")
+            oBack['okay'] = False
+        # Return what has happened
+        return oBack

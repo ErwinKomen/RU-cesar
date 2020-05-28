@@ -12,15 +12,36 @@ from django.utils.translation import ugettext_lazy as _
 from cesar.doc.models import *
 
 class UploadFilesForm(forms.Form):
-    """This is for uploading one or more files"""
+    """This is for uploading one or more files for Concreteness"""
 
     files_field = forms.FileField(label="Specify which file(s) should be loaded",
                                   widget=forms.ClearableFileInput(attrs={'multiple': True}))
     clamuser = forms.CharField(label="CLAM service user name")
     clampw = forms.CharField(max_length=32, widget=forms.PasswordInput)
 
+
+class UploadNexisForm(forms.Form):
+    """This is for uploading one or more files for Nexis Uni """
+
+    files_field = forms.FileField(label="Specify which file(s) should be loaded",
+                                  widget=forms.ClearableFileInput(attrs={'multiple': True}))
+
+
 class UploadOneFileForm(forms.Form):
     """This is for uploading one file"""
 
     file_field = forms.FileField(label="Specify which file should be imported",
                                   widget=forms.ClearableFileInput())
+
+
+class NexisBatchForm(forms.ModelForm):
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = NexisBatch
+        fields = ['created', 'count']
+        widgets = {
+            'count':    forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'created':  forms.DateTimeInput(attrs={'style': 'width: 100%;'})
+            }

@@ -63,16 +63,6 @@
     <Compile Include="cesar\doc\tests.py" />
     <Compile Include="cesar\doc\views.py" />
     <Compile Include="cesar\doc\__init__.py" />
-    <Compile Include="cesar\ds2\admin.py" />
-    <Compile Include="cesar\ds2\apps.py" />
-    <Compile Include="cesar\ds2\forms.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="cesar\ds2\migrations\__init__.py" />
-    <Compile Include="cesar\ds2\models.py" />
-    <Compile Include="cesar\ds2\tests.py" />
-    <Compile Include="cesar\ds2\views.py" />
-    <Compile Include="cesar\ds2\__init__.py" />
     <Compile Include="cesar\lingo\admin.py" />
     <Compile Include="cesar\lingo\apps.py" />
     <Compile Include="cesar\lingo\forms.py">
@@ -158,9 +148,6 @@
     <Folder Include="cesar\doc\migrations\" />
     <Folder Include="cesar\doc\templates\" />
     <Folder Include="cesar\doc\templates\doc\" />
-    <Folder Include="cesar\ds2\" />
-    <Folder Include="cesar\ds2\migrations\" />
-    <Folder Include="cesar\ds2\templates\" />
     <Folder Include="cesar\lingo\" />
     <Folder Include="cesar\lingo\migrations\" />
     <Folder Include="cesar\lingo\static\" />
@@ -227,11 +214,12 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\text_info.html" />
-    <Content Include="cesar\doc\templates\doc\doc_main.html" />
+    <Content Include="cesar\doc\templates\doc\import_nexis.html" />
+    <Content Include="cesar\doc\templates\doc\nexis_main.html" />
+    <Content Include="cesar\doc\templates\doc\concrete_main.html" />
     <Content Include="cesar\doc\templates\doc\foliadocs_view.html" />
     <Content Include="cesar\doc\templates\doc\import_brys.html" />
-    <Content Include="cesar\doc\templates\doc\import_docs.html" />
-    <Content Include="cesar\ds2\templates\form.html" />
+    <Content Include="cesar\doc\templates\doc\import_concrete.html" />
     <Content Include="cesar\lingo\static\lingo\content\bootstrap.min.css" />
     <Content Include="cesar\lingo\static\lingo\content\lingo.css" />
     <Content Include="cesar\lingo\static\lingo\content\ru-base.css" />
