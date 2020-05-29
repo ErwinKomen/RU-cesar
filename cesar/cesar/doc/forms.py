@@ -45,3 +45,10 @@ class NexisBatchForm(forms.ModelForm):
             'count':    forms.TextInput(attrs={'style': 'width: 100%;'}),
             'created':  forms.DateTimeInput(attrs={'style': 'width: 100%;'})
             }
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(NexisBatchForm, self).__init__(*args, **kwargs)
+        # Make sure some are not obligatory
+        self.fields['created'].required = False
+        self.fields['count'].required = False

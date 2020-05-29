@@ -726,11 +726,13 @@ class NexisListView(BasicList):
     sg_name = "Nexis Batch"
     has_select2 = False     # Don't use Select2 here
     delete_line = True      # Allow deleting a line
+    bUseFilter = True
     order_cols = ['created', 'count', '']
     order_default = ['-created', 'count']
     order_heads = [{'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created', 'linkdetails': True},
                    {'name': 'Texts', 'order': 'o=2', 'type': 'int', 'field':  'count', 'linkdetails': True, 'main': True},
-                   {'name': '',      'order': '',    'type': 'str', 'custom': 'links', 'align': 'right'}]
+                   {'name': '',      'order': '',    'type': 'str', 'custom': 'links', 'align': 'right'},
+                   {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
     filters = [
         {'name': 'Date', 'id': 'filer_created', 'enabled': False}
         ]
@@ -769,7 +771,8 @@ class NexisListView(BasicList):
         qAlternative = None
         # Make sure only batches are shown for which this user is the owner
         username = self.request.user.username
-        ndocs = NexisDocs.objects.filter(owner=username).first()
+        owner = User.objects.filter(username = username).first()
+        ndocs = NexisDocs.objects.filter(owner=owner)
         if ndocs != None:
             fields['ndocs'] = ndocs
 
