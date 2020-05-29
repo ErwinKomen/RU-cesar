@@ -651,6 +651,7 @@ class NexisBatchEdit(BasicDetails):
             {'type': 'plain', 'label': "Number of texts:",  'value': instance.count,    'field_key': 'count'}
             ]
         context['is_app_editor'] = user_is_ingroup(self.request, "nexis_editor")
+        context['is_app_uploader'] = context['is_app_editor']
         # Return the context we have made
         return context
 
@@ -777,5 +778,6 @@ class NexisListView(BasicList):
 
     def add_to_context(self, context, initial):
         context['is_app_editor'] = user_is_ingroup(self.request, "nexis_editor")
+        context['is_app_uploader'] = context['is_app_editor']
         return context
 
