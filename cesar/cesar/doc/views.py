@@ -727,6 +727,7 @@ class NexisListView(BasicList):
     has_select2 = False     # Don't use Select2 here
     delete_line = True      # Allow deleting a line
     bUseFilter = True
+    superuser = False
     order_cols = ['created', 'count', '']
     order_default = ['-created', 'count']
     order_heads = [{'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created', 'linkdetails': True},
@@ -745,6 +746,20 @@ class NexisListView(BasicList):
         ]
     uploads = [{"title": "nbatch", "label": "Batch", "url": "import_nexis", "msg": "Upload Nexis text files", "type": "multiple"}]
 
+    def initializations(self):
+        # Check if I am superuser or not
+        self.superuser = self.request.user.is_superuser
+        if self.superuser:
+            self.order_cols = ['created', 'count', 'ndocs__owner__username', '']
+            self.order_heads = [
+                {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created', 'linkdetails': True},
+                {'name': 'Texts', 'order': 'o=2', 'type': 'int', 'field':  'count', 'linkdetails': True, 'main': True},
+                {'name': 'User',  'order': 'o=3', 'type': 'str', 'custom':  'user', 'linkdetails': True},
+                {'name': '',      'order': '',    'type': 'str', 'custom': 'links', 'align': 'right'},
+                {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
+
+        return None
+
     def get_field_value(self, instance, custom):
         sBack = ""
         sTitle = ""
@@ -761,6 +776,8 @@ class NexisListView(BasicList):
             
             # COmbineer
             sBack = "\n".join(html)
+        elif custom == "user":
+            sBack = instance.ndocs.owner.username
 
         # Retourneer wat kan
         return sBack, sTitle
@@ -769,12 +786,13 @@ class NexisListView(BasicList):
         # Initialisations
         lstExclude=None
         qAlternative = None
-        # Make sure only batches are shown for which this user is the owner
-        username = self.request.user.username
-        owner = User.objects.filter(username = username).first()
-        ndocs = NexisDocs.objects.filter(owner=owner)
-        if ndocs != None:
-            fields['ndocs'] = ndocs
+        if not self.superuser:
+            # Make sure only batches are shown for which this user is the owner
+            username = self.request.user.username
+            owner = User.objects.filter(username = username).first()
+            ndocs = NexisDocs.objects.filter(owner=owner)
+            if ndocs != None:
+                fields['ndocs'] = ndocs
 
         # Return standard
         return fields, lstExclude, qAlternative
