@@ -29,6 +29,7 @@ from cesar.utils import ErrHandle
 from cesar.lingo.models import *
 from cesar.lingo.forms import ExperimentForm, ParticipantForm, AnswerForm, QdataListForm
 from cesar.seeker.views import csv_to_excel
+from cesar.browser.views import user_is_superuser
 
 # Debugging for certain functions in this views.py
 bDebug = True
@@ -184,6 +185,7 @@ def home(request):
     # Make sure we add special group permission(s)
     context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
+    context['is_superuser'] = user_is_superuser(request)
     # Render and return the page
     return render(request, template_name, context)
 

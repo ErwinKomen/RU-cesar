@@ -157,8 +157,10 @@
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
                          aria-haspopup="true" aria-expanded="false">Tools <span class="caret"></span></a>
                       <ul class="dropdown-menu">
-                        <li><a href="{% url 'crpp' %}">Update from /crpp</a></li>
-                        <li role="separator" class="divider"></li>
+                        {% if is_superuser %}
+                          <li><a href="{% url 'crpp' %}">Update from /crpp</a></li>
+                          <li role="separator" class="divider"></li>
+                        {% endif %}
                         <li><a href="{% url 'concrete_main' %}">Documents</a></li>
                         <li><a href="{% url 'nexisbatch_list' %}">Nexis batches</a></li>
                         {% if is_in_tsg %}

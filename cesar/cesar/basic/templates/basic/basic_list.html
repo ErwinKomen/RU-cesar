@@ -27,7 +27,7 @@
         <div  class="panel panel-none">
 
           <div class="row">
-            <div class="col-md-2 col-md-offset-9 text-right" style="margin-top: 5px;">
+            <div class="col-md-2 col-md-offset-8 text-right" style="margin-top: 5px;">
               {% if downloads %}
                 <a id="downloadmenu" role="button" class="btn jumbo-1 btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" 
                         onclick="" >
@@ -44,7 +44,7 @@
                 </ul>
               {% endif %}
             </div>
-            <div class="col-md-1 text-right">
+            <div class="col-md-2 text-right">
               {% if custombuttons and is_app_editor %}
                 {% for citem in custombuttons %}
                   <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#tab_{{citem.name}}" 
@@ -57,7 +57,7 @@
                 <a id="uploadmenu" role="button" title="Importing..." class="btn jumbo-1 btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" onclick="">
                   <span class="glyphicon glyphicon-upload"></span>
                 </a>
-                <ul class="dropdown-menu" aria-labelledby="uploadmenu">
+                <ul class="dropdown-menu text-left" aria-labelledby="uploadmenu">
                   {% for uitem in uploads %}
                     {% if uitem.label %}
                       <li><a href="#" title="upload {{uitem.title}}" targetid="import_{{uitem.title}}" onclick="ru.basic.toggle_click(this);">{{uitem.label}}</a></li>

@@ -320,6 +320,9 @@ def sync_crpp(request):
 
     assert isinstance(request, HttpRequest)
 
+    is_superuser = user_is_superuser(request)
+    if not is_superuser:
+        return home(request)
     # Gather info
     context =  { 'title':'Sync-Crpp',
             'message':'Radboud University CESAR utility.',
