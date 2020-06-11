@@ -1,17 +1,18 @@
 ﻿{% load i18n %}
 
   {% if statuscode == "completed" %}
-  <div class="row">
-    <div class='col-md-9 panel panel-default'>
+  <div class="row panel panel-default">
+    <div class='col-md-12'>
       <div class="">
         <div class="row">
           <div class="col-md-10">A list of {{results|length}} (text) files has been processed.</div>
           <div class="col-md-2">
+            <a class="btn btn-sm jumbo-2 collapsed" data-toggle="collapse" data-target="#nexis_results">Show/Hide</a>
             <a class="btn btn-sm jumbo-1" href="{% url 'nexisbatch_list' %}">Continue...</a>
           </div>
         </div>
         <!-- Results section -->
-        <div id="nexis_results" class="row">
+        <div id="nexis_results" class="row inert collapse">
           <div class="col-md-12">
             <table>
               <thead>
@@ -23,10 +24,10 @@
                 {% for obj in results %}
                   <tr>
                     <td>{{forloop.counter}}</td>
-                    <td>{{obj.name}}</td>
-                    <td>{{obj.metadata.title}}</td>
-                    <td>{{obj.metadata.newspaper}}</td>
-                    <td>{{obj.metadata.date}}</td>
+                    <td class="nexis-filename">{{obj.name}}</td>
+                    <td class="nexis-title">{{obj.metadata.title}}</td>
+                    <td><span class="badge">{{obj.metadata.newspaper}}</span></td>
+                    <td class="nexis-newsdate">{{obj.metadata.newsdate}}</td>
                   </tr>
                 {% endfor %}
               </tbody>

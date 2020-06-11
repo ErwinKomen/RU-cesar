@@ -739,11 +739,11 @@ class NexisLink(models.Model):
             <date> := $line NL
             <copyright := $line NL
 
-            <meta> := <keyword> ‘:’ <metatext> NL
-            <keyword> := ‘Section’ | ‘Length’ | ‘Byline’ | ‘Highlight’
+            <meta> := <keyword> ':' <metatext> NL
+            <keyword> := 'Section' | 'Length' | 'Byline' | 'Highlight' |'Dateline'
             <metatext> := $line ( NL $line )*
 
-            <body> := ‘Body’ NL ( $line NL )*
+            <body> := 'Body' NL ( $line NL )*
 
             <footer> := <loaddate> <eod>
             <loaddate> := ‘Load-Date:’ $line NL
@@ -754,10 +754,35 @@ class NexisLink(models.Model):
             while idx < len(lst) and lst[idx] == "": idx += 1
             return idx
 
-        def get_line_item(lst, idx):
+        def get_line_item(lst, idx, inside = None, must = None):
             item = lst[idx]
-            idx += 1
-            while idx < len(lst) and lst[idx] == "": idx += 1
+            # Is there a 'must'?
+            if must != None:
+                bFound = False
+                item_lower = item.lower()
+                for m in must:
+                    if m in item_lower: 
+                        bFound = True
+                        break
+                if not bFound:
+                    return idx, None
+            elif inside != None:
+                # Check if we can append to [item] from the next non-empty line
+                bReady = False
+                while not bReady:
+                    # GO to next non-empty line
+                    idy = skip_empty_lines(lst, idx+1)
+                    # Check if the contents is inside [inside]
+                    if lst[idy] not in inside:
+                        bReady = True
+                    else:
+                        idx = idy
+
+            # Skip any following empty lines
+            #idx += 1
+            #while idx < len(lst) and lst[idx] == "": idx += 1
+            idx = skip_empty_lines(lst, idx+1)
+            # Return the index of the first non-empty line + the item we found
             return idx, item
 
         def get_line_meta(lst, idx):
@@ -788,6 +813,9 @@ class NexisLink(models.Model):
         iCount = 0
         inputType = "nexistext"
         nexisProc = NexisProcessor(username)
+        day = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
+        paper = ['telegraaf', 'dagblad', 'handelsblad', 'trouw', 'volkskrant']
+        copyright = ['copyright']
 
         try:
 
@@ -801,6 +829,11 @@ class NexisLink(models.Model):
                 # DEBUG: show the frog location
                 errHandle.Status("DEBUG: basis_text has been read")
 
+                #if oStatus != None:
+                #    msg = "Reading: [{}]".format(filename[:40], completion)
+                #    oStatus.set("NEXIS", msg=msg)
+
+
                 # Get the metadata and the body
                 lst_meta = oResult['metadata']
                 lst_body = oResult['body']
@@ -810,10 +843,26 @@ class NexisLink(models.Model):
                 # Skip empty lines
                 iLine = skip_empty_lines(lst_meta, 0)
                 # Get the title, newspaper, date and copyright
-                iLine, oMeta['title'] = get_line_item(lst_meta, iLine)
-                iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine)
-                iLine, oMeta['newsdate'] = get_line_item(lst_meta, iLine)
-                iLine, oMeta['copyright'] = get_line_item(lst_meta, iLine)
+                iLine, oMeta['title'] = get_line_item(lst_meta, iLine, inside=filename)
+                iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine, must=paper)
+                while oMeta['newspaper'] == None and iLine < len(lst_meta):
+                    # Read one more line into the title
+                    iLine, add_to_title = get_line_item(lst_meta, iLine, inside=filename)
+                    if add_to_title != None:
+                        oMeta['title'] = "{} {}".format(oMeta['title'], add_to_title)
+                    # Try reading newspaper again
+                    iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine, must=paper)
+                if oMeta['newspaper'] == None:
+                    errHandle.Status("Line doesn't contain newspaper: {}".format(lst_meta[iLine]))
+                    iStop = 1
+                iLine, oMeta['newsdate'] = get_line_item(lst_meta, iLine, must=day)
+                if oMeta['newsdate'] == None:
+                    errHandle.Status("Line doesn't contain day: {}".format(lst_meta[iLine]))
+                    iStop = 1
+                iLine, oMeta['copyright'] = get_line_item(lst_meta, iLine, must=copyright)
+                if oMeta['copyright'] == None:
+                    errHandle.Status("Line doesn't contain copyright: {}".format(lst_meta[iLine]))
+                    iStop = 1
                 # Get any more metadata
                 while iLine < len(lst_meta) and ":" in lst_meta[iLine]:
                     # Extract one meta element

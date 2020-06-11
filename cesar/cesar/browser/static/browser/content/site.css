@@ -1051,3 +1051,12 @@ table.func-view td .view-mode:hover {
   background-color: lightyellow;
 }
 
+/* DOC - NEXIS */
+.nexis-filename {
+    font-size: 80%;
+    color: darkblue;
+}
+.nexis-newsdate {
+    font-size: xx-small;
+    color: darkred;
+}

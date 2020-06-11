@@ -269,7 +269,7 @@
         <!-- Allow importing list items from Excel -->
         {% if is_app_uploader and uploads %}
           {% for uitem in uploads %}
-            <div id="import_{{uitem.title}}" class="row hidden container">
+            <div id="import_{{uitem.title}}" class="hidden">
               <form action="{{uitem.url}}" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <!-- Room for the filename to appear -->

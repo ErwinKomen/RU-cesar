@@ -535,11 +535,11 @@ def import_nexis(request):
             if files != None:
                 # Create a NexisBatch
                 batch, msg = NexisBatch.create(username=username)
-                for data_file in files:
+                for idx, data_file in enumerate(files):
                     filename = data_file.name
 
                     # Set the status
-                    oStatus.set("reading", msg="file={}".format(filename))
+                    oStatus.set("reading", msg="{}: file={}".format(idx, filename))
 
                     # Get the source file
                     if data_file == None or data_file == "":
@@ -565,7 +565,7 @@ def import_nexis(request):
                                 # Cannot process these
                                 oResult = {'status': 'error', 'msg': 'cannot process non-text files'}
                             else:
-                                # Assume this is a text file: create a froglink
+                                # Assume this is a text file: create a NexisLink and parse it
                                 fl, msg = NexisLink.create(name=sBare, username=username, batch=batch)
                                 if fl == None:
                                     # Some error occurred
