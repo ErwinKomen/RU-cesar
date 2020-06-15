@@ -151,3 +151,21 @@ div.inline-group a.add-related {
     margin-top: -5px;
     margin-bottom: -5px;
 }
+
+body > div > footer {
+  height: 18px;
+  padding-top: 1px;
+  background: darkgoldenrod;
+  color: white;
+  font-size: x-small;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  text-align: center;
+}
+body > div > footer a {
+  color: #355e3b;
+  position: relative;
+  z-index: 1000;
+}
+
