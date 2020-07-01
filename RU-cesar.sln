@@ -11,6 +11,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "hebot", "hebot\hebot.pyproj
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "htreeconv", "htreeconv\htreeconv.pyproj", "{5944FFAA-6A7E-48B5-85E5-E9EA5E5F45A0}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "mdutch", "mdutch\mdutch.pyproj", "{574DE5A7-29A0-45AD-8416-2924CE63D0CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,8 @@ Global
 		{8B9AFFDA-919D-4001-9F82-FC844F0A23BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5944FFAA-6A7E-48B5-85E5-E9EA5E5F45A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5944FFAA-6A7E-48B5-85E5-E9EA5E5F45A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{574DE5A7-29A0-45AD-8416-2924CE63D0CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{574DE5A7-29A0-45AD-8416-2924CE63D0CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
