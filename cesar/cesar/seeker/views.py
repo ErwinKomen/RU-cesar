@@ -4911,7 +4911,7 @@ def research_simple(request, pk=None):
             simple_list = qs_simple,
             error_list=error_list
             )
-
+        # x = render_to_string(template, context, request=request)
         # Open the template that allows Editing an existing or Creating a new research project
         #   or editing the existing project
         return render(request, template, context)
