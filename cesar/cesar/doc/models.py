@@ -769,6 +769,7 @@ class NexisLink(models.Model):
             elif inside != None:
                 # Check if we can append to [item] from the next non-empty line
                 bReady = False
+                bFound = False
                 while not bReady:
                     # GO to next non-empty line
                     idy = skip_empty_lines(lst, idx+1)
@@ -777,10 +778,12 @@ class NexisLink(models.Model):
                         bReady = True
                     else:
                         idx = idy
+                        bFound = True
+                # Has something been found?
+                if not bFound:
+                    return idx, None
 
             # Skip any following empty lines
-            #idx += 1
-            #while idx < len(lst) and lst[idx] == "": idx += 1
             idx = skip_empty_lines(lst, idx+1)
             # Return the index of the first non-empty line + the item we found
             return idx, item
@@ -829,11 +832,6 @@ class NexisLink(models.Model):
                 # DEBUG: show the frog location
                 errHandle.Status("DEBUG: basis_text has been read")
 
-                #if oStatus != None:
-                #    msg = "Reading: [{}]".format(filename[:40], completion)
-                #    oStatus.set("NEXIS", msg=msg)
-
-
                 # Get the metadata and the body
                 lst_meta = oResult['metadata']
                 lst_body = oResult['body']
@@ -844,6 +842,7 @@ class NexisLink(models.Model):
                 iLine = skip_empty_lines(lst_meta, 0)
                 # Get the title, newspaper, date and copyright
                 iLine, oMeta['title'] = get_line_item(lst_meta, iLine, inside=filename)
+                if oMeta['title'] == None: oMeta['title'] = "(untitled)"
                 iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine, must=paper)
                 while oMeta['newspaper'] == None and iLine < len(lst_meta):
                     # Read one more line into the title
@@ -951,6 +950,8 @@ class NexisProcessor():
             iLoadDate = -1
             iMetaEnd = -1
             loaddate = None
+            end_of_text = []    # Array of possible end-of-text indexes
+                                # (idea of Joost Grunwald)
             for idx, line in enumerate(lines):
                 if line.startswith( "Body"):
                     iBodyStart = idx + 1
@@ -958,13 +959,24 @@ class NexisProcessor():
                         iBodyStart += 1
                     iMetaEnd = idx - 1
                 elif line.startswith("End of Document"):
-                    iBodyEnd = idx - 1
+                    # iBodyEnd = idx - 1
+                    end_of_text.append(idx - 1)
+                elif line.startswith("Bekijk de oorspronkelijke pagina"):
+                    end_of_text.append(idx - 1)
                 elif line.startswith("Load-Date:"):
                     iLoadDate = idx - 1
                     colon = line.index(":") + 1
                     loaddate = line[colon:].strip()
+                    end_of_text.append(idx - 1)
             # If there is a loaddate, then that is the end of the body
-            if iLoadDate >= 0: iBodyEnd = iLoadDate
+            # Determine the best candidate for the end-of-text
+            if len(end_of_text) == 0:
+                iBodyEnd = iBodyStart
+            else:
+                # Take the highest index in the list
+                end_of_text.sort()
+                iBodyEnd = end_of_text[0]
+            # if iLoadDate >= 0: iBodyEnd = iLoadDate
 
             # Get the Meta and the body
             oBack['metadata'] = lines[:iMetaEnd]
