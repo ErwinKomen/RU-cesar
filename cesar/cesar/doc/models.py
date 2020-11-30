@@ -904,6 +904,7 @@ class NexisProcessor():
     doc = None
     re_single = None
     re_double = None
+    bDebug = True
 
     def __init__(self, username):
         # Check and/or create the appropriate directory for the user
@@ -921,10 +922,17 @@ class NexisProcessor():
         errHandle = ErrHandle()
         oBack = dict(okay=True)
         try:
+            errHandle.Status("NexisProcessor: {}".format(filename))
             # Read file into array
             lines = []
             bFirst = True
+            idx = 0
             for line in data_contents:
+                idx += 1
+                # ===================================================
+                if self.bDebug:
+                    errHandle.Status("[{}]: [{}]".format(idx, line))
+                # ===================================================
                 sLine = line.decode("utf-8").strip()
                 if bFirst:
                     sLine = sLine.replace(u'\ufeff', '')
@@ -938,6 +946,14 @@ class NexisProcessor():
 
             # Check and/or create the appropriate directory for the user
             dir = self.dir
+
+            # ===================================================
+            if self.bDebug:
+                # Save the file just to be sure
+                save_name = os.path.abspath(os.path.join(dir, filename))
+                with open(save_name, "w", encoding = "utf-8") as fd:
+                    fd.write("\n".join(lines))
+            # ===================================================
 
             # create a folia document with a numbered id
             docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
