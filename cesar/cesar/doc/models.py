@@ -32,7 +32,9 @@ import folia.main as folia
 #    frogurl = "https://webservices-lst.science.ru.nl/frog"
 #    from clam.common.client import *
 
-frogurl = "https://webservices-lst.science.ru.nl/frog"
+# OLD: frogurl = "https://webservices-lst.science.ru.nl/frog"
+# New (2020, december)
+frogurl = "https://webservices.cls.ru.nl/frog"
 from clam.common.client import *
 
 MAXPARAMLEN = 100
