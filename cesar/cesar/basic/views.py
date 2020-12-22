@@ -158,6 +158,16 @@ def adapt_search(val):
     val = '^' + fnmatch.translate(val) + '$'
     return val
 
+def treat_bom(sHtml):
+    """REmove the BOM marker except at the beginning of the string"""
+
+    # Check if it is in the beginning
+    bStartsWithBom = sHtml.startswith(u'\ufeff')
+    # Remove everywhere
+    sHtml = sHtml.replace(u'\ufeff', '')
+    # Return what we have
+    return sHtml
+
 def make_search_list(filters, oFields, search_list, qd):
     """Using the information in oFields and search_list, produce a revised filters array and a lstQ for a Queryset"""
 
@@ -438,6 +448,7 @@ class BasicList(ListView):
     use_team_group = False
     lst_typeaheads = []
     sort_order = ""
+    extend_template = "layout.html"
     page_function = "ru.basic.search_paged_start"
 
     def initializations(self):
@@ -526,6 +537,7 @@ class BasicList(ListView):
 
         context['new_button'] = self.new_button
         context['add_text'] = self.add_text
+        context['extend_template'] = self.extend_template
 
         # Adapt possible downloads
         if len(self.downloads) > 0:
@@ -839,6 +851,7 @@ class BasicDetails(DetailView):
     basic_name = None
     basic_name_prefix = ""
     basic_add = ""
+    extend_template = "layout.html"
     add_text = "Add a new"
     permission = "write"    # Permission can be: (nothing), "read" and "write"
     new_button = False
@@ -1040,6 +1053,7 @@ class BasicDetails(DetailView):
             if context['is_app_editor']:
                 self.permission = "write"
         context['permission'] = self.permission
+        context['extend_template'] = self.extend_template
 
         # Possibly define where a listview is
         classname = self.model._meta.model_name

@@ -64,6 +64,10 @@ SECRET_KEY = '379848c4-ce15-403e-a74a-f994d720554b'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# if the request URL does not match any of the patterns in the URLconf and it doesn’t end in a slash, 
+#   an HTTP redirect is issued to the same URL with a slash appended.
+APPEND_SLASH = True
+
 ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
 
 # Application definition
@@ -85,7 +89,8 @@ INSTALLED_APPS = [
     'cesar.seeker',
     'cesar.doc',
     'cesar.tsg',
-    'cesar.lingo'
+    'cesar.lingo',
+    'cesar.brief'
 ]
 
 # MIDDLEWARE_CLASSES = [

@@ -18,6 +18,8 @@ from cesar.doc.views import *
 from cesar.tsg.views import *
 # The CesarLingo application
 from cesar.lingo.views import *
+# The brief application
+from cesar.brief.views import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
@@ -53,6 +55,15 @@ urlpatterns = [
     url(r'^lingo/qdata/view(?:/(?P<pk>\d+))?/$', QdataDetailsView.as_view(), name='qdata_details'),
 
     url(r'^crm/contacts', cesar.lingo.views.crm_contacts, name='crm_contacts'),
+
+    # Cesar brief:
+    url(r'^brief/$', cesar.brief.views.home, name='brief_home'),
+    url(r'^brief/about', cesar.brief.views.about, name='brief_about'),
+    url(r'^brief/update', cesar.brief.views.brief_load, name='brief_about'),
+    url(r'^brief/project/list', ProjectListView.as_view(), name='project_list'),
+    url(r'^brief/project/details(?:/(?P<pk>\d+))?/$', ProjectDetails.as_view(), name='project_details'),
+    url(r'^brief/project/edit(?:/(?P<pk>\d+))?/$', ProjectEdit.as_view(), name='project_edit'),
+    url(r'^brief/master(?:/(?P<pk>\d+))?/$', BriefMaster.as_view(), name='brief_master'),
 
     # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),

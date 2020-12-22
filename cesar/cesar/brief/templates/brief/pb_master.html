@@ -1,0 +1,127 @@
+{% extends "brief/layout.html" %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'brief_home' %}">Home</a>
+      &rsaquo; <a href="{% url 'project_details' object_id %}">Project</a>
+      &rsaquo; Brief for [{{pname}}]
+  </div>
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="container">
+    <form action="" method="post" class="form-inline">
+
+      <!-- General information row -->
+      <div class="row">
+        <div class="col-md-8">
+          <h2>Project: <span style="color: darkblue;">{{pname}}</span></h2>
+
+        </div>
+        <div class="col-md-4">
+          <div class="pull-right">
+            <span id="form_save_notice" style="font-size: small;"></span>
+            <a role="button" class="btn btn-lg btn-success"
+                    onclick="sil.pbrief.process_pbrief();">Save</a>
+            <img src="{% static  'brief/content/sil_logo.png' %}" style="height: 60px;" />
+          </div>
+        </div>
+      </div>
+      
+      <!-- General row -->
+      <div class="row">
+        <div class="col-md-12">
+          <p class="panel panel-round">
+            <b>A project brief should be viewed as a work in progress </b>
+            that will be regularly updated and added to over the course of a project, as things change in the project
+            and additional data is collected. As such, it is a tool to encourage a process of regular reflection
+            on the activities and goals of the project.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tabs for the different pages -->
+      <div class="row">
+        <!-- THe actual 'pills' -->
+        <div class="col-md-2 ">
+          <div class="panel tab-pane fade">
+            &nbsp;
+          </div>
+          <div class="panel panel-default-NOT" style="margin: 3px; padding: 3px; background-color: lightgoldenrodyellow;">
+            <ul class="nav nav-pills nav-stacked">
+              {% for mod in modules %}
+                <li class="{% if forloop.first %}active{% endif %}"  >
+                  <a href="#pbrief_m_{{mod.order}}" data-toggle="tab" 
+                     title="{{mod.name}}">{{mod.order}}. {{mod.short}}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <!-- The contents of the different pages -->
+        <div class="col-md-10 tab-content">
+
+          {% for mod in modules %}
+            <div id="pbrief_m_{{mod.order}}" 
+                 class="panel tab-pane fade {% if forloop.first %}in active{% endif %}">
+              <h4>{{mod.name}}</h4>
+
+              {% for sec in mod.modulesections.all %}
+                <!-- show this section -->
+                <div class="panel {% if sec.order == 0 %}panel-info{% else %}panel-success{% endif %}">                
+                  <div class="panel-heading collapsed" data-toggle="collapse" data-target="#pbrief_m{{mod.order}}_s{{sec.order}}">
+                    {{sec.order}}. {{sec.name}}...
+                  </div>
+                  <div id="pbrief_m{{mod.order}}_s{{sec.order}}" class="panel-body collapse">
+                    {% if sec.intro|length > 0 %}
+                      <p>{{sec.get_intro_markdown|safe}}</p>
+                    {% endif %}
+
+                    <!-- All questions for this section -->
+                    <table style="width: 100%;">
+                      {% for question in sec.sectionquestions.all %}
+                        <tr>
+                          <td valign="top" class="tdnowrap">
+                            {{question.get_order_letter}}
+                            {% if question.ntype == "alw" %}
+                              <span class="obligatory">**</span>
+                            {% elif question.ntype == "fir" %}
+                              <span class="obligatory">*</span>
+                            {% endif %}
+                          </td>
+                          <td>
+                            <div>{{question.content}}</div>
+                            <div>
+                              {% if question.rtype == "mline" %}
+                                <textarea type="text" class="form-control" id="s0p1-refdialect" name="s0p1-refdialect" 
+                                             placeholder="{{question.placeholder}}..."></textarea>
+                              {% elif question.rtype == "line" %}
+                                <input type="text" class="form-control" id="s0p1-lngname" name="s0p1-lngname" placeholder="{{question.placeholder}}...">
+                              {% elif question.rtype == "boole" %}
+                                 boolean
+                              {% elif question.rtype == "entri" %}
+                                entries
+                              {% endif %}
+                            </div>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </table>
+                    <div class="pull-right" style="font-size: x-small; color: darkgreen;">module {{mod.order}}, section {{sec.order}}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </form>
+
+  </section>
+{% endblock %}
