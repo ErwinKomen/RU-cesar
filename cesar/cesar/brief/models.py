@@ -291,6 +291,40 @@ class BriefSection(models.Model):
         sBack = adapt_markdown(self.intro, lowercase=False, nopara=False)
         return sBack
 
+    def get_todo_html(self, project):
+        # Initialize obligatoriness counting
+        cnt_obl_needed = 0
+        cnt_obl_done = 0
+        todo = ""
+
+        oErr = ErrHandle()
+        try:
+            # FIgure out what is really needed
+            obl_needed = ['alw']
+            if project.ptype != "ini":
+                obl_needed.append("fir")
+            for question in self.sectionquestions.all().order_by("order"):
+                if question.rtype != "entri":
+                    if question.ntype in obl_needed:
+                        cnt_obl_needed += 1
+                        # Check if question has been dealt with
+                        obj = AnswerQuestion.objects.filter(project=project, question=question).first()
+                        if obj != None and obj.content.strip() != "":
+                            cnt_obl_done += 1
+            if cnt_obl_needed > 0:
+                if cnt_obl_done == cnt_obl_needed:
+                    # Everything done
+                    todo = "<span class='glyphicon glyphicon-flag' style='color: green;'></span>"
+                else:
+                    cnt_color = "red" if cnt_obl_done == 0 else "orange"
+                    todo = "{}/{} <span class='glyphicon glyphicon-flag' style='color: {};'></span>".format(
+                        cnt_obl_done, cnt_obl_needed, cnt_color)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_todo_html")
+        # Return what we have figured out
+        return todo
+
 
 class BriefQuestion(models.Model):
     """Section within a module"""

@@ -63,6 +63,7 @@ urlpatterns = [
     url(r'^brief/project/list', ProjectListView.as_view(), name='project_list'),
     url(r'^brief/project/details(?:/(?P<pk>\d+))?/$', ProjectDetails.as_view(), name='project_details'),
     url(r'^brief/project/edit(?:/(?P<pk>\d+))?/$', ProjectEdit.as_view(), name='project_edit'),
+    url(r'^brief/edit(?:/(?P<pk>\d+))?/$', BriefEdit.as_view(), name='brief_edit'),
     url(r'^brief/master(?:/(?P<pk>\d+))?/$', BriefMaster.as_view(), name='brief_master'),
 
     # Cesar proper:

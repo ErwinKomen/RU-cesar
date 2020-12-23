@@ -25,7 +25,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.brief.models import AnswerEntry, AnswerQuestion, BriefEntry, BriefModule, BriefQuestion, BriefSection, Project, qids
-from cesar.brief.forms import ProjectForm
+from cesar.brief.forms import ProjectForm, QuestionsForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -262,10 +262,12 @@ class ProjectListView(BasicList):
     """Paginated view of project instances"""
 
     model = Project
+    listform = ProjectForm
     extend_template = "brief/layout.html"
     order_cols = ['name', 'description']
-    order_heads = [{'name': 'Name', 'order': 'o=1', 'type': 'str', 'field': 'name', 'main': True, 'linkdetails': True},
-                   {'name': 'Description', 'order': 'o=2', 'type': 'str', 'field': 'description'},
+    order_heads = [{'name': 'Name', 'order': 'o=1', 'type': 'str', 'field': 'name', 'linkdetails': True},
+                   {'name': 'Progress', 'order': 'o=2', 'type': 'str', 'custom': 'progress', 'linkdetails': True},
+                   {'name': 'Description', 'order': 'o=3', 'type': 'str', 'field': 'description', 'linkdetails': True, 'main': True},
                    {'name': 'Actions', 'order': '', 'type': 'str', 'custom': 'actions'}]
 
     def initializations(self):
@@ -285,26 +287,121 @@ class ProjectListView(BasicList):
         if custom == "actions":
             # The buttons for the actions that can be taken
             url = reverse("brief_master", kwargs={'pk': instance.id})
-            html.append('<a href="{}" title="Project brief"><span class="glyphicon glyphicon-download"><span></a>'.format(url))
+            html.append('<a href="{}" title="Project brief"><span class="glyphicon glyphicon-th-list"><span></a>'.format(url))
             # COmbineer
             sBack = "\n".join(html)
+        elif custom == "progress":
+            sBack = instance.get_ptype_display()
 
         # Retourneer wat kan
         return sBack, sTitle
 
 
-class BriefMaster(ProjectDetails):
+class BriefEdit(BasicDetails):
+    """Allow saving and processing the answers to project brief questions"""
+
+    model = Project
+    mForm = QuestionsForm
+    prefix = "que"
+    mainitems = []
+
+    def after_save(self, form, instance):
+        msg = ""
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            # Process the form instances
+            if getattr(form, 'cleaned_data') != None:
+                cleaned_data = form.cleaned_data
+                # Walk all the cleaned_data, processing the answers to the brief questions
+                for k,v in cleaned_data.items():
+                    if "bq-" in k:
+                        v = v.strip()
+                        arK = k.split("-")
+                        question_id = arK[1]
+                        # See if there already was an answer to this question
+                        answer = AnswerQuestion.objects.filter(project=instance, question_id=question_id).first()
+                        if answer == None:
+                            # Is this a new answer?
+                            if v != "":
+                                # Add this answer
+                                answer = AnswerQuestion.objects.create(project=instance, question_id=question_id, content=v)
+                        elif answer.content != v:
+                            # Update the answer that is already there
+                            answer.content = v
+                            answer.save()
+                # Calculate the 'todo' stuff of the sections
+                lst_back = []
+                for sec in BriefSection.objects.all():
+                    todo = sec.get_todo_html(instance)
+                    if todo != "":
+                        todo_id = "todo_s_{}".format(sec.id)
+                        oSection = dict(id=todo_id, todo=todo)
+                        lst_back.append(oSection)
+                self.lst_typeahead = lst_back
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+        return bResult, msg
+
+
+class BriefMaster(BriefEdit):
     """Show the project brief modules and allow filling in the questions"""
 
     template_name = "brief/pb_master.html"
-    form_objects = []   # [{'form': SeekerResGroupForm, 'prefix': 'resgroup', 'readonly': False}]
+    rtype = "html"
 
     def add_to_context(self, context, instance):
+        oErr = ErrHandle()
+        try:
+            # Look at the object_id
+            context['object_id'] = "{}".format(instance.id)
+            context['pname'] = instance.name
+            # context['modules'] = BriefModule.objects.all().order_by("order")
 
-        # Look at the object_id
-        context['object_id'] = "{}".format(instance.id)
-        context['pname'] = instance.name
-        context['modules'] = BriefModule.objects.all().order_by("order")
+            # We need to have the form object too
+            qform = context['queForm']
+
+            lst_module = []
+            for mod in BriefModule.objects.all().order_by("order"):
+                # Start an object for this module
+                oModule = dict(module=mod)
+                # Find out what sections there are in this module
+                lst_section = []
+                for sec in mod.modulesections.all().order_by("order"):
+                    # Start section object
+                    oSection = dict(section=sec)
+                    # Find all the questions in this section
+                    lst_question = []
+                    for question in sec.sectionquestions.all().order_by("order"):
+                        if question.rtype == "entri":
+                            # Requires special treatment
+                            pass
+                        else:
+                            # The main part of the question is the question itself
+                            oQuestion = dict(question=question)
+                            # The second part of the question is the field-name
+                            formfieldname = "bq-{}".format(question.id)
+                            oQuestion['formfield'] = qform[formfieldname]
+
+                            # Add question to list
+                            lst_question.append(oQuestion)
+                    # Add questions to section
+                    oSection['questions'] = lst_question
+                    # Calculate how many need to be done in this section
+                    oSection['todo'] = sec.get_todo_html(instance)
+                    # Add section
+                    lst_section.append(oSection)
+                # Add sections to this module
+                oModule['sections'] = lst_section
+                # Add module
+                lst_module.append(oModule)
+            # THis is what we pass on
+            context['modules'] = lst_module
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("BriefMaster/add_to_context")
 
         # Return the context we have adapted
         return context
+
