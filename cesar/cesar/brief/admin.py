@@ -49,7 +49,7 @@ class BriefSectionAdmin(admin.ModelAdmin):
 class BriefQuestionAdmin(admin.ModelAdmin):
     """Display and edit [BriefQuestion] objects"""
 
-    fields = ['order', 'rtype', 'ntype', 'content', 'help', 'placeholder' 'section']
+    fields = ['order', 'rtype', 'ntype', 'content', 'help', 'placeholder', 'section']
     list_display = ['get_module', 'get_section', 'order', 'content', 'rtype', 'ntype']
     list_filter = ['section__module__order']   #    ['get_module', 'get_section']
     search_fields = ['name']

@@ -454,6 +454,9 @@ class BasicList(ListView):
     def initializations(self):
         return None
 
+    def get_app_access(self, context):
+        return True
+
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super(BasicList, self).get_context_data(**kwargs)
@@ -630,6 +633,9 @@ class BasicList(ListView):
         context['is_app_uploader'] = user_is_ingroup(self.request, app_uploader)
         context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
         context['is_app_userplus'] = user_is_ingroup(self.request, app_userplus)
+
+        # Possible adapt the access stuff
+        self.get_app_access(context)
 
         # Process this visit and get the new breadcrumbs object
         prevpage = reverse('home')
@@ -1033,6 +1039,9 @@ class BasicDetails(DetailView):
         """Get the history of this element"""
         return ""
 
+    def get_app_access(self, context):
+        return True
+
     def get_context_data(self, **kwargs):
         # Get the current context
         context = super(BasicDetails, self).get_context_data(**kwargs)
@@ -1042,6 +1051,9 @@ class BasicDetails(DetailView):
         context['is_app_uploader'] = user_is_ingroup(self.request, app_uploader)
         context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
         context['is_app_userplus'] = user_is_ingroup(self.request, app_userplus)
+
+        self.get_app_access(context)
+
         # context['prevpage'] = get_previous_page(self.request) # self.previous
         context['afternewurl'] = ""
 

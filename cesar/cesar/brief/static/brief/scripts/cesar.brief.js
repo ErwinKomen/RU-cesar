@@ -86,6 +86,192 @@ var sil = (function ($, sil) {
         }
       },
 
+      /**
+       * tabular_addrow
+       *   Add one row into a tabular inline
+       *
+       */
+      tabular_addrow: function (elStart, options) {
+        // NOTE: see the definition of lAddTableRow above
+        var oTdef = {},
+            rowNew = null,
+            elTable = null,
+            select2_options = {},
+            iNum = 0,     // Number of <tr class=form-row> (excluding the empty form)
+            sId = "",
+            bSelect2 = false,
+            i;
+
+        try {
+          // Find out just where we are
+          if (elStart === undefined || elStart === null || $(elStart).closest("div").length === 0)
+            elStart = $(this);
+          sId = $(elStart).closest("div[id]").attr("id");
+          // Process options
+          if (options !== undefined) {
+            for (var prop in options) {
+              switch (prop) {
+                case "select2": bSelect2 = options[prop]; break;
+              }
+            }
+          }
+          // Get the definition
+          oTdef = options;
+          if (sId === oTdef.table || sId.indexOf(oTdef.table) >= 0) {
+            // Go to the <tbody> and find the last form-row
+            elTable = $(elStart).closest("tbody").children("tr.form-row.empty-form")
+
+            if ("select2_options" in oTdef) {
+              select2_options = oTdef.select2_options;
+            }
+
+            // Perform the cloneMore function to this <tr>
+            rowNew = ru.basic.cloneMore(elTable, oTdef.prefix, oTdef.counter);
+            // Call the event initialisation again
+            if (oTdef.events !== null) {
+              oTdef.events();
+            }
+            // Possible Select2 follow-up
+            if (bSelect2) {
+              // Remove previous .select2
+              $(rowNew).find(".select2").remove();
+              // Execute djangoSelect2()
+              $(rowNew).find(".django-select2").djangoSelect2(select2_options);
+            }
+            // Any follow-up activity
+            if ('follow' in oTdef && oTdef['follow'] !== null) {
+              oTdef.follow(rowNew);
+            }
+          }
+        } catch (ex) {
+          private_methods.errMsg("tabular_addrow", ex);
+        }
+      },
+
+      /**
+       * delete_confirm
+       *   Open the next <tr> to get delete confirmation (or not)
+       *
+       */
+      delete_confirm: function (el, bNeedConfirm) {
+        var elDiv = null;
+
+        try {
+          if (bNeedConfirm === undefined) { bNeedConfirm = true; }
+          // Action depends on the need for confirmation
+          if (bNeedConfirm) {
+            // Find the [.delete-row] to be shown
+            elDiv = $(el).closest("tr").find(".delete-confirm").first();
+            if (elDiv.length === 0) {
+              // Try goint to the next <tr>
+              elDiv = $(el).closest("tr").next("tr.delete-confirm");
+            }
+            $(elDiv).removeClass("hidden");
+          } else {
+
+          }
+        } catch (ex) {
+          private_methods.errMsg("delete_confirm", ex);
+        }
+      },
+
+      /**
+       * tabular_deleterow
+       *   Delete one row from a tabular inline
+       *
+       */
+      tabular_deleterow: function (elStart) {
+        var sId = "",
+            elDiv = null,
+            elRow = null,
+            elPrev = null,
+            elDel = null,   // The delete inbox
+            sPrefix = "",
+            elForms = "",
+            counter = $(elStart).attr("counter"),
+            deleteurl = "",
+            data = [],
+            frm = null,
+            bCounter = false,
+            bHideOnDelete = false,
+            iForms = 0,
+            prefix = "simplerel";
+
+        try {
+          // Get the prefix, if possible
+          sPrefix = $(elStart).attr("extra");
+          bCounter = (typeof counter !== typeof undefined && counter !== false && counter !== "");
+          elForms = "#id_" + sPrefix + "-TOTAL_FORMS"
+          // Find out just where we are
+          elDiv = $(elStart).closest("div[id]")
+          sId = $(elDiv).attr("id");
+          // Find out how many forms there are right now
+          iForms = $(elForms).val();
+          frm = $(elStart).closest("form");
+
+          // Get the deleteurl (if existing)
+          deleteurl = $(elStart).attr("targeturl");
+          // Only delete the current row
+          elRow = $(elStart).closest("tr");
+          // Do we need to hide or delete?
+          if ($(elRow).hasClass("hide-on-delete")) {
+            bHideOnDelete = true;
+            $(elRow).addClass("hidden");
+          } else {
+            $(elRow).remove();
+          }
+
+          // Further action depends on whether the row just needs to be hidden
+          if (bHideOnDelete) {
+            // Row has been hidden: now find and set the DELETE checkbox
+            elDel = $(elRow).find("input:checkbox[name$='DELETE']");
+            if (elDel !== null) {
+              $(elDel).prop("checked", true);
+            }
+          } else {
+            // Decrease the amount of forms
+            iForms -= 1;
+            $(elForms).val(iForms);
+
+            // Re-do the numbering of the forms that are shown
+            $(elDiv).find(".form-row").not(".empty-form").each(function (idx, elThisRow) {
+              var iCounter = 0, sRowId = "", arRowId = [];
+
+              iCounter = idx + 1;
+              // Adapt the ID attribute -- if it EXISTS
+              sRowId = $(elThisRow).attr("id");
+              if (sRowId !== undefined) {
+                arRowId = sRowId.split("-");
+                arRowId[1] = idx;
+                sRowId = arRowId.join("-");
+                $(elThisRow).attr("id", sRowId);
+              }
+
+              if (bCounter) {
+                // Adjust the number in the FIRST <td>
+                $(elThisRow).find("td").first().html(iCounter.toString());
+              }
+
+              // Adjust the numbering of the INPUT and SELECT in this row
+              $(elThisRow).find("input, select").each(function (j, elInput) {
+                // Adapt the name of this input
+                var sName = $(elInput).attr("name");
+                if (sName !== undefined) {
+                  var arName = sName.split("-");
+                  arName[1] = idx;
+                  sName = arName.join("-");
+                  $(elInput).attr("name", sName);
+                  $(elInput).attr("id", "id_" + sName);
+                }
+              });
+            });
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("tabular_deleterow", ex);
+        }
+      },
+
       process_brief: function (elStart, divNotice) {
         var targeturl = "",
             frm = null,

@@ -1,4 +1,4 @@
-﻿{% load staticfiles %}
+{% load staticfiles %}
 
     <div class="navbar navbar-custom navbar-fixed-top">
         <div class="container" url_home="{% url 'brief_home' %}">
@@ -41,6 +41,7 @@
                           <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
                           <li><a href="{% url 'admin:password_change' %}">Change password</a></li>
                           {% if is_superuser %}
+                            <li role="separator" class="divider"></li>
                             <li><a href="{% url 'brief_about' %}">Update Brief Definition</a></li>
                           {% endif %}
                         {% else %}

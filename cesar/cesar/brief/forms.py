@@ -81,6 +81,22 @@ class QuestionsForm(ModelForm):
                 self.fields[field_name].initial = answer
             
             
+class AnswerEntryForm(ModelForm):
+    """The answer to one entry"""
 
+    class Meta:
+        model = AnswerEntry
+        fields = ['content', 'entry', 'question', 'project']
+        widgets={'content':        forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Answer...'})
+                 }
 
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(AnswerEntryForm, self).__init__(*args, **kwargs)
+
+        self.fields['question'].required = False
+        self.fields['entry'].required = False
+        self.fields['content'].required = False
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
 

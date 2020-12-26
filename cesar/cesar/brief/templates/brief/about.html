@@ -1,44 +1,44 @@
-﻿{% extends "brief/layout.html" %}
+{% extends "brief/layout.html" %}
 {% load staticfiles %}
 
+{% block breadcrumbs %}
+    {% include 'breadcrumb_list.html' %}
+{% endblock %}
 
 {% block content %}
 
 <div class="container body-content">
   <div class="row">
 
-    <h2>{{ title }}</h2>
-
-    <div class="col-md-6">
-      <p>The CESAR-LINGO program has been developed by the Technical Service Group of the Radboud University's Humanities Lab</p>
-    </div>
-    <div class="col-md-6">
-      <p>
-      </p>
-      <p>
-        The source code of CesarLingo is available at <a href="https://github.com/ErwinKomen/RU-cesar">github</a>.
-      </p>
-    </div>
-
-  </div>
-
-  <div class="row">
     <div class="col-md-12">
-      <h4>References</h4>
-      <div class="citation">
-        Komen, Erwin R. 2013. “Corpus Databases with Feature Pre-Calculation.” 
-        The Twelfth Workshop on Treebanks and Linguistic Theories (TLT12). 
-        Bulgary. <a href="http://erwinkomen.ruhosting.nl/doc/2013_CorpusDbases_TLT12.pdf">pdf</a>.
-      </div>
-      <div class="citation">
-        Komen, Erwin R. 2017. “Beyond Counting Syntactic Hits.” 
-        In <i>CLARIN in the Low Countries</i>, edited by J. Odijk and Hessen, A. van. Netherlands: Ubiquity press.
-        <a href="https://www.ubiquitypress.com/site/chapters/10.5334/bbi.21/download/1037/">pdf</a>.
-      </div>
-      <div class="citation">
-          Komen, Erwin R., and Jet Hoek. 2018. <i>Automatic Coherence Analysis for the Computationally Challenged</i>. http://clin28.cls.ru.nl.
-      </div>
+      <h2>{{ title }}</h2>
     </div>
+
+    <div class="col-md-6">
+      <h3>Background</h3>
+      <p>The Project Brief app has been developed by SIL-Bolshoi</p>
+    </div>
+    <div class="col-md-6">
+      <h3>Advanced help</h3>
+      <p>
+        There are basically two modes of operation for this app.
+        <ul>
+          <li><b>Convenient</b>: keep the project brief data on the server. 
+          Downloading can be done any time, but would only serve backup purposes.</li>
+          <li><b>Secure</b>: upload and download the project brief data when editing or viewing is needed. 
+          Make sure to remove the data from the server, once it has been successfully downloaded.</li>
+        </ul>
+      </p>
+      <h3>Technical details</h3>
+      <p>
+        This implementation of the project 'brief' is a Django app under the larger 'Cesar' web application.
+        The source code of Cesar is available at <a href="https://github.com/ErwinKomen/RU-cesar">github</a>.
+        The 'brief' source code can be found in there.
+        The 'brief' also makes use of the 'basic' app (providing the standardized list view and details view)
+      </p>
+    </div>
+
   </div>
+
 </div>
 {% endblock %}

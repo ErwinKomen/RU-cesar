@@ -59,7 +59,7 @@ urlpatterns = [
     # Cesar brief:
     url(r'^brief/$', cesar.brief.views.home, name='brief_home'),
     url(r'^brief/about', cesar.brief.views.about, name='brief_about'),
-    url(r'^brief/update', cesar.brief.views.brief_load, name='brief_about'),
+    url(r'^brief/update', cesar.brief.views.brief_load, name='brief_update'),
     url(r'^brief/project/list', ProjectListView.as_view(), name='project_list'),
     url(r'^brief/project/details(?:/(?P<pk>\d+))?/$', ProjectDetails.as_view(), name='project_details'),
     url(r'^brief/project/edit(?:/(?P<pk>\d+))?/$', ProjectEdit.as_view(), name='project_edit'),

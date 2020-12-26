@@ -8,6 +8,7 @@ from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from django.db import models, transaction
 from django.db.models import Q
+from django.forms import formset_factory, modelformset_factory, inlineformset_factory, ValidationError
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpRequest
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
@@ -25,27 +26,15 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.brief.models import AnswerEntry, AnswerQuestion, BriefEntry, BriefModule, BriefQuestion, BriefSection, Project, qids
-from cesar.brief.forms import ProjectForm, QuestionsForm
+from cesar.brief.forms import ProjectForm, QuestionsForm, AnswerEntryForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
 bDebug = False
 
-def get_application_name():
-    """Try to get the name of this application"""
-
-    # Walk through all the installed apps
-    for app in apps.get_app_configs():
-        # Check if this is a site-package
-        if "site-package" not in app.path:
-            # Get the name of this app
-            name = app.name
-            # Take the first part before the dot
-            project_name = name.split(".")[0]
-            return project_name
-    return "unknown"
 # Provide application-specific information
-PROJECT_NAME = get_application_name()
+PROJECT_NAME = "brief"
+app_user = "{}_user".format(PROJECT_NAME.lower())
 app_uploader = "{}_uploader".format(PROJECT_NAME.lower())
 app_editor = "{}_editor".format(PROJECT_NAME.lower())
 app_userplus = "{}_userplus".format(PROJECT_NAME.lower())
@@ -89,6 +78,16 @@ def user_is_superuser(request):
     return bFound
 
 # Views belonging to the Cesar Brief Processing app.
+def add_app_access(request, context):
+    # Make sure we add special group permission(s)
+    context['is_app_user'] = user_is_ingroup(request, app_user)
+    context['is_app_editor'] = user_is_ingroup(request, app_editor)
+    context['is_app_uploader'] = user_is_ingroup(request, app_uploader)
+    context['is_app_userplus'] = user_is_ingroup(request, app_userplus)
+    context['is_app_moderator'] = user_is_ingroup(request, app_moderator)
+    context['is_superuser'] = user_is_superuser(request)
+
+    return True
 
 def home(request):
     """Renders the home page."""
@@ -105,8 +104,8 @@ def home(request):
     context['acount'] = AnswerQuestion.objects.count()
 
     # Make sure we add special group permission(s)
-    context['is_app_editor'] = user_is_ingroup(request, app_editor)
-    context['is_superuser'] = user_is_superuser(request)
+    add_app_access(request, context)
+
     # Render and return the page
     return render(request, template_name, context)
 
@@ -116,16 +115,17 @@ def about(request):
     # Specify the template
     template_name = 'brief/about.html'
     assert isinstance(request, HttpRequest)
+    breadcrumbs = [{'name': 'Home', 'url': reverse('brief_home')},
+                   {'name': 'About this application'}]
     context =  {'title':'About',
-                'message':'Radboud University passim utility.',
+                'message':'SIL-Bolshoi project brief utility.',
                 'year':datetime.now().year,
+                'breadcrumbs': breadcrumbs,
                 'pfx': APP_PREFIX,
                 'site_url': admin.site.site_url}
-    context['is_app_editor'] = user_is_ingroup(request, app_editor)
-    context['is_superuser'] = user_is_superuser(request)
 
-    # Process this visit
-    context['breadcrumbs'] = get_breadcrumbs(request, "About", True)
+    # Make sure we add special group permission(s)
+    add_app_access(request, context)
 
     return render(request,template_name, context)
 
@@ -249,8 +249,14 @@ class ProjectEdit(BasicDetails):
             {'type': 'plain', 'label': "Created:",      'value': instance.get_created()  },
             {'type': 'plain', 'label': "Saved:",        'value': instance.get_saved()}
             ]
+
         # Return the context we have made
         return context
+
+    def get_app_access(self, context):
+        # Make sure we add special group permission(s)
+        add_app_access(self.request, context)
+        return True
 
 
 class ProjectDetails(ProjectEdit):
@@ -278,6 +284,11 @@ class ProjectListView(BasicList):
                 obj.save()
         return None
 
+    def get_app_access(self, context):
+        # Make sure we add special group permission(s)
+        add_app_access(self.request, context)
+        return True
+
     def get_field_value(self, instance, custom):
         sBack = ""
         sTitle = ""
@@ -304,6 +315,11 @@ class BriefEdit(BasicDetails):
     mForm = QuestionsForm
     prefix = "que"
     mainitems = []
+
+    def get_app_access(self, context):
+        # Make sure we add special group permission(s)
+        add_app_access(self.request, context)
+        return True
 
     def after_save(self, form, instance):
         msg = ""
@@ -357,7 +373,9 @@ class BriefMaster(BriefEdit):
             # Look at the object_id
             context['object_id'] = "{}".format(instance.id)
             context['pname'] = instance.name
-            # context['modules'] = BriefModule.objects.all().order_by("order")
+            
+            # Make sure we add special group permission(s)
+            add_app_access(self.request, context)
 
             # We need to have the form object too
             qform = context['queForm']
@@ -374,18 +392,26 @@ class BriefMaster(BriefEdit):
                     # Find all the questions in this section
                     lst_question = []
                     for question in sec.sectionquestions.all().order_by("order"):
+                        # The main part of the question is the question itself
+                        oQuestion = dict(question=question)
+                        # The second part of the question is the field-name
+                        formfieldname = "bq-{}".format(question.id)
                         if question.rtype == "entri":
-                            # Requires special treatment
-                            pass
+                            # This means that the 'formfield' should contain a table with add possibilities
+                            oQuestion['formfield'] = ""
+                            oQuestion['entries']= question.questionentries.all().order_by('order')
+                            # Get the existing answers
+                            answers = []
+                            aq = AnswerQuestion.objects.filter(project=instance, question=question).first()
+                            if aq != None and aq != "" and aq[0] == "[":
+                                answers = json.loads(aq.content)
+                            oQuestion['answers'] = answers
                         else:
-                            # The main part of the question is the question itself
-                            oQuestion = dict(question=question)
-                            # The second part of the question is the field-name
-                            formfieldname = "bq-{}".format(question.id)
+                            # The formfield is the normal form field
                             oQuestion['formfield'] = qform[formfieldname]
 
-                            # Add question to list
-                            lst_question.append(oQuestion)
+                        # Add question to list
+                        lst_question.append(oQuestion)
                     # Add questions to section
                     oSection['questions'] = lst_question
                     # Calculate how many need to be done in this section

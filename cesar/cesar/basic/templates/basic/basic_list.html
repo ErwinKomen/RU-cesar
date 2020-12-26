@@ -1,12 +1,6 @@
 {% extends extend_template %}
 {% load i18n %}
 
-{% block breadcrumbs %}
-  <div class="breadcrumbs">
-    {% include 'breadcrumb_list.html' %}
-  </div>
-{% endblock %}
-
 {% block scripts %}
     {% load staticfiles %}
     <link rel="stylesheet" type="text/css" href="{% static 'basic/content/basic.css' %}" />
@@ -14,10 +8,12 @@
   {% if has_select2 %}{{listForm.media.css}}{% endif %}
 {% endblock %}
 
+{% block breadcrumbs %}
+    {% include 'breadcrumb_list.html' %}
+{% endblock %}
+
 {% block content %}
-
   <div>
-
     {% if authenticated %}
       <!-- Upper part of the basic list interface -->
 

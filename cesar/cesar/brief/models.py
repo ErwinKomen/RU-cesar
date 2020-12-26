@@ -304,13 +304,12 @@ class BriefSection(models.Model):
             if project.ptype != "ini":
                 obl_needed.append("fir")
             for question in self.sectionquestions.all().order_by("order"):
-                if question.rtype != "entri":
-                    if question.ntype in obl_needed:
-                        cnt_obl_needed += 1
-                        # Check if question has been dealt with
-                        obj = AnswerQuestion.objects.filter(project=project, question=question).first()
-                        if obj != None and obj.content.strip() != "":
-                            cnt_obl_done += 1
+                if question.ntype in obl_needed:
+                    cnt_obl_needed += 1
+                    # Check if question has been dealt with
+                    obj = AnswerQuestion.objects.filter(project=project, question=question).first()
+                    if obj != None and obj.content.strip() != "":
+                        cnt_obl_done += 1
             if cnt_obl_needed > 0:
                 if cnt_obl_done == cnt_obl_needed:
                     # Everything done
@@ -420,6 +419,10 @@ class BriefQuestion(models.Model):
         letter = "{}.".format(letter)
         return letter
 
+    def get_help_markdown(self):
+        sBack = adapt_markdown(self.help, lowercase=False, nopara=False)
+        return sBack
+
 
 class BriefEntry(models.Model):
     """Some questions contain sub-questions, which we call [Entry]"""
@@ -474,6 +477,40 @@ class Project(models.Model):
             sBack = self.saved.strftime("%d/%B/%Y (%H:%M)")
         return sBack
 
+    def get_todo_html(self):
+        # Initialize obligatoriness counting
+        cnt_obl_needed = 0
+        cnt_obl_done = 0
+        todo = ""
+        project = self
+
+        oErr = ErrHandle()
+        try:
+            # FIgure out what is really needed
+            obl_needed = ['alw']
+            if project.ptype != "ini":
+                obl_needed.append("fir")
+            for question in BriefQuestion.objects.all().order_by("order"):
+                if question.ntype in obl_needed:
+                    cnt_obl_needed += 1
+                    # Check if question has been dealt with
+                    obj = AnswerQuestion.objects.filter(project=project, question=question).first()
+                    if obj != None and obj.content.strip() != "":
+                        cnt_obl_done += 1
+            if cnt_obl_needed > 0:
+                if cnt_obl_done == cnt_obl_needed:
+                    # Everything done
+                    todo = "<span class='glyphicon glyphicon-flag' style='color: green;'></span>"
+                else:
+                    cnt_color = "red" if cnt_obl_done == 0 else "orange"
+                    todo = "{}/{} <span class='glyphicon glyphicon-flag' style='color: {};'></span>".format(
+                        cnt_obl_done, cnt_obl_needed, cnt_color)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_todo_html")
+        # Return what we have figured out
+        return todo
+
 
 class AnswerQuestion(models.Model):
     """Answer of one project to one question"""
@@ -494,9 +531,11 @@ class AnswerEntry(models.Model):
     """Answer of one project to one entry (=sub-question)"""
 
     # [1] Each entry has a contents (short)
-    content = models.CharField("Answer", max_length=MAXPARAMLEN)
+    content = models.CharField("Answer", blank=True, null=True, max_length=MAXPARAMLEN)
 
-    # [1] Each answer belongs to a question
+    # [1] Each entry-answer belongs to a question
+    question = models.ForeignKey(BriefQuestion, on_delete=models.CASCADE, null=True, related_name="questionentryanswers")
+    # [1] Each entry-answer also belongs to a particular entry
     entry = models.ForeignKey(BriefEntry, on_delete=models.CASCADE, related_name="entryanswers")
     # [1] Each answer belongs to a project
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="projectentryanswers")
