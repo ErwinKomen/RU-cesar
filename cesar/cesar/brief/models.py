@@ -431,6 +431,8 @@ class BriefEntry(models.Model):
     content = models.CharField("Sub question", max_length=MAXPARAMLEN)
     # [0-1] Each entry may have some short help information
     help = models.CharField("Help information", max_length=MAXPARAMLEN, blank=True, null=True)
+    # [0-1] Placeholder, depending on the response type
+    placeholder = models.CharField("Placeholder", max_length=MAXPARAMLEN, null=True, blank=True)
     # [1] Each entry has an order number
     order = models.IntegerField("Order", default=-1)
 
@@ -439,6 +441,15 @@ class BriefEntry(models.Model):
 
     def __str__(self):
         return self.content
+
+
+#class BriefProduct(models.Model):
+#    """Scripture product"""
+
+#    # [1] Name of this product
+#    name = models.CharField("Product", max_length=MAXPARAMLEN)
+#    # [0-1] Scripture
+#    scripture = models.TextField("Scripture", null=True, blank=True)
 
 
 class Project(models.Model):
