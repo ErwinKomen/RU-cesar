@@ -5,6 +5,7 @@ Definition of forms for the BRIEF app.
 from django import forms
 from django.forms import ModelForm, formset_factory, modelformset_factory, BaseFormSet
 from django.forms.widgets import Textarea
+from django.utils.translation import ugettext_lazy as _
 
 # Application specific
 from cesar.brief.models import *
@@ -97,6 +98,45 @@ class AnswerEntryForm(ModelForm):
         self.fields['question'].required = False
         self.fields['entry'].required = False
         self.fields['content'].required = False
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+
+
+class ProductForm(ModelForm):
+    """One Scripture product"""
+    new_name = forms.CharField(label=_("Name"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
+                'placeholder':'The name of this product...'}))
+    new_scripture = forms.CharField(label=_("Scripture"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
+                'placeholder':'The books or passages included in this product...'}),
+                help_text="list books, passages")
+    new_format = forms.CharField(label=_("Format"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
+                'placeholder':'The format of this product...'}), help_text="text / audio / video")
+    new_media = forms.CharField(label=_("Media"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
+                'placeholder':'The media on which this product is available...'}),
+                help_text="print / digital / broadcast / live performance etc.")
+    new_goal = forms.CharField(label=_("Goal"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
+                'placeholder':'Desires, needs, concerns...'}),
+                help_text="What desire(s), felt need(s), concern(s) and/or value(s) does this product address?")
+    new_audience = forms.CharField(label=_("Audience"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
+                'placeholder':'Audience(s) this product is aimed for...'}))
+    new_timing = forms.CharField(label=_("Timing"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
+                'placeholder':'Timing...'}))
+
+    class Meta:
+        model = BriefProduct
+        fields = ['name', 'scripture', 'format', 'media', 'goal', 'audience', 'timing']
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(ProductForm, self).__init__(*args, **kwargs)
+
+        self.fields['name'].required = False
+        self.fields['scripture'].required = False
+        self.fields['format'].required = False
+        self.fields['media'].required = False
+        self.fields['goal'].required = False
+        self.fields['audience'].required = False
+        self.fields['timing'].required = False
         if 'instance' in kwargs:
             instance = kwargs['instance']
 

@@ -443,15 +443,6 @@ class BriefEntry(models.Model):
         return self.content
 
 
-#class BriefProduct(models.Model):
-#    """Scripture product"""
-
-#    # [1] Name of this product
-#    name = models.CharField("Product", max_length=MAXPARAMLEN)
-#    # [0-1] Scripture
-#    scripture = models.TextField("Scripture", null=True, blank=True)
-
-
 class Project(models.Model):
     """A project name"""
 
@@ -463,6 +454,7 @@ class Project(models.Model):
     status = models.CharField("Status", choices=build_abbr_list(PROJECT_STATUS), max_length=5, default="val")
     # [1] The amount of publications done by this project 
     ptype = models.CharField("Progress", choices=build_abbr_list(PROJECT_PROGRESS), max_length=5, default="ini")
+
     # [1] Each Brief Module has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
     # [0-1] Time this module was last updated
@@ -480,6 +472,7 @@ class Project(models.Model):
         return response
 
     def get_created(self):
+        """Get the creation date"""
         return self.created.strftime("%d/%B/%Y (%H:%M)")
 
     def get_saved(self):
@@ -553,6 +546,67 @@ class AnswerEntry(models.Model):
 
     def __str__(self):
         return self.content
+
+
+class BriefProduct(models.Model):
+    """Scripture product"""
+
+    # [1] Name of this product
+    name = models.CharField("Product", max_length=MAXPARAMLEN)
+    # [0-1] Scripture: books or passages included in this product
+    scripture = models.TextField("Scripture", null=True, blank=True, help_text="list books, passages")
+    # [0-1] The format of this product
+    format = models.CharField("Format", null=True, blank=True, max_length=MAXPARAMLEN, help_text="e.g. text / audio / video")
+    # [0-1] The media on which this product is available
+    media = models.TextField("Media", null=True, blank=True, help_text="e.g. print / digital / broadcast / live performance etc")
+    # [0-1] What desire(s), felt need(s) or concern(s) or values does this product address?
+    goal = models.TextField("Goal", null=True, blank=True)
+    # [0-1] Audiences this product is targetting
+    audience = models.TextField("Audience(s)", null=True, blank=True)
+    # [0-1] Timing
+    timing = models.TextField("Timing", null=True, blank=True)
+
+    # [1] Each Brief Product has been created at one point in time
+    created = models.DateTimeField(default=timezone.now)
+    # [0-1] Time this module was last updated
+    saved = models.DateTimeField(null=True, blank=True)
+
+    # [1] Each product has an order number within the products for one particular project
+    order = models.IntegerField("Order", default=-1)
+
+    # [1] Each answer belongs to a question
+    question = models.ForeignKey(BriefQuestion, on_delete=models.CASCADE, related_name="questionproducts")
+    # [1] Each answer belongs to a project
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="projectquestionproducts")
+
+    def __str__(self):
+        return self.name
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        # Adapt the save date
+        self.saved = timezone.now()
+        # Now do the saving
+        response = super(Project, self).save(force_insert, force_update, using, update_fields)
+        # Return the response
+        return response
+
+    def get_created(self):
+        """Get the creation date"""
+        return self.created.strftime("%d/%B/%Y (%H:%M)")
+
+    def get_saved(self):
+        sBack = "-"
+        if self.saved != None:
+            sBack = self.saved.strftime("%d/%B/%Y (%H:%M)")
+        return sBack
+
+    def get_summary_html(self):
+        """Get a summary of this product in HTML"""
+
+        sBack = ""
+        lhtml = []
+        lhtml.append("<b>{}</b>".format(self.name))        
+        return sBack
 
 
 

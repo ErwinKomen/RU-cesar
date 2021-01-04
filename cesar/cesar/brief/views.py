@@ -25,8 +25,9 @@ from cesar.settings import APP_PREFIX, WRITABLE_DIR
 from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
-from cesar.brief.models import AnswerEntry, AnswerQuestion, BriefEntry, BriefModule, BriefQuestion, BriefSection, Project, qids
-from cesar.brief.forms import ProjectForm, QuestionsForm, AnswerEntryForm
+from cesar.brief.models import AnswerEntry, AnswerQuestion, BriefEntry, BriefModule, BriefQuestion, BriefSection, Project, qids, \
+                            BriefProduct
+from cesar.brief.forms import ProjectForm, QuestionsForm, AnswerEntryForm, ProductForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -430,4 +431,44 @@ class BriefMaster(BriefEdit):
 
         # Return the context we have adapted
         return context
+
+
+class ProductEdit(BasicDetails):
+    """Details view for one Product"""
+
+    model = BriefProduct
+    mForm = ProductForm
+    prefix = "prd"
+    rtype = "json"
+    mainitems = []
+    extend_template = "brief/layout.html"
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Product:",      'value': instance.name,         'field_key': 'name'},
+            {'type': 'plain', 'label': "Scripture:",    'value': instance.description,  'field_key': 'scripture'},
+            {'type': 'plain', 'label': "Format:",       'value': instance.format,       'field_key': 'format'},
+            {'type': 'plain', 'label': "Media:",        'value': instance.media,        'field_key': 'media'},
+            {'type': 'plain', 'label': "Goal:",         'value': instance.goal,         'field_key': 'goal'  },
+            {'type': 'plain', 'label': "Audience:",     'value': instance.audience,     'field_key': 'audience'},
+            {'type': 'plain', 'label': "Timing:",       'value': instance.timing,       'field_key': 'timing'},
+            {'type': 'plain', 'label': "Saved:",        'value': instance.get_saved()}
+            ]
+
+        # Return the context we have made
+        return context
+
+    def get_app_access(self, context):
+        # Make sure we add special group permission(s)
+        add_app_access(self.request, context)
+        return True
+
+
+class ProductDetails(ProductEdit):
+    """Show the details of a [Product]"""
+    rtype = "html"
+
 
