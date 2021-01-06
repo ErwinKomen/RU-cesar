@@ -76,13 +76,23 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="brief\content\" />
+    <Folder Include="brief\scripts\" />
     <Folder Include="letter\" />
     <Folder Include="letter\css\" />
     <Folder Include="letter\js\" />
+    <Folder Include="brief\" />
     <Folder Include="processor\" />
     <Folder Include="processor\entity_mapping\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="brief\content\bootstrap.css" />
+    <Content Include="brief\content\sil_logo.png" />
+    <Content Include="brief\content\site.css" />
+    <Content Include="brief\pbrief.html" />
+    <Content Include="brief\scripts\bootstrap.js" />
+    <Content Include="brief\scripts\jquery-1.10.2.js" />
+    <Content Include="brief\scripts\pbrief.js" />
     <Content Include="letter\css\site.css" />
     <Content Include="letter\elpash.html" />
   </ItemGroup>

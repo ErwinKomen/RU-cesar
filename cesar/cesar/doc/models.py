@@ -756,6 +756,22 @@ class NexisLink(models.Model):
             while idx < len(lst) and lst[idx] == "": idx += 1
             return idx
 
+        def get_anywhere(lst, must):
+            bFound = False
+            item_found = None
+            for item in lst:
+                if bFound:
+                    break
+                item_lower = item.lower()
+                for m in must:
+                    if m in item_lower: 
+                        bFound = True
+                        item_found = item
+                        break
+            # Found anything?
+            return bFound, item_found
+
+
         def get_line_item(lst, idx, inside = None, must = None):
             item = lst[idx]
             # Is there a 'must'?
@@ -844,7 +860,8 @@ class NexisLink(models.Model):
                 iLine = skip_empty_lines(lst_meta, 0)
                 # Get the title, newspaper, date and copyright
                 iLine, oMeta['title'] = get_line_item(lst_meta, iLine, inside=filename)
-                if oMeta['title'] == None: oMeta['title'] = "(untitled)"
+                if oMeta['title'] == None: oMeta['title'] = filename.replace(".txt", "")
+                
                 iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine, must=paper)
                 while oMeta['newspaper'] == None and iLine < len(lst_meta):
                     # Read one more line into the title
@@ -854,16 +871,18 @@ class NexisLink(models.Model):
                     # Try reading newspaper again
                     iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine, must=paper)
                 if oMeta['newspaper'] == None:
-                    errHandle.Status("Line doesn't contain newspaper: {}".format(lst_meta[iLine]))
-                    iStop = 1
-                iLine, oMeta['newsdate'] = get_line_item(lst_meta, iLine, must=day)
+                    oMeta['newspaper'] = "(Unknown newspaper)"
+
+                bFound, oMeta['newsdate'] = get_anywhere(lst_meta, must=day)
+                # iLine, oMeta['newsdate'] = get_line_item(lst_meta, iLine, must=day)
                 if oMeta['newsdate'] == None:
-                    errHandle.Status("Line doesn't contain day: {}".format(lst_meta[iLine]))
-                    iStop = 1
-                iLine, oMeta['copyright'] = get_line_item(lst_meta, iLine, must=copyright)
+                    oMeta['newsdate'] = "(Cannot find the news date)"
+
+                bFound, oMeta['copyright'] = get_anywhere(lst_meta, must=copyright)
+                # iLine, oMeta['copyright'] = get_line_item(lst_meta, iLine, must=copyright)
                 if oMeta['copyright'] == None:
-                    errHandle.Status("Line doesn't contain copyright: {}".format(lst_meta[iLine]))
-                    iStop = 1
+                    oMeta['copyright'] = "(Cannot find the copyright line)"
+
                 # Get any more metadata
                 while iLine < len(lst_meta) and ":" in lst_meta[iLine]:
                     # Extract one meta element
