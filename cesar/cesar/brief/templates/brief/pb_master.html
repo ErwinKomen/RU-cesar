@@ -134,55 +134,23 @@
                                   {% if que.formfield %}
                                     {{que.formfield}}
                                   {% elif que.entries %}
-                                    <table class="func-view" style="width: 100%;">
-                                      <tbody>
-                                        <!-- Show the existing answers -->
-                                        {% for answer in que.answers %}
-                                          <tr class="form-row">
-                                            <td>{{forloop.counter}}</td>
-                                            <td>
-                                              <table>
-                                              <!-- the entries in this answer -->
-                                              {% for entry in answer.entries %}
-                                                <tr>
-                                                  <td></td>
-                                                  <td>
-                                                    <input id="id_qaent-{{forloop.parentloop.counter0}}-{{entry.order}}" 
-                                                           name="qaent-{{forloop.parentloop.counter0}}-{{entry.order}}"
-                                                           value="{{entry.value}}" />
-                                                  </td>
-                                                </tr>
-                                              {% endfor %}
-                                              </table>
-                                            </td>
-                                            <!-- A delete button -->
-                                            <td title="Delete this row" style="vertical-align: middle; width: 20px; " class="clickable">
-                                              <a onclick="sil.pbrief.delete_confirm(this);"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
-                                            </td>
-                                          </tr>
-                                        {% endfor %}
-
-                                        <!-- There should be at least one set to fill in -->
-                                        {% if que.answers|length == 0 %}
-                                          {% include 'brief/question_entries.html' with counter='1' emptyform='' que=que %}
-                                        {% endif %}
-
-                                        <!-- Empty row that can be added -->
-                                        {% include 'brief/question_entries.html' with counter='__counter__' emptyform='empty-form' que=que %}
-
-                                        <!-- Add row -->
-                                        <tr class="add-row">
-                                          <td colspan="3">
-                                            <span id="add_answer_entry text link">
-                                              <a href="#" title="Add a row"
-                                                 onclick="sil.pbrief.tabular_addrow(this);">
-                                                <span class="glyphicon glyphicon-plus">&nbsp;</span>
-                                              </a>
-                                            </span>
-                                          </td>
+                                    <table class="" style="width: 100%">
+                                      <!-- Existing projects -->
+                                      {% for prj in instance.projectquestionproducts.all %}
+                                        <tr>
+                                          <td>{{forloop.counter}}</td>
+                                          <td><a href="{% url 'briefproduct_details' prj.id %}">{{prj.name}}</a></td>
                                         </tr>
-
-                                      </tbody>
+                                      {% endfor %}
+                                      <!-- Button to add a project -->
+                                      <tr>
+                                        <td colspan="2">
+                                          <a class="btn btn-xs jumbo-3" role="button" 
+                                             onclick="document.getElementById('create_new_product').submit();">
+                                            <span class="glyphicon glyphicon-plus">&nbsp;</span>Add a new product
+                                          </a>
+                                        </td>
+                                      </tr>
                                     </table>
 
                                   {% else %}
@@ -207,6 +175,13 @@
         </form>
 
       </section>
+
+      <div class="hidden">
+        <form id="create_new_product" action="{% url 'briefproduct_details' %}" method="post">
+          {% csrf_token %}
+          <input type="text" name="prd-project" value="{{instance.id}}" />
+        </form>
+      </div>
 
     {% elif authenticated and not permission or not is_app_user %}
       <div class="explanation">

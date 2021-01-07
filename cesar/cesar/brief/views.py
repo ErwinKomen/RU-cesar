@@ -433,7 +433,7 @@ class BriefMaster(BriefEdit):
         return context
 
 
-class ProductEdit(BasicDetails):
+class BriefProductEdit(BasicDetails):
     """Details view for one Product"""
 
     model = BriefProduct
@@ -441,15 +441,31 @@ class ProductEdit(BasicDetails):
     prefix = "prd"
     rtype = "json"
     mainitems = []
+    project = None
     extend_template = "brief/layout.html"
+    prefix_type = "simple"
+
+    def custom_init(self, instance):
+
+        if instance != None:
+            # Indicate where to go after deleting
+            if instance != None and instance.project != None:
+                self.afterdelurl = reverse('project_details', kwargs={'pk': instance.project.id})
+        return None
 
     def add_to_context(self, context, instance):
         """Add to the existing context"""
 
+        # Figure out what the project id is
+        project_id = None if instance == None else instance.project.id
+
         # Define the main items to show and edit
         context['mainitems'] = [
+            # -------- HIDDEN field values ---------------
+            {'type': 'plain', 'label': "Project id",    'value': project_id,            'field_key': "project", 'empty': 'hide'},
+            # --------------------------------------------
             {'type': 'plain', 'label': "Product:",      'value': instance.name,         'field_key': 'name'},
-            {'type': 'plain', 'label': "Scripture:",    'value': instance.description,  'field_key': 'scripture'},
+            {'type': 'plain', 'label': "Scripture:",    'value': instance.scripture,    'field_key': 'scripture'},
             {'type': 'plain', 'label': "Format:",       'value': instance.format,       'field_key': 'format'},
             {'type': 'plain', 'label': "Media:",        'value': instance.media,        'field_key': 'media'},
             {'type': 'plain', 'label': "Goal:",         'value': instance.goal,         'field_key': 'goal'  },
@@ -466,8 +482,22 @@ class ProductEdit(BasicDetails):
         add_app_access(self.request, context)
         return True
 
+    def after_new(self, form, instance):
+        """Action to be performed after adding a new item"""
 
-class ProductDetails(ProductEdit):
+        ## Set the 'afternew' URL
+        project = instance.project
+        if project != None and instance.order < 0:
+            # Calculate how many products
+            product_count = project.projectquestionproducts.count()
+            # Make sure the new project gets changed
+            form.instance.order = product_count
+
+        # Return positively
+        return True, ""
+
+
+class BriefProductDetails(BriefProductEdit):
     """Show the details of a [Product]"""
     rtype = "html"
 

@@ -124,7 +124,21 @@ class ProductForm(ModelForm):
 
     class Meta:
         model = BriefProduct
-        fields = ['name', 'scripture', 'format', 'media', 'goal', 'audience', 'timing']
+        fields = ['project', 'name', 'scripture', 'format', 'media', 'goal', 'audience', 'timing']
+        widgets={'name':        forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'The name of this product...'}),
+                 'scripture':   forms.TextInput(attrs={'style': 'width: 100%;', 
+                                                       'placeholder':'The books or passages included in this product...'}),
+                 'format':      forms.TextInput(attrs={'style': 'width: 100%;', 
+                                'placeholder':'The format of this product...'}), 
+                 'media':       forms.TextInput(attrs={'style': 'width: 100%;', 
+                                'placeholder':'The media on which this product is available...'}),
+                 'goal':        forms.TextInput(attrs={'style': 'width: 100%;', 
+                                'placeholder':'Desires, needs, concerns...'}),
+                 'audience':    forms.TextInput(attrs={'style': 'width: 100%;', 
+                                'placeholder':'Audience(s) this product is aimed for...'}),
+                 'timing':      forms.TextInput(attrs={'style': 'width: 100%;', 
+                                'placeholder':'Timing...'})
+                 }
 
     def __init__(self, *args, **kwargs):
         # First perform the default thing

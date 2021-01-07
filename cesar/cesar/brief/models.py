@@ -575,7 +575,7 @@ class BriefProduct(models.Model):
     order = models.IntegerField("Order", default=-1)
 
     # [1] Each answer belongs to a question
-    question = models.ForeignKey(BriefQuestion, on_delete=models.CASCADE, related_name="questionproducts")
+    # question = models.ForeignKey(BriefQuestion, on_delete=models.CASCADE, related_name="questionproducts")
     # [1] Each answer belongs to a project
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="projectquestionproducts")
 
@@ -586,7 +586,7 @@ class BriefProduct(models.Model):
         # Adapt the save date
         self.saved = timezone.now()
         # Now do the saving
-        response = super(Project, self).save(force_insert, force_update, using, update_fields)
+        response = super(BriefProduct, self).save(force_insert, force_update, using, update_fields)
         # Return the response
         return response
 
