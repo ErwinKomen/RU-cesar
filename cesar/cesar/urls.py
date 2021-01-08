@@ -67,6 +67,7 @@ urlpatterns = [
     url(r'^brief/master(?:/(?P<pk>\d+))?/$', BriefMaster.as_view(), name='brief_master'),
     url(r'^brief/product/details(?:/(?P<pk>\d+))?/$', BriefProductDetails.as_view(), name='briefproduct_details'),
     url(r'^brief/product/edit(?:/(?P<pk>\d+))?/$', BriefProductEdit.as_view(), name='briefproduct_edit'),
+    url(r'^brief/product/list', BriefProductList.as_view(), name='briefproduct_list'),
 
     # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),

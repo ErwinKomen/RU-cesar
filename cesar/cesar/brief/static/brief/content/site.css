@@ -36,6 +36,23 @@ td a.nostyle {
   display: block;
 }
 
+a.sermon:link, a.sermon:visited {
+    text-decoration: inherit;
+    color: inherit;
+    cursor: inherit;
+}
+
+.sermonnumber {
+    cursor: cell;
+    background-color: white;
+}
+.sermonnumber.selected {
+    background-color: yellow;
+}
+.sermonnumber.selected:visited {
+    background-color: white;
+}
+
 
 
 
@@ -779,6 +796,9 @@ table.func-view {
   vertical-align: top;
   padding: 2px;
 }
+table.func-view.sermons {
+    padding: 0px 2px 0px 2px;
+}
 table.func-view th {
   border: 1px solid white;
   font-size: 12px;
@@ -841,6 +861,9 @@ table.func-view td {
   margin-top: 0px;
   vertical-align: top;
   padding: 2px;
+}
+table.func-view.sermons td {
+    padding: 0px 2px 0px 2px;
 }
 table.func-view td.vmiddle {
   vertical-align: middle;

@@ -474,6 +474,16 @@ class BriefProductEdit(BasicDetails):
             {'type': 'plain', 'label': "Saved:",        'value': instance.get_saved()}
             ]
 
+        # Add a button to go back to this project's brief
+        topleftlist = []
+        if instance.project != None:
+            project = instance.project
+            buttonspecs = dict(
+                label="B", title="Return to this project's brief",
+                url=reverse('brief_master', kwargs={'pk': project_id}))
+            topleftlist.append(buttonspecs)
+        context['topleftbuttons'] = topleftlist
+
         # Return the context we have made
         return context
 
@@ -502,3 +512,44 @@ class BriefProductDetails(BriefProductEdit):
     rtype = "html"
 
 
+class BriefProductList(BasicList):
+    """List of products, allowing filtering for a project"""
+
+    model = BriefProduct
+    listform = ProductForm
+    new_button = False      # Adding is not from here
+    extend_template = "brief/layout.html"
+    order_cols = ['product', 'order', 'name']
+    order_heads = [
+        {'name': 'Project',     'order': 'o=1', 'type': 'str', 'custom': 'project',     'linkdetails': True},
+        {'name': 'Name',        'order': 'o=2', 'type': 'str', 'field': 'name',         'linkdetails': True, 'main': True},
+        {'name': 'Scripture',   'order': 'o=3', 'type': 'str', 'field': 'scripture',    'linkdetails': True},
+        {'name': 'Media',       'order': 'o=4', 'type': 'str', 'field': 'media',        'linkdetails': True},
+        {'name': 'Actions',     'order': '',    'type': 'str', 'custom': 'actions'}
+        ]
+
+    def initializations(self):
+        return None
+
+    def get_app_access(self, context):
+        # Make sure we add special group permission(s)
+        add_app_access(self.request, context)
+        return True
+    
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        # Figure out what to show
+        if custom == "actions":
+            # The buttons for the actions that can be taken
+            url = reverse("brief_master", kwargs={'pk': instance.project.id})
+            html.append('<a href="{}" title="Project brief"><span class="glyphicon glyphicon-th-list"><span></a>'.format(url))
+            # COmbineer
+            sBack = "\n".join(html)
+        elif custom == "project":
+            sBack = instance.project.name
+
+        # Retourneer wat kan
+        return sBack, sTitle

@@ -134,23 +134,33 @@
                                   {% if que.formfield %}
                                     {{que.formfield}}
                                   {% elif que.entries %}
-                                    <table class="" style="width: 100%">
-                                      <!-- Existing projects -->
-                                      {% for prj in instance.projectquestionproducts.all %}
-                                        <tr>
-                                          <td>{{forloop.counter}}</td>
-                                          <td><a href="{% url 'briefproduct_details' prj.id %}">{{prj.name}}</a></td>
-                                        </tr>
-                                      {% endfor %}
-                                      <!-- Button to add a project -->
-                                      <tr>
-                                        <td colspan="2">
-                                          <a class="btn btn-xs jumbo-3" role="button" 
-                                             onclick="document.getElementById('create_new_product').submit();">
-                                            <span class="glyphicon glyphicon-plus">&nbsp;</span>Add a new product
-                                          </a>
-                                        </td>
-                                      </tr>
+                                    <div class="pull-right">
+                                      <!-- Button for a new product -->
+                                      <a class="btn btn-xs jumbo-3" role="button" 
+                                               onclick="document.getElementById('create_new_product').submit();">
+                                              <span class="glyphicon glyphicon-plus">&nbsp;</span>Add a new product
+                                            </a>
+                                    </div>
+                                    <table class="func-view sermons" style="width: 100%">
+                                      <tbody>
+                                        <!-- Existing projects -->
+                                        {% for prj in instance.projectquestionproducts.all %}
+                                          <tr>
+                                            <td class="sermonnumber tdnowrap" valign="top">{{forloop.counter}}</td>
+                                            <td class="tdnowrap clickable" style="width: 100%;" valign="top">
+                                              <a class="sermon" href="{% url 'briefproduct_details' prj.id %}">
+                                                <span style="color: darkblue;">
+                                                  {% if prj.scripture %}
+                                                    {{prj.scripture}}
+                                                  {% else %}(none){% endif %}
+                                                </span>
+                                                <span><b>{{prj.name}}</b></span>
+                                                <span style="color: darkred; font-size: smaller;">{{prj.timing}}</span>
+                                              </a>
+                                            </td>
+                                          </tr>
+                                        {% endfor %}
+                                      </tbody>
                                     </table>
 
                                   {% else %}
