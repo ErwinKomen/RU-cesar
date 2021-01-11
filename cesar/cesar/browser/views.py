@@ -205,6 +205,7 @@ def home(request):
     # Make sure we add special group permission(s)
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
     context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
+    context['is_brief_user'] = user_is_ingroup(request, "brief_user")
     context['is_superuser'] = user_is_superuser(request)
     # Render and return the page
     return render(request, template_name, context)

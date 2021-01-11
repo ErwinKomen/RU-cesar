@@ -16,7 +16,7 @@ class ProjectForm(ModelForm):
 
     class Meta:
         model = Project
-        fields = ['name', 'description', 'status', 'ptype']
+        fields = ['name', 'description', 'status', 'ptype', 'user']
         widgets={'name':        forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Name of this project...'}),
                  'description': forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Description of the project...'}),
                  'status':      forms.Select(attrs={'style': 'width: 100%;'}),
@@ -27,6 +27,7 @@ class ProjectForm(ModelForm):
         # First perform the default thing
         super(ProjectForm, self).__init__(*args, **kwargs)
 
+        self.fields['user'].required = False
         self.fields['name'].required = False
         self.fields['description'].required = False
         self.fields['ptype'].required = False

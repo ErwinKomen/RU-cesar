@@ -248,16 +248,47 @@ class ProjectEdit(BasicDetails):
             {'type': 'plain', 'label': "Status:",       'value': instance.get_status_display(), 'field_key': 'status'},
             {'type': 'plain', 'label': "Progress:",     'value': instance.get_ptype_display(),  'field_key': 'ptype'},
             {'type': 'plain', 'label': "Created:",      'value': instance.get_created()  },
-            {'type': 'plain', 'label': "Saved:",        'value': instance.get_saved()}
+            {'type': 'plain', 'label': "Saved:",        'value': instance.get_saved()},
+            {'type': 'safe',  'label': "Brief",         'value': self.get_brief_button(instance)}
             ]
+
+        # CHeck if this user has edit access to this particular item
+        user = User.objects.filter(username=self.request.user.username).first()
+        if user != instance.user:
+            # Switch off access
+            context['is_app_editor'] = False
+            context['is_app_uploader'] = False
+            context['is_app_userplus'] = False
 
         # Return the context we have made
         return context
+
+    def get_brief_button(self, instance):
+        sBack = ""
+        html = []
+
+        # The buttons for the actions that can be taken
+        url = reverse("brief_master", kwargs={'pk': instance.id})
+        html.append('<a href="{}" title="Project brief"><span class="glyphicon glyphicon-th-list"><span></a>'.format(url))
+        # COmbineer
+        sBack = "\n".join(html)
+
+        # Retourneer wat kan
+        return sBack
 
     def get_app_access(self, context):
         # Make sure we add special group permission(s)
         add_app_access(self.request, context)
         return True
+
+    def before_save(self, form, instance):
+        # Make sure the user is filled in
+        if form != None and instance.user_id == None or instance.user == None:
+            # Figure out who I am
+            user = User.objects.filter(username= self.request.user.username).first()
+            # Set me
+            form.instance.user = user
+        return True, "" 
 
 
 class ProjectDetails(ProjectEdit):
@@ -271,10 +302,11 @@ class ProjectListView(BasicList):
     model = Project
     listform = ProjectForm
     extend_template = "brief/layout.html"
-    order_cols = ['name', 'description']
-    order_heads = [{'name': 'Name', 'order': 'o=1', 'type': 'str', 'field': 'name', 'linkdetails': True},
-                   {'name': 'Progress', 'order': 'o=2', 'type': 'str', 'custom': 'progress', 'linkdetails': True},
-                   {'name': 'Description', 'order': 'o=3', 'type': 'str', 'field': 'description', 'linkdetails': True, 'main': True},
+    order_cols = ['user__username', 'name', 'description']
+    order_heads = [{'name': 'User', 'order': 'o=1', 'type': 'str', 'custom': 'user', 'linkdetails': True},
+                   {'name': 'Name', 'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True},
+                   {'name': 'Progress', 'order': 'o=3', 'type': 'str', 'custom': 'progress', 'linkdetails': True},
+                   {'name': 'Description', 'order': 'o=4', 'type': 'str', 'field': 'description', 'linkdetails': True, 'main': True},
                    {'name': 'Actions', 'order': '', 'type': 'str', 'custom': 'actions'}]
 
     def initializations(self):
@@ -304,6 +336,8 @@ class ProjectListView(BasicList):
             sBack = "\n".join(html)
         elif custom == "progress":
             sBack = instance.get_ptype_display()
+        elif custom == "user":
+            sBack = instance.user.username
 
         # Retourneer wat kan
         return sBack, sTitle
@@ -316,6 +350,17 @@ class BriefEdit(BasicDetails):
     mForm = QuestionsForm
     prefix = "que"
     mainitems = []
+
+    def add_to_context(self, context, instance):
+        # CHeck if this user has edit access to this particular item
+        user = User.objects.filter(username=self.request.user.username).first()
+        if user != instance.user:
+            # Switch off access
+            context['is_app_editor'] = False
+            context['is_app_uploader'] = False
+            context['is_app_userplus'] = False
+
+        return context
 
     def get_app_access(self, context):
         # Make sure we add special group permission(s)
@@ -369,14 +414,18 @@ class BriefMaster(BriefEdit):
     rtype = "html"
 
     def add_to_context(self, context, instance):
+        # First execute the [BriefEdit] default context additions
+        context = super(BriefMaster, self).add_to_context(context, instance)
+
+        # Now we may continue here
         oErr = ErrHandle()
         try:
             # Look at the object_id
             context['object_id'] = "{}".format(instance.id)
             context['pname'] = instance.name
             
-            # Make sure we add special group permission(s)
-            add_app_access(self.request, context)
+            ## Make sure we add special group permission(s)
+            #add_app_access(self.request, context)
 
             # We need to have the form object too
             qform = context['queForm']
@@ -425,6 +474,9 @@ class BriefMaster(BriefEdit):
                 lst_module.append(oModule)
             # THis is what we pass on
             context['modules'] = lst_module
+
+            # Explicitly say what the mode is
+            context['mode'] = "view" if not context['is_app_editor'] else "edit"
         except:
             msg = oErr.get_error_message()
             oErr.DoError("BriefMaster/add_to_context")

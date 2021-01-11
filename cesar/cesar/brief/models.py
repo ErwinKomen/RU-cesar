@@ -455,6 +455,9 @@ class Project(models.Model):
     # [1] The amount of publications done by this project 
     ptype = models.CharField("Progress", choices=build_abbr_list(PROJECT_PROGRESS), max_length=5, default="ini")
 
+    # [1] Each project has been made by one particular user
+    user = models.ForeignKey(User)
+
     # [1] Each Brief Module has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
     # [0-1] Time this module was last updated

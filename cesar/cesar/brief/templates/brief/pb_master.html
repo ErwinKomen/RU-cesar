@@ -30,13 +30,28 @@
                 <!-- Any overall todo message -->
                 <span title="Overal status of this brief's responses versus the number that is required">{{instance.get_todo_html|safe}}</span>
 
-                <!-- Message with last save date/time -->
-                <span id="form_save_notice" style="font-size: small;"></span>
+                {% if mode == "edit" and is_app_editor %}
+                  <!-- Message with last save date/time -->
+                  <span id="form_save_notice" class="edit-mode hidden" style="font-size: small;"></span>
 
-                <!-- Save button -->
-                <a role="button" class="btn btn-lg btn-success"
-                   targeturl="{% url 'brief_edit' queForm.instance.id  %}"
-                   onclick="sil.pbrief.process_brief(this, '#form_save_notice');">Save</a>
+                  <!-- Save button -->
+                  <a role="button" class="edit-mode btn btn-lg btn-success hidden" title="Save last changes"
+                     targeturl="{% url 'brief_edit' queForm.instance.id  %}"
+                     onclick="sil.pbrief.process_brief(this, '#form_save_notice');">Save</a>
+
+                  <!-- Edit button -->
+                  <a mode="edit" class="view-mode btn btn-lg jumbo-1" 
+                     onclick="sil.pbrief.do_button(this);"
+                     title="Edit these data">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                  </a>
+                  <!-- Cancel button -->
+                  <a mode="cancel" class="edit-mode btn btn-lg jumbo-2 hidden" 
+                     onclick="sil.pbrief.do_button(this);"
+                     title="Cancel (do *NOT* save)">
+                    <span class="glyphicon glyphicon-arrow-left"></span>
+                  </a>
+                {% endif %}
 
                 <!-- Images for identification -->
                 <img src="{% static  'brief/content/sil_logo.png' %}" style="height: 60px;" />
@@ -132,14 +147,23 @@
                                 {% endif %}
                                 <div>
                                   {% if que.formfield %}
-                                    {{que.formfield}}
+                                    {% if is_app_editor %}
+                                      <div class="edit-mode hidden">
+                                        {{que.formfield}}
+                                      </div>
+                                    {% endif %}
+                                    <div {% if is_app_editor %}class="view-mode"{% endif %} style="color: darkblue;">
+                                      {% if que.formfield.value %}{{que.formfield.value}}{% else %}-{% endif %}
+                                    </div>
                                   {% elif que.entries %}
                                     <div class="pull-right">
-                                      <!-- Button for a new product -->
-                                      <a class="btn btn-xs jumbo-3" role="button" 
+                                      {% if is_app_editor %}
+                                        <!-- Button for a new product -->
+                                        <a class="btn btn-xs jumbo-3" role="button" 
                                                onclick="document.getElementById('create_new_product').submit();">
                                               <span class="glyphicon glyphicon-plus">&nbsp;</span>Add a new product
                                             </a>
+                                      {% endif %}
                                     </div>
                                     <table class="func-view sermons" style="width: 100%">
                                       <tbody>

@@ -87,6 +87,30 @@ var sil = (function ($, sil) {
       },
 
       /**
+       * do_button
+       *   Show or hide edit mode
+       *
+       */
+      do_button: function (elStart) {
+        try {
+          if ($(elStart).hasClass("view-mode")) {
+            // Hide view mode
+            $(".view-mode").addClass("hidden");
+            // Show edit mode
+            $(".edit-mode").removeClass("hidden");
+          } else {
+            // Show view mode
+            $(".view-mode").removeClass("hidden");
+            // Hide edit mode
+            $(".edit-mode").addClass("hidden");
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("do_button", ex);
+        }
+      },
+
+      /**
        * tabular_addrow
        *   Add one row into a tabular inline
        *
