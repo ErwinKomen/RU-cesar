@@ -352,10 +352,10 @@ var ru = (function ($, ru) {
           // Action depends on the need for confirmation
           if (bNeedConfirm) {
             // Find the [.delete-row] to be shown
-            elDiv = $(el).closest("tr").find(".delete-confirm").first();
+            elDiv = $(el).closest("tr, .panel").find(".delete-confirm").first();
             if (elDiv.length === 0) {
               // Try goint to the next <tr>
-              elDiv = $(el).closest("tr").next("tr.delete-confirm");
+              elDiv = $(el).closest("tr, .panel").next("tr.delete-confirm");
             }
             $(elDiv).removeClass("hidden");
           } else {

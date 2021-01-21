@@ -1246,6 +1246,10 @@ class BasicDetails(DetailView):
         # Possibly add to context by the calling function
         if instance.id:
             context = self.add_to_context(context, instance)
+            # Double check access
+            if context['is_app_editor']:
+                self.permission = "write"
+                context['permission'] = self.permission
             if self.history_button:
                 # Retrieve history
                 context['history_contents'] = self.get_history(instance)

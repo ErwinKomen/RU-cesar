@@ -88,7 +88,10 @@ urlpatterns = [
     url(r'^text/syntax/download/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='syntax_download'),
 
     url(r'^doc/concrete/$', cesar.doc.views.concrete_main, name='concrete_main'),
-    url(r'^doc/concrete/download/(?P<pk>\d+)/$', FoliaDocumentDetailView.as_view(), name='concrete_download'),
+    url(r'^doc/concrete/list/$', ConcreteListView.as_view(), name='froglink_list'),
+    url(r'^doc/concrete/details(?:/(?P<pk>\d+))?/$', ConcreteDetails.as_view(), name='froglink_details'),
+    url(r'^doc/concrete/edit(?:/(?P<pk>\d+))?/$', ConcreteEdit.as_view(), name='froglink_edit'),
+    url(r'^doc/concrete/download/(?P<pk>\d+)/$', ConcreteDownload.as_view(), name='concrete_download'),
     url(r'^doc/nexis/$', cesar.doc.views.nexis_main, name='nexis_main'),
     url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),
     url(r'^doc/nexis/details(?:/(?P<pk>\d+))?/$', NexisBatchDetails.as_view(), name='nexisbatch_details'),

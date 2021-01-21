@@ -107,6 +107,19 @@ class FrogLink(models.Model):
             errHandle.DoError("FrogLink/create")
             return None, errHandle.get_error_message()
 
+    def get_created(self):
+        sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
+        return sBack
+
+    def get_owner(self):
+        """Return the owner of this concreteness document"""
+
+        sBack = ""
+        if self.fdocs != None:
+            if self.fdocs.owner != None:
+                sBack = self.fdocs.owner.username
+        return sBack
+
     def read_doc(self, username, data_file, filename, clamuser, clampw, arErr, xmldoc=None, sName = None, oStatus = None):
         """Import a text file, parse it through the frogger, and create a Folia.xml file"""
 
@@ -116,6 +129,34 @@ class FrogLink(models.Model):
         iCount = 0
         inputType = "folia"
         frogType = "remote"     # Fix to remote -- or put to None if automatically choosing
+
+        def get_error_log(result):
+            """Try to get the error.log file contents"""
+            for item in result.output:
+                name = str(item)
+                if "error.log" in name:
+                    lText = []
+                    for part in item:
+                        lText.append(part.decode("utf-8").strip())
+                        # lText.append(str(part))
+                    sText = "\n".join(lText)
+            return sText
+
+        def get_error_view(errorpoint, statusmsg, errormsg, sLog, sText):
+            lhtml = []
+            lhtml.append("<div>Error in {}: {}</div>".format(errorpoint, statusmsg))
+            lhtml.append("<div>Frog error: {}</div>".format(errormsg))
+            lhtml.append("<div class='panel panel-default'>")
+            lhtml.append("  <div class='panel-heading' data-toggle='collapse' data-target='#error_log'>Log Info</div>")
+            lhtml.append("  <div id='error_log' class='collapse'><pre style='font-size: smaller;'>{}</pre></div>".format(sLog))
+            lhtml.append("</div>")
+            # Get a (numbered) listing of the text file
+            lhtml.append("<div class='panel panel-default'>")
+            lhtml.append("  <div class='panel-heading' data-toggle='collapse' data-target='#error_text'>Text file</div>")
+            lhtml.append("  <div id='error_text' class='collapse'><pre style='font-size: smaller;'>{}</pre></div>".format(sText))
+            lhtml.append("</div>")
+            return "\n".join(lhtml)
+
 
         folProc = FoliaProcessor(username)
         try:
@@ -163,26 +204,20 @@ class FrogLink(models.Model):
                         it.filename = self.name
                     else:
                         it = data.inputtemplate("foliainput")
-                
+
                     # Add the Basis-Folia XML file as input to the project
                     basicf = folProc.basicf
                     result = clamclient.addinputfile(project, it, basicf, language='nl')
                     # Opstarten
                     result = clamclient.start(project)
                     if result.errors:
-                        # Handle errors
-                        # sys.exit(1)
-                        statusmsg = result.statusmessage
                         oBack['status'] = "error"
-                        oBack['msg'] = "Error in CLAM: {}".format(statusmsg)
-                        for item in result.output:
-                            name = str(item)
-                            if "error.log" in name:
-                                lText = []
-                                for part in item:
-                                    lText.append(str(part))
-                                sText = "\n".join(lText)
-                                oBack['msg'] = "{}\nERROR LOG:\n{}".format(oBack['msg'], sText)
+                        # Handle errors
+                        statusmsg = result.statusmessage
+                        errormsg = result.errormsg
+                        # Find the error log
+                        sText = get_error_log(result)
+                        oBack['msg'] = get_error_view("Pre-CLAM", statusmsg, errormsg, sText, sMsg)
                         return oBack
                     # Otherwise loop until ready
                     while result.status != clam.common.status.DONE:
@@ -195,7 +230,12 @@ class FrogLink(models.Model):
                             oStatus.set("CLAM", msg=msg)
                     if result.errors:
                         oBack['status'] = "error"
-                        oBack['msg'] = "Error in CLAM: {}".format(statusmsg)
+                        # Handle errors
+                        statusmsg = result.statusmessage
+                        errormsg = result.errormsg
+                        # Find the error log
+                        sText = get_error_log(result)
+                        oBack['msg'] = get_error_view("Post-CLAM", statusmsg, errormsg, sText, sMsg)
                         return oBack
                     # Now we are ready
                     for outputfile in result.output:
@@ -206,7 +246,7 @@ class FrogLink(models.Model):
                             fout = fout.replace(".basis", ".folia")
                             outputfile.copy(fout)
                             iCount += 1
-
+                            
                             # Note where it is
                             self.fullname = fout
                             self.save()
@@ -533,10 +573,13 @@ class FoliaProcessor():
 
             # Walk through the JSON 
             lFolia = []
+            counter = 0
             for sLine in lines:
                 # Check for empty
                 sLine = sLine.strip()
                 if sLine != "":
+                    counter += 1
+                    lFolia.append("{}: {}".format(counter, sLine))
                     # Append a paragraph
                     para = text.add(folia.Paragraph)
 
@@ -554,6 +597,7 @@ class FoliaProcessor():
                             sentence.settext(sentence.text())
                     # Add text to paragraph
                     para.settext(para.text())
+            sMsg = "\n".join(lFolia)
 
             # THink of a correct name for Basic folia
             f =  os.path.abspath(os.path.join(dir, docstr) + ".basis.xml")

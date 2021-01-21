@@ -25,7 +25,7 @@ from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor
-from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm
+from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -56,7 +56,7 @@ def user_is_ingroup(request, sGroup):
 # ========== CONCRETENESS ==============================
 
 def concrete_main(request):
-    """The main page of working with documents."""
+    """The main page of working with documents for concreteness."""
 
     assert isinstance(request, HttpRequest)
     template = 'doc/concrete_main.html'
@@ -65,12 +65,15 @@ def concrete_main(request):
     superuser = request.user.is_superuser
     # Get a list of already uploaded files too
     text_list = []
-    for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)):
+    for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created'):
         if item.concr == None or item.concr == "":
-            text_list.append(None)
+            obj = dict(id=item.id, show=False)
+            text_list.append(obj)
         else:
             obj = json.loads(item.concr)
             obj['id'] = item.id
+            obj['show'] = True
+            obj['created'] = item.get_created()
             # obj['download'] = reverse('concrete_download', kwargs={'pk': item.id})
             text_list.append(obj)
     context = {'title': 'Document processing',
@@ -82,7 +85,6 @@ def concrete_main(request):
                'intro_breadcrumb': 'Concreteness',
                'year': datetime.now().year}
     return render(request, template, context)
-
 
 def import_brysbaert(request):
     """Ad-hoc procedure to allow importing Brysbaert tab-separated file into Model"""
@@ -375,7 +377,10 @@ def import_concrete(request):
     # Return the information
     return JsonResponse(data)
 
-class FoliaDocumentDetailView(DetailView):
+
+class ConcreteDownload(DetailView):
+    """Allow loading file that has been analyzed for concreteness"""
+
     model = FrogLink
     template_name = 'doc/foliadocs_view.html'
 
@@ -442,7 +447,7 @@ class FoliaDocumentDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
-        context = super(FoliaDocumentDetailView, self).get_context_data(**kwargs)
+        context = super(ConcreteDownload, self).get_context_data(**kwargs)
 
         # Get parameters for the search (if it is GET)
         initial = self.request.GET
@@ -454,6 +459,151 @@ class FoliaDocumentDetailView(DetailView):
 
         # Return what we have
         return context
+
+
+class ConcreteEdit(BasicDetails):
+    """Details view for one concreteness-treated file"""
+
+    model = FrogLink
+    mForm = FrogLinkForm
+    prefix = "concr"
+    title= "ConcreteEdit"
+    mainitems = []
+
+    def get_context_data(self, **kwargs):
+        context = super(ConcreteEdit, self).get_context_data(**kwargs)
+
+        # See if there is a manual afterurl
+        if 'afterurl' in self.qd:
+            afterurl = self.qd.get("afterurl")
+            context['afterdelurl'] = afterurl
+        return context
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Owner:",    'value': instance.get_owner()       },
+            {'type': 'plain', 'label': "Date:",     'value': instance.get_created()     },
+            {'type': 'plain', 'label': "Name:",     'value': instance.name,     'field_key': 'name'}
+            ]
+        context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
+        context['is_app_uploader'] = context['is_app_editor']
+
+        # Return the context we have made
+        return context
+
+
+class ConcreteDetails(ConcreteEdit):
+    """Viewing concreteness file as HTML, including the text layout"""
+    rtype = "html"
+
+    def add_to_context(self, context, instance):
+        # Call the base implementation first to get a context
+        context = super(ConcreteDetails, self).add_to_context(context, instance)
+
+        # Do we have a JSON response in self.concr?
+        if instance.concr != None and instance.concr != "":
+            # Make sure to add [otext] and[tnumber]
+            context['tnumber'] = 1
+            if instance.concr == None or instance.concr == "":
+                obj = dict(id=instance.id, show=False)
+            else:
+                obj = json.loads(instance.concr)
+                obj['id'] = instance.id
+                obj['show'] = True
+            context['otext'] = obj
+            sAfter = render_to_string('doc/foliadocs_view.html', context, self.request)
+            context['after_details'] = sAfter
+
+        # Return the adapted context
+        return context
+
+
+class ConcreteListView(BasicList):
+    """Search and list nexis batches"""
+
+    model = FrogLink
+    listform = FrogLinkForm
+    prefix = "concr"
+    new_button = False      # Don't show a new button, because new items can only be added by downloading
+    plural_name = "Concreteness text files"
+    sg_name = "Concreteness file"
+    has_select2 = True      # We are using Select2 in the FrogLinkForm
+    delete_line = True      # Allow deleting a line
+    bUseFilter = True
+    superuser = False
+    order_cols = ['created', 'name', '']
+    order_default = ['-created', 'name']
+    order_heads = [{'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
+                   {'name': 'Name',  'order': 'o=2', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+                   {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
+    filters = [
+        {'name': 'Name',  'id': 'filter_name',  'enabled': False}
+        ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
+            {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
+            ]},
+        {'section': 'other', 'filterlist': [
+            {'filter': 'fdocs',     'fkfield': 'fdocs',  'keyFk': 'fdocs'}]}
+        ]
+
+    def initializations(self):
+        # Check if I am superuser or not
+        self.superuser = self.request.user.is_superuser
+        if self.superuser:
+            self.order_cols = ['created', 'fdocs__owner__username', 'name', '']
+            self.order_default = ['-created', 'fdocs__owner__username', 'name']
+            self.order_heads = [
+                {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
+                {'name': 'Owner', 'order': 'o=2', 'type': 'str', 'custom': 'owner',      'linkdetails': True},
+                {'name': 'Name',  'order': 'o=3', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+                {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
+            self.filters = [
+                {'name': 'Name',  'id': 'filter_name',  'enabled': False},
+                {'name': 'Owner', 'id': 'filter_owner', 'enabled': False}
+                ]
+
+        return None
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        # Figure out what to show
+        if custom == "created":
+            sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
+        elif custom == "owner":
+            sBack = instance.fdocs.owner.username
+
+        # Retourneer wat kan
+        return sBack, sTitle
+
+    def adapt_search(self, fields):
+        # Initialisations
+        lstExclude=None
+        qAlternative = None
+        if not self.superuser:
+            # Make sure only batches are shown for which this user is the owner
+            username = self.request.user.username
+            owner = User.objects.filter(username = username).first()
+            fdocs = FrogLink.objects.filter(fdocs__owner=owner)
+            if fdocs != None:
+                fields['fdocs'] = fdocs
+
+        # Return standard
+        return fields, lstExclude, qAlternative
+
+    def add_to_context(self, context, initial):
+        # Allow simple seeker_user to work with this
+        context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
+        context['is_app_uploader'] = context['is_app_editor']
+        return context
+
 
 
 # ================ NEXIS UNI ===========================
@@ -657,6 +807,7 @@ class NexisBatchEdit(BasicDetails):
 
 
 class NexisBatchDetails(NexisBatchEdit):
+    """Viewing nexis as HTML"""
     rtype = "html"
 
 
@@ -735,7 +886,7 @@ class NexisListView(BasicList):
                    {'name': '',      'order': '',    'type': 'str', 'custom': 'links', 'align': 'right'},
                    {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
     filters = [
-        {'name': 'Date', 'id': 'filer_created', 'enabled': False}
+        {'name': 'Date', 'id': 'filter_created', 'enabled': False}
         ]
     searches = [
         {'section': '', 'filterlist': [
@@ -772,7 +923,7 @@ class NexisListView(BasicList):
             # Show the download links
             url = reverse('nexisbatch_download', kwargs={'pk': instance.id})
             html.append('<a href="#" title="Download compressed tar.gz" downloadtype="tar.gz" ajaxurl="{}" onclick="ru.basic.post_download(this);">'.format(url))
-            html.append('<span class="glyphicon glyphicon-download"><span></a>')
+            html.append('<span class="glyphicon glyphicon-download"></span></a>')
             
             # COmbineer
             sBack = "\n".join(html)
