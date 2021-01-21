@@ -544,8 +544,7 @@ class ConcreteListView(BasicList):
         ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
-            {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
+            {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'}
             ]},
         {'section': 'other', 'filterlist': [
             {'filter': 'fdocs',     'fkfield': 'fdocs',  'keyFk': 'fdocs'}]}
@@ -566,6 +565,15 @@ class ConcreteListView(BasicList):
                 {'name': 'Name',  'id': 'filter_name',  'enabled': False},
                 {'name': 'Owner', 'id': 'filter_owner', 'enabled': False}
                 ]
+            self.searches [
+                {'section': '', 'filterlist': [
+                    {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
+                    {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
+                    ]},
+                {'section': 'other', 'filterlist': [
+                    {'filter': 'fdocs',     'fkfield': 'fdocs',  'keyFk': 'fdocs'}]}
+                ]
+
 
         return None
 
@@ -591,7 +599,7 @@ class ConcreteListView(BasicList):
             # Make sure only batches are shown for which this user is the owner
             username = self.request.user.username
             owner = User.objects.filter(username = username).first()
-            fdocs = FrogLink.objects.filter(fdocs__owner=owner)
+            fdocs = FoliaDocs.objects.filter(owner=owner)
             if fdocs != None:
                 fields['fdocs'] = fdocs
 
