@@ -458,6 +458,9 @@ class Project(models.Model):
     # [1] Each project has been made by one particular user
     user = models.ForeignKey(User)
 
+    # [1] Information in JSON
+    info = models.TextField("Information in JSON", default = "{}")
+
     # [1] Each Brief Module has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
     # [0-1] Time this module was last updated
@@ -612,4 +615,31 @@ class BriefProduct(models.Model):
         return sBack
 
 
+class History(models.Model):
+    """Actions of a user on a project are stored here"""
+
+    # [1] Each answer belongs to a project
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="projecthistories")
+    # [1] Each project has been made by one particular user
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userhistories")
+    # [1] Information in JSON
+    info = models.TextField("Information in JSON list", default = "[]")
+
+    def __str__(self):
+        sBack = "{}: {}".format(self.user.username, self.project.name)
+        return sBack
+
+    def add_action(username, project, location):
+        """Add one action"""
+
+        user = User.objects.filter(username=username).first()
+        if user != None and project != None:
+            obj = History.objects.filter(user=user, project=project).first()
+            if obj == None:
+                obj = History.objects.create(user=user, project=project)
+            info = json.loads(obj.info)
+            info.append(location)
+            obj.info = json.dumps(info)
+            obj.save()
+        return True
 

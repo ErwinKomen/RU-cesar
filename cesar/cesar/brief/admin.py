@@ -46,6 +46,18 @@ class BriefSectionAdmin(admin.ModelAdmin):
         }
 
 
+class HistoryAdmin(admin.ModelAdmin):
+    """Display and edit [History] objects"""
+
+    fields = ['project', 'user', 'info']
+    list_display = ['project', 'user', 'info']
+    list_filter = ['project', 'user']
+    search_fields = ['project', 'user']
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
+        }
+
+
 class BriefQuestionAdmin(admin.ModelAdmin):
     """Display and edit [BriefQuestion] objects"""
 
@@ -79,6 +91,7 @@ admin.site.register(BriefModule)
 admin.site.register(BriefQuestion, BriefQuestionAdmin)
 admin.site.register(BriefSection, BriefSectionAdmin)
 admin.site.register(Project)
+admin.site.register(History, HistoryAdmin)
 admin.site.register(AnswerEntry)
 admin.site.register(AnswerQuestion)
 

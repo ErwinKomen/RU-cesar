@@ -111,6 +111,57 @@ var sil = (function ($, sil) {
       },
 
       /**
+       * set_section
+       *   Set the project/module/section
+       *
+       */
+      set_section: function (elStart) {
+        var data = null,
+            elForm = "#send_location",
+            target = "",
+            arTarget = [],
+            section = "",
+            url = "";
+
+        try {
+          target = $(elStart).attr("data-target");
+          arTarget = target.split("_");
+          $("#module_no").val(arTarget[1].replace("m", ""));
+          // Double check: are we opening or closing?
+          if ($(elStart).hasClass("collapsed")) {
+            // It is now opening up...
+            section = arTarget[2].replace("s", "");
+          } else {
+            // It is closing down
+            section = -1;
+          }
+          $("#section_no").val(section);
+          url = $(elForm).attr("action");
+          data = $(elForm).serializeArray();
+          // Send the data
+          $.post(url, data, function (response) {
+            // First leg has been done
+            if (response === undefined || response === null || !("status" in response)) {
+              private_methods.errMsg("No status returned");
+            } else {
+              switch (response.status) {
+                case "ok":
+                  // No further action is needed
+                  break;
+                case "error":
+                  if ("html" in response) {
+                    private_methods.errMsg("error: " + response['html']);
+                  }
+                  break;
+              }
+            }
+          });
+        } catch (ex) {
+          private_methods.errMsg("set_section", ex);
+        }
+      },
+
+      /**
        * tabular_addrow
        *   Add one row into a tabular inline
        *

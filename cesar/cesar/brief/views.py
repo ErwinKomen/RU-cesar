@@ -13,7 +13,9 @@ from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpRe
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic.detail import DetailView
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
 import sys
 import json
@@ -26,7 +28,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.brief.models import AnswerEntry, AnswerQuestion, BriefEntry, BriefModule, BriefQuestion, BriefSection, Project, qids, \
-                            BriefProduct
+                            BriefProduct, History
 from cesar.brief.forms import ProjectForm, QuestionsForm, AnswerEntryForm, ProductForm
 from cesar.utils import ErrHandle
 
@@ -226,6 +228,47 @@ def brief_load(request):
         msg = oErr.get_error_message()
         oErr.DoError("brief_load")
     return response
+
+# @csrf_exempt
+def set_section(request):
+    """Set the section for a particular user viewing a particular project brief"""
+
+    oData = dict(status="fail")
+    if request.is_ajax() and request.method == "POST":
+        oErr = ErrHandle()
+        try:
+            qd = request.POST
+            # Get the project id
+            project_id = qd.get("project_id", "")
+            module_no = qd.get("module_no", "")
+            section_no = qd.get("section_no", "")
+            # Validate project
+            if project_id != "":
+                project = Project.objects.filter(id=project_id).first()
+                # Validate module/section
+                if module_no != "" and section_no != "": 
+                    location = dict(module=int(module_no), 
+                                    section=int(section_no),
+                                    date=timezone.now().strftime("%Y-%m-%dT%H:%M:%S"))
+                    # Set this information in the project information
+                    project.info = json.dumps(location)
+                    project.save()
+                    # Also set a history note
+                    History.add_action(request.user.username, project, location)
+                    oData['status'] = "ok"
+                else:
+                    oData['msg'] = "no module or section specified"
+            else:
+                oData['msg'] = "no project specified"
+        except:
+            msg = oErr.get_error_message()
+            oData['msg'] = msg
+            oErr.DoError("set_section")
+    else:
+        oData['msg'] = "Request is not ajax"
+    mimetype = "application/json"
+    data = json.dumps(oData)
+    return HttpResponse(data, mimetype)
 
 
 class ProjectEdit(BasicDetails):
@@ -427,6 +470,15 @@ class BriefMaster(BriefEdit):
             ## Make sure we add special group permission(s)
             #add_app_access(self.request, context)
 
+            # Default values
+            module = 1      # Start with section #1 "Language"
+            section = -1    # No section opened
+            # Possibly get alternative values
+            if instance.info != "" and instance.info[0] == "{":
+                info = json.loads(instance.info)
+                module = info.get('module', 1)
+                section = info.get('section', -1)
+
             # We need to have the form object too
             qform = context['queForm']
 
@@ -434,11 +486,17 @@ class BriefMaster(BriefEdit):
             for mod in BriefModule.objects.all().order_by("order"):
                 # Start an object for this module
                 oModule = dict(module=mod)
+                # Is this the opening section?
+                if mod.order == module:
+                    oModule['show'] = True
                 # Find out what sections there are in this module
                 lst_section = []
                 for sec in mod.modulesections.all().order_by("order"):
                     # Start section object
                     oSection = dict(section=sec)
+                    # Is this the section to be shown?
+                    if section >=0 and mod.order == module and sec.order == section:
+                        oSection['show'] = True
                     # Find all the questions in this section
                     lst_question = []
                     for question in sec.sectionquestions.all().order_by("order"):

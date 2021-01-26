@@ -448,6 +448,7 @@ class BasicList(ListView):
     use_team_group = False
     lst_typeaheads = []
     sort_order = ""
+    param_list = []
     extend_template = "layout.html"
     page_function = "ru.basic.search_paged_start"
 
@@ -512,6 +513,13 @@ class BasicList(ListView):
             context['page_obj'] = context['paginator'].page( page_num)
             # Make sure to adapt the object_list
             context['object_list'] = context['page_obj']
+            self.param_list.append("page={}".format(page_num))
+
+        # Make sure the parameter list becomes available
+        params = ""
+        if len(self.param_list) > 0:
+            params = base64_encode( "&".join(self.param_list))
+        context['params'] = params
 
         # Set the title of the application
         if self.plural_name =="":
@@ -779,6 +787,13 @@ class BasicList(ListView):
             if thisForm.is_valid():
                 # Process the criteria for this form
                 oFields = thisForm.cleaned_data
+
+                # Set the param_list variable
+                self.param_list = []
+                lookfor = "{}-".format(prefix)
+                for k,v in self.qd.items():
+                    if lookfor in k and not isempty(v):
+                        self.param_list.append("{}={}".format(k,v))
 
                 # Allow user to adapt the list of search fields
                 oFields, lstExclude, qAlternative = self.adapt_search(oFields)
@@ -1098,6 +1113,13 @@ class BasicDetails(DetailView):
         initial = get.copy()
         self.qd = initial
 
+        # Possibly first get params
+        params = ""
+        if "params" in dict(self.qd):
+            params = base64_decode( "".join(self.qd.pop("params")))
+        context['params'] = params
+
+        # Now see if anything is left
         self.bHasFormInfo = (len(self.qd) > 0)
 
         # Set the title of the application

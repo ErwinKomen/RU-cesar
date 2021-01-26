@@ -88,7 +88,7 @@
               <div class="panel panel-default-NOT" style="margin: 3px; padding: 3px; background-color: lightgoldenrodyellow;">
                 <ul class="nav nav-pills nav-stacked">
                   {% for mod in modules %}
-                    <li class="{% if forloop.first %}active{% endif %}"  >
+                    <li class="{% if mod.show %}active{% endif %}"  >
                       <a href="#pbrief_m_{{mod.module.order}}" data-toggle="tab" 
                          title="{{mod.module.name}}">{{mod.module.order}}. {{mod.module.short}}</a>
                     </li>
@@ -102,19 +102,22 @@
 
               {% for mod in modules %}
                 <div id="pbrief_m_{{mod.module.order}}" 
-                     class="panel tab-pane fade {% if forloop.first %}in active{% endif %}">
+                     class="panel tab-pane fade {% if mod.show %}in active{% endif %}">
                   <h4>{{mod.module.name}}</h4>
 
                   {% for sec in mod.sections %}
                     <!-- show this section -->
                     <div class="panel {% if sec.section.order == 0 %}panel-info{% else %}panel-success{% endif %}">                
-                      <div class="panel-heading collapsed" data-toggle="collapse" data-target="#pbrief_m{{mod.module.order}}_s{{sec.section.order}}">
+                      <div class="panel-heading {% if sec.show %}showing{% else %}collapsed{% endif %}" 
+                           data-toggle="collapse" onclick="sil.pbrief.set_section(this);"                           
+                           data-parent="#pbrief_m_{{mod.module.order}}"
+                           data-target="#pbrief_m{{mod.module.order}}_s{{sec.section.order}}">
                         <!-- Section name -->
                         <span>{{sec.section.order}}. {{sec.section.name}}...</span>
                         <!-- Number of items still to be done in this section -->
                         <span id="todo_s_{{sec.section.id}}" class="pull-right">{{sec.todo|safe}}</span>
                       </div>
-                      <div id="pbrief_m{{mod.module.order}}_s{{sec.section.order}}" class="panel-body collapse">
+                      <div id="pbrief_m{{mod.module.order}}_s{{sec.section.order}}" class="panel-body {% if sec.show %}in{% else %}collapse{% endif %}">
                         {% if sec.section.intro|length > 0 %}
                           <p>{{sec.section.get_intro_markdown|safe}}</p>
                         {% endif %}
@@ -211,9 +214,19 @@
       </section>
 
       <div class="hidden">
+        <!-- Add a product to this project -->
         <form id="create_new_product" action="{% url 'briefproduct_details' %}" method="post">
           {% csrf_token %}
           <input type="text" name="prd-project" value="{{instance.id}}" />
+        </form>
+      </div>
+      <div class="hidden">
+        <!-- Send current location -->
+        <form id="send_location" action="{% url 'project_location' %}" method="post">
+          {% csrf_token %}
+          <input type="text" name="project_id" value="{{instance.id}}" />
+          <input type="text" name="module_no" id="module_no" value="" />
+          <input type="text" name="section_no" id="section_no" value="" />
         </form>
       </div>
 
