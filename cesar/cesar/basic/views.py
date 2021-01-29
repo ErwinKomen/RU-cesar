@@ -867,6 +867,7 @@ class BasicDetails(DetailView):
     title = ""              # The title to be passed on with the context
     titlesg = None          # Alternative title in singular
     rtype = "json"          # JSON response (alternative: html)
+    dname = None            # If rtype == download, this may be the name of the downloaded document
     prefix_type = ""        # Whether the adapt the prefix or not ('simple')
     mForm = None            # Model form
     basic_name = None
@@ -930,9 +931,14 @@ class BasicDetails(DetailView):
                 # Set any possible typeaheads
                 context['typeaheads'] = json.dumps(self.lst_typeahead)
                 # This takes self.template_name...
-                sHtml = render_to_string(self.template_name, context, request)
-                sHtml = sHtml.replace("\ufeff", "")
-                response = HttpResponse(sHtml)
+                oErr = ErrHandle()
+                try:
+                    sHtml = render_to_string(self.template_name, context, request)
+                    sHtml = sHtml.replace("\ufeff", "")
+                    response = HttpResponse(sHtml)
+                except:
+                    msg = oErr.get_error_message()
+                    response = None
                 # response = self.render_to_response(context)
 
         # Return the response
@@ -972,6 +978,57 @@ class BasicDetails(DetailView):
                 # Set any possible typeaheads
                 data['typeaheads'] = self.lst_typeahead
                 response = JsonResponse(data)
+            elif self.rtype == "download":
+                if self.template_post == "": self.template_post = self.template_name
+                # We are being asked to download something
+                if self.dtype != "":
+                    # Initialise return status
+                    oBack = {'status': 'ok'}
+                    sType = "csv" if (self.dtype == "xlsx") else self.dtype
+
+                    # Get the data
+                    if self.dtype == "htmldoc":
+                        sData = render_to_string(self.template_post, context, request)
+                        sData = sData.replace("\ufeff", "")
+                    else:
+                        sData = self.get_data('', self.dtype)
+                    # Decode the data and compress it using gzip
+                    bUtf8 = (self.dtype != "db")
+                    bUsePlain = (self.dtype == "xlsx" or self.dtype == "csv")
+
+                    # Create name for download
+                    modelname = self.model.__name__
+                    obj_id = "n" if self.object == None else self.object.id
+                    if self.dname == None:
+                        sDbName = "cesar_{}_{}.{}".format(modelname, obj_id, self.dtype)
+                    else:
+                        sDbName = self.dname
+                    sContentType = ""
+                    if self.dtype == "csv":
+                        sContentType = "text/tab-separated-values"
+                    elif self.dtype == "json":
+                        sContentType = "application/json"
+                    elif self.dtype == "xlsx":
+                        sContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    elif self.dtype == "tar.gz":
+                        sContentType = "application/gzip"
+                    elif self.dtype == "htmldoc":
+                        sContentType = "application/msword"
+
+                    # Excel needs additional conversion
+                    if self.dtype == "xlsx":
+                        # Convert 'compressed_content' to an Excel worksheet
+                        response = HttpResponse(content_type=sContentType)
+                        response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
+                        response = csv_to_excel(sData, response)
+                    else:
+                        response = HttpResponse(sData, content_type=sContentType)
+                        response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
+
+                    # Continue for all formats
+                        
+                    # return gzip_middleware.process_response(request, response)
+                    return response
             elif self.newRedirect and self.redirectpage != "":
                 # Redirect to this page
                 return redirect(self.redirectpage)
@@ -987,6 +1044,9 @@ class BasicDetails(DetailView):
 
         # Return the response
         return response
+
+    def get_data(self, prefix, dtype, response=None):
+        return ""
 
     def initializations(self, request, pk):
         # Store the previous page

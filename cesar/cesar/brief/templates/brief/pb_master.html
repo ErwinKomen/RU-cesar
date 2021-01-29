@@ -39,6 +39,14 @@
                      targeturl="{% url 'brief_edit' queForm.instance.id  %}"
                      onclick="sil.pbrief.process_brief(this, '#form_save_notice');">Save</a>
 
+                  <!-- Download button -->
+                  <a class="view-mode btn btn-lg jumbo-3" 
+                     ajaxurl="{% url 'brief_report' queForm.instance.id %}"
+                     onclick="sil.pbrief.post_download(this);"
+                     title="Download as document">
+                    <span class="glyphicon glyphicon-download"></span>
+                  </a>
+
                   <!-- Edit button -->
                   <a mode="edit" class="view-mode btn btn-lg jumbo-1" 
                      onclick="sil.pbrief.do_button(this);"

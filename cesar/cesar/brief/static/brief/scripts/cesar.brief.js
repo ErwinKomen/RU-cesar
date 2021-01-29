@@ -347,6 +347,92 @@ var sil = (function ($, sil) {
         }
       },
 
+      /**
+        * result_download
+        *   Trigger creating and downloading a result CSV / XLSX / JSON
+        *
+        */
+      post_download: function (elStart) {
+        var ajaxurl = "",
+            contentid = null,
+            response = null,
+            frm = null,
+            el = null,
+            sHtml = "",
+            oBack = null,
+            dtype = "",
+            sMsg = "",
+            method = "normal",
+            data = [];
+
+        try {
+          // Clear the errors
+          private_methods.errClear();
+
+          // obligatory parameter: ajaxurl
+          ajaxurl = $(elStart).attr("ajaxurl");
+          contentid = $(elStart).attr("contentid");
+
+          // Gather the information
+          frm = $(elStart).closest(".container-small").find("form");
+          if (frm.length === 0) {
+            frm = $(elStart).closest("td").find("form");
+            if (frm.length === 0) {
+              frm = $(elStart).closest(".body-content").find("form");
+              if (frm.length === 0) {
+                frm = $(elStart).closest(".container-large.body-content").find("form");
+              }
+            }
+          }
+          // Check what we have
+          if (frm === null || frm.length === 0) {
+            // Didn't find the form
+            private_methods.errMsg("post_download: could not find form");
+          } else {
+            // Make sure we take only the first matching form
+            frm = frm.first();
+          }
+          // Get the download type and put it in the <input>
+          dtype = $(elStart).attr("downloadtype");
+          $(frm).find("#downloadtype").val(dtype);
+
+          switch (method) {
+            case "erwin":
+              data = frm.serialize();
+              $.post(ajaxurl, data, function (response) {
+                var iready = 1;
+              });
+              break;
+            default:
+              // Set the 'action; attribute in the form
+              frm.attr("action", ajaxurl);
+              // Make sure we do a POST
+              frm.attr("method", "POST");
+
+              // Do we have a contentid?
+              if (contentid !== undefined && contentid !== null && contentid !== "") {
+                // Process download data
+                switch (dtype) {
+                  default:
+                    // TODO: add error message here
+                    return;
+                }
+              } else {
+                // Do a plain submit of the form
+                oBack = frm.submit();
+              }
+              break;
+          }
+
+          // Check on what has been returned
+          if (oBack !== null) {
+
+          }
+        } catch (ex) {
+          private_methods.errMsg("post_download", ex);
+        }
+      },
+
       process_brief: function (elStart, divNotice) {
         var targeturl = "",
             frm = null,

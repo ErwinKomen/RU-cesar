@@ -32,7 +32,9 @@
                 <ul class="dropdown-menu" aria-labelledby="downloadmenu">
                   {% for ditem in downloads %}
                     {% if ditem.label %}
-                      <li><a href="#" downloadtype="{{ditem.dtype}}" ajaxurl="{{ditem.url}}" onclick="ru.basic.post_download(this);">{{ditem.label}}</a></li>
+                      <li><a href="#" downloadtype="{{ditem.dtype}}" 
+                             ajaxurl="{{ditem.url}}" 
+                             onclick="ru.basic.post_download(this);">{{ditem.label}}</a></li>
                     {% else %}
                       <li class="divider" role="separator"></li>
                     {% endif %}

@@ -66,6 +66,7 @@ urlpatterns = [
     url(r'^brief/project/location/$', cesar.brief.views.set_section, name='project_location'),
     url(r'^brief/edit(?:/(?P<pk>\d+))?/$', BriefEdit.as_view(), name='brief_edit'),
     url(r'^brief/master(?:/(?P<pk>\d+))?/$', BriefMaster.as_view(), name='brief_master'),
+    url(r'^brief/report(?:/(?P<pk>\d+))?/$', BriefReport.as_view(), name='brief_report'),
     url(r'^brief/product/details(?:/(?P<pk>\d+))?/$', BriefProductDetails.as_view(), name='briefproduct_details'),
     url(r'^brief/product/edit(?:/(?P<pk>\d+))?/$', BriefProductEdit.as_view(), name='briefproduct_edit'),
     url(r'^brief/product/list', BriefProductList.as_view(), name='briefproduct_list'),

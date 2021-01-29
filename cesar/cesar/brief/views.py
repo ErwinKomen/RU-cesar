@@ -23,7 +23,7 @@ import re
 import os.path, io, shutil
 import tarfile
 
-from cesar.settings import APP_PREFIX, WRITABLE_DIR
+from cesar.settings import APP_PREFIX, WRITABLE_DIR, STATIC_ROOT
 from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
@@ -292,7 +292,8 @@ class ProjectEdit(BasicDetails):
             {'type': 'plain', 'label': "Progress:",     'value': instance.get_ptype_display(),  'field_key': 'ptype'},
             {'type': 'plain', 'label': "Created:",      'value': instance.get_created()  },
             {'type': 'plain', 'label': "Saved:",        'value': instance.get_saved()},
-            {'type': 'safe',  'label': "Brief",         'value': self.get_brief_button(instance)}
+            {'type': 'safe',  'label': "Brief",         'value': self.get_brief_button(instance)},
+            {'type': 'safe',  'label': "Report",        'value': self.get_report_button(instance)}
             ]
 
         # CHeck if this user has edit access to this particular item
@@ -313,6 +314,19 @@ class ProjectEdit(BasicDetails):
         # The buttons for the actions that can be taken
         url = reverse("brief_master", kwargs={'pk': instance.id})
         html.append('<a href="{}" title="Project brief"><span class="glyphicon glyphicon-th-list"><span></a>'.format(url))
+        # COmbineer
+        sBack = "\n".join(html)
+
+        # Retourneer wat kan
+        return sBack
+
+    def get_report_button(self, instance):
+        sBack = ""
+        html = []
+
+        # The buttons for the actions that can be taken
+        url = reverse("brief_report", kwargs={'pk': instance.id})
+        html.append('<a href="{}" title="Project brief - REPORT"><span class="glyphicon glyphicon-th-list"><span></a>'.format(url))
         # COmbineer
         sBack = "\n".join(html)
 
@@ -375,6 +389,9 @@ class ProjectListView(BasicList):
             # The buttons for the actions that can be taken
             url = reverse("brief_master", kwargs={'pk': instance.id})
             html.append('<a href="{}" title="Project brief"><span class="glyphicon glyphicon-th-list"><span></a>'.format(url))
+            # REPORT
+            url = reverse("brief_report", kwargs={'pk': instance.id})
+            html.append('<a href="{}" title="Project brief - REPORT"><span class="glyphicon glyphicon-th-list"><span></a>'.format(url))
             # COmbineer
             sBack = "\n".join(html)
         elif custom == "progress":
@@ -535,11 +552,41 @@ class BriefMaster(BriefEdit):
 
             # Explicitly say what the mode is
             context['mode'] = "view" if not context['is_app_editor'] else "edit"
+            context['title'] = "{} brief".format(instance.name)
+            context['downloadurl'] = reverse('brief_report', kwargs={'pk': instance.id})
         except:
             msg = oErr.get_error_message()
             oErr.DoError("BriefMaster/add_to_context")
 
         # Return the context we have adapted
+        return context
+
+
+class BriefReport(BriefMaster):
+    """Show the project brief in a report"""
+
+    template_name = "brief/report.html"
+    rtype = "download"
+    dtype = "htmldoc"
+
+    def custom_init(self, instance):
+        # Calculate the [dname], document name
+        self.dname = "Brief-{}-{}.doc".format(instance.name, timezone.now().strftime("%Y%m%d-%H:%M"))
+        return None
+
+    def add_to_context(self, context, instance):
+        # First execute the [BriefEdit] default context additions
+        context = super(BriefReport, self).add_to_context(context, instance)
+        files = []
+        files.append(os.path.join(STATIC_ROOT, "brief", "content", "bootstrap.min.css"))
+        files.append(os.path.join(STATIC_ROOT, "brief", "content", "sil-base.css"))
+        contents = []
+        for file in files:
+            with open(file, "r", encoding="utf8") as fp:
+                contents.append(fp.read())
+
+        context['bootstrapcss'] = '<style type="text/css">{}</style>'.format( contents[0])
+        context['silbasecss'] = '<style type="text/css">{}</style>'.format(contents[1])
         return context
 
 
