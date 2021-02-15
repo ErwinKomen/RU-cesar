@@ -3746,7 +3746,7 @@ class Research(models.Model):
         if sCrpxName == "":
             # An error has returned
             oBack['status'] = 'error'
-            oBack['msg'] = "/n".join(sCrpxText)
+            oBack['msg'] = "\n".join(sCrpxText)
             return oBack
 
         # Return what we have created
