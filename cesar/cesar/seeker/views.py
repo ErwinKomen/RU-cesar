@@ -4796,6 +4796,8 @@ def research_simple(request, pk=None):
             simpleform.fields["searchexc"].initial = ""
             simpleform.fields["searchrel"].initial = ""
             simpleform.fields["searchcql"].initial = ""
+            simpleform.fields["searchfcat"].initial = ""
+            simpleform.fields["searchfval"].initial = ""
             simpleform.fields["baresimple"].initial = ""
             simpleform.fields["description"].initial = ""
             cns = obj.gateway.constructions.first()
@@ -4844,6 +4846,8 @@ def research_simple(request, pk=None):
             simpleform.fields["searchlemma"].initial = oSearch['searchlemma']
             simpleform.fields["searchexc"].initial = oSearch['searchexc']
             simpleform.fields["searchcql"].initial = oSearch['searchcql']
+            simpleform.fields["searchfcat"].initial = oSearch['searchfcat']
+            simpleform.fields["searchfval"].initial = oSearch['searchfval']
             simpleform.fields["baresimple"].initial = oSearch['name']
             simpleform.fields["description"].initial = "" if "description" not in oSearch else oSearch['description']
 
@@ -4869,7 +4873,7 @@ def research_simple(request, pk=None):
 
         # Determine whether the 'more' part should be shown or not
         show_more = "more"
-        more_fields = ["searchpos", "searchlemma", "searchexc"]
+        more_fields = ["searchpos", "searchlemma", "searchexc", "searchfcat", "searchfval"]
         for field in more_fields:
             if simpleform.fields[field].initial: 
                 show_more = "less"
@@ -5062,6 +5066,8 @@ def modify_simple_search(research, qd, data = None):
         sLemma = ""         # Extended: lemma
         sRelated = ""       # Extended: related constituent(s)
         lTowards = []       # List of towards options
+        sFeatCat = ""       # Feature category
+        sFeatVal = ""       # Feature value
         sCql = ""           # CQL
         if research.targetType == "w":              # Word-level
             sValue = qd.get("searchwords", "")
@@ -5075,6 +5081,8 @@ def modify_simple_search(research, qd, data = None):
             sCategory = qd.get("searchpos", "")
             sLemma = qd.get("searchlemma", "")
             sExclude = qd.get("searchexc", "")
+            sFeatCat = qd.get("searchfcat", "")
+            sFeatVal = qd.get("searchfval", "")
             # sRelated = qd.get("searchrel", "")      # Related constituent(s)
 
         # Adapt the 'RelatedForm' with the information from lTowards
@@ -5109,7 +5117,7 @@ def modify_simple_search(research, qd, data = None):
                 return False
 
         # Adapt the value in searchmain
-        if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "" or sCql != "" or bResetRelated:
+        if sValue != "" or sCategory != "" or sLemma != "" or sExclude != "" or sCql != "" or sFeatVal != "" or bResetRelated:
             search = None
             cns = research.gateway.constructions.first()
             if cns == None or cns.search == None:
@@ -5124,7 +5132,9 @@ def modify_simple_search(research, qd, data = None):
                         search = SearchMain.create_item("word-group", sValue, 'groupmatches', related=sRelated)
                 elif research.targetType == "c" or research.targetType == "e":
                     # This is targetType "c" (constituent) or "e" (extended)
-                    search = SearchMain.create_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma, sRelated)
+                    search = SearchMain.create_item("const-group", sValue, 
+                                                    'groupmatches', sExclude, sCategory, 
+                                                    sLemma, sFeatCat, sFeatVal, sRelated)
                 elif research.targetType == "q":
                     # CQL translation
                     search = SearchMain.create_item("const-group", sValue, 'groupmatches', cql = sCql)
@@ -5151,7 +5161,9 @@ def modify_simple_search(research, qd, data = None):
                     search.adapt_item("word-group", sValue, 'groupmatches', related=sRelated)
             elif research.targetType == "c" or research.targetType == "e":
                 # Targettype "c" (constituent) or "e" (extended)
-                search.adapt_item("const-group", sValue, 'groupmatches', sExclude, sCategory, sLemma, sRelated)
+                search.adapt_item("const-group", sValue, 
+                                  'groupmatches', sExclude, sCategory, 
+                                  sLemma, sFeatCat, sFeatVal, sRelated)
             elif research.targetType == "q":
                 # CQL translation
                 search.adapt_item("const-group", sValue, 'groupmatches', cql = sCql)
@@ -5238,15 +5250,18 @@ def research_simple_save(request):
     # Return the information
     return JsonResponse(data)
 
-def get_targettype(sWord, sCat, sLemma, sCql):
+def get_targettype(sWord, sCat, sLemma, sFeatVal, sCql):
     """Determine the targettype based on the information passed on"""
 
-    targetType = "e"
+    targetType = "e"    # Default: extended
     if sCql != "": 
+        # Whenever CQL is specified, do a CQL search
         targetType = "q"
-    elif sWord != "" and sLemma == "" and sCat == "":
+    elif sWord != "" and sLemma == "" and sCat == "" and sFeatVal == "":
+        # THis is *ONLY* looking for a particular word
         targetType = "w"
-    elif sWord == "" and sLemma == "" and sCat != "":
+    elif sWord == "" and sLemma == "" and sFeatVal == "" and sCat != "":
+        # THis is *ONLY* constituent category searching!!!
         targetType = "c"
     return targetType
 
@@ -5271,18 +5286,22 @@ def read_simple_form(qd):
             searchpos = cleaned_data['searchpos']
             searchexc = cleaned_data['searchexc']
             searchlemma = cleaned_data['searchlemma']
+            searchfcat = cleaned_data['searchfcat']
+            searchfval = cleaned_data['searchfval']
             targetType = cleaned_data['targetType']
             description = cleaned_data['description']
             overwrite = (qd.get("overwrite", "false") == "true")
 
             # Determine the targettype based on the data above
             # (i.e: overriding what has been determined previously...)
-            targetType = get_targettype(searchwords, searchpos, searchlemma, searchcql)
+            targetType = get_targettype(searchwords, searchpos, searchlemma, searchfval, searchcql)
 
             if baresimple != "":
                 # Get the search parameters
-                oSearch = dict(name=baresimple, targetType=targetType, searchwords=searchwords, searchcql=searchcql,
-                                searchpos=searchpos, searchexc=searchexc, searchlemma=searchlemma, description=description)
+                oSearch = dict(name=baresimple, targetType=targetType, searchwords=searchwords, 
+                               searchcql=searchcql, searchpos=searchpos, searchexc=searchexc, 
+                               searchfcat=searchfcat, searchfval=searchfval,
+                               searchlemma=searchlemma, description=description)
                 # Get the related ones
                 bOkay, sRelated = get_related(qd)
                 if bOkay:

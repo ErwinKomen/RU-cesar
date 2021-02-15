@@ -547,6 +547,8 @@ class SimpleSearchForm(forms.Form):
     searchexc = forms.CharField(label=_("Constituent categorie(s) to be excluded"), required = False)
     searchrel = forms.CharField(label=_("Related constituent(s)"), required = False)
     searchcql = forms.CharField(required = False, widget=SeekerTextarea(attrs={'rows': 3, 'cols': 80, 'style': 'height: 90px;'}))
+    searchfcat = forms.CharField(label=_("Feature category"), required = False)
+    searchfval = forms.CharField(label=_("Feature value(s)"), required = False)
 
 
 class SimpleListForm(ModelForm):

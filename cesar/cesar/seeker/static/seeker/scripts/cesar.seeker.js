@@ -3953,6 +3953,8 @@ var ru = (function ($, ru) {
             sLemma = "",        // For simple search
             sCat = "",          // For simple search
             sExc = "",          // For simple search
+            sFcat = "",         // For simple search
+            sFval = "",         // For simple search
             sCql = "",          // For extended search
             sTargetType = "",   // For simple search
             data = [];
@@ -3974,13 +3976,15 @@ var ru = (function ($, ru) {
             sWord = private_methods.get_list_value(data, "searchwords");
             sLemma = private_methods.get_list_value(data, "searchlemma");
             sCat = private_methods.get_list_value(data, "searchpos");
+            sFcat = private_methods.get_list_value(data, "searchfcat");
+            sFval = private_methods.get_list_value(data, "searchfval");
             sExc = private_methods.get_list_value(data, "searchexc");
             sCql = private_methods.get_list_value(data, "searchcql");
             // Determine the targetType
             sTargetType = "e";
             if (sCql !== "") {sTargetType = "q"; }
-            else if (sWord !== "" && sLemma === "" && sCat === "") { sTargetType = "w"; }
-            else if (sWord === "" && sLemma === "" && sCat !== "") { sTargetType = "c";}
+            else if (sWord !== "" && sLemma === "" && sFval === "" && sCat === "") { sTargetType = "w"; }
+            else if (sWord === "" && sLemma === "" && sFval === "" && sCat !== "") { sTargetType = "c";}
             // Set the targetType
             $("#id_targetType").val(sTargetType);
             // Change the value in the list

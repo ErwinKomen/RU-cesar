@@ -154,6 +154,10 @@ class SearchMain(models.Model):
     category = models.CharField("Constituent category", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [0-1] Extended: lemma
     lemma = models.CharField("Lemma", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] Extended: feature category
+    fcat = models.CharField("Feature category", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] Extended: feature value
+    fval = models.CharField("Feaure value", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [0-1] Extended: related
     related = models.TextField("Related constituent(s)", null=True, blank=True)
     # [0-1] None of the above: CQL
@@ -183,7 +187,7 @@ class SearchMain(models.Model):
         # Return the new copy
         return new_copy
 
-    def create_item(function, value, operator, exclude=None, category=None, lemma=None, related=None, cql=None):
+    def create_item(function, value, operator, exclude=None, category=None, lemma=None, fcat=None, fval=None, related=None, cql=None):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
         function_word = choice_value(SEARCH_FUNCTION, function)
         # Create initial object
@@ -200,6 +204,12 @@ class SearchMain(models.Model):
         if lemma != None: 
             obj.lemma = lemma
             need_saving = True
+        if fcat != None:
+            obj.fcat = fcat
+            need_saving = True
+        if fval != None:
+            obj.fval = fval
+            need_saving = True
         if related != None: 
             obj.related = related
             need_saving = True
@@ -214,7 +224,7 @@ class SearchMain(models.Model):
         # Return the object as we have it
         return obj
 
-    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None, related=None, cql=None):
+    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None, fcat=None, fval=None, related=None, cql=None):
         """Adapt the search and save it"""
 
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
@@ -239,6 +249,12 @@ class SearchMain(models.Model):
             need_saving = True
         if self.lemma != lemma: 
             self.lemma = lemma
+            need_saving = True
+        if self.fcat != fcat:
+            self.fcat = fcat
+            need_saving = True
+        if self.fval != fval:
+            self.fval = fval
             need_saving = True
         if self.related != related: 
             self.related = related
@@ -292,12 +308,14 @@ class SearchMain(models.Model):
             # CQL definition
             response =  {'cql': self.cql }
         elif targetType == 'e': 
-            # Extended: look for combination of word/lemma/category
+            # Extended: look for combination of word/lemma/category/fcat/fval
             sSingle, sMulti = val_convert(self.value)
             response = {'single': sSingle, 
                     'line_list': sMulti,
                     'cat_incl': self.category, 
                     'cat_excl': self.exclude,
+                    'fcat': self.fcat,
+                    'fval': self.fval,
                     'lemma': self.lemma}
         # Only add 'related'if it is there
         if self.related != None and self.related != "":
@@ -541,34 +559,42 @@ class Gateway(models.Model):
 
     def get_search_list(self):
         """List the names of the constructions plus their search group and specification"""
-        qs = self.constructions.all().select_related()
-        targetType = self.research.targetType
+
+        oErr = ErrHandle()
         lBack = []
-        for item in qs:
-            oSearch = item.search.get_search_spec(targetType)
-            if targetType == 'w':
-                # Only word
-                oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
-            elif targetType == 'c':
-                # Only constituent category
-                oItem = {'name': item.name, 'cat_incl': oSearch['cat_incl'], 'cat_excl': oSearch['cat_excl']}
-            elif targetType == 'e':
-                # Etended: combination of word(s), lemma, category
-                oItem = {'name': item.name, 
-                         'single': oSearch['single'], 
-                         'line_list': oSearch['line_list'], 
-                         'cat_incl': oSearch['cat_incl'], 
-                         'cat_excl': oSearch['cat_excl'],
-                         'lemma': oSearch['lemma']}
-            elif targetType == 'q':
-                # CQL type definition
-                oItem = {'cql': oSearch['cql'] }
-            else:
-                oItem = {}
-            # Potentially also 'related'
-            if (targetType == 'c' or targetType == 'e' or targetType =='w') and ('related' in oSearch):
-                oItem['related'] = oSearch['related']
-            lBack.append(oItem)
+        try:
+            qs = self.constructions.all().select_related()
+            targetType = self.research.targetType
+            for item in qs:
+                oSearch = item.search.get_search_spec(targetType)
+                if targetType == 'w':
+                    # Only word
+                    oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
+                elif targetType == 'c':
+                    # Only constituent category
+                    oItem = {'name': item.name, 'cat_incl': oSearch['cat_incl'], 'cat_excl': oSearch['cat_excl']}
+                elif targetType == 'e':
+                    # Extended: combination of word(s), lemma, category, feature-category, feature-value
+                    oItem = {'name': item.name, 
+                             'single': oSearch['single'], 
+                             'line_list': oSearch['line_list'], 
+                             'cat_incl': oSearch['cat_incl'], 
+                             'cat_excl': oSearch['cat_excl'],
+                             'fcat': oSearch['fcat'],
+                             'fval': oSearch['fval'],
+                             'lemma': oSearch['lemma']}
+                elif targetType == 'q':
+                    # CQL type definition
+                    oItem = {'cql': oSearch['cql'] }
+                else:
+                    oItem = {}
+                # Potentially also 'related'
+                if (targetType == 'c' or targetType == 'e' or targetType =='w') and ('related' in oSearch):
+                    oItem['related'] = oSearch['related']
+                lBack.append(oItem)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_search_list")
         return lBack
 
     def do_simple_related(self):
@@ -3442,6 +3468,8 @@ class Research(models.Model):
                             search.exclude = cns['exclude']
                             search.category = cns['category']
                             search.lemma = cns['lemma']
+                            search.fcat = cns['fcat']
+                            search.fval = cns['fval']
                         elif targetType == "q":
                             search.cql = cns['cql']
                         search.save()
