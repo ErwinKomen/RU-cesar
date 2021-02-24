@@ -4846,8 +4846,8 @@ def research_simple(request, pk=None):
             simpleform.fields["searchlemma"].initial = oSearch['searchlemma']
             simpleform.fields["searchexc"].initial = oSearch['searchexc']
             simpleform.fields["searchcql"].initial = oSearch['searchcql']
-            simpleform.fields["searchfcat"].initial = oSearch['searchfcat']
-            simpleform.fields["searchfval"].initial = oSearch['searchfval']
+            simpleform.fields["searchfcat"].initial = oSearch.get('searchfcat')
+            simpleform.fields["searchfval"].initial = oSearch.get('searchfval')
             simpleform.fields["baresimple"].initial = oSearch['name']
             simpleform.fields["description"].initial = "" if "description" not in oSearch else oSearch['description']
 
