@@ -1029,6 +1029,11 @@ td a.nostyle {
   display: block;
 }
 
+/*
+.btn-xs {
+    padding: 5px 5px;
+}*/
+
 
 /* TSG specific */
 td.editable, span.editable {
@@ -1060,3 +1065,4 @@ table.func-view td .view-mode:hover {
     font-size: xx-small;
     color: darkred;
 }
+

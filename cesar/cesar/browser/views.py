@@ -1097,6 +1097,10 @@ class TextDetailView(DetailView):
             status = initial['status']
         context['status'] = status
 
+        # Make sure we add special group permission(s)
+        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+        context['is_superuser'] = user_is_superuser(self.request)
+
         # Return what we have
         return context
 
@@ -1179,6 +1183,9 @@ class TextListView(ListView):
         # Set the title
         context['title'] = "Cesar texts"
 
+        # Make sure we add special group permission(s)
+        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+        context['is_superuser'] = user_is_superuser(self.request)
 
         # Remember where we are
         # ONLY GIVES PARTIAL: context['url'] = self.request.resolver_match.url_name

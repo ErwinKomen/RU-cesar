@@ -1,4 +1,4 @@
-﻿{% load staticfiles %}
+{% load staticfiles %}
 
     <div class="navbar navbar-custom navbar-fixed-top">
         <div class="container" url_home="{% url 'home' %}">
@@ -14,7 +14,9 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="{% url 'definitions' %}">Definitions</a></li>
+                    {% if is_superuser or is_in_tsg %}
+                      <li><a href="{% url 'definitions' %}">Definitions</a></li>
+                    {% endif %}
 
                     <li class="dropdown">
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
