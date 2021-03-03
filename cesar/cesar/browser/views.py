@@ -506,6 +506,7 @@ def sync_crpp_start(request):
                 
 
     except:
+        msg = oErr.get_error_message()
         oErr.DoError("sync_crpp_start error")
         data['status'] = "error"
 
@@ -555,7 +556,8 @@ def sync_crpp_progress(request):
         # Return this response
         return JsonResponse(data)
     except:
-        oErr.DoError("sync_crpp_start error")
+        msg = oErr.get_error_message()
+        oErr.DoError("sync_crpp_progress error")
         data = {'status': 'error'}
 
     # Return this response

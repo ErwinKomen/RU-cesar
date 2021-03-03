@@ -827,7 +827,20 @@ class NexisLink(models.Model):
                         bFound = True
                         break
                 if not bFound:
-                    return idx, None
+                    # Check if we can find it from here
+                    idx_local = idx + 1
+                    while idx_local < len(lst) and not bFound:
+                        item = lst[idx_local]
+                        item_lower = item.lower()
+                        bFound = False
+                        for m in must:
+                            if m in item_lower: 
+                                bFound = True
+                                break
+                        if not bFound:
+                            idx_local += 1
+                    if not bFound:
+                        return idx, None
             elif inside != None:
                 # Check if we can append to [item] from the next non-empty line
                 bReady = False
