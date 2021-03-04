@@ -706,10 +706,11 @@ def import_nexis(request):
                         # Check the extension
                         arFile = filename.split(".")
                         extension = arFile[len(arFile)-1]
-                        sBare = arFile[0].strip().replace(" ", "_")
+                        # sBare = arFile[0].strip().replace(" ", "_")
+                        sBare = arFile[0].strip()
 
                         # Check the bare file name
-                        if re_number.match(sBare):
+                        if False: # re_number.match(sBare):
                             # Invalid filename
                             statuscode = "error"
                             msg = "Please change the filename. It should start with a character."

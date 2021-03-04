@@ -654,6 +654,10 @@ class Gateway(models.Model):
 
                             # Get the correct relation from raxis_id
                             raxis = Relation.objects.filter(id=raxis_id).first()
+                            if raxis == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: there is no raxis id {}".format(raxis_id)
+                                return False, msg
 
                             # Get the constituent towards with we are working
                             cnstype = "hit" if towards == "search" else "dvar"
@@ -667,7 +671,8 @@ class Gateway(models.Model):
                         
                             # First add a DVAR for this line -- this automatically creates a CVAR
                             dvar_order += 1
-                            dvar = VarDef(name=sName, order=dvar_order, description="dvar for line #{}".format(idx),
+                            dvar = VarDef(name=sName, order=dvar_order, 
+                                          description="dvar for line #{}".format(idx),
                                           type=varType, gateway=gateway)
                             trials = 10
                             bDone = False
@@ -682,8 +687,17 @@ class Gateway(models.Model):
                                     # Are we out of bounds?
                                     if trials <= 0:
                                         return False, sMsg
+                            if dvar == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: no dvar is created for line ${} trials={}".format(idx, trials)
+                                return False, msg
+
                             # Retrieve the CVAR
                             cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
+                            if cvar == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: no cvar could be created for line {}".format(idx)
+                                return False, msg
                             cvar.type=varType
 
                             # Add details for function [get_first_relative_cns]
@@ -742,6 +756,10 @@ class Gateway(models.Model):
                             cond = Condition(name="exist_{}".format(sName), order=cond_order,
                                           description="check existence of ${}".format(sName), include="true",
                                           condtype="func", gateway=gateway)
+                            if cond == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: could not create condition for {}".format(sName)
+                                return False, msg
                             cond.save()
                             # Create and add details for the function: exist
                             arglist = []
@@ -749,6 +767,10 @@ class Gateway(models.Model):
                             lFunc = [ {"function": "exists", "line": 0, "arglist": arglist}]
                             # Yes, create the functions
                             func_main = Function.create_from_list(lFunc, gateway, "cond", None, cond, None)
+                            if func_main == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: could not create main function for {}".format(sName)
+                                return False, msg
                             func_main.save()
                             cond.function = func_main
                             cond.functiondef = func_main.functiondef
@@ -832,6 +854,7 @@ class Gateway(models.Model):
             return True, "ok"
         except:
             sMsg = oErr.get_error_message()
+            oErr.DoError("Gateway/do_simple_related")
             return False, sMsg
         
     def delete(self, using = None, keep_parents = False):
@@ -3635,6 +3658,7 @@ class Research(models.Model):
         # Validate
         if partId == None or partId == "" or sFormat == None or sFormat == "":
             return None
+
         try:
             # Prepare data
             oData = {'targetType': self.targetType,
@@ -3651,6 +3675,8 @@ class Research(models.Model):
                 # Check errors
                 errors = self.gateway.get_errors()
                 if errors != "" and errors != "[]":
+                    # Also show errors here
+                    errHandle.Status("Error in to_xquery: {}".format(errors))
                     return None
                 # Save the basket
                 basket.save()
@@ -3719,6 +3745,8 @@ class Research(models.Model):
                         self.gateway.error_clear()
                 oBack['msg'] = sMsg
                 oBack['status'] = 'error'
+                # Also show this error in the console
+                oErr.Status("Error in to_crpx: {}".format(sMsg))
                 return oBack
         except:
             msg_list = []
@@ -3728,6 +3756,8 @@ class Research(models.Model):
             oBack['msg_list'] = msg_list
             oBack['msg'] = " ".join(msg_list)
             oBack['status'] = 'error'
+            # Also show this error in the console
+            oErr.Status("Error in to_crpx: {}".format(" ".join(msg_list)))
             return oBack
         # Add basket to the return object, provided all went well
         oBack['basket'] = basket

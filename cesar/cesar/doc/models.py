@@ -895,10 +895,15 @@ class NexisLink(models.Model):
         paper = ['telegraaf', 'dagblad', 'handelsblad', 'trouw', 'volkskrant']
         copyright = ['copyright']
 
+        nexis_filename = ""
+
         try:
+            # Provide the right nexis filename
+            nexis_filename = "nexislink_{}.txt".format(str(self.id).zfill(6))
 
             # Read and create basis-folia
-            oResult = nexisProc.basis_text(filename, data_file)
+            # Note: changed from [filename] to [nexis_filename]
+            oResult = nexisProc.basis_text(nexis_filename, data_file)
             if not oResult['okay']:
                 # There was some kind of error
                 oBack['status'] = 'error'
@@ -1033,10 +1038,10 @@ class NexisProcessor():
                     fd.write("\n".join(lines))
             # ===================================================
 
-            # create a folia document with a numbered id
-            docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
-            # Make sure we remember the docstr
-            self.docstr = docstr
+            ## create a folia document with a numbered id
+            #docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
+            ## Make sure we remember the docstr
+            #self.docstr = docstr
 
             # Split into metadata and body
             iBodyStart = -1
