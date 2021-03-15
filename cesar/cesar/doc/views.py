@@ -24,7 +24,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
-from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor
+from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm
 from cesar.utils import ErrHandle
 
@@ -927,7 +927,8 @@ class NexisListView(BasicList):
 
         # Figure out what to show
         if custom == "created":
-            sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
+            # sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
+            sBack = get_crpp_date(instance.created, True)
         elif custom == "links":
             # Show the download links
             url = reverse('nexisbatch_download', kwargs={'pk': instance.id})

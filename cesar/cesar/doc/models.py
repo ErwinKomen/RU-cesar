@@ -4,13 +4,14 @@ import time
 import json
 import re
 import copy
+import pytz
 from io import StringIO 
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from cesar.utils import ErrHandle
 from cesar.seeker.models import import_data_file
-from cesar.settings import WRITABLE_DIR
+from cesar.settings import WRITABLE_DIR, TIME_ZONE
 
 # XML processing
 from xml.dom import minidom
@@ -41,13 +42,25 @@ MAXPARAMLEN = 100
 MAXPATH = 256
 FROGPORT = 8020
 
-def get_crpp_date(dtThis):
+#def get_crpp_date(dtThis):
+#    """Convert datetime to string"""
+
+#    # Model: yyyy-MM-dd'T'HH:mm:ss
+#    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+#    return sDate
+
+def get_crpp_date(dtThis, readable=False):
     """Convert datetime to string"""
 
-    # Model: yyyy-MM-dd'T'HH:mm:ss
-    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+    if readable:
+        # Convert the computer-stored timezone...
+        dtThis = dtThis.astimezone(pytz.timezone(TIME_ZONE))
+        # Model: yyyy-MM-dd'T'HH:mm:ss
+        sDate = dtThis.strftime("%d/%B/%Y (%H:%M)")
+    else:
+        # Model: yyyy-MM-dd'T'HH:mm:ss
+        sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
     return sDate
-
 
 
 
@@ -800,21 +813,32 @@ class NexisLink(models.Model):
             while idx < len(lst) and lst[idx] == "": idx += 1
             return idx
 
-        def get_anywhere(lst, must):
+        def get_anywhere(lst, must, start_from = 0, eow=False):
             bFound = False
             item_found = None
-            for item in lst:
+            index_found = -1
+            for idx, item in enumerate(lst[start_from:]):
                 if bFound:
+                    # index_found = idx + start_from
                     break
                 item_lower = item.lower()
                 for m in must:
                     if m in item_lower: 
-                        bFound = True
-                        item_found = item
-                        break
+                        if eow:
+                            pattern = r'.*{}\s*$'.format(m)
+                            if re.match(pattern, item_lower):
+                                bFound = True
+                                item_found = item
+                                index_found = idx + start_from
+                                break
+                        else:
+                            bFound = True
+                            item_found = item
+                            index_found = idx + start_from
+                            break
             # Found anything?
-            return bFound, item_found
-
+            index_found += 1
+            return bFound, item_found, index_found
 
         def get_line_item(lst, idx, inside = None, must = None):
             item = lst[idx]
@@ -892,8 +916,11 @@ class NexisLink(models.Model):
         inputType = "nexistext"
         nexisProc = NexisProcessor(username)
         day = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
-        paper = ['telegraaf', 'dagblad', 'handelsblad', 'trouw', 'volkskrant']
+        paper = ['telegraaf', 'dagblad', 'handelsblad', 'trouw', 'volkskrant', 'nrc.next', 'nrc']
         copyright = ['copyright']
+        highlight = ['highlight:']
+        byline = ['byline:']
+        section = ['section:']
 
         nexis_filename = ""
 
@@ -918,34 +945,40 @@ class NexisLink(models.Model):
 
                 # Process the metadata
                 oMeta = {}
+                bTitle = False
+                # Add all the metadata 
+                oMeta['raw'] = "\n".join(lst_meta)
                 # Skip empty lines
                 iLine = skip_empty_lines(lst_meta, 0)
                 # Get the title, newspaper, date and copyright
                 iLine, oMeta['title'] = get_line_item(lst_meta, iLine, inside=filename)
-                if oMeta['title'] == None: oMeta['title'] = filename.replace(".txt", "")
+                if oMeta['title'] == None: 
+                    oMeta['title'] = filename.replace(".txt", "")
+                else:
+                    bTitle = True
                 
-                iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine, must=paper)
-                while oMeta['newspaper'] == None and iLine < len(lst_meta):
-                    # Read one more line into the title
-                    iLine, add_to_title = get_line_item(lst_meta, iLine, inside=filename)
-                    if add_to_title != None:
-                        oMeta['title'] = "{} {}".format(oMeta['title'], add_to_title)
-                    # Try reading newspaper again
-                    iLine, oMeta['newspaper'] = get_line_item(lst_meta, iLine, must=paper)
+                bFound, oMeta['newspaper'], iLine = get_anywhere(lst_meta, must=paper, eow=True) # , start_from=iLine+1)
                 if oMeta['newspaper'] == None:
                     oMeta['newspaper'] = "(Unknown newspaper)"
+                elif not bTitle:
+                    # See if he previous position has the title
+                    if lst_meta[iLine-2] != "":
+                        oMeta['title'] = lst_meta[iLine-2]
 
-                bFound, oMeta['newsdate'] = get_anywhere(lst_meta, must=day)
+                bFound, oMeta['newsdate'], iLine = get_anywhere(lst_meta, must=day)
                 # iLine, oMeta['newsdate'] = get_line_item(lst_meta, iLine, must=day)
                 if oMeta['newsdate'] == None:
                     oMeta['newsdate'] = "(Cannot find the news date)"
 
-                bFound, oMeta['copyright'] = get_anywhere(lst_meta, must=copyright)
+                bFound, oMeta['copyright'], iLine = get_anywhere(lst_meta, must=copyright)
                 # iLine, oMeta['copyright'] = get_line_item(lst_meta, iLine, must=copyright)
                 if oMeta['copyright'] == None:
-                    oMeta['copyright'] = "(Cannot find the copyright line)"
+                    oMeta['copyright'] = "(no copyright line)"
 
-                # Get any more metadata
+                # Get any more metadata, starting from the first line with colon
+                iLine = 1
+                while iLine < len(lst_meta) and not ":" in lst_meta[iLine]:
+                    iLine += 1
                 while iLine < len(lst_meta) and ":" in lst_meta[iLine]:
                     # Extract one meta element
                     iLine, key, value = get_line_meta(lst_meta, iLine)

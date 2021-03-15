@@ -696,7 +696,7 @@ class Gateway(models.Model):
                             cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
                             if cvar == None:
                                 # Proved a good error message
-                                msg = "Gateway/do_simplerelated: no cvar could be created for line {}".format(idx)
+                                msg = "Gateway/do_simplerelated: no cvar could be created for line {} (trials={})".format(idx, trials)
                                 return False, msg
                             cvar.type=varType
 
@@ -940,40 +940,55 @@ class Gateway(models.Model):
         sMsg = ""
         oErr = ErrHandle()
         try:
+            # Step 1: Add combination[s] of vardef/construction if it doesn't yet exist
             with transaction.atomic():
                 # Step 1: add CVAR for all Construction/Vardef combinations
                 for vardef in self.get_vardef_list():
                     # Walk all constructions
                     for construction in self.constructions.all():
                         # Check if a cvar exists
-                        qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
-                        if qs.count() == 0:
+                        cvar = ConstructionVariable.objects.filter(variable=vardef, construction=construction).first()
+                        if cvar == None:
                             # Doesn't exist: create it
-                            cvar = ConstructionVariable(variable=vardef, construction=construction)
-                            trials = 10
-                            bDone = False
-                            while not bDone:
-                                try:
-                                    cvar.save()
-                                    bDone=True
-                                except:
-                                    trials -= 10
-                                    if trials <=0:
-                                        # Cannot do it
-                                        sMsg = oErr.get_error_message()
-                                        return False, sMsg
-                # Step 2: Find CVAR that do not belong to a gateway
-                gateway_pk_list = [item.pk for item in Gateway.objects.all()]
-                cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list)]
-                # Remove these instances
-                for cvar in cvar_orphans:
-                    cvar.delete()
-                cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(variable__gateway__in=gateway_pk_list)]
-                # Remove these instances
-                for cvar in cvar_orphans:
-                    cvar.delete()
+                            cvar = ConstructionVariable.objects.create(variable=vardef, construction=construction)
+
+            # Step 2: Find CVAR that do not belong to a gateway
+            gateway_pk_list = [x['id'] for x in Gateway.objects.all().values("id")]
+
+            #cvar_orphans = [cvar['id'] for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list).values("id")]
+            #if len(cvar_orphans) > 0:
+            #    ConstructionVariable.objects.filter(id__in=cvar_orphans).delete()
+
+            #cvar_orphans = [cvar['id'] for cvar in ConstructionVariable.objects.exclude(variable__gateway__in=gateway_pk_list).values("id")]
+            #if len(cvar_orphans) > 0:
+            #    ConstructionVariable.objects.filter(id__in=cvar_orphans).delete()
+
+            # GEt a list of Gateway IDs that are mentioned from ConstructionVariable
+            delete_cv = []
+            lst_variable_gateway = ConstructionVariable.objects.all().values("id", "variable__gateway__id").distinct()
+            lst_construc_gateway = ConstructionVariable.objects.all().values("id", "construction__gateway__id").distinct()
+            for item in lst_variable_gateway:
+                cv_id=item['id']
+                gw_id=item['variable__gateway__id']
+                if gw_id not in gateway_pk_list:
+                    # Add the CV id to the deletable ones
+                    delete_cv.append(cv_id)
+            for item in lst_construc_gateway:
+                cv_id=item['id']
+                gw_id=item['construction__gateway__id']
+                if gw_id not in gateway_pk_list:
+                    # Add the CV id to the deletable ones
+                    delete_cv.append(cv_id)
+
+            # If there is something to be deleted, then 
+            if len(delete_cv) > 0:
+                ConstructionVariable.objects.filter(id__in=delete_cv).delete()
+
+
+
         except:
             sMsg = oErr.get_error_message()
+            oErr.DoError("Gateway/check_var")
             bResult = False
         # Make sure we are happy
         return bResult, sMsg
@@ -1124,8 +1139,13 @@ class VarDef(Variable):
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Perform the normal saving
       save_result = super(VarDef, self).save(force_insert, force_update, using, update_fields)
-      # Check and add/delete CVAR instances for this gateway
-      bCheck, msg = Gateway.check_cvar(self.gateway)
+      oErr = ErrHandle()
+      try:
+          # Check and add/delete CVAR instances for this gateway
+          bCheck, msg = Gateway.check_cvar(self.gateway)
+      except:
+          msg2 = oErr.get_error_message()
+          oErr.DoError("VarDef/save ({})".format(msg))
       # Return the result of normal saving
       return save_result
 
