@@ -20,6 +20,8 @@ from cesar.tsg.views import *
 from cesar.lingo.views import *
 # The brief application
 from cesar.brief.views import *
+# The WOORD application
+from cesar.woord.views import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
@@ -55,6 +57,9 @@ urlpatterns = [
     url(r'^lingo/qdata/view(?:/(?P<pk>\d+))?/$', QdataDetailsView.as_view(), name='qdata_details'),
 
     url(r'^crm/contacts', cesar.lingo.views.crm_contacts, name='crm_contacts'),
+
+    # Cesar woordbeoordelingen:
+    url(r'^woord/$', cesar.woord.views.home, name='woord_home'),
 
     # Cesar brief:
     url(r'^brief/$', cesar.brief.views.home, name='brief_home'),

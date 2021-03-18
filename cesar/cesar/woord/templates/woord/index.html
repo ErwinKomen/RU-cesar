@@ -1,0 +1,42 @@
+﻿{% extends "woord/layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<h1>Vragenlijst</h1>
+
+<div class="centerfield" style="text-align:left">
+  <p>Hartelijk dank voor je medewerking aan deze vragenlijst. Je krijgt in deze lijst 2000 woorden te zien die je op verschillende kenmerken 
+    moet beoordelen. Ieder woord komt vijf keer voor in de lijst. Zodoende beoordeel je ieder woord op vijf verschillende kenmerken. 
+    Naast ieder woord staat vermeld of het een zelfstandig naamwoord (ZNW), werkwoord (WW) of een bijvoeglijk naamwoord (BNW) is. 
+    Voor het zelfstandig naamwoord wordt altijd alleen het enkelvoud gebruikt, en voor het werkwoord altijd het hele werkwoord.</p>
+
+  <p>Om het woord te beoordelen moet je een schuifje verplaatsen van 0 tot 100 (je kunt ook op de bedoelde plaats op de schaal klikken). 
+    Op elke bladzijde staan tien te beoordelen woorden. Als je een woord niet kent, kun je dit naast het woord aanvinken. 
+    Beoordeel dan toch het desbetreffende woord.</p>
+
+  <p>Werk individueel en geconcentreerd. Ons advies is om niet langer dan een uur per keer aan de vragenlijst te werken. 
+    Probeer niet te lang na te denken; geef je oordeel op basis van je intu&iuml;tie.</p>
+
+  <p>De oordelen worden opgeslagen zodra je op de knop "Volgende" drukt. 
+    Als je tussentijds wilt stoppen moet je dan ook niet vergeten op "Volgende" te drukken vlak voordat je afsluit. 
+    Je kunt de vragenlijst ook op een tablet invullen. Je kunt dan niet schuiven op de schaal maar wel de juiste positie aantikken. 
+    Je kunt dus afwisselend op een laptop en een tablet werken.</p>
+
+  <p>In totaal moet je 10.000 keer een oordeel uitspreken. Je hebt daarvoor twee weken de tijd. 
+    Wanneer je tussentijds stopt, houdt het programma bij waar je was gebleven. 
+    Als je verder wilt gaan met invullen, klik je weer op de link in de uitnodigingsmail.
+  </p>
+
+  <div class="userentry">
+    {{userform.as_table}}
+  </div>
+
+  <!-- Allow submitting the form -->
+  <form action="question.php" method="post">
+    <input type="submit" value="Beginnen">
+  </form>
+
+</div>
+
+{% endblock %}

@@ -90,7 +90,8 @@ INSTALLED_APPS = [
     'cesar.doc',
     'cesar.tsg',
     'cesar.lingo',
-    'cesar.brief'
+    'cesar.brief',
+    'cesar.woord'
 ]
 
 # MIDDLEWARE_CLASSES = [

@@ -1,0 +1,67 @@
+﻿body
+{
+	background-color: aliceblue;  
+}
+
+body, button, input
+{
+    text-align: center;
+    font-family: arial, helvetica, sans-serif;
+    font-size: 14px;
+}
+
+button
+{
+    margin-top: 40px;
+}
+
+.centerfield
+{
+    margin: auto;
+    width: 850px;
+    text-align: center;
+	margin-top: 30px;
+}
+
+.stimulus
+{
+	font-size:16px;
+	font-weight:bold;
+}
+
+.slidervalue
+{
+	margin-top: 10px
+}
+
+.slider
+{
+    margin: auto;
+    width: 500px;
+}
+
+.leftoption
+{
+    float: left;
+	width: 140px;
+}
+
+.rightoption
+{
+    float:right;
+	width: 140px;
+}
+
+.dontknow
+{
+	top: -30;
+	position: relative;
+	left: 300;
+}
+
+.progressfield
+{
+	margin-left: auto;
+	width: 300;
+}
+

@@ -1,0 +1,19 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'woord/content/woord-site.css' %}" />
+{% block scripts %}{% endblock %}
+</head>
+
+<body>
+{% load i18n %}
+
+{% block content %}{% endblock %}
+
+
+</body>
+</html>
