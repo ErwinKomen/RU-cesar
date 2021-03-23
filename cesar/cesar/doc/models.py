@@ -516,7 +516,7 @@ class FoliaProcessor():
 
     def __init__(self, username):
         # Check and/or create the appropriate directory for the user
-        dir = os.path.abspath(os.path.join( WRITABLE_DIR, username))
+        dir = os.path.abspath(os.path.join( WRITABLE_DIR, "../folia", username))
         if not os.path.exists(dir):
             os.mkdir(dir)
         # Set the dir locally
@@ -813,7 +813,7 @@ class NexisLink(models.Model):
             while idx < len(lst) and lst[idx] == "": idx += 1
             return idx
 
-        def get_anywhere(lst, must, start_from = 0, eow=False):
+        def get_anywhere(lst, must, start_from = 0, eow=False, year=False):
             bFound = False
             item_found = None
             index_found = -1
@@ -826,6 +826,13 @@ class NexisLink(models.Model):
                     if m in item_lower: 
                         if eow:
                             pattern = r'.*{}\s*$'.format(m)
+                            if re.match(pattern, item_lower):
+                                bFound = True
+                                item_found = item
+                                index_found = idx + start_from
+                                break
+                        elif year:
+                            pattern = r'.*\d\d\d\d\s*.*$'
                             if re.match(pattern, item_lower):
                                 bFound = True
                                 item_found = item
@@ -915,7 +922,8 @@ class NexisLink(models.Model):
         iCount = 0
         inputType = "nexistext"
         nexisProc = NexisProcessor(username)
-        day = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
+        day = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag',
+               'monday', 'tuesday', 'wednesday', 'thursday','friday', 'saturday', 'sunday']
         paper = ['telegraaf', 'dagblad', 'handelsblad', 'trouw', 'volkskrant', 'nrc.next', 'nrc']
         copyright = ['copyright']
         highlight = ['highlight:']
@@ -965,10 +973,15 @@ class NexisLink(models.Model):
                     if lst_meta[iLine-2] != "":
                         oMeta['title'] = lst_meta[iLine-2]
 
-                bFound, oMeta['newsdate'], iLine = get_anywhere(lst_meta, must=day)
+                bFound, oMeta['newsdate'], iLine = get_anywhere(lst_meta, must=day, year=True)
                 # iLine, oMeta['newsdate'] = get_line_item(lst_meta, iLine, must=day)
                 if oMeta['newsdate'] == None:
                     oMeta['newsdate'] = "(Cannot find the news date)"
+                elif "Unknown" in oMeta['newspaper']:
+                    # Take the newspaper as the line immediately preceding the newsdate
+                    oMeta['newspaper'] = lst_meta[iLine-2]
+                    if not bTitle and lst_meta[iLine-3] != "":
+                        oMeta['title'] = lst_meta[iLine-3]
 
                 bFound, oMeta['copyright'], iLine = get_anywhere(lst_meta, must=copyright)
                 # iLine, oMeta['copyright'] = get_line_item(lst_meta, iLine, must=copyright)
@@ -982,7 +995,8 @@ class NexisLink(models.Model):
                 while iLine < len(lst_meta) and ":" in lst_meta[iLine]:
                     # Extract one meta element
                     iLine, key, value = get_line_meta(lst_meta, iLine)
-                    if key != "" and value != "":
+                    # NOTE: the key must not contain a space
+                    if key != "" and value != "" and not " " in key:
                         oMeta[key.lower()] = value
                 # Any last line left?
                 if iLine == len(lst_meta)-1 and ":" not in lst_meta[iLine]:
@@ -1024,7 +1038,7 @@ class NexisProcessor():
 
     def __init__(self, username):
         # Check and/or create the appropriate directory for the user
-        dir = os.path.abspath(os.path.join( WRITABLE_DIR, username))
+        dir = os.path.abspath(os.path.join( WRITABLE_DIR,  "../nexis", username))
         if not os.path.exists(dir):
             os.mkdir(dir)
         # Set the dir locally
@@ -1095,6 +1109,9 @@ class NexisProcessor():
                     end_of_text.append(idx - 1)
                 elif line.startswith("Bekijk de oorspronkelijke pagina"):
                     end_of_text.append(idx - 1)
+                elif line.startswith("* Vervangende titel"):
+                    # Issue #137: check for replacement title
+                    end_of_text.append(idx - 1)
                 elif line.startswith("Load-Date:"):
                     iLoadDate = idx - 1
                     colon = line.index(":") + 1
@@ -1114,6 +1131,30 @@ class NexisProcessor():
             oBack['metadata'] = lines[:iMetaEnd]
             oBack['body'] = lines[iBodyStart:iBodyEnd]
             oBack['loaddate'] = loaddate
+
+            # Issue #137: check for replacement title
+            for idx, line in enumerate(oBack['body']):
+                if "* vervangende titel" in line.lower():
+                    # Get the previous line
+                    alt_title = oBack['body'][idx-1]
+                    oBack['body'].pop(idx)
+                    oBack['body'].pop(idx-1)
+                    oBack['metadata'].append('alt_title: {}'.format(alt_title))
+                    break
+            # Issuee #139: Look for Graphic
+            if iBodyEnd < len(lines):
+                for idx, line in enumerate(lines[iBodyEnd+1:]):
+                    if line.startswith("Graphic"):
+                        # Skip empty lines
+                        bFound = False
+                        start = iBodyEnd + 1 + idx 
+                        for line_next in lines[start+1:]:
+                            if line_next != "":
+                                oBack['metadata'].append('graphic: {}'.format(line_next))
+                                bFound = True
+                                break
+                        if bFound:
+                            break
         except:
             oBack['msg'] = errHandle.get_error_message()
             errHandle.DoError("basis_text")

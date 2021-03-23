@@ -1,4 +1,4 @@
-﻿{% extends "woord/layout.html" %}
+{% extends "woord/layout.html" %}
 {% load staticfiles %}
 
 {% block content %}
@@ -28,12 +28,12 @@
     Als je verder wilt gaan met invullen, klik je weer op de link in de uitnodigingsmail.
   </p>
 
-  <div class="userentry">
-    {{userform.as_table}}
-  </div>
-
   <!-- Allow submitting the form -->
-  <form action="question.php" method="post">
+  <form action="{% url 'woord_question' %}" method="post">
+    {% csrf_token %}
+    <label for="id_username">Vul hier uw gebruikersnaam in</label>
+    <input type="text" name="username" id="id_username" placeholder="De gebruikersnaam die u heeft ontvangen..." style="width: 100%;">
+
     <input type="submit" value="Beginnen">
   </form>
 

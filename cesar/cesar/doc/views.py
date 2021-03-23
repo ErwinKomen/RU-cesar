@@ -18,6 +18,9 @@ from django.views.generic.detail import DetailView
 from datetime import datetime
 import os.path, io, shutil
 import tarfile
+import openpyxl
+from openpyxl.utils.cell import get_column_letter
+from openpyxl import Workbook
 
 from cesar.settings import APP_PREFIX
 from cesar.basic.views import BasicList, BasicDetails, BasicPart
@@ -841,12 +844,20 @@ class NexisBatchDownload(BasicPart):
                 # Determine file name
                 srcdir = os.path.join(dir, "nexisbatch_{}".format(batch.id))
                 # Create dir if not existing
-                os.mkdir(srcdir)
+                if not os.path.exists(srcdir):
+                    os.mkdir(srcdir)
+
+                # Create a list of key names and of meta info
+                key_names = ['file_id']
+                meta_lines = []
+                csv_lines = []
+
                 # Get all the link objects as files in [srcdir]
                 qs = batch.batchlinks.all()
                 for obj in qs:
                     # Figure out where to put them
-                    sbare = os.path.join(srcdir,"nexislink_{}".format(str(obj.id).zfill(6)))
+                    sbare_name = "nexislink_{}".format(str(obj.id).zfill(6))
+                    sbare = os.path.join(srcdir,sbare_name)
                     fmeta = "{}.meta".format(sbare)
                     ftext = "{}.txt".format(sbare)
                     # Write the contents of metadata
@@ -856,6 +867,22 @@ class NexisBatchDownload(BasicPart):
                     # Write the text as UTF8
                     with io.open(ftext, 'w', encoding='utf8') as fp:
                         fp.write(obj.nbody)
+
+                    meta = dict(file_id=sbare_name)
+                    for k,v in oMeta.items():
+                        if not k in key_names: key_names.append(k)
+                        meta[k] = v
+                    meta_lines.append(meta)
+
+                # Create CSV output
+                csv_lines.append(key_names)
+                for meta in meta_lines:
+                    oCsvLine = []
+                    for k in key_names:
+                        oCsvLine.append(meta.get(k, ""))
+                    csv_lines.append(oCsvLine)
+                fexcel = os.path.join(srcdir, "nexisbatch_{}.xlsx".format(str(batch.id).zfill(6)))
+                self.csv_to_excel(csv_lines, fexcel)
 
                 # Copy from [srcdir] into tar.gz
                 ofname = "{}.tar.gz".format(srcdir)
@@ -873,6 +900,47 @@ class NexisBatchDownload(BasicPart):
 
         # Return the data
         return gzdata
+
+    def csv_to_excel(self, csv_lines, filename):
+        """Convert CSV data to an Excel worksheet"""
+
+        # Start workbook
+        wb = openpyxl.Workbook()
+        # ws = wb.get_active_sheet()
+        ws = wb.active
+        ws.title="Data"
+
+        # Read the header cells and make a header row in the worksheet
+        headers = csv_lines[0]
+        for col_num in range(len(headers)):
+            c = ws.cell(row=1, column=col_num+1)
+            c.value = headers[col_num]
+            c.font = openpyxl.styles.Font(bold=True)
+            # Set width to a fixed size
+            ws.column_dimensions[get_column_letter(col_num+1)].width = 8.0        
+
+        row_num = 1
+        lCsv = []
+        for row in csv_lines[1:]:
+            # Keep track of the EXCEL row we are in
+            row_num += 1
+            # Walk the elements in the data row
+            # oRow = {}
+            for idx, cell in enumerate(row):
+                c = ws.cell(row=row_num, column=idx+1)
+                # attempt to see this as a float
+                cell_value = row[idx]
+                try:
+                    cell_value = float(cell_value)
+                except ValueError:
+                    pass
+                c.value = cell_value
+                c.alignment = openpyxl.styles.Alignment(wrap_text=False)
+
+        # Save the result in the response
+        wb.save(filename)
+        return True
+
 
 
 class NexisListView(BasicList):

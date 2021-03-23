@@ -28,6 +28,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.utils import ErrHandle
 
+from cesar.woord.models import WoordUser
 from cesar.woord.forms import UserForm
 
 # Global debugging 
@@ -100,10 +101,6 @@ def home(request):
     context =  {'title':'Woordbeoordelingen','year':datetime.now().year,
                 'pfx': APP_PREFIX,'site_url': admin.site.site_url}
 
-    # Statistics
-    #context['pcount'] = Project.objects.count()
-    #context['acount'] = AnswerQuestion.objects.count()
-
     # Make sure we add special group permission(s)
     add_app_access(request, context)
 
@@ -112,4 +109,41 @@ def home(request):
 
     # Render and return the page
     return render(request, template_name, context)
+
+def nlogin(request):
+    """Renders the not logged-in page."""
+
+    assert isinstance(request, HttpRequest)
+    # Specify the template
+    template_name = 'woord/nlogin.html'
+    # Define the initial context
+    context =  {'title':'NoPermission','year':datetime.now().year,
+                'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+
+    # Render and return the page
+    return render(request, template_name, context)
+
+def question(request):
+    """Check this user's existence and start with the questions"""
+
+    assert isinstance(request, HttpRequest)
+    # Specify the template
+    template_name = 'woord/question.html'
+    # Define the initial context
+    context =  {'title':'Woordvragen','year':datetime.now().year,
+                'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+    # Make sure we add special group permission(s)
+    add_app_access(request, context)
+
+    # Get the parameters passed on
+    qd = request.GET if request.method.lower() == "get" else request.POST
+    username = qd.get("username", "")
+    if username == "" or not WoordUser.is_user(username):
+        return nlogin(request)
+
+    # Render and return the page
+    return render(request, template_name, context)
+
+
+
 

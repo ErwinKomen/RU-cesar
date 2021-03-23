@@ -206,6 +206,10 @@ class WoordUser(models.Model):
         # A new name has been found
         return sName
 
+    def is_user(sName):
+        obj = WoordUser.objects.filter(name__iexact=sName).first()
+        return (not obj is None)
+
 
 class Result(models.Model):
     """A result of one user"""
