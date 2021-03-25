@@ -28,7 +28,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.utils import ErrHandle
 
-from cesar.woord.models import WoordUser, Choice, Question, Result, Stimulus
+from cesar.woord.models import WoordUser, Choice, Question, Qset, Result, Stimulus, QuestionSet
 from cesar.woord.forms import UserForm
 
 # Global debugging 
@@ -99,9 +99,9 @@ def initialize_woord():
         if Stimulus.objects.count() == 0:
             bNeedRandomization = True
             # Load the stimuli
-            with open(stimuli_file, encoding="utf-8") as f:
+            with open(stimuli_file) as f:
                 reader = csv.reader(f, dialect='excel')
-                lst_stimuli = [get_stimulus(row) for row in reader]
+                lst_stimuli = [get_stimulus(row[0]) for row in reader]
             # Add the stimuli into the objects
             with transaction.atomic():
                 for oStimulus in lst_stimuli:
@@ -117,15 +117,27 @@ def initialize_woord():
             # Combine stimuli and choices so that we have the full set
             result = []
             with transaction.atomic():
+                # Iterate over 2000 stimuli
                 for stimulus in Stimulus.objects.all():
+                    # And then over 5 choices
                     for choice in Choice.objects.all():
+                        # This yields 10,000 objects
                         obj = Question.objects.create(stimulus=stimulus, choice=choice)
-                        result.append(obj)
-
-            # Shuffle the question objects
-            random.shuffle(result)
+                        result.append(obj.id)
 
             # Divide the shuffled questions over sets 
+            for i in range(100):
+                # Show where we are
+                oErr.Status("initialize_woord random set #{}".format(i))
+                # Shuffle the 10,000 question object id's
+                random.shuffle(result)
+                # Create a Qset
+                qset = Qset.objects.create()
+                # Make the links for this shuffle
+                with transaction.atomic():
+                    for question_id in result:
+                        QuestionSet.objects.create(qset=qset, question_id=question_id)
+
             
     except:
         msg = oErr.get_error_message()

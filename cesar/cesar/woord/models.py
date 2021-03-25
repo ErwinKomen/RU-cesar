@@ -268,15 +268,22 @@ class Question(models.Model):
     # [1] Status of this question: has it been done yet?
     status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
 
-    # [0-1] Each question should be assigned to a questionset
-    qset = models.ForeignKey(Qset, blank=True, null=True, on_delete=models.SET_NULL, related_name="qsetquestions")
-    
     def __str__(self):
         woord = self.stimuli.woord
         category = self.stimuli.category
         choice = self.choice.name
         sBack = "{} ({}) on {}".format(stimulus, woord, category, choice)
         return sBack 
+
+
+class QuestionSet(models.Model):
+    """A particular question for a particular person's set of questions"""
+
+    # [1] Link to the qset
+    qset = models.ForeignKey(Qset, related_name="qset_questionsets", on_delete=models.CASCADE)
+    # [1] Link to the question
+    question = models.ForeignKey(Question, related_name="question_questionsets", on_delete=models.CASCADE)
+
 
 
 class Result(models.Model):
