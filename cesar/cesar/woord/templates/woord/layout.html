@@ -5,12 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'woord/content/jquery-ui.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'woord/content/woord-site.css' %}" />
+    <script src="{% static 'woord/scripts/jquery-1.11.0.min.js' %}"></script>
+    <script src="{% static 'woord/scripts/jquery-ui.min.js' %}"></script>
+    <script src="{% static 'woord/scripts/cesar.woord.js' %}"></script>
 {% block scripts %}{% endblock %}
 </head>
 
 <body>
 {% load i18n %}
+
+  <!-- Error messages -->
+  <div id="woord_err" style="color: red; background-color: lightblue;"></div>
 
 {% block content %}{% endblock %}
 

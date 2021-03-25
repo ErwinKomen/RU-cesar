@@ -67,5 +67,8 @@ admin.site.register(FieldChoice, FieldChoiceAdmin)
 # Models for the [woord] app
 admin.site.register(WoordUser, WoordUserAdmin)
 admin.site.register(Result, ResultAdmin)
+admin.site.register(Question)
+admin.site.register(Choice)
+admin.site.register(Stimulus)
 
 

@@ -184,12 +184,17 @@ class WoordUser(models.Model):
 
     # [1] Status of this user
     status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
+    # [1] History of user actions - this is a JSON list
+    history = models.TextField("History", default="[]")
+
+    def __str__(self):
+        return self.name
 
     def generate_new():
         """Generate a new user, assigning it a random name"""
 
         # Get a list of current user names
-        current_names = [x.name for x in WoordUser.objecs.all()]
+        current_names = [x.name for x in WoordUser.objects.all()]
 
         bFound = False
         counter = 100000
@@ -210,6 +215,69 @@ class WoordUser(models.Model):
         obj = WoordUser.objects.filter(name__iexact=sName).first()
         return (not obj is None)
 
+    def get_user(sName):
+        obj = WoordUser.objects.filter(name__iexact=sName).first()
+        return obj
+
+
+class Stimulus(models.Model):
+    """This combines all the stimuli that can potentially be used by one particular user"""
+
+    # [1] The word under question
+    woord = models.CharField("Woord", max_length=MAXPARAMLEN)
+    # [1] The word category
+    category = models.CharField("Category", max_length=MAXPARAMLEN)
+
+    def __str__(self):
+        sBack = "{} ({})".format(self.woord, self.category)
+        return sBack
+
+
+class Choice(models.Model):
+    """One possible answer"""
+
+    # [1] The name of this scale
+    name = models.CharField("Name", max_length=MAXPARAMLEN)
+    # [1] The left hand side of the slide
+    left = models.CharField("Left", max_length=MAXPARAMLEN)
+    # [1] The right hand side of the slide
+    right = models.CharField("Right", max_length=MAXPARAMLEN)
+
+    def __str__(self):
+        return self.name
+
+
+class Qset(models.Model):
+    """Set of questions"""
+
+    # [1] Status of this Qset: has it been done yet?
+    status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
+
+    # [0-1] Each set can be assigned to a user
+    woorduser = models.ForeignKey(WoordUser, blank=True, null=True, on_delete=models.SET_NULL, related_name="woorduserqsets")
+
+
+class Question(models.Model):
+    """One question belonging to a set of stimuli"""
+
+    # [1] Each question contains a stimulus (woord + category)
+    stimulus = models.ForeignKey(Stimulus, on_delete=models.CASCADE, related_name="stimulusquestions")
+    # [1] The particular choice type for this question
+    choice = models.ForeignKey(Choice, on_delete=models.CASCADE, related_name="choicequestions")
+
+    # [1] Status of this question: has it been done yet?
+    status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
+
+    # [0-1] Each question should be assigned to a questionset
+    qset = models.ForeignKey(Qset, blank=True, null=True, on_delete=models.SET_NULL, related_name="qsetquestions")
+    
+    def __str__(self):
+        woord = self.stimuli.woord
+        category = self.stimuli.category
+        choice = self.choice.name
+        sBack = "{} ({}) on {}".format(stimulus, woord, category, choice)
+        return sBack 
+
 
 class Result(models.Model):
     """A result of one user"""
@@ -217,6 +285,15 @@ class Result(models.Model):
     # [1] must know the user
     user = models.ForeignKey(WoordUser, related_name="userresults", on_delete=models.CASCADE)
     # [1] each result must be the answer to a particular question
-    question = models.CharField("Question tag", max_length=MAXQUESTION)
+    question = models.ForeignKey(Question, related_name="questionresults", on_delete=models.CASCADE)
     # [1] The judgment scale of this result
     judgment = models.IntegerField("Judgment", default=0)
+    # [1] Whether the person doesn't know the anser
+    dontknown = models.BooleanField("Don't know", default=False)
+
+    def __str__(self):
+        sUser = self.user.name
+        qid = self.question.id
+        sBack = "{}: {}".format(sUser, qid)
+        return sBack 
+
