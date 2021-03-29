@@ -42,22 +42,31 @@ app_editor = "{}_editor".format(PROJECT_NAME.lower())
 app_userplus = "{}_userplus".format(PROJECT_NAME.lower())
 app_moderator = "{}_moderator".format(PROJECT_NAME.lower())
 
+NUMBER_OF_PARTICIPANTS = 40
+
 def initialize_woord():
     """Fill the application if this is needed"""
 
     def get_stimulus(row):
         woord = ""
         cat = ""
-        if row != "":
-            parts = re.split(r'\s+', row)
-            if len(parts) > 1:
-                woord = parts[0]
-                cat = parts[1].replace("(", "").replace(")", "")
-        oBack = dict(woord=woord, cat=cat)
+        oBack = {}
+        try:
+            if row != "":
+                parts = re.split(r'\s+', row)
+                if len(parts) > 1:
+                    woord = parts[0]
+                    cat = parts[1].replace("(", "").replace(")", "")
+            oBack = dict(woord=woord, cat=cat)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_stimulus")
         return oBack
 
     oErr = ErrHandle()
     bNeedRandomization = False
+    msg = "no changes"
+    lhtml = []
 
     try:
         # Figure out directory and file names
@@ -69,9 +78,10 @@ def initialize_woord():
         if WoordUser.objects.count() <= 1:
             # Create 20 random users
             with transaction.atomic():
-                for number in range(20):
+                for number in range(NUMBER_OF_PARTICIPANTS):
                     username = WoordUser.generate_new()
                     WoordUser.objects.create(name=username)
+            lhtml.append("Created {} users".format(NUMBER_OF_PARTICIPANTS))
 
         # Check on choices
         if Choice.objects.count() == 0:
@@ -94,56 +104,74 @@ def initialize_woord():
                             break
                     # Create object
                     Choice.objects.create(name=name, left=left, right=right)
+            lhtml.append("Created {} choices".format(len(left_lst)))
 
         # Check on stimuli
+        oErr.Status("initialize_woord #1")
         if Stimulus.objects.count() == 0:
             bNeedRandomization = True
+            oErr.Status("initialize_woord #2")
             # Load the stimuli
             with open(stimuli_file) as f:
                 reader = csv.reader(f, dialect='excel')
                 lst_stimuli = [get_stimulus(row[0]) for row in reader]
+            oErr.Status("initialize_woord #3")
             # Add the stimuli into the objects
             with transaction.atomic():
                 for oStimulus in lst_stimuli:
                     woord = oStimulus['woord']
                     cat = oStimulus['cat']
                     Stimulus.objects.create(woord=woord, category=cat)
+            oErr.Status("initialize_woord #4")
+            lhtml.append("Read from file {} stimuli".format(len(lst_stimuli)))
+
+        # Otherwise in need of randomization?
+        if Question.objects.count() == 0:
+            bNeedRandomization = True
 
         # Do we need to randomize?
         if bNeedRandomization:
             # Remove previous questions
             Question.objects.all().delete()
+            lhtml.append("Removed previous questions")
 
             # Combine stimuli and choices so that we have the full set
             result = []
             with transaction.atomic():
-                # Iterate over 2000 stimuli
+                # Iterate over all stimuli (will be 5000)
                 for stimulus in Stimulus.objects.all():
-                    # And then over 5 choices
-                    for choice in Choice.objects.all():
+                    # And then over all choices (should be just 1)
+                    for choice in Choice.objects.filter(valid=True):
                         # This yields 10,000 objects
                         obj = Question.objects.create(stimulus=stimulus, choice=choice)
                         result.append(obj.id)
+            lhtml.append("Created {} questions".format(Question.objects.count()))
 
             # Divide the shuffled questions over sets 
-            for i in range(100):
+            num_sets = NUMBER_OF_PARTICIPANTS + 10
+            for i in range(num_sets):
                 # Show where we are
                 oErr.Status("initialize_woord random set #{}".format(i))
-                # Shuffle the 10,000 question object id's
+                # Shuffle the question object id's
                 random.shuffle(result)
                 # Create a Qset
                 qset = Qset.objects.create()
                 # Make the links for this shuffle
                 with transaction.atomic():
-                    for question_id in result:
-                        QuestionSet.objects.create(qset=qset, question_id=question_id)
+                    for idx, question_id in enumerate(result):
+                        order = idx + 1
+                        QuestionSet.objects.create(qset=qset, question_id=question_id, order=order)
+        lhtml.append("Created {} question sets".format(num_sets))
 
+        # COmbine the message
+        msg = "<br />".join(lhtml)
             
     except:
         msg = oErr.get_error_message()
         oErr.DoError("initialize_woord")
 
-
+    return msg
+        
 def user_is_authenticated(request):
     # Is this user authenticated?
     username = request.user.username
@@ -211,13 +239,79 @@ def home(request):
 
     if user_is_superuser(request):
         # See if initialization is needed
-        initialize_woord()
+        msg = initialize_woord()
 
     # Add a form for the user to enter his/her name
     context['userform'] = UserForm()
 
     # Render and return the page
     return render(request, template_name, context)
+
+def tools(request):
+    """Renders the tools page."""
+
+    assert isinstance(request, HttpRequest)
+    # Specify the template
+    template_name = 'woord/tools.html'
+    # Define the initial context
+    context =  {'title':'Woord tools','year':datetime.now().year,
+                'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+
+    # Make sure we add special group permission(s)
+    add_app_access(request, context)
+
+    if not user_is_authenticated(request) or not user_is_superuser(request): 
+        # Username is either void, or this user is not a WOORD user
+        return nlogin(request)
+
+    # Render and return the page
+    return render(request, template_name, context)
+
+def reset(request):
+    """Reset system."""
+
+    oErr = ErrHandle()
+    oData = dict(status="fail")
+
+    try:
+        # Only allow POST command
+        if request.is_ajax() and request.method == "POST" and user_is_authenticated(request) and user_is_superuser(request):
+            # Get the parameters passed on
+            qd = request.POST
+            action = qd.get("action", "")
+
+            if action == "questions":
+                # THis is a POST method, continue
+                count = Question.objects.count()
+                # Delete
+                Question.objects.all().delete()
+                # Prepare message
+                oData['msg'] = "Questions deleted: {}".format(count)
+
+            elif action == "users":
+                # THis is a POST method, continue
+                count = WoordUser.objects.count()
+                # Delete
+                WoordUser.objects.all().delete()
+                # Prepare message
+                oData['msg'] = "Woord-Users deleted: {}".format(count)
+
+            elif action == "init":
+                oData['msg'] = initialize_woord()
+
+            # REturn positively
+            oData['status'] = "ok"
+        else:
+            oData['msg'] = "Not authenticated"
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("question")
+        oData['status'] = "error"
+        oData['msg'] = msg
+
+    mimetype = "application/json"
+    data = json.dumps(oData)
+    return HttpResponse(data, mimetype)
 
 def nlogin(request):
     """Renders the not logged-in page."""
@@ -238,49 +332,75 @@ def question(request):
     def get_stimulus(obj):
         # Transform a question_values object into a stimulus object
         oBack = {}
-        woord = obj['woord']
-        category = obj['category']
+        woord = obj['question__stimulus__woord']
+        category = obj['question__stimulus__category']
         oBack['stimulus']  = "{}&nbsp;&nbsp;{}".format(woord, category)
-        oBack['left'] =obj['choice__left']
-        oBack['right']=obj['choice__right']
+        oBack['left'] =obj['question__choice__left']
+        oBack['right']=obj['question__choice__right']
         return oBack
 
+    oErr = ErrHandle()
 
-    # First make sure that this is a HTTP request
-    assert isinstance(request, HttpRequest)
+    try:
+        # First make sure that this is a HTTP request
+        assert isinstance(request, HttpRequest)
 
-    # Get the parameters passed on
-    qd = request.GET if request.method.lower() == "get" else request.POST
-    username = qd.get("username", "")
+        # Specify the template
+        template_name = 'woord/question.html'
+        # Define the initial context
+        context =  {'title':'Woordvragen','year':datetime.now().year,
+                    'availability': True,
+                    'pfx': APP_PREFIX,'site_url': admin.site.site_url}
 
-    # Check for valid user - and if it exists, get a link to that user
-    woorduser = WoordUser.get_user(username)
-    if username == "" or woorduser == None:
-        # Username is either void, or this user is not a WOORD user
-        return nlogin(request)
+        # Get the parameters passed on
+        qd = request.GET if request.method.lower() == "get" else request.POST
+        username = qd.get("username", "")
+        lResults = qd.get("results", None)
 
-    # Get all the questions assigned to this user, but not yet done
-    stimuli = Stimuli.objects.filter(woorduser=woorduser)
-    questions = Question.objects.filter(stimuli=stimuli, status='created').values(
-        'woord', 'category', 'choice__left', 'choice__right')
-    lst_stimulus = [get_stimulus(x) for x in questions]
+        # Check for valid user - and if it exists, get a link to that user
+        woorduser = WoordUser.get_user(username)
+        if username == "" or woorduser == None:
+            # Username is either void, or this user is not a WOORD user
+            return nlogin(request)
 
-    total_num = Question.objects.filter(stimuli=stimuli).count()
-    percentage = len(lst_stimulus) / total_num
+        # Get all the questions assigned to this user, but not yet done
+        qset = Qset.objects.filter(woorduser=woorduser).first()
+        if qset == None:
+            # No set has yet been assigned to this user: assign one
+            qset = Qset.objects.filter(woorduser__isnull=True).first()
+            if qset == None:
+                # No set is available anymore
+                context['availability'] = False
+            else:
+                # Assign this set to the user
+                qset.woorduser = woorduser
+                qset.save()
+        # Continue if all is well
+        if not qset is None:
+            # Find the remaining questions
+            #questions = qset.questions.filter(status='created').order_by('order').values(
+            #    'stimulus__woord', 'stimulus__category', 'choice__left', 'choice__right')
+            questions = QuestionSet.objects.filter(qset__woorduser=woorduser, question__status='created').order_by('order').values(
+                'question__stimulus__woord', 'question__stimulus__category', 'question__choice__left', 'question__choice__right')
 
-    # Specify the template
-    template_name = 'woord/question.html'
-    # Define the initial context
-    context =  {'title':'Woordvragen','year':datetime.now().year,
-                'pfx': APP_PREFIX,'site_url': admin.site.site_url}
-    # Additional context information
-    context['woordusername'] = woorduser.name
-    context['lst_stimulus'] = lst_stimulus
-    context['question_url'] = reverse('woord_question')
-    context['percentage'] = percentage
+            lst_stimulus = [get_stimulus(x) for x in questions[:10]]
 
-    # Make sure we add special group permission(s)
-    add_app_access(request, context)
+            # Calculate the percentage of questions still needing to be answered
+            total_num = qset.questions.count()
+            done_count = qset.questions.filter(status="done").count()
+            percentage = done_count / total_num
+
+            # Additional context information
+            context['woordusername'] = woorduser.name
+            context['lst_stimulus'] = lst_stimulus
+            context['question_url'] = reverse('woord_question')
+            context['percentage'] = percentage
+
+        # Make sure we add special group permission(s)
+        add_app_access(request, context)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("question")
 
     # Render and return the page
     return render(request, template_name, context)

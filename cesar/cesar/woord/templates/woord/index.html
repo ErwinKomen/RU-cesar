@@ -37,6 +37,12 @@
     <input type="submit" value="Beginnen">
   </form>
 
+  <!-- For the superuser -->
+  {% if is_superuser %}
+    <div>&nbsp;</div>
+    <a class="btn btn-success" href="{% url 'woord_tools' %}">Superuser Tools</a>
+  {% endif %}
+
 </div>
 
 {% endblock %}

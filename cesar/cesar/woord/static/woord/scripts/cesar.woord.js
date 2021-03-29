@@ -8,7 +8,7 @@ var $ = jQuery;
   $(function () {
     $(document).ready(function () {
       // Initialize event listeners
-      sil.pbrief.init_event_listeners();
+      ru.cesar.woord.init_event_listeners();
     });
   });
 })(django.jQuery);
@@ -22,6 +22,7 @@ var ru = (function ($, ru) {
     // Define variables for ru.collbank here
     var loc_example = "",
         loc_divErr = "woord_err",
+        loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         loc_month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
         oSyncTimer = null;
 
@@ -120,6 +121,7 @@ var ru = (function ($, ru) {
             result = null,
             percentage = 0.0,
             url = "",
+            csrf = "",
             data = null;
 
         try {
@@ -134,9 +136,12 @@ var ru = (function ($, ru) {
 
           });
 
+          // Get the CSRF token
+          csrf = $(elStart).closest("div").find("input").first().val();
+
           // POST the response and find out what needs to be done
           url = $(elStart).attr("targeturl");
-          data = { 'user': username, 'results': result_string };
+          data = { 'csrfmiddlewaretoken': csrf, 'user': username, 'results': result_string };
           // Send the data
           $.post(url, data, function (response) {
             // First leg has been done
@@ -166,11 +171,61 @@ var ru = (function ($, ru) {
       },
 
       /**
-       * show_slider
-       *   Show the slider
+       * postman
+       *   Post and process response
        *
        */
+      postman: function(elStart) {
+        var url = "",
+            targetid = "",
+            action = "",
+            msg = "",
+            data = null;
 
+        try {
+
+          // POST the response and find out what needs to be done
+          url = $(elStart).attr("targeturl");
+          targetid = $(elStart).attr("targetid");
+          targetid = "#" + targetid.replace("#", "");
+          action = $(elStart).attr("action");
+          data = $("form").serializeArray();
+          data.push({ name: "action", value: action });
+
+          // Show we are starting
+          $(targetid).html(loc_sWaiting);
+
+          // Send the data
+          $.post(url, data, function (response) {
+            // First leg has been done
+            if (response === undefined || response === null || !("status" in response)) {
+              private_methods.errMsg("No status returned");
+            } else {
+              switch (response.status) {
+                case "ok":
+                  // Do we have a message to show?
+                  if ("msg" in response) {
+                    msg = response.msg;
+                  } else {
+                    msg = "";
+                  }
+                  $(targetid).html(msg);
+                  break;
+                case "error":
+                  if ("html" in response) {
+                    private_methods.errMsg("error: " + response['html']);
+                  } else if ("msg" in response) {
+                    private_methods.errMsg("error: " + response['msg']);
+                  }
+                  break;
+              }
+            }
+          });
+
+        } catch (ex) {
+          private_methods.errMsg("postman", ex);
+        }
+      }
 
     };
   }($, ru.config));

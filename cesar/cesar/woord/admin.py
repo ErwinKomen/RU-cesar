@@ -58,6 +58,16 @@ class ResultAdmin(admin.ModelAdmin):
         }
 
 
+class ChoiceAdmin(admin.ModelAdmin):
+    """Display and edit [Choice] objects"""
+
+    fields = ['name', 'left', 'right', 'valid']
+    list_display = ['name', 'valid']
+    list_filter = ['valid']
+    search_fields = ['name']
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
+        }
 
 
 
@@ -68,7 +78,7 @@ admin.site.register(FieldChoice, FieldChoiceAdmin)
 admin.site.register(WoordUser, WoordUserAdmin)
 admin.site.register(Result, ResultAdmin)
 admin.site.register(Question)
-admin.site.register(Choice)
+admin.site.register(Choice, ChoiceAdmin)
 admin.site.register(Stimulus)
 
 

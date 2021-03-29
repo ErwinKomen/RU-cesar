@@ -242,6 +242,8 @@ class Choice(models.Model):
     left = models.CharField("Left", max_length=MAXPARAMLEN)
     # [1] The right hand side of the slide
     right = models.CharField("Right", max_length=MAXPARAMLEN)
+    # [1] Whether this is a valid choice or not
+    valid = models.BooleanField("Valid", default=True)
 
     def __str__(self):
         return self.name
@@ -256,6 +258,9 @@ class Qset(models.Model):
     # [0-1] Each set can be assigned to a user
     woorduser = models.ForeignKey(WoordUser, blank=True, null=True, on_delete=models.SET_NULL, related_name="woorduserqsets")
 
+    # [1] Each Qset links to a lot of Questions
+    questions = models.ManyToManyField("Question", through="QuestionSet", related_name="questionsqset")
+
 
 class Question(models.Model):
     """One question belonging to a set of stimuli"""
@@ -269,10 +274,10 @@ class Question(models.Model):
     status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
 
     def __str__(self):
-        woord = self.stimuli.woord
-        category = self.stimuli.category
+        woord = self.stimulus.woord
+        category = self.stimulus.category
         choice = self.choice.name
-        sBack = "{} ({}) on {}".format(stimulus, woord, category, choice)
+        sBack = "{} ({}) on {}".format(woord, category, choice)
         return sBack 
 
 
@@ -283,6 +288,8 @@ class QuestionSet(models.Model):
     qset = models.ForeignKey(Qset, related_name="qset_questionsets", on_delete=models.CASCADE)
     # [1] Link to the question
     question = models.ForeignKey(Question, related_name="question_questionsets", on_delete=models.CASCADE)
+    # [1] Question ask order number
+    order = models.IntegerField("Order", default = 0)
 
 
 

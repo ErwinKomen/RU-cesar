@@ -60,8 +60,9 @@ urlpatterns = [
 
     # Cesar woordbeoordelingen:
     url(r'^woord/$', cesar.woord.views.home, name='woord_home'),
+    url(r'^woord/tools/$', cesar.woord.views.tools, name='woord_tools'),
     url(r'^woord/question/$', cesar.woord.views.question, name='woord_question'),
-
+    url(r'^woord/reset/$', cesar.woord.views.reset, name='woord_reset'),
 
     # Cesar brief:
     url(r'^brief/$', cesar.brief.views.home, name='brief_home'),
