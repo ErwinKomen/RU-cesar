@@ -6,12 +6,16 @@
 <!-- Parameters -->
 
 <!-- Show the overall progress -->
-<div class="progressfield">Voortgang: {{percentage}}% <div id="progressbar" style="width: 300px;height: 15px;"></div></div>
+<div class="progressfield">Voortgang: {{percentage|floatformat:2}}% (done {{progr_done}} of {{progr_total}})<div id="progressbar" style="width: 300px;height: 15px;"></div></div>
 
 <!-- Show the next stimuli for this particular user -->
 {% for item in lst_stimulus %}
   <div class="centerfield">
     <p class="stimulus">{{item.stimulus|safe}}</p>
+
+    <!-- Hidden: the id of this question-->
+    <div class="hidden questionid">{{item.questionid}}</div>
+
     <span class="dontknow"><input class="knowcheck" type="checkbox"> Ken ik niet</span>
     <div class="sliderfield">
       <!-- The two options -->
@@ -27,10 +31,15 @@
 {% endfor %}
 
 <div id="next_question">
-  {% csrf_token %}
-  <!-- Allow the user to go to the next question -->
-  <button targeturl="{{question_url}}"
-          onclick="ru.cesar.woord.volgende(this, '{{woordusername}}');">Volgende</button>
+  <form method="post" action="{{question_url}}">
+    {% csrf_token %}
+    <input type="hidden" name="username" value="{{woordusername}}" />
+    <input type="hidden" name="results" id="results" />
+    <!-- Allow the user to go to the next question -->
+    <input type="submit" targeturl="{{question_url}}" value="Volgende"
+            onclick="ru.cesar.woord.volgende(this, '{{woordusername}}');" />
+
+  </form>
 </div>
 
 {% endblock %}

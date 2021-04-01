@@ -121,6 +121,7 @@ var ru = (function ($, ru) {
             result = null,
             percentage = 0.0,
             url = "",
+            frm = null,
             csrf = "",
             data = null;
 
@@ -131,40 +132,21 @@ var ru = (function ($, ru) {
             result.scale = $(this).find('.rightoption').html().trim();
             result.dontknow = $(this).find('.knowcheck').is(':checked');
             result.score = $(this).find('.slider').slider('option', 'value');
+            result.questionid = $(this).find(".questionid").html().trim();
 
             result_string = result_string + JSON.stringify(result) + '\n';
 
           });
 
-          // Get the CSRF token
-          csrf = $(elStart).closest("div").find("input").first().val();
+          // Put the results in the right name
+          $("#results").val(result_string);
 
-          // POST the response and find out what needs to be done
-          url = $(elStart).attr("targeturl");
-          data = { 'csrfmiddlewaretoken': csrf, 'user': username, 'results': result_string };
-          // Send the data
-          $.post(url, data, function (response) {
-            // First leg has been done
-            if (response === undefined || response === null || !("status" in response)) {
-              private_methods.errMsg("No status returned");
-            } else {
-              switch (response.status) {
-                case "ok":
-                  // Fetch the percentage from the results
-                  percentage = response.percentage;
-                  // Set the progressbar correctly
-                  $("#progressbar").progressbar({ value: percentage });
-                  break;
-                case "error":
-                  if ("html" in response) {
-                    private_methods.errMsg("error: " + response['html']);
-                  }
-                  break;
-              }
-            }
-          });
-
+          // Get the form and the associated data
+          frm = $(elStart).closest("form")
  
+          // Submit it
+          frm.submit();
+  
         } catch (ex) {
           private_methods.errMsg("volgende", ex);
         }

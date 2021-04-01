@@ -133,7 +133,9 @@ def initialize_woord():
         if bNeedRandomization:
             # Remove previous questions
             Question.objects.all().delete()
-            lhtml.append("Removed previous questions")
+            # Remove previous questions
+            Qset.objects.all().delete()
+            lhtml.append("Removed previous questions and qsets")
 
             # Combine stimuli and choices so that we have the full set
             result = []
@@ -161,7 +163,7 @@ def initialize_woord():
                     for idx, question_id in enumerate(result):
                         order = idx + 1
                         QuestionSet.objects.create(qset=qset, question_id=question_id, order=order)
-        lhtml.append("Created {} question sets".format(num_sets))
+            lhtml.append("Created {} question sets".format(num_sets))
 
         # COmbine the message
         msg = "<br />".join(lhtml)
@@ -264,6 +266,16 @@ def tools(request):
         # Username is either void, or this user is not a WOORD user
         return nlogin(request)
 
+    # Add calculations
+    working_id = [x['woorduser__id'] for x in Qset.objects.filter(woorduser__isnull=False).values('woorduser__id').distinct()]
+    context['count_user'] = WoordUser.objects.count()
+    context['users_working'] = ", ".join([x.name for x in WoordUser.objects.filter(id__in=working_id)])
+    context['users_available'] = ", ".join([x.name for x in WoordUser.objects.exclude(id__in=working_id)])
+    context['count_choice'] = Choice.objects.filter(valid=True).count()
+    context['count_stimulus'] = Stimulus.objects.count()
+    context['count_question'] = Question.objects.count()
+    context['count_qset'] = Qset.objects.count()
+
     # Render and return the page
     return render(request, template_name, context)
 
@@ -337,7 +349,19 @@ def question(request):
         oBack['stimulus']  = "{}&nbsp;&nbsp;{}".format(woord, category)
         oBack['left'] =obj['question__choice__left']
         oBack['right']=obj['question__choice__right']
+        oBack['questionid'] = obj['question_id']
         return oBack
+
+    def get_results(sResult):
+        """Convert the string into a proper list of objects"""
+
+        lBack = []
+        if not sResult is None:
+            lResult = sResult.split("\n")
+            for item in lResult:
+                if item != "" and item[0] == "{":
+                    lBack.append(json.loads(item))
+        return lBack
 
     oErr = ErrHandle()
 
@@ -377,11 +401,25 @@ def question(request):
                 qset.save()
         # Continue if all is well
         if not qset is None:
+            # Process any questions handed over to me
+            lst_result = get_results(lResults)
+            for item in lst_result:
+                # Find out which question this is
+                question = Question.objects.filter(id=item['questionid']).first()
+                if not question is None:
+                    # Add the response to this question
+                    judgment = item['score']
+                    dontknow = item['dontknow']
+                    result = Result.objects.create(
+                        user=woorduser, question=question, judgment=judgment, dontknown=dontknow)
+                    # Change the status of this question
+                    question.status = "done"
+                    question.save()
+
             # Find the remaining questions
-            #questions = qset.questions.filter(status='created').order_by('order').values(
-            #    'stimulus__woord', 'stimulus__category', 'choice__left', 'choice__right')
             questions = QuestionSet.objects.filter(qset__woorduser=woorduser, question__status='created').order_by('order').values(
-                'question__stimulus__woord', 'question__stimulus__category', 'question__choice__left', 'question__choice__right')
+                'question_id', 'question__stimulus__woord', 'question__stimulus__category', 
+                'question__choice__left', 'question__choice__right')
 
             lst_stimulus = [get_stimulus(x) for x in questions[:10]]
 
@@ -395,6 +433,8 @@ def question(request):
             context['lst_stimulus'] = lst_stimulus
             context['question_url'] = reverse('woord_question')
             context['percentage'] = percentage
+            context['progr_done'] = done_count
+            context['progr_total'] = total_num
 
         # Make sure we add special group permission(s)
         add_app_access(request, context)

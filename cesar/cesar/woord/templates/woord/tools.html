@@ -10,12 +10,90 @@
   <!-- Clear all questions -->
   <div class="panel panel-info">
     <div class="row">
-      <div class="col-md-12">
-        Use the buttons to clear (generated) questions and otherwise reset the project
+
+      <div class="col-md-8 col-md-offset-1">
+        <h4>Statistics</h4>
+        <table style="width: 100%; background-color: lightgoldenrodyellow;">
+          <thead>
+            <tr><th>Item</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td valign="top" class="tdnowrap">Woord users total</td><td align="right">{{count_user}}</td></tr>
+            <tr><td valign="top" class="tdnowrap">Woord users working</td><td style="font-size: smaller;">{{users_working}}</td></tr>
+            <tr><td valign="top" class="tdnowrap">Woord users available</td><td style="font-size: smaller;">{{users_available}}</td></tr>
+            <tr><td valign="top" class="tdnowrap">Choices</td><td align="right">{{count_choice}}</td></tr>
+            <tr><td valign="top" class="tdnowrap">Stimuli</td><td align="right">{{count_stimulus}}</td></tr>
+            <tr><td valign="top" class="tdnowrap">Questions</td><td align="right">{{count_question}}</td></tr>
+            <tr><td valign="top" class="tdnowrap">Qsets</td><td align="right">{{count_qset}}</td></tr>
+          </tbody>
+        </table>
+
+        <p>&nbsp;</p>
+        <p><b>Note</b>: <i>Update statistics by refreshing the page</i></p>
       </div>
+
     </div>
 
+
     <div class="row">&nbsp;</div>
+
+    <div class="row">
+
+      <div class="col-md-12">
+        <h4>Actions</h4>
+        <p>Use the buttons to clear (generated) questions and otherwise reset the project. 
+          Responses to actions will appear to the right of the button.</p>
+
+        <div class="row">
+          <div class="col-md-6">
+            Initialize users, choices, stimuli, questions:
+          </div>
+          <div class="col-md-2">
+            <span>
+              <a class="btn btn-success btn-sm" action="init" onclick="ru.cesar.woord.postman(this);"
+                 targetid="initwoord" targeturl="{% url 'woord_reset' %}">Initialize</a>
+            </span>
+          </div>
+          <div class="col-md-4" id="initwoord"></div>
+
+        </div>
+
+        <div class="row">&nbsp;</div>
+
+        <div class="row">
+          <div class="col-md-6">
+            Remove all questions, including related responses:
+          </div>
+          <div class="col-md-2">
+            <span>
+              <a class="btn btn-danger btn-sm" action="questions" onclick="ru.cesar.woord.postman(this);"
+                 targetid="resetquestions" targeturl="{% url 'woord_reset' %}">Questions</a>
+            </span>
+          </div>
+          <div class="col-md-4" id="resetquestions"></div>
+
+        </div>
+
+        <div class="row">&nbsp;</div>
+
+        <div class="row">
+          <div class="col-md-6">
+            Remove all created users, including responses they gave:
+          </div>
+          <div class="col-md-2">
+            <span>
+              <a class="btn btn-danger btn-sm" action="users" onclick="ru.cesar.woord.postman(this);"
+                 targetid="resetusers" targeturl="{% url 'woord_reset' %}">Users</a>
+            </span>
+          </div>
+          <div class="col-md-4" id="resetusers"></div>
+
+        </div>
+
+        <div class="row">&nbsp;</div>
+      </div>
+
+    </div>
 
     <div class="hidden">
       <form>
@@ -23,53 +101,6 @@
       </form>
     </div>
 
-    <div class="row">
-      <div class="col-md-6">
-        Initialize users, choices, stimuli, questions:
-      </div>
-      <div class="col-md-2">
-        <span>
-          <a class="btn btn-success btn-sm" action="init" onclick="ru.cesar.woord.postman(this);"
-             targetid="initwoord" targeturl="{% url 'woord_reset' %}">Initialize</a>
-        </span>
-      </div>
-      <div class="col-md-4" id="initwoord"></div>
-
-    </div>
-
-    <div class="row">&nbsp;</div>
-
-    <div class="row">
-      <div class="col-md-6">
-        Remove all questions, including related responses:
-      </div>
-      <div class="col-md-2">
-        <span>
-          <a class="btn btn-danger btn-sm" action="questions" onclick="ru.cesar.woord.postman(this);"
-             targetid="resetquestions" targeturl="{% url 'woord_reset' %}">Questions</a>
-        </span>
-      </div>
-      <div class="col-md-4" id="resetquestions"></div>
-
-    </div>
-
-    <div class="row">&nbsp;</div>
-
-    <div class="row">
-      <div class="col-md-6">
-        Remove all created users, including responses they gave:
-      </div>
-      <div class="col-md-2">
-        <span>
-          <a class="btn btn-danger btn-sm" action="users" onclick="ru.cesar.woord.postman(this);"
-             targetid="resetusers" targeturl="{% url 'woord_reset' %}">Users</a>
-        </span>
-      </div>
-      <div class="col-md-4" id="resetusers"></div>
-
-    </div>
-
-    <div class="row">&nbsp;</div>
 
   </div>
 </div>

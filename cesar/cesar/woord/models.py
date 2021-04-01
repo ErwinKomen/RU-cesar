@@ -280,6 +280,10 @@ class Question(models.Model):
         sBack = "{} ({}) on {}".format(woord, category, choice)
         return sBack 
 
+    def get_question(stimulus, scale):
+        """Retrieve a question based on the stimulus and the scale"""
+        pass
+
 
 class QuestionSet(models.Model):
     """A particular question for a particular person's set of questions"""
