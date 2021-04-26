@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d565a16b-3481-4b3c-8554-8308d2d5d15f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>nexiscorona.py</StartupFile>
+    <StartupFile>che2wordvec.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -16,7 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-i "d:/etc/corpora/nld/ParsedSonar/WR-P-P-G_newspapers/079" </CommandLineArguments>
+    <CommandLineArguments>-l </CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -29,6 +29,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="anon.py" />
+    <Compile Include="che2wordvec.py" />
+    <Compile Include="psdx2sent.py" />
     <Compile Include="erwin.py" />
     <Compile Include="filter.py" />
     <Compile Include="lingoconvert.py">
@@ -94,6 +96,7 @@
     <Content Include="brief\scripts\jquery-1.10.2.js" />
     <Content Include="brief\scripts\pbrief.js" />
     <Content Include="letter\css\site.css" />
+    <Content Include="letter\gulam.html" />
     <Content Include="letter\elpash.html" />
   </ItemGroup>
   <PropertyGroup>
