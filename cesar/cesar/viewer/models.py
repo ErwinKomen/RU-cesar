@@ -28,7 +28,7 @@ class ResultSet(models.Model):
     created = models.CharField("Date created", max_length=MAX_TEXT_LEN)
     # [1] Link to the relevant [Part] from 'browser'
     #     (This is determined by the combination of "Part" and "Language" in the results database)
-    part = models.ForeignKey(Part, blank=False, null=False)
+    part = models.ForeignKey(Part, blank=False, null=False, on_delete=models.CASCADE, related_name="part_resultsets")
     # [1] The line number from the QC (Query Constructor)
     qc = models.IntegerField("QC line number")
     # [0-1] Notes on these results
@@ -44,12 +44,12 @@ class ResultFeatName(models.Model):
     # [1]
     name = models.CharField("Name of this feature", max_length=MAX_TEXT_LEN)
     # [1] Names belong together to one set
-    set = models.ForeignKey(ResultSet, blank=False, null=False)
+    set = models.ForeignKey(ResultSet, blank=False, null=False, on_delete=models.CASCADE, related_name="set_resultfeatnames")
 
 
 class ResultFeature(models.Model):
     # [1] One feature is a key/value paier
-    ftname = models.ForeignKey(ResultFeatName, blank=False, null=False)
+    ftname = models.ForeignKey(ResultFeatName, blank=False, null=False, on_delete=models.CASCADE, related_name="ftname_resultfeatures")
 
 
 class ResultText(models.Model):
@@ -57,9 +57,9 @@ class ResultText(models.Model):
 
     # [1] Name of the TEXT in which this result occurred - should coincice with browser.Text.fileName
     #     fileName = models.CharField("Name of the text file", max_length=MAX_TEXT_LEN)
-    text = models.ForeignKey(Text, blank=False, null=False)
+    text = models.ForeignKey(Text, blank=False, null=False, on_delete=models.CASCADE, related_name="text_resulttexts")
     # [1] Each result text belongs to a particular ResultGeneral
-    general = models.ForeignKey(ResultSet, blank=False, null=False)
+    general = models.ForeignKey(ResultSet, blank=False, null=False, on_delete=models.CASCADE, related_name="general_resulttexts")
 
     def __str__(self):
         return self.fileName
@@ -69,7 +69,7 @@ class Result(models.Model):
     """One result from a corpus search"""
 
     # [1] Link to the text
-    text = models.ForeignKey(ResultText)
+    text = models.ForeignKey(ResultText, on_delete=models.CASCADE, related_name="text_results")
     # [1] Sentence identifier
     sentId = models.CharField("Sentence identifier", max_length=MAX_TEXT_LEN)
     # [1] Constituent identifier

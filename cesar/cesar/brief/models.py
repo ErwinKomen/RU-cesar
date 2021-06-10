@@ -456,7 +456,7 @@ class Project(models.Model):
     ptype = models.CharField("Progress", choices=build_abbr_list(PROJECT_PROGRESS), max_length=5, default="ini")
 
     # [1] Each project has been made by one particular user
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_projects")
 
     # [1] Information in JSON
     info = models.TextField("Information in JSON", default = "{}")

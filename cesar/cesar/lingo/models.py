@@ -453,9 +453,9 @@ class Response(models.Model):
     """Answers of one participant to one experiment"""
 
     # [1] The experiment
-    experiment = models.ForeignKey(Experiment)
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name="experiment_responses")
     # [1] The Participant
-    participant = models.ForeignKey(Participant)
+    participant = models.ForeignKey(Participant, on_delete=models.CASCADE, related_name="participant_responses")
     # [0-1] The answers as a json object (stringified)
     answer = models.TextField("Answers", blank=True, null=True)
     # [1] Record when this response was created

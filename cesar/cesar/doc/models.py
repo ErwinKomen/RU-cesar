@@ -68,7 +68,7 @@ class FoliaDocs(models.Model):
     """Set of folia-encoded documents"""
     
     # [1] These belong to a particular user
-    owner = models.ForeignKey(User, editable=False)
+    owner = models.ForeignKey(User, editable=False, on_delete=models.CASCADE, related_name="owner_foliadocs")
 
     def __str__(self):
         return self.owner.username
@@ -83,7 +83,7 @@ class FrogLink(models.Model):
     # [1] Each froglink centers around a file that is uploaded, processed and made available
     name = models.CharField("Name to be used for this file", max_length=MAXPARAMLEN)
     # [1] Each link belongs to a set of docs (that belong to an owner)
-    fdocs = models.ForeignKey(FoliaDocs, related_name="documents")
+    fdocs = models.ForeignKey(FoliaDocs, related_name="documents", on_delete=models.CASCADE)
     # [0-1] Full name is the full path of the folia.xml document on the server
     fullname = models.CharField("Full path of this file", max_length=MAXPATH, null=True, blank=True)
     # [0-1] Concreteness as stringified JSON object
@@ -685,7 +685,7 @@ class NexisDocs(models.Model):
     """Set of text files for Nexis research"""
     
     # [1] These belong to a particular user
-    owner = models.ForeignKey(User, editable=False)
+    owner = models.ForeignKey(User, editable=False, on_delete=models.CASCADE, related_name="owner_nexisdocs")
 
     def __str__(self):
         return self.owner.username
@@ -752,7 +752,7 @@ class NexisLink(models.Model):
     created = models.DateTimeField(default=timezone.now)
 
     # [1] Each link belongs to a set of docs (that belong to an owner)
-    ndocs = models.ForeignKey(NexisDocs, related_name="nexisdocuments")
+    ndocs = models.ForeignKey(NexisDocs, related_name="nexisdocuments", on_delete=models.CASCADE)
     # [1] Each nexislink should belong to a batch
     batch = models.ForeignKey(NexisBatch, null=True, on_delete=models.CASCADE, related_name="batchlinks")
 

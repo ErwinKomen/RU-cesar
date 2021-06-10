@@ -3,7 +3,7 @@ from django.utils.safestring import mark_safe
 import os
 
 class SeekerTextarea(Textarea):
-    def render(self, name, value, attrs = None):
+    def render(self, name, value, attrs = None, renderer = None):
       output = []
       # Check for none-type
       if value != None:

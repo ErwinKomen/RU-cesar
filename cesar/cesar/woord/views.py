@@ -178,7 +178,7 @@ def user_is_authenticated(request):
     # Is this user authenticated?
     username = request.user.username
     user = User.objects.filter(username=username).first()
-    response = False if user == None else user.is_authenticated()
+    response = False if user == None else user.is_authenticated
     return response
 
 def user_is_ingroup(request, sGroup):
