@@ -341,3 +341,6 @@ ModelManifest.xml
 /woordbeoordelingen/results
 /woordbeoordelingen/stimuli
 /woordbeoordelingen
+/cesar/cesar/trans/migrations/__pycache__
+/cesar/cesar/trans/migrations/__init__.py
+/cesar/cesar/trans/__pycache__

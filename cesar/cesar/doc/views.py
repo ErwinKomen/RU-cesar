@@ -940,8 +940,7 @@ class NexisBatchDownload(BasicPart):
         # Save the result in the response
         wb.save(filename)
         return True
-
-
+    
 
 class NexisListView(BasicList):
     """Search and list nexis batches"""

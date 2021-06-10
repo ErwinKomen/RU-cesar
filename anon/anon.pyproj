@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d565a16b-3481-4b3c-8554-8308d2d5d15f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>che2wordvec.py</StartupFile>
+    <StartupFile>flex2text.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -16,7 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-l </CommandLineArguments>
+    <CommandLineArguments>-l nl -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\02_shaj.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\02_shaj_stories.doc"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -30,6 +30,7 @@
   <ItemGroup>
     <Compile Include="anon.py" />
     <Compile Include="che2wordvec.py" />
+    <Compile Include="flex2text.py" />
     <Compile Include="psdx2sent.py" />
     <Compile Include="erwin.py" />
     <Compile Include="filter.py" />
@@ -96,6 +97,8 @@
     <Content Include="brief\scripts\jquery-1.10.2.js" />
     <Content Include="brief\scripts\pbrief.js" />
     <Content Include="letter\css\site.css" />
+    <Content Include="letter\info.html" />
+    <Content Include="letter\gheenash.html" />
     <Content Include="letter\gulam.html" />
     <Content Include="letter\elpash.html" />
   </ItemGroup>

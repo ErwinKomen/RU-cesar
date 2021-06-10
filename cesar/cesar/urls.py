@@ -22,6 +22,8 @@ from cesar.lingo.views import *
 from cesar.brief.views import *
 # The WOORD application
 from cesar.woord.views import *
+# The Transliterate application
+from cesar.trans.views import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
@@ -63,6 +65,11 @@ urlpatterns = [
     url(r'^woord/tools/$', cesar.woord.views.tools, name='woord_tools'),
     url(r'^woord/question/$', cesar.woord.views.question, name='woord_question'),
     url(r'^woord/reset/$', cesar.woord.views.reset, name='woord_reset'),
+
+    # Cesar transliteration:
+    url(r'^trans/$', cesar.trans.views.home, name='trans_home'),
+    url(r'^trans/convert/$', cesar.trans.views.convert, name='trans_convert'),
+    url(r'^trans/download/$', cesar.trans.views.download, name='trans_download'),
 
     # Cesar brief:
     url(r'^brief/$', cesar.brief.views.home, name='brief_home'),

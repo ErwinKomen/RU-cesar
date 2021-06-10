@@ -1,0 +1,80 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block scripts %}
+    <link rel="stylesheet" type="text/css" href="{% static 'trans/content/trans-site.css' %}" />
+    <script src="{% static 'trans/scripts/clipboard.js' %}"></script>
+    <script src="{% static 'trans/scripts/cesar.trans.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">    
+    <h3>Transliterate Chechen</h3>
+
+    <!-- Potential room for errors-->
+    <div id="trans_err" style="color: red; font-family: sans-serif;">
+      {% for item in error_list %}{{item}}{% endfor %}
+    </div>
+
+    <!-- This is where the user can input their text to be transliterated -->
+    <form>
+      {% csrf_token %}
+      <div id="downloadcenter" class="hidden">
+        <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+        <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+      </div>
+      <table style="width: 100%;">
+        <tbody>
+          <!-- Instructions and button -->
+          <tr>
+            <td valign="top">
+              <a class="btn btn-xs jumbo-3" 
+                 data-target="transliteration"
+                 targeturl="{% url 'trans_convert' %}"
+                 onclick="ru.cesar.trans.do_convert(this);">Convert</a>
+            </td>
+            <td style="width: 100%;">Write (or paste) the Latin Chechen text to be transliterated</td>
+          </tr>
+
+          <!-- The user's original -->
+          <tr>
+            <td valign="top">Original</td>
+            <td valign="top">{{transForm.original}}</td>
+          </tr>
+
+          <!-- The cyrillic transliteration -->
+          <tr>
+            <td valign="top">
+              <span>Transliteration</span>
+              <a role="button" class="btn btn-xs jumbo-1 clipboard-copy"
+                 data-target="transliteration"
+                 title="Copy the transliterated text to the clipboard"
+                 >Copy</a>
+              <a  role="button" class="btn btn-xs jumbo-1"
+                  title="Download the transliterated text as a Word document"
+                  downloadtype="word"
+                  ajaxurl="{% url 'trans_download' %}"
+                  onclick="ru.cesar.seeker.post_download(this);">Download</a>
+            </td>
+            <td valign="top">
+              <textarea id="transliteration" name="transliteration" class="trans-result"></textarea>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+
+  </div>
+
+{% endblock content %}
+

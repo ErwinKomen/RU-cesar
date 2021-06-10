@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'cesar.viewer',
     'cesar.seeker',
     'cesar.doc',
+    'cesar.trans',
     'cesar.tsg',
     'cesar.lingo',
     'cesar.brief',
