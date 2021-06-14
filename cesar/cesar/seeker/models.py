@@ -3359,6 +3359,7 @@ class Research(models.Model):
                     obj.save()
         except:
             msg = errHandle.get_error_message()
+            errHandle.DoError("Research/create_simple")
             obj=None
 
         # Return the object that has been created

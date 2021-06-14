@@ -21,6 +21,7 @@ from django.views.generic import ListView, View
 import json
 import fnmatch
 import os
+import base64
 from datetime import datetime
 
 # provide error handling
@@ -144,6 +145,17 @@ def has_string_value(field, obj):
 
 def has_list_value(field, obj):
     response = (field != None and field in obj and obj[field] != None and len(obj[field]) > 0)
+    return response
+
+def isempty(value):
+    response = True
+    if value != None:
+        if isinstance(value, str):
+            response = (value == "")
+        elif isinstance(value, int):
+            response = False
+        else:
+            response = (len(value) == 0)
     return response
 
 def has_obj_value(field, obj):
@@ -402,6 +414,19 @@ def make_ordering(qs, qd, order_default, order_cols, order_heads):
         lstQ = []
 
     return qs, order_heads, colnum
+
+def base64_encode(sInput):
+    message_bytes = sInput.encode("utf8")
+    base64_bytes = base64.b64encode(message_bytes)
+    sOutput = base64_bytes.decode("utf8")
+    return sOutput
+
+def base64_decode(sInput):
+    base64_bytes = sInput.encode('utf8')
+    message_bytes = base64.b64decode(base64_bytes)
+    sOutput = message_bytes.decode('utf8')
+    return sOutput
+
 
 
 # The views that are defined by 'basic'

@@ -695,11 +695,12 @@ class SimpleListView(BasicList):
     new_button = False
     none_on_empty = True
     page_function = "ru.basic.search_paged_start"
-    order_cols = ['owner__username', 'name', '', 'created', '']
-    order_default = ['owner__username', 'created', 'name', '', '']
+    order_cols = ['owner__username', 'name', '', '', 'created', '']
+    order_default = ['owner__username', 'created', 'name', '', '', '']
     order_heads = [{'name': 'Owner',        'order': 'o=1', 'type': 'str', 'custom': 'owner'},
                    {'name': 'Name',         'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True},
                    {'name': 'Description',  'order': '',    'type': 'str', 'custom': 'description', 'main': True, 'linkdetails': True},
+                   {'name': 'Status',       'order': '',    'type': 'str', 'custom': 'status'},
                    {'name': 'Created',      'order': 'o=4', 'type': 'str', 'custom': 'created'},
                    {'name': '', 'order': '', 'type': 'str', 'options': ['delete']}
                    ]
@@ -756,6 +757,13 @@ class SimpleListView(BasicList):
         elif custom == "created":
             sTime = instance.created.strftime("%d/%b/%Y %H:%M")
             html.append("<span style='color: darkgreen; font-size: smaller;'>{}</span>".format(sTime))
+        elif custom == "status":
+            sStatus = "unknown"
+            if instance.compact == None or instance.compact == "" or instance.compact[0] != "{":
+                sStatus = "empty?"
+            else:
+                sStatus = "ok"
+            html.append(sStatus)
         # Combine the HTML code
         sBack = "\n".join(html)
         return sBack, sTitle
@@ -4770,7 +4778,7 @@ def research_simple(request, pk=None):
         # Get the correct research object
         if pk != None:
             obj = Research.objects.filter(id=pk).first()
-        if pk == None or obj == None:
+        if pk == None or obj == None or obj.compact == None or obj.compact == "":
             # Get the 'simple' project of this owner
             lstQ = []
             lstQ.append(Q(owner=owner))
