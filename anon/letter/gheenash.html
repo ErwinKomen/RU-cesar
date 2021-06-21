@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
@@ -6,6 +6,7 @@
   <link rel="stylesheet" type="text/css" href="css/site.css" />
   <script src="js/jquery-1.10.2.js"></script>
   <script src="js/bootstrap.js"></script>
+  <script src="js/gheenash.js"></script>
   <title>Бераллин гІенаш</title>
 </head>
 <body style="font-family: sans-serif">
@@ -18,13 +19,18 @@
       <p class="lead">The translation of Chechen childhood stories. 
       </p>
     </div>
+
+    <!-- Possibility to show errors -->
+    <div id="gheenash_err"></div>
+
     <section class="row">
       <!-- The stories -->
       <div class="col-md-6 col-xs-6">
         <h3>
           <span>Stories</span>
-          <span class="pull-right" style="font-size: xx-small;">(Update: 9/Jun/2021)</span>
+          <span class="pull-right" style="font-size: xx-small;">(Update: 21/Jun/2021)</span>
         </h3>
+
         <table class="table">
           <thead>
             <tr>
@@ -39,7 +45,8 @@
               <td>-</td>
               <td>Introduction</td>
               <td>
-                <a href="#story_00" data-toggle="collapse" title="Documents" class="btn btn-default btn-xs">pdf...</a>
+                <a href="#story_00" data-toggle="collapse" title="Documents" class="btn btn-default btn-xs" disabled>pdf...</a>
+                <a href="gheenash/diicar_00.html" title="Documents" class="btn btn-primary btn-xs" disabled>view</a>
               </td>
             </tr>
             <tr id="story_00" class="collapse">
@@ -55,6 +62,7 @@
               <td>Hoopoe: аттйокх екачохь</td>
               <td>
                 <a href="#story_01" data-toggle="collapse" title="Documents" class="btn btn-default btn-xs">pdfs...</a>
+                <a href="gheenash/diicar_01.html" title="Documents" class="btn btn-primary btn-xs">view</a>
               </td>
             </tr>
             <tr id="story_01" class="collapse">
@@ -75,6 +83,7 @@
               <td>Penny: бабийн шай</td>
               <td>
                 <a href="#story_02" data-toggle="collapse" title="Documents" class="btn btn-default btn-xs">pdfs...</a>
+                <a href="gheenash/diicar_02.html" title="Documents" class="btn btn-primary btn-xs">view</a>
               </td>
             </tr>
             <tr id="story_02" class="collapse">
@@ -95,6 +104,7 @@
               <td>Train: дāдин цІерпошт</td>
               <td>
                 <a href="#story_03" data-toggle="collapse" title="Documents" class="btn btn-default btn-xs">pdfs...</a>
+                <a href="gheenash/diicar_03.html" title="Documents" class="btn btn-primary btn-xs">view</a>
               </td>
             </tr>
             <tr id="story_03" class="collapse">
@@ -119,11 +129,12 @@
         <h3>Goal</h3>
         <p>The stories in Бераллин гІенаш provide a vivid cultural and historical picture of the Chechen life as it was decades ago.
         The translations are aimed at people interested in Chechen life and history, 
-        but also at native speakers from the diaspora, to suppor them in maintaining their language.</p>
+        but also at native speakers from the diaspora, to support them in maintaining their beautiful and rich language.</p>
 
         <h3>HELP!</h3>
-        <p>Are you interested in helping out with the draft translation of the stories (from Chechen into English or Dutch) 
-        or the brushing-up of the results (to make for natural translations)? Then please contact us (see below at 'contact').</p>
+        <p>Anyone interested in helping out with the draft translation of the stories (from Chechen into English or Dutch) 
+        or the brushing-up of the results (to make for natural translations) can contact us at 
+        <span style="color: darkgreen">beerallin dot gheenash at solcon dot nl</span>.</p>
 
         <h3>Acknowledgements</h3>
         <p>Thanks to all the proof-readers: <i>(your name could be here...)</i></p>
