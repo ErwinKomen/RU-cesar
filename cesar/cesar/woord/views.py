@@ -235,9 +235,9 @@ def home(request):
     # Make sure we add special group permission(s)
     add_app_access(request, context)
 
-    if not user_is_authenticated(request) or not user_is_ingroup(request, app_user): 
-        # Username is either void, or this user is not a WOORD user
-        return nlogin(request)
+    #if not user_is_authenticated(request) or not user_is_ingroup(request, app_user): 
+    #    # Username is either void, or this user is not a WOORD user
+    #    return nlogin(request)
 
     if user_is_superuser(request):
         # See if initialization is needed
