@@ -194,6 +194,7 @@
                       <ul class="dropdown-menu">
                         <li><a href="{% url 'about' %}">About</a></li>
                         <li><a href="{% url 'contact' %}">Contact</a></li>
+                        <li><a href="{% static 'browser/content/CesarStepByStep.pdf' %}" target="_blank">Step-by-step (pdf)</a></li>
                         <li><a href="{% static 'browser/content/CesarManual.pdf' %}" target="_blank">Manual (pdf)</a></li>
                         {% if user.is_authenticated %}
                           <form id="logoutForm" action="{% url 'logout' %}" method="post" class="navbar-right">

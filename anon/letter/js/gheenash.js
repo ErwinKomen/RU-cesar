@@ -51,6 +51,9 @@ var ru = (function ($, ru) {
       init_event_listeners: function () {
         // Bind on the language choice changes radio buttons
         $(".language-choice input[type=radio]").bind('change', ru.gheenash.lang_change);
+        // Show the first language only
+        $(".story").addClass("hidden");
+        $(".story").first().removeClass("hidden");
       },
 
       /**
