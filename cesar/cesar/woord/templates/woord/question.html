@@ -24,19 +24,20 @@
 
       <!-- The actual slider -->
       <div class="slider"></div>
-      <div class="slidervalue">50</div>
+      <div class="slidervalue">5</div>
     </div>
   </div>
   <br />
 {% endfor %}
 
-<div id="next_question">
+<div id="next_question" class="next-button">
   <form method="post" action="{{question_url}}">
     {% csrf_token %}
     <input type="hidden" name="username" value="{{woordusername}}" />
     <input type="hidden" name="results" id="results" />
     <!-- Allow the user to go to the next question -->
     <input type="submit" targeturl="{{question_url}}" value="Volgende"
+           class="btn btn-primary btn-lg"
             onclick="ru.cesar.woord.volgende(this, '{{woordusername}}');" />
 
   </form>

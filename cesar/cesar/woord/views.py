@@ -290,7 +290,8 @@ def tools(request):
     # Make sure we add special group permission(s)
     add_app_access(request, context)
 
-    if not user_is_authenticated(request) or not user_is_superuser(request): 
+    if not user_is_authenticated(request) or not \
+       (user_is_ingroup(request, app_user) or user_is_ingroup(request, app_editor) or user_is_superuser(request)): 
         # Username is either void, or this user is not a WOORD user
         return nlogin(request)
 
@@ -304,6 +305,10 @@ def tools(request):
     context['count_question'] = Question.objects.count()
     context['count_qset'] = Qset.objects.count()
 
+    done_count = Question.objects.filter(status="done").count()
+    context['progr_done'] = done_count
+    context['progr_users'] = len(working_id)
+
     # Render and return the page
     return render(request, template_name, context)
 
@@ -315,7 +320,8 @@ def reset(request):
 
     try:
         # Only allow POST command
-        if request.is_ajax() and request.method == "POST" and user_is_authenticated(request) and user_is_superuser(request):
+        if request.is_ajax() and request.method == "POST" and user_is_authenticated(request) and \
+            (user_is_superuser(request) or user_is_ingroup(request, app_editor)):
             # Get the parameters passed on
             qd = request.POST
             action = qd.get("action", "")
@@ -334,8 +340,17 @@ def reset(request):
             elif action == "users":
                 # THis is a POST method, continue
                 count = WoordUser.objects.count()
-                # Delete
+                user_id = [x['id'] for x in WoordUser.objects.all().values('id')]
+                # Delete user results
+                count_res = Result.objects.filter(user__id__in=user_id).count()
+                Result.objects.filter(user__id__in=user_id).delete()
+                # Delete users
                 WoordUser.objects.all().delete()
+                # Reset done  status
+                with transaction.atomic():
+                    for obj in Question.objects.filter(status="done"):
+                        obj.status = "reset"
+                        obj.save()
                 # Prepare message
                 oData['msg'] = "Woord-Users deleted: {}".format(count)
 

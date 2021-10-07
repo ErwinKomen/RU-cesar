@@ -93,7 +93,10 @@ var ru = (function ($, ru) {
         try {
           // Define what happens to the .slider elements
           $( ".slider" ).slider(
-              { value:50,
+              {
+                value: 5,
+                max: 10,
+                min: 1,
                 slide: function(event, ui) {
                   $(this).next().html(ui.value);
                 }

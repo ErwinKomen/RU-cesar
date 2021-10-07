@@ -37,19 +37,19 @@ button
 .slider
 {
     margin: auto;
-    width: 500px;
+    width: 440px;
 }
 
 .leftoption
 {
     float: left;
-	width: 140px;
+	width: 180px;
 }
 
 .rightoption
 {
     float:right;
-	width: 140px;
+	width: 180px;
 }
 
 .dontknow
@@ -81,5 +81,13 @@ button
 }
 
 .tdnowrap {
-  white-space:nowrap !important;
+    white-space:nowrap !important;
+}
+
+.next-button {
+    padding-bottom: 50px;
+}
+
+.warning {
+    background-color: yellow; border: 1px solid darkred; text-align: center; margin: 5px;
 }
