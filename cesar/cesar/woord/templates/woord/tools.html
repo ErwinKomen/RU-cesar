@@ -46,7 +46,7 @@
 
         <div class="row">
           <div class="col-md-6">
-            Initialize users, choices, stimuli, questions:
+            Initialize users, choices, questions:
           </div>
           <div class="col-md-2">
             <span>
@@ -55,6 +55,22 @@
             </span>
           </div>
           <div class="col-md-4" id="initwoord"></div>
+
+        </div>
+
+        <div class="row">&nbsp;</div>
+
+        <div class="row">
+          <div class="col-md-6">
+            Initialize users, choices, questions as well as <b>stimuli</b>:
+          </div>
+          <div class="col-md-2">
+            <span>
+              <a class="btn btn-success btn-sm" action="stimuli" onclick="ru.cesar.woord.postman(this);"
+                 targetid="initstimuli" targeturl="{% url 'woord_reset' %}">Stimuli</a>
+            </span>
+          </div>
+          <div class="col-md-4" id="initstimuli"></div>
 
         </div>
 

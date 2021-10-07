@@ -44,20 +44,35 @@ app_moderator = "{}_moderator".format(PROJECT_NAME.lower())
 
 NUMBER_OF_PARTICIPANTS = 40
 
-def initialize_woord():
-    """Fill the application if this is needed"""
+def initialize_woord(additional=None):
+    """Fill the application if this is needed
+    
+    Initial: only use stimuli.txt
+    Issue #147: read stimuli2021.txt, omitting first line with column headers
+    """
 
     def get_stimulus(row):
         woord = ""
         cat = ""
+        note = ""
         oBack = {}
         try:
-            if row != "":
-                parts = re.split(r'\s+', row)
+            if len(row) == 3:
+                woord = row[0]
+                cat = row[1]
+                note = row[2]
+                oBack = dict(woord=woord, cat=cat, note=note)
+            elif row != "":
+                # parts = re.split(r'\s+', row)
+                parts = re.split(r'\t', row)
                 if len(parts) > 1:
                     woord = parts[0]
-                    cat = parts[1].replace("(", "").replace(")", "")
-            oBack = dict(woord=woord, cat=cat)
+                    cat = parts[1] # parts[1].replace("(", "").replace(")", "")
+                    note = parts[2]
+                    oBack = dict(woord=woord, cat=cat, note=note)
+            else:
+                # Empty row
+                iStop = 1
         except:
             msg = oErr.get_error_message()
             oErr.DoError("get_stimulus")
@@ -66,13 +81,14 @@ def initialize_woord():
     oErr = ErrHandle()
     bNeedRandomization = False
     msg = "no changes"
+    STIMULI_NAME = "stimuli2021.txt"    # Was: stimuli.txt
     lhtml = []
 
     try:
         # Figure out directory and file names
         woord_dir = os.path.abspath(os.path.join(WRITABLE_DIR, "../woord"))
         choices_file = os.path.abspath(os.path.join(woord_dir, "choices.txt"))
-        stimuli_file = os.path.abspath(os.path.join(woord_dir, "stimuli.txt"))
+        stimuli_file = os.path.abspath(os.path.join(woord_dir, STIMULI_NAME))
 
         # Check on number of users
         if WoordUser.objects.count() <= 1:
@@ -108,20 +124,30 @@ def initialize_woord():
 
         # Check on stimuli
         oErr.Status("initialize_woord #1")
+        if additional != None and additional == "stimuli":
+            # THis is a POST method, continue
+            count = Stimulus.objects.count()
+            # Delete
+            Stimulus.objects.all().delete()
+            # Prepare message
+            lhtml.append("Stimuli deleted: {}".format(count))
+
         if Stimulus.objects.count() == 0:
             bNeedRandomization = True
             oErr.Status("initialize_woord #2")
             # Load the stimuli
             with open(stimuli_file) as f:
-                reader = csv.reader(f, dialect='excel')
-                lst_stimuli = [get_stimulus(row[0]) for row in reader]
+                reader = csv.reader(f, dialect='excel-tab')
+                lst_stimuli = [get_stimulus(row) for row in reader]
             oErr.Status("initialize_woord #3")
             # Add the stimuli into the objects
             with transaction.atomic():
-                for oStimulus in lst_stimuli:
+                # Note: skip the first line containing column headers
+                for oStimulus in lst_stimuli[1:]:
                     woord = oStimulus['woord']
                     cat = oStimulus['cat']
-                    Stimulus.objects.create(woord=woord, category=cat)
+                    note = oStimulus['note']
+                    Stimulus.objects.create(woord=woord, category=cat, note=note)
             oErr.Status("initialize_woord #4")
             lhtml.append("Read from file {} stimuli".format(len(lst_stimuli)))
 
@@ -141,8 +167,10 @@ def initialize_woord():
             result = []
             with transaction.atomic():
                 # Iterate over all stimuli (will be 5000)
+                # 2021: these are now 1823
                 for stimulus in Stimulus.objects.all():
                     # And then over all choices (should be just 1)
+                    # 2021: this is now 2
                     for choice in Choice.objects.filter(valid=True):
                         # This yields 10,000 objects
                         obj = Question.objects.create(stimulus=stimulus, choice=choice)
@@ -299,6 +327,9 @@ def reset(request):
                 Question.objects.all().delete()
                 # Prepare message
                 oData['msg'] = "Questions deleted: {}".format(count)
+
+            elif action == "stimuli":
+                oData['msg'] = initialize_woord("stimuli")
 
             elif action == "users":
                 # THis is a POST method, continue

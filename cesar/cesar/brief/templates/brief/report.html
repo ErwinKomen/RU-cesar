@@ -30,7 +30,7 @@
       {% if mod.module.order == 1 %}
         <!-- Show project name box on first page -->
         <h4>Project name:</h4>
-        <div style="margin-left: 20px;">
+        <div style="margin-left: 20px; position: absolute; ">
           <table style="width: 100%; border-collapse: collapse;">
             <tr><td style="background-color: aliceblue;">{% if pname %}{{pname}}{% else %}*{% endif %}</td></tr>
           </table>
@@ -52,10 +52,10 @@
 
         <!-- All questions for this section -->
         {% if sec.questions|length == 0 %}
-          <div style="margin-left: 20px; color: darkgray; margin-top: 5px; margin-bottom: 5px;"><i>(no questions...)</i></div>
+          <div style="margin-left: 20px; position: absolute; color: darkgray; margin-top: 5px; margin-bottom: 5px;"><i>(no questions...)</i></div>
         {% else %}
           {% for que in sec.questions %}
-            <div style="margin-left: 20px;" >
+            <div style="margin-left: 20px; position: absolute; " >
             <table style="width: 100%; margin-top: 5px; margin-bottom: 5px; border-collapse: collapse;">
               <!-- Row with the question -->
               <tr>

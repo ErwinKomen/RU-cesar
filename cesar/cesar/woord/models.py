@@ -227,6 +227,8 @@ class Stimulus(models.Model):
     woord = models.CharField("Woord", max_length=MAXPARAMLEN)
     # [1] The word category
     category = models.CharField("Category", max_length=MAXPARAMLEN)
+    # [0-1] Optional note
+    note = models.CharField("Note", blank=True, null=True, max_length=MAXPARAMLEN)
 
     def __str__(self):
         sBack = "{} ({})".format(self.woord, self.category)
