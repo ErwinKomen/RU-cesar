@@ -388,11 +388,19 @@ def question(request):
     """Check this user's existence and start with the questions"""
 
     def get_stimulus(obj):
+        bOnlyWoord = True   # Issue #150
+
         # Transform a question_values object into a stimulus object
         oBack = {}
         woord = obj['question__stimulus__woord']
-        category = obj['question__stimulus__category']
-        oBack['stimulus']  = "{}&nbsp;&nbsp;{}".format(woord, category)
+        if bOnlyWoord:
+            oBack['stimulus']  = woord
+        else:
+            category = obj['question__stimulus__category']
+            oBack['stimulus']  = "{}&nbsp;&nbsp;{}".format(woord, category)
+
+        # Issue #150: only woord, not category
+
         oBack['left'] =obj['question__choice__left']
         oBack['right']=obj['question__choice__right']
         oBack['questionid'] = obj['question_id']
