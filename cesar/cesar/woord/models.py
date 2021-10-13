@@ -219,6 +219,12 @@ class WoordUser(models.Model):
         obj = WoordUser.objects.filter(name__iexact=sName).first()
         return obj
 
+    def set_status(self, status):
+        if status != None and status != "":
+            self.status = status
+            self.save()
+        return True
+
 
 class Stimulus(models.Model):
     """This combines all the stimuli that can potentially be used by one particular user"""

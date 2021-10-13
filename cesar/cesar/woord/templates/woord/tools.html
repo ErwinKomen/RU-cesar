@@ -90,6 +90,22 @@
 
           <div class="row">
             <div class="col-md-6">
+              Re-<b>randomize</b> existing stimuli:
+            </div>
+            <div class="col-md-2">
+              <span>
+                <a class="btn btn-success btn-sm" action="randomize" onclick="ru.cesar.woord.postman(this);"
+                   targetid="initrandomize" targeturl="{% url 'woord_reset' %}">Re-randomize</a>
+              </span>
+            </div>
+            <div class="col-md-4" id="initrandomize"></div>
+
+          </div>
+
+          <div class="row">&nbsp;</div>
+
+          <div class="row">
+            <div class="col-md-6">
               Remove all questions, including related responses:
             </div>
             <div class="col-md-2">

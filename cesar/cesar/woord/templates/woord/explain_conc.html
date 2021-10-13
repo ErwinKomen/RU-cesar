@@ -1,0 +1,63 @@
+{% extends "woord/layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<h1>Concreetheid</h1>
+
+<div class="centerfield" style="text-align:left">
+  <p>Na deze instructie zul je starten met het beoordelen van de concreetheid van ca. 2000 woorden.</p>
+
+  <p>Een woord is concreet als het verwijst naar iets wat bestaat in de realiteit: 
+  je kunt het woord ervaren door het te zien, ruiken, horen, proeven, voelen of door een actie uit te voeren. 
+  Bv. om "springen" uit te leggen kun je het voordoen of een filmpje tonen van iemand die springt. 
+  Om de betekenis van "sofa" uit te leggen, kun je een sofa laten zien of een tekening ervan. </p>
+
+  <p>Een abstract woord verwijst naar iets wat je niet rechtstreeks kunt ervaren via je zintuigen. 
+  De betekenis ervan hangt af van taal: als je iemand uit wilt leggen wat het woord "wet" betekent, 
+  kun je dat bijna alleen maar uitleggen door andere woorden te gebruiken. 
+  We vragen je om ca. 2000 woorden te beoordelen op een 10-puntsschaal van heel erg abstract naar heel erg concreet. 
+  Zo zal het woord "hypothese" dichter bij de 1 liggen dan bij de 10, terwijl het woord "fietsbel" dichter bij de 10 ligt. </p>
+
+  <p>De kans is groot dat je woorden niet goed genoeg kent om een score te geven. 
+  Daarom staat bij elk  woord de optie "ken ik niet". 
+  Die optie vink je aan als je het woord niet kent. De beoordeling sla je dan over.</p>
+
+  <p>In de lijst komen losse woorden voor en uitdrukkingen. 
+  Bij de losse woorden staat meestal ook informatie over de woordsoort: zelfstandig naamwoord (ZNW), 
+  bijvoegelijk naamwoord (BNW), werkwoord (WW), bijwoord (BW), tussenwerpsel (TUSSENWERPSEL). 
+  Dat is om onduidelijkheid te voorkomen over welk woord we bedoelen. 
+  Ook staat er soms bij woorden met meer betekenissen een kleine toelichting om de bedoelde betekenis duidelijk te maken. </p>
+
+  <p>Werk individueel en geconcentreerd en niet langer dan een uur per keer achter elkaar. 
+  Maak gebruik van een laptop of tablet (en dus niet je telefoon) en werk in een stille omgeving. 
+  Je kunt afwisselend op een laptop en een tablet werken. </p>
+
+  <p>Probeer niet te lang na te denken; geef je oordeel op basis van je intuïtie.</p>
+
+  <p>De oordelen worden per schermpagina opgeslagen zodra je op de knop "Volgende" drukt. 
+  Als je tussentijds wilt stoppen moet je dan ook niet vergeten op "Volgende" te drukken vlak voordat je afsluit. 
+  Rechtsboven zie je een voortgangsbalk die laat zien hoe ver je bent met je 4000 beoordelingen. 
+  Het programma onthoudt automatisch waar je was gebleven in de lijst. 
+  Als je verder gaat, zorgt het programma ervoor dat je op de goede plek verder gaat.</p>
+
+  <p>Druk op "Beginnen" om je deelname te starten.</p>
+
+  <!-- Allow submitting the form -->
+  <form action="{% url 'woord_question' %}" method="post">
+    {% csrf_token %}
+    <label for="id_username">Vul hier uw gebruikersnaam in</label>
+    <input type="text" name="username" id="id_username" placeholder="De gebruikersnaam die u heeft ontvangen..." style="width: 100%;">
+
+    <input type="submit" value="Beginnen">
+  </form>
+
+  <!-- For the superuser -->
+  {% if is_superuser %}
+    <div>&nbsp;</div>
+    <a class="btn btn-success" href="{% url 'woord_tools' %}">Superuser Tools</a>
+  {% endif %}
+
+</div>
+
+{% endblock %}

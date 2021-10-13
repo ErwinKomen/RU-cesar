@@ -126,16 +126,40 @@ var ru = (function ($, ru) {
             url = "",
             frm = null,
             csrf = "",
+            missing = 0,        // Number of missing values
+            elChecked = null,
+            bUseSlider = false,
+            bDoExit = false,
             data = null;
 
         try {
+          // Initially hide error messages
+          $(".eval-missing").addClass("hidden");
+
+          // Try fetch values
           $('.centerfield').each(function (index) {
             result = new Object();
             result.stimulus = $(this).find('.stimulus').html().trim();
             result.scale = $(this).find('.rightoption').html().trim();
             result.dontknow = $(this).find('.knowcheck').is(':checked');
-            result.score = $(this).find('.slider').slider('option', 'value');
             result.questionid = $(this).find(".questionid").html().trim();
+
+            // Get the resulting score
+            if (bUseSlider) {
+              result.score = $(this).find('.slider').slider('option', 'value');
+            } else {
+              // Check if all has been done
+              elChecked = $(this).find("input[type=radio]:checked");
+              if (elChecked.length === 0) {
+                // It has not been done
+                $(this).find(".eval-missing").removeClass("hidden");
+                bDoExit = true;
+                missing += 1;
+                return;
+              } else {
+                result.score = elChecked.val();
+              }
+            }
 
             result_string = result_string + JSON.stringify(result) + '\n';
 
@@ -144,12 +168,26 @@ var ru = (function ($, ru) {
           // Put the results in the right name
           $("#results").val(result_string);
 
-          // Get the form and the associated data
-          frm = $(elStart).closest("form")
- 
-          // Submit it
-          frm.submit();
-  
+          // Double check
+          if (bDoExit) {
+            // Laat zien hoeveel er nog gedaan moeten worden
+            $(".eval-warning").removeClass("hidden");
+            $(".eval-warning code").html("Nog niet ingevuld: " + missing.toString() + " vra(a)g(en)");
+            // Keer terug
+            return;
+          } else {
+
+            // Make sure the button cannot be clicked anymore
+            $(elStart).addClass("disabled");
+            $(".eval-waiting").removeClass("hidden");
+
+            // Get the form and the associated data
+            frm = $(elStart).closest("form")
+
+            // Submit it
+            frm.submit();
+
+          }
         } catch (ex) {
           private_methods.errMsg("volgende", ex);
         }
