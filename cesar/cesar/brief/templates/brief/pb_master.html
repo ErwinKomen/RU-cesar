@@ -144,7 +144,7 @@
                               </td>
                               <td>
                                 <div>
-                                  {{que.question.content}}
+                                  {{que.question.get_content_markdown|safe}}
                                   {% if que.question.help %}
                                     <a role="button" data-toggle="collapse" data-target="#pbrief_h_{{que.question.id}}">
                                       <span class="glyphicon glyphicon-question-sign" style="color: blue;"></span>

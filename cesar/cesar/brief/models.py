@@ -406,6 +406,10 @@ class BriefQuestion(models.Model):
             oErr.DoError("briefsection/update")
         return obj
 
+    def get_content_markdown(self):
+        sBack = adapt_markdown(self.content, lowercase=False, nopara=False)
+        return sBack
+
     def get_order_letter(self):
         """Convert the order integer into a letter"""
 
