@@ -175,6 +175,13 @@ def initialize_woord(additional=None, randomize=None):
                 for number in range(NUMBER_OF_PARTICIPANTS):
                     username = WoordUser.generate_new()
                     WoordUser.objects.create(name=username)
+
+            # Reset done  status for QuestionSet objects
+            with transaction.atomic():
+                for obj in QuestionSet.objects.filter(status="done"):
+                    obj.status = "created"
+                    obj.save()
+            # Message
             lhtml.append("Created {} users".format(NUMBER_OF_PARTICIPANTS))
 
         # Check on choices
@@ -389,10 +396,11 @@ def reset(request):
                 Result.objects.filter(user__id__in=user_id).delete()
                 # Delete users
                 WoordUser.objects.all().delete()
-                # Reset done  status
+                
+                # Reset done  status for QuestionSet objects
                 with transaction.atomic():
-                    for obj in Question.objects.filter(status="done"):
-                        obj.status = "reset"
+                    for obj in QuestionSet.objects.filter(status="done"):
+                        obj.status = "created"
                         obj.save()
                 # Prepare message
                 oData['msg'] = "Woord-Users deleted: {}".format(count)

@@ -131,6 +131,22 @@ var ru = (function ($, ru) {
             $( "#progressbar" ).progressbar({value: 0 / 100.05});
           });
 
+          // If the user checks "Ken ik niet", the score should be taken away
+          $('.knowcheck').on("click", function (event) {
+            var el = $(this);
+            if ($(el).is(':checked')) {
+              // reset the evaluation score
+              $(el).closest(".centerfield").find(".evaluation input[type=radio]").prop("checked", false);
+            }
+          });
+
+          // If the user checks an evaluation "dontknow" should be unchecked
+          $(".evaluation input[type=radio]").on("change", function (event) {
+            var el = $(this);
+            // Reset the dontknow score
+            $(el).closest(".centerfield").find(".knowcheck").prop("checked", false);
+          });
+
 
         } catch (ex) {
           private_methods.errMsg("init_event_listeners", ex);
@@ -161,7 +177,7 @@ var ru = (function ($, ru) {
           $(".eval-missing").addClass("hidden");
 
           // Check rechtstreeks
-          has_rechtstreeks = ($("#rechtstreeks").val() !== "");
+          has_rechtstreeks = ($("#rechtstreeks").val() !== undefined && $("#rechtstreeks").val() !== "");
 
           // Try fetch values
           $('.centerfield').each(function (index) {
@@ -174,6 +190,8 @@ var ru = (function ($, ru) {
             // Get the resulting score
             if (bUseSlider) {
               result.score = $(this).find('.slider').slider('option', 'value');
+            } else if (result.dontknow) {
+              result.score = -1;
             } else {
               // Check if all has been done
               elChecked = $(this).find("input[type=radio]:checked");
