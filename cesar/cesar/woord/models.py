@@ -182,6 +182,9 @@ class WoordUser(models.Model):
     # [0-1] Any comments by user
     about = models.TextField("User comments", blank=True, null=True)
 
+    # [0-1] Any consent information
+    consent = models.TextField("Consent information", blank=True, null=True)
+
     # [1] Status of this user
     status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
     # [1] History of user actions - this is a JSON list
@@ -222,6 +225,12 @@ class WoordUser(models.Model):
     def set_status(self, status):
         if status != None and status != "":
             self.status = status
+            self.save()
+        return True
+
+    def set_consent(self, consent):
+        if consent != None and consent != "":
+            self.consent = consent
             self.save()
         return True
 
@@ -279,7 +288,9 @@ class Question(models.Model):
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE, related_name="choicequestions")
 
     # [1] Status of this question: has it been done yet?
-    status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
+    #     But note: questions exist 'forever'. They are used and responded to by everyone
+    #     Use [Result] to check whether a particular question for a particular qset has been answered
+    # status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
 
     def __str__(self):
         woord = self.stimulus.woord
@@ -302,6 +313,9 @@ class QuestionSet(models.Model):
     question = models.ForeignKey(Question, related_name="question_questionsets", on_delete=models.CASCADE)
     # [1] Question ask order number
     order = models.IntegerField("Order", default = 0)
+
+    # [1] Status of this qset/question combination: has it been done yet?
+    status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
 
 
 

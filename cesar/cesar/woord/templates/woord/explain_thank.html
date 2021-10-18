@@ -3,7 +3,7 @@
 
 {% block content %}
 
-<h1>Specificiteit</h1>
+<h1>Concreetheid</h1>
 
 <div class="centerfield" style="text-align:left">
   <p>Je bent nu halverwege het onderzoek en hebt alle woorden beoordeeld op hun concreetheid. 
@@ -16,7 +16,7 @@ Specifiekere woorden geven een wat preciezere omschrijving, doordat ze meer inzo
 
 <p>Specificiteit is dus wat anders dan concreetheid. Onderstaande voorbeelden illustreren het verschil: 
 <ul>
-  <li>Het woord "herdershond" is heel concreet Ã©n heel specifiek. Het begrip is een zintuiglijk waarneembare of tastbare entiteit. 
+  <li>Het woord "herdershond" is heel concreet én heel specifiek. Het begrip is een zintuiglijk waarneembare of tastbare entiteit. 
   Daarnaast is de omschrijving van het woord precies: je weet precies om welke hondensoort het gaat.</li>
   <li>Het woord "wet" is heel abstract en heel weinig specifiek. Het begrip is niet zintuiglijk waarneembaar of tastbaar. 
   Daarnaast is het niet duidelijk om wat voor wet het gaat. Het begrip is daarvoor niet precies genoeg.</li>
@@ -31,15 +31,15 @@ Specifiekere woorden geven een wat preciezere omschrijving, doordat ze meer inzo
 Een werkwoord als "zijn" zal dichter bij de 1 dan bij de 10 uitkomen en een werkwoord als "figuurzagen" dichter bij 10.
 
 
-  <p>Druk op "Begin maar" om te starten met de specificiteitsvragen.</p>
+  <p>Druk op "Verder gaan" om je deelname te starten.</p>
 
   <!-- Allow submitting the form -->
   <form action="{% url 'woord_question' %}" method="post">
     {% csrf_token %}
-    <input type="hidden" name="username" value="{{woordusername}}" />
+    <label for="id_username">Vul hier uw gebruikersnaam in</label>
+    <input type="text" name="username" id="id_username" placeholder="De gebruikersnaam die u heeft ontvangen..." style="width: 100%;">
 
-    {% include 'woord/rechtstreeks.html' %}
-    <input type="submit" value="Begin maar">
+    <input type="submit" value="Verder gaan">
   </form>
 
   <!-- For the superuser -->

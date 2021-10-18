@@ -65,6 +65,12 @@ button
 	width: 300px;
 }
 
+.usernamefield
+{
+	margin-right: auto;
+	width: 300px;
+}
+
 .glyphicon-refresh-animate {
     animation: spin .7s infinite linear;
     -webkit-animation: spin2 .7s infinite linear;
@@ -90,4 +96,8 @@ button
 
 .warning {
     background-color: yellow; border: 1px solid darkred; text-align: center; margin: 5px;
+}
+
+.rechtstreeks {
+    width: 350px; margin: auto; padding: 10px; background-color: yellow;
 }

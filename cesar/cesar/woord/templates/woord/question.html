@@ -5,6 +5,8 @@
 
 <!-- Parameters -->
 
+<!-- Show the user name -->
+<div class="usernamefield">{{woordusername}}</div>
 <!-- Show the overall progress -->
 <div class="progressfield">Voortgang: {{percentage|floatformat:2}}% (done {{progr_done}} of {{progr_total}})<div id="progressbar" style="width: 300px;height: 15px;"></div></div>
 
@@ -65,6 +67,7 @@
     {% csrf_token %}
     <input type="hidden" name="username" value="{{woordusername}}" />
     <input type="hidden" name="results" id="results" />
+    {% include 'woord/rechtstreeks.html' %}
     <!-- Allow the user to go to the next question -->
     <a role="button" class="btn btn-primary btn-lg" 
             targeturl="{{question_url}}" 

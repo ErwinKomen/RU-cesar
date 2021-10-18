@@ -33,7 +33,7 @@
   Maak gebruik van een laptop of tablet (en dus niet je telefoon) en werk in een stille omgeving. 
   Je kunt afwisselend op een laptop en een tablet werken. </p>
 
-  <p>Probeer niet te lang na te denken; geef je oordeel op basis van je intuïtie.</p>
+  <p>Probeer niet te lang na te denken; geef je oordeel op basis van je intuÃ¯tie.</p>
 
   <p>De oordelen worden per schermpagina opgeslagen zodra je op de knop "Volgende" drukt. 
   Als je tussentijds wilt stoppen moet je dan ook niet vergeten op "Volgende" te drukken vlak voordat je afsluit. 
@@ -41,15 +41,15 @@
   Het programma onthoudt automatisch waar je was gebleven in de lijst. 
   Als je verder gaat, zorgt het programma ervoor dat je op de goede plek verder gaat.</p>
 
-  <p>Druk op "Beginnen" om je deelname te starten.</p>
+  <p>Druk op "Begin maar" om te starten met de concreetheidsvragen.</p>
 
   <!-- Allow submitting the form -->
   <form action="{% url 'woord_question' %}" method="post">
     {% csrf_token %}
-    <label for="id_username">Vul hier uw gebruikersnaam in</label>
-    <input type="text" name="username" id="id_username" placeholder="De gebruikersnaam die u heeft ontvangen..." style="width: 100%;">
+    <input type="hidden" name="username" value="{{woordusername}}" />
 
-    <input type="submit" value="Beginnen">
+    {% include 'woord/rechtstreeks.html' %}
+    <input type="submit" value="Begin maar">
   </form>
 
   <!-- For the superuser -->

@@ -344,7 +344,8 @@ def tools(request):
     context['count_question'] = Question.objects.count()
     context['count_qset'] = Qset.objects.count()
 
-    done_count = Question.objects.filter(status="done").count()
+    # done_count = Question.objects.filter(status="done").count()
+    done_count = Result.objects.count()
     context['progr_done'] = done_count
     context['progr_users'] = len(working_id)
 
@@ -426,8 +427,8 @@ def nlogin(request):
     # Render and return the page
     return render(request, template_name, context)
 
-def question(request):
-    """Check this user's existence and start with the questions"""
+def do_process(woorduser, lResults, context, calltype, next, title, altnext, alttitle, consent):
+    """Process the questions of this woorduser"""
 
     def get_stimulus(obj):
         bOnlyWoord = True   # Issue #150
@@ -461,67 +462,29 @@ def question(request):
 
     oErr = ErrHandle()
     bUseSlider = False  # See issue #152
-    bDoQuestions = False
+    template_name = ""
 
     try:
-        # First make sure that this is a HTTP request
-        assert isinstance(request, HttpRequest)
-
-        # Specify the template
-        template_name = 'woord/question.html'
-        # Define the initial context
-        context =  {'title':'Woordvragen','year':datetime.now().year,
-                    'availability': True,
-                    'pfx': APP_PREFIX,'site_url': admin.site.site_url}
-
-        # Get the parameters passed on
-        qd = request.GET if request.method.lower() == "get" else request.POST
-        username = qd.get("username", "")
-        lResults = qd.get("results", None)
-
-        # Check for valid user - and if it exists, get a link to that user
-        woorduser = WoordUser.get_user(username)
-        if username == "" or woorduser == None:
-            # Username is either void, or this user is not a WOORD user
-            return nlogin(request)
-
-        # Action depends on the status of the user
-        if woorduser.status == "created":
-            # Need to show the EXPLAIN concreteness page
-            woorduser.set_status("explain_conc")
-            # Specify the template
-            template_name = 'woord/explain_conc.html'
-            # Define the initial context
-            context =  {'title':'Uitleg 1','year':datetime.now().year,
-                        'availability': True,
-                        'pfx': APP_PREFIX,'site_url': admin.site.site_url}
-
-        elif woorduser.status == "explain_conc":
-            # Need to show the EXPLAIN specificity page
-            woorduser.set_status("explain_spec")
-            # Specify the template
-            template_name = 'woord/explain_spec.html'
-            # Define the initial context
-            context =  {'title':'Uitleg 2','year':datetime.now().year,
-                        'availability': True,
-                        'pfx': APP_PREFIX,'site_url': admin.site.site_url}
-
-        elif woorduser.status == "explain_spec":
-            woorduser.set_status("questioning")
-            bDoQuestions = True
-        elif woorduser.status == "questioning":
-            bDoQuestions = True
-        elif woorduser.status == "lastdone":
-            # Need to show the THANKYOU page
-            pass
-
-        if bDoQuestions:
-            # Specify the template
-            template_name = 'woord/question.html'
-            # Define the initial context
-            context =  {'title':'Woordvragen','year':datetime.now().year,
-                        'availability': True,
-                        'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+        # What calltype are we in?
+        if calltype == "permission":
+            # Make sure to ask again if unclear
+            context['title'] = "Toestemming"
+            template_name = "woord/{}.html".format("explain_perm")
+            # Check whether the user gave permission
+            if consent != None: 
+                nowdate = timezone.now().strftime("%c")
+                if consent == "true":
+                    woorduser.set_status(next)
+                    woorduser.set_consent("User consented at: {}".format(nowdate))
+                    context['title'] = title
+                    template_name = "woord/{}.html".format(next)
+                elif consent == "false":
+                    woorduser.set_status(altnext)
+                    context['title'] = alttitle
+                    template_name = "woord/{}.html".format(altnext)
+                    woorduser.set_consent("User opted out at: {}".format(nowdate))
+        else:
+            # We are processing questions
             # Get all the questions assigned to this user, but not yet done
             qset = Qset.objects.filter(woorduser=woorduser).first()
             if qset == None:
@@ -538,6 +501,7 @@ def question(request):
             if not qset is None:
                 # Process any questions handed over to me
                 lst_result = get_results(lResults)
+                lst_question = []
                 for item in lst_result:
                     # Find out which question this is
                     question = Question.objects.filter(id=item['questionid']).first()
@@ -547,30 +511,189 @@ def question(request):
                         dontknow = item['dontknow']
                         result = Result.objects.create(
                             user=woorduser, question=question, judgment=judgment, dontknown=dontknow)
-                        # Change the status of this question
-                        question.status = "done"
-                        question.save()
 
-                # Find the remaining questions
-                questions = QuestionSet.objects.filter(qset__woorduser=woorduser, question__status='created').order_by('order').values(
+                        # do *NOT* change the status of the question - others still need to respond!!
+                        #question.status = "done"
+                        #question.save()
+
+                        # Save the id
+                        lst_question.append(question.id)
+                # Set the corresponding QuestionSet statuses to 'done'
+                with transaction.atomic():
+                    for qitem in QuestionSet.objects.filter(qset=qset, question__id__in=lst_question):
+                        # Make sure to change the status of the corresponding qset object
+                        qitem.status = "done"
+                        qitem.save()
+
+                # Find the remaining questions: FOR THIS PARTICULAR CHOICE TYPE
+                choice_id = 0
+                if calltype == "que_conc":
+                    # Restricting to Abstract/Concrete questions (id=1)
+                    choice_id = 1
+                else:
+                    # Restricting to specificity questions (id=5)
+                    choice_id = 5
+
+                # Get the questions for a particulare CHOICE type for this user
+                #     to which this user has no Result yet
+                questions = QuestionSet.objects.filter(
+                    qset__woorduser=woorduser, status='created', 
+                    question__choice_id=choice_id).order_by('order').values(
                     'question_id', 'question__stimulus__woord', 'question__stimulus__category', 
                     'question__choice__left', 'question__choice__right')
 
-                lst_stimulus = [get_stimulus(x) for x in questions[:10]]
+                # Check if there were any questions left
+                if questions.count() == 0:
+                    # These were the last questions
+                    woorduser.set_status(altnext)
+                    context['title'] = alttitle
+                    template_name = "woord/{}.html".format(altnext)
+                else:
+                    # Go for the next batch of questions
+                    lst_stimulus = [get_stimulus(x) for x in questions[:10]]
 
-                # Calculate the percentage of questions still needing to be answered
-                total_num = qset.questions.count()
-                done_count = qset.questions.filter(status="done").count()
-                percentage = done_count / total_num
+                    # Calculate the percentage of questions still needing to be answered
+                    total_num = qset.questions.filter(choice_id=choice_id).count()
+                    # done_count = qset.questions.filter(status="done", choice_id=choice_id).count()
+                    done_count = QuestionSet.objects.filter(qset=qset, status="done", question__choice_id=choice_id).count()
+                    percentage = done_count / total_num
 
-                # Additional context information
-                context['woordusername'] = woorduser.name
-                context['lst_stimulus'] = lst_stimulus
-                context['question_url'] = reverse('woord_question')
-                context['percentage'] = percentage
-                context['progr_done'] = done_count
-                context['progr_total'] = total_num
-                context['user_slider'] = bUseSlider
+                    # Additional context information
+                    context['woordusername'] = woorduser.name
+                    context['lst_stimulus'] = lst_stimulus
+                    context['question_url'] = reverse('woord_question')
+                    context['percentage'] = percentage
+                    context['progr_done'] = done_count
+                    context['progr_total'] = total_num
+                    context['user_slider'] = bUseSlider
+
+                    woorduser.set_status(next)
+                    context['title'] = title
+                    template_name = "woord/{}.html".format(next)
+            else:
+                # Something has gone terribly wrong...
+                woorduser.set_status("wrong")
+                context['title'] = "Sorry"
+                template_name = "woord/wrong.html"
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("do_questions")
+    return context, template_name
+
+def question(request):
+    """Check this user's existence and start with the questions"""
+
+    lst_stage = [
+        {'status': 'created',       'next': 'explain_perm',         'title': 'Toestemming'},
+        {'status': 'explain_perm',  'next': 'explain_conc;optout',  'title': 'Concreetheid;Helaas',     'call': "permission"},
+        {'status': 'optout',        'next': 'optout',               'title': 'Helaas'},
+        {'status': 'explain_conc',  'next': 'que_conc',             'title': 'Vragen:1',  'call': "que_conc"},
+        {'status': 'que_conc',      'next': 'que_conc;explain_spec','title': 'Vragen:1;Specificiteit',  'call': "que_conc"},
+        {'status': 'explain_spec',  'next': 'que_spec',             'title': 'Vragen:2','call': "que_spec"},
+        {'status': 'que_spec',      'next': 'que_spec;lastdone',    'title': 'Vragen:2;Bedankt',        'call': "que_spec"},
+        {'status': 'lastdone',      'next': 'lastdone',             'title': 'Welkom'},
+        ]
+    lst_status = [
+        {"status": "created",        "title": "Woordbeoordelingen",  "template": "index"},
+        {"status": "explain_perm",   "title": "Toestemming"},
+        {"status": "optout",         "title": "Helaas"},
+        {"status": "explain_conc",   "title": "Concreetheid"},
+        {"status": "que_conc",       'next': 'que_conc;explain_spec','title': 'Vragen:1;Specificiteit',  'call': "que_conc"},
+        {"status": "explain_spec",   "title": "Specificiteit"},
+        {"status": "que_spec",       'next': 'que_spec;lastdone',    'title': 'Vragen:2;Bedankt',        'call': "que_spec"},
+        {"status": "lastdone",       "title": "Bedankt"},
+        {"status": "wrong",          "title": "Oeps"},
+        ]
+
+    oErr = ErrHandle()
+    bUseSlider = False  # See issue #152
+    bDoQuestions = False
+
+    try:
+        # First make sure that this is a HTTP request
+        assert isinstance(request, HttpRequest)
+
+        # Specify the template - if something goes wrong!
+        template_name = 'woord/wrong.html'
+        # Define the initial context
+        context =  {'title':'Oeps','year':datetime.now().year,
+                    'availability': True,
+                    'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+
+        # Get the parameters passed on
+        qd = request.GET if request.method.lower() == "get" else request.POST
+        username = qd.get("username", "")
+        lResults = qd.get("results", None)
+        consent = qd.get("consent", "")
+        rechtstreeks = qd.get("rechtstreeks", "")
+
+        # Check for valid user - and if it exists, get a link to that user
+        woorduser = WoordUser.get_user(username)
+        if username == "" or woorduser == None:
+            # Username is either void, or this user is not a WOORD user
+            return nlogin(request)
+
+        if rechtstreeks == "":
+
+            # Action depends on the status of the user
+            for oStage in lst_stage:
+                # Is this the stage we are at?
+                if woorduser.status == oStage['status']:
+                    # Good - check for next and alt and title
+                    arNext = oStage.get("next", "").split(";")
+                    next = arNext[0]
+                    altnext = "" if len(arNext) == 1 else arNext[1]
+                    arTitle = oStage.get("title", "(no title)").split(";")
+                    title = arTitle[0]
+                    alttitle = "" if len(arTitle) == 1 else arTitle[1]
+
+                    # Define the initial context
+                    context =  {
+                        'title': title,'year':datetime.now().year,
+                        'availability': True, 'woordusername': woorduser.name,
+                        'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+
+                    # And check for call type
+                    calltype = oStage.get("call", "")
+                    if calltype == "":
+                        # No further verification needed
+                        woorduser.set_status(next)
+                        # Specify the template
+                        template_name = "woord/{}.html".format(next)
+                    else:
+                        # Call the process verification
+                        context, template_name = do_process(woorduser, lResults, context, calltype, next, title, altnext, alttitle, consent)
+
+                    # Make sure to get out of this loop!
+                    break
+        else:
+            for oStage in lst_status:
+                if rechtstreeks == oStage['status']:
+                    # Define the initial context
+                    context =  {
+                        'title': oStage['title'],'year':datetime.now().year,
+                        'availability': True, 'woordusername': woorduser.name,
+                        'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+                    tname = oStage.get("template", "")
+                    if tname == "": tname = rechtstreeks
+                    template_name = "woord/{}.html".format(tname)
+
+                    # Make sure to change the status
+                    woorduser.set_status(rechtstreeks)
+
+                    # And check for call type
+                    calltype = oStage.get("call", "")
+                    if calltype != "":
+                        arNext = oStage.get("next", "").split(";")
+                        next = arNext[0]
+                        altnext = "" if len(arNext) == 1 else arNext[1]
+                        # We have a next definition...
+                        arTitle = oStage.get("title", "(no title)").split(";")
+                        title = arTitle[0]
+                        alttitle = "" if len(arTitle) == 1 else arTitle[1]
+
+                        # Call the process verification
+                        context, template_name = do_process(woorduser, lResults, context, calltype, next, title, altnext, alttitle, consent)
 
         # Make sure we add special group permission(s)
         add_app_access(request, context)

@@ -106,6 +106,9 @@ def get_breadcrumbs(request, name, is_menu, lst_crumb=[], **kwargs):
     # Return the breadcrumbs
     return p_list
 
+def get_current_datetime():
+    return timezone.now()
+
 def action_model_changes(form, instance):
     field_values = model_to_dict(instance)
     changed_fields = form.changed_data

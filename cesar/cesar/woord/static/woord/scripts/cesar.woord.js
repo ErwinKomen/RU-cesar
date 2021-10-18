@@ -85,6 +85,29 @@ var ru = (function ($, ru) {
     // Public methods
     return {
       /**
+       * do_consent
+       *   Go to the next step with or without consent
+       *
+       */
+      do_consent: function (elStart, consent) {
+        var frm = null, data = null;
+
+        try {
+          // Put the correct consent value in the form
+          $("#id_consent").val(consent);
+
+          // Get the form and the associated data
+          frm = $(elStart).closest("form")
+
+          // Submit it
+          frm.submit();
+
+        } catch (ex) {
+          private_methods.errMsg("do_consent", ex);
+        }
+      },
+
+      /**
        * init_event_listeners
        *   Set a listener to the progressbar
        *
@@ -130,11 +153,15 @@ var ru = (function ($, ru) {
             elChecked = null,
             bUseSlider = false,
             bDoExit = false,
+            has_rechtstreeks = false,
             data = null;
 
         try {
           // Initially hide error messages
           $(".eval-missing").addClass("hidden");
+
+          // Check rechtstreeks
+          has_rechtstreeks = ($("#rechtstreeks").val() !== "");
 
           // Try fetch values
           $('.centerfield').each(function (index) {
@@ -169,7 +196,7 @@ var ru = (function ($, ru) {
           $("#results").val(result_string);
 
           // Double check
-          if (bDoExit) {
+          if (!has_rechtstreeks && bDoExit) {
             // Laat zien hoeveel er nog gedaan moeten worden
             $(".eval-warning").removeClass("hidden");
             $(".eval-warning code").html("Nog niet ingevuld: " + missing.toString() + " vra(a)g(en)");
