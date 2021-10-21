@@ -323,42 +323,6 @@ def initialize_woord(additional=None, randomize=None):
 
     return msg
         
-def tools(request):
-    """Renders the tools page."""
-
-    assert isinstance(request, HttpRequest)
-    # Specify the template
-    template_name = 'woord/tools.html'
-    # Define the initial context
-    context =  {'title':'Woord tools','year':datetime.now().year,
-                'pfx': APP_PREFIX,'site_url': admin.site.site_url}
-
-    # Make sure we add special group permission(s)
-    add_app_access(request, context)
-
-    if not user_is_authenticated(request) or not \
-       (user_is_ingroup(request, app_user) or user_is_ingroup(request, app_editor) or user_is_superuser(request)): 
-        # Username is either void, or this user is not a WOORD user
-        return nlogin(request)
-
-    # Add calculations
-    working_id = [x['woorduser__id'] for x in Qset.objects.filter(woorduser__isnull=False).values('woorduser__id').distinct()]
-    context['count_user'] = WoordUser.objects.count()
-    context['users_working'] = ", ".join([x.name for x in WoordUser.objects.filter(id__in=working_id)])
-    context['users_available'] = ", ".join([x.name for x in WoordUser.objects.exclude(id__in=working_id)])
-    context['count_choice'] = Choice.objects.filter(valid=True).count()
-    context['count_stimulus'] = Stimulus.objects.count()
-    context['count_question'] = Question.objects.count()
-    context['count_qset'] = Qset.objects.count()
-
-    # done_count = Question.objects.filter(status="done").count()
-    done_count = Result.objects.count()
-    context['progr_done'] = done_count
-    context['progr_users'] = len(working_id)
-
-    # Render and return the page
-    return render(request, template_name, context)
-
 def reset(request):
     """Reset system."""
 
@@ -421,6 +385,44 @@ def reset(request):
     mimetype = "application/json"
     data = json.dumps(oData)
     return HttpResponse(data, mimetype)
+
+def tools(request):
+    """Renders the tools page."""
+
+    assert isinstance(request, HttpRequest)
+    # Specify the template
+    template_name = 'woord/tools.html'
+    # Define the initial context
+    context =  {'title':'Woord tools','year':datetime.now().year,
+                'pfx': APP_PREFIX,'site_url': admin.site.site_url}
+
+    # Make sure we add special group permission(s)
+    add_app_access(request, context)
+
+    if not user_is_authenticated(request) or not \
+       (user_is_ingroup(request, app_user) or user_is_ingroup(request, app_editor) or user_is_superuser(request)): 
+        # Username is either void, or this user is not a WOORD user
+        return nlogin(request)
+
+    # Add calculations
+    working_id = [x['woorduser__id'] for x in Qset.objects.filter(woorduser__isnull=False).values('woorduser__id').distinct()]
+    context['count_user'] = WoordUser.objects.count()
+    context['users_working'] = ", ".join([x.name for x in WoordUser.objects.filter(id__in=working_id)])
+    context['users_available'] = ", ".join([x.name for x in WoordUser.objects.exclude(id__in=working_id)])
+    context['count_choice'] = Choice.objects.filter(valid=True).count()
+    context['count_stimulus'] = Stimulus.objects.count()
+    context['count_question'] = Question.objects.count()
+    context['count_qset'] = Qset.objects.count()
+    context['count_result'] = Result.objects.count()
+
+    # done_count = Question.objects.filter(status="done").count()
+    done_count = Result.objects.count()
+    context['progr_done'] = done_count
+    context['progr_users'] = len(working_id)
+
+    # Render and return the page
+    return render(request, template_name, context)
+
 
 def nlogin(request):
     """Renders the not logged-in page."""
@@ -587,6 +589,66 @@ def do_process(woorduser, lResults, context, calltype, next, title, altnext, alt
         msg = oErr.get_error_message()
         oErr.DoError("do_questions")
     return context, template_name
+
+def generate(request):
+    """Reset system."""
+
+    oErr = ErrHandle()
+    oData = dict(status="fail")
+
+    try:
+        # Only allow POST command of the Su
+        if request.is_ajax() and request.method == "POST" and \
+            user_is_authenticated(request) and \
+            user_is_superuser(request):
+
+            # Get the parameters passed on
+            qd = request.POST
+            action = qd.get("action", "")
+
+            if action == "random":
+                # Remove previous data
+                Result.objects.all().delete()
+                # Make sure each woorduser is assigned to a qset
+                for wusr in WoordUser.objects.all():
+                    qset = wusr.woorduserqsets.first()
+                    if qset == None:
+                        qset = Qset.objects.filter(woorduser__isnull=True).first()
+                        qset.woorduser = wusr
+                        qset.save()
+                # Generate random data
+                choices = [1, 5]
+                for choice in choices:
+                    # Iterate over all questions for this particular choice
+                    with transaction.atomic():
+                        for idx, oQuestion in enumerate(Question.objects.filter(choice=choice).values('id')):
+                            que_id = oQuestion['id']
+                            oErr.Status("choice = {}, q = {}".format(choice, idx+1))
+                            # Iterate over all users
+                            for wusr in WoordUser.objects.all():
+                                qset = wusr.woorduserqsets.first()
+                                judgment = random.randint(1,10)
+                                # 90% of the time dontknown is false
+                                dontknow = (random.randint(1,10) == 10)
+                                # Add the random result
+                                obj = Result.objects.create(question_id=que_id, user=wusr, judgment=judgment, dontknown=dontknow)
+                                # Signal that this result has been accomplished
+                                obj = QuestionSet.objects.filter(qset=qset, question_id=que_id).first()
+                                obj.set_status("done")
+
+            # REturn positively
+            oData['status'] = "ok"
+        else:
+            oData['msg'] = "Not authenticated"
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("question")
+        oData['status'] = "error"
+        oData['msg'] = msg
+
+    mimetype = "application/json"
+    data = json.dumps(oData)
+    return HttpResponse(data, mimetype)
 
 def question(request):
     """Check this user's existence and start with the questions"""

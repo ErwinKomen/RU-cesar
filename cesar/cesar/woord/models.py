@@ -317,6 +317,11 @@ class QuestionSet(models.Model):
     # [1] Status of this qset/question combination: has it been done yet?
     status = models.CharField("Status", default="created", max_length=MAXPARAMLEN)
 
+    def set_status(self, status):
+        if status != None and status != "":
+            self.status = status
+            self.save()
+        return True
 
 
 class Result(models.Model):

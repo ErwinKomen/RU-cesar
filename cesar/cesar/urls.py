@@ -66,6 +66,7 @@ urlpatterns = [
     url(r'^woord/tools/$', cesar.woord.views.tools, name='woord_tools'),
     url(r'^woord/question/$', cesar.woord.views.question, name='woord_question'),
     url(r'^woord/reset/$', cesar.woord.views.reset, name='woord_reset'),
+    url(r'^woord/generate/$', cesar.woord.views.generate, name='woord_generate'),
 
     # Cesar transliteration:
     url(r'^trans/$', cesar.trans.views.home, name='trans_home'),

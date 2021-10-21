@@ -136,6 +136,22 @@
 
           <div class="row">&nbsp;</div>
 
+          <div class="row">
+            <div class="col-md-6">
+              Remove all available {{count_result}} results and generate random results.
+            </div>
+            <div class="col-md-2">
+              <span>
+                <a class="btn btn-danger btn-sm" action="random" onclick="ru.cesar.woord.postman(this);"
+                   targetid="resetgenerate" targeturl="{% url 'woord_generate' %}">Generate</a>
+              </span>
+            </div>
+            <div class="col-md-4" id="resetgenerate"></div>
+
+          </div>
+
+          <div class="row">&nbsp;</div>
+
         </div>
 
       </div>
