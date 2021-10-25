@@ -67,6 +67,7 @@ urlpatterns = [
     url(r'^woord/question/$', cesar.woord.views.question, name='woord_question'),
     url(r'^woord/reset/$', cesar.woord.views.reset, name='woord_reset'),
     url(r'^woord/generate/$', cesar.woord.views.generate, name='woord_generate'),
+    url(r'^woord/download/(?P<pk>\d+)', ResultDownload.as_view(), name='woord_download'),
 
     # Cesar transliteration:
     url(r'^trans/$', cesar.trans.views.home, name='trans_home'),

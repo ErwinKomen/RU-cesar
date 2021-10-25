@@ -28,7 +28,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.utils import ErrHandle
 
-from cesar.woord.models import WoordUser, Choice, Question, Qset, Result, Stimulus, QuestionSet
+from cesar.woord.models import WoordUser, Choice, Question, Qset, Result, Stimulus, QuestionSet, Result
 from cesar.woord.forms import UserForm
 
 # Global debugging 
@@ -779,5 +779,120 @@ def question(request):
     return render(request, template_name, context)
 
 
+class ResultDownload(BasicPart):
+    """Facilitate downloading of the responses"""
+
+    MainModel = Choice
+    template_name = "seeker/download_status.html"
+    action = "download"
+    delimiter='\t'
+
+    def custom_init(self):
+        """Calculate stuff"""
+        
+        dt = self.qd['downloadtype']
+        if dt != None and dt != '':
+            self.dtype = dt
+
+    def get_data(self, prefix, dtype):
+        oErr = ErrHandle()
+        lCsv = []
+        data = None
+        headers = ['Woord', 'Categorie', 'Concr/Spec']
+
+        try:
+            # Add column headers for each respondent
+            working_id = [x['woorduser__id'] for x in Qset.objects.filter(woorduser__isnull=False).order_by(
+                "woorduser__id").values('woorduser__id').distinct()]
+            for id in working_id:
+                headers.append("user_{}".format(id))
+
+            # Action depends on dtype
+            if dtype == "json":
+                oBack = {}
+                oBack['user_id'] = working_id
+                lOutput = []
+            elif dtype in ['csv', 'xlsx']:
+                # Start with the header
+                oLine = "\t".join(headers)
+                lCsv.append(oLine)
+
+            oChoice = {}
+            for obj in Choice.objects.all():
+                oChoice[obj.id] = obj.name
 
 
+            # Work through the questions one by one
+            for oQuestion in Question.objects.all().order_by(
+                'choice', 'stimulus__category', 'stimulus__woord').values(
+                    'id', 'choice', 'stimulus__category', 'stimulus__woord'):
+                question_id = oQuestion['id']
+                choice = oChoice[oQuestion['choice']]
+                category = oQuestion['stimulus__category']
+                woord = oQuestion['stimulus__woord']
+
+                # Action depends on dtype
+                if dtype == "json":
+                    oQ = dict(woord=woord, category=category, choice=choice)
+                elif dtype in ['csv', 'xlsx']:
+                    # Start creating the line for the CSV
+                    line = []
+                    line.append("{}".format(woord))
+                    line.append("{}".format(category))
+                    line.append("{}".format(choice))
+
+                # Get all results for this particular question
+                lResults = Result.objects.filter(question_id=question_id).order_by("user__id").values(
+                    "user__id", "dontknown", "judgment")
+
+                # Action depends on dtype
+                if dtype == "json":
+                    lUserResults = []
+                    oResults = {}
+                    for oResult in lResults:
+                        user_id = oResult['user__id']
+                        dontknown = oResult['dontknown']
+                        judgment = -1 if dontknown else oResult['judgment']
+                        oResults[user_id] = judgment
+                    for user_id in working_id:
+                        judgment = -1 if not user_id in oResults else oResults[user_id]
+                        lUserResults.append(judgment)
+
+                    oQ['results'] = lUserResults
+                    lOutput.append(oQ)
+                elif dtype in ['csv', 'xlsx']:
+                    # Create dictionary of these results
+                    oResults = {}
+                    for oResult in lResults:
+                        user_id = oResult['user__id']
+                        dontknown = oResult['dontknown']
+                        judgment = oResult['judgment']
+                        oResults[user_id] = {'dontknown': dontknown, 'judgment': judgment}
+                    # Walk all users
+                    for user_id in working_id:
+                        res = -1
+                        oRes = oResults.get(user_id)
+                        if oRes != None:
+                            if not oRes['dontknown']:
+                                res = oRes['judgment']
+                        line.append("{}".format(res))
+
+                    # Add this line to the total output
+                    sLine = "\t".join(line)
+                    lCsv.append(sLine)
+
+
+            # Action depends on dtype
+            if dtype == "json":
+                oBack['userresults'] = lOutput
+                data = json.dumps(oBack, indent=2)
+            elif dtype in ['csv', 'xlsx']:
+                # REturn the whole
+                data = "\n".join(lCsv)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ResultDownload get_data")
+            data = ""
+
+        # Return the data
+        return data

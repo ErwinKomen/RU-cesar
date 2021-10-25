@@ -23,6 +23,10 @@ import fnmatch
 import os
 import base64
 from datetime import datetime
+import openpyxl
+from openpyxl.utils.cell import get_column_letter
+from io import StringIO
+import csv
 
 # provide error handling
 from .utils import ErrHandle
@@ -429,6 +433,48 @@ def base64_decode(sInput):
     message_bytes = base64.b64decode(base64_bytes)
     sOutput = message_bytes.decode('utf8')
     return sOutput
+
+def csv_to_excel(sCsvData, response, delimiter=","):
+    """Convert CSV data to an Excel worksheet"""
+
+    oErr = ErrHandle()
+    try:
+        # Start workbook
+        wb = openpyxl.Workbook()
+        ws = wb.active  # wb.get_active_sheet()
+        ws.title="Data"
+
+        # Start accessing the string data 
+        f = StringIO(sCsvData)
+        reader = csv.reader(f, delimiter=delimiter)
+
+        # Read the header cells and make a header row in the worksheet
+        headers = next(reader)
+        for col_num in range(len(headers)):
+            c = ws.cell(row=1, column=col_num+1)
+            c.value = headers[col_num]
+            c.font = openpyxl.styles.Font(bold=True)
+            # Set width to a fixed size
+            ws.column_dimensions[get_column_letter(col_num+1)].width = 5.0        
+
+        row_num = 1
+        lCsv = []
+        for row in reader:
+            # Keep track of the EXCEL row we are in
+            row_num += 1
+            # Walk the elements in the data row
+            # oRow = {}
+            for idx, cell in enumerate(row):
+                c = ws.cell(row=row_num, column=idx+1)
+                c.value = row[idx]
+                c.alignment = openpyxl.styles.Alignment(wrap_text=False)
+        # Save the result in the response
+        wb.save(response)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("csv_to_excel")
+
+    return response
 
 
 
@@ -900,6 +946,7 @@ class BasicDetails(DetailView):
     basic_name = None
     basic_name_prefix = ""
     basic_add = ""
+    delimiter = ","
     extend_template = "layout.html"
     add_text = "Add a new"
     permission = "write"    # Permission can be: (nothing), "read" and "write"
@@ -1047,7 +1094,7 @@ class BasicDetails(DetailView):
                         # Convert 'compressed_content' to an Excel worksheet
                         response = HttpResponse(content_type=sContentType)
                         response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
-                        response = csv_to_excel(sData, response)
+                        response = csv_to_excel(sData, response, self.delimiter)
                     else:
                         response = HttpResponse(sData, content_type=sContentType)
                         response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
@@ -1579,6 +1626,8 @@ class BasicPart(View):
     add = False             # Are we adding a new record or editing an existing one?
     obj = None              # The instance of the MainModel
     action = ""             # The action to be undertaken
+    delimiter = ","         # for excel/csv downloading
+    dtype = ""
     MainModel = None        # The model that is mainly used for this form
     form_objects = []       # List of forms to be processed
     formset_objects = []    # List of formsets to be processed
@@ -1823,7 +1872,7 @@ class BasicPart(View):
                         # Convert 'compressed_content' to an Excel worksheet
                         response = HttpResponse(content_type=sContentType)
                         response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
-                        response = csv_to_excel(sData, response)
+                        response = csv_to_excel(sData, response, self.delimiter)
                     else:
                         response = HttpResponse(sData, content_type=sContentType)
                         response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    

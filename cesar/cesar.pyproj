@@ -444,6 +444,17 @@
     <Content Include="cesar\woord\static\woord\scripts\cesar.woord.js" />
     <Content Include="cesar\woord\static\woord\scripts\jquery-ui.min.js" />
     <Content Include="cesar\woord\static\woord\scripts\jquery-1.11.0.min.js" />
+    <Content Include="cesar\woord\templates\woord\download.html" />
+    <Content Include="cesar\woord\templates\woord\explain_thank.html" />
+    <Content Include="cesar\woord\templates\woord\explain_spec.html" />
+    <Content Include="cesar\woord\templates\woord\explain_conc.html" />
+    <Content Include="cesar\woord\templates\woord\explain_perm.html" />
+    <Content Include="cesar\woord\templates\woord\lastdone.html" />
+    <Content Include="cesar\woord\templates\woord\optout.html" />
+    <Content Include="cesar\woord\templates\woord\que_spec.html" />
+    <Content Include="cesar\woord\templates\woord\que_conc.html" />
+    <Content Include="cesar\woord\templates\woord\rechtstreeks.html" />
+    <Content Include="cesar\woord\templates\woord\wrong.html" />
     <Content Include="cesar\woord\templates\woord\nlogin.html" />
     <Content Include="cesar\woord\templates\woord\index.html" />
     <Content Include="cesar\woord\templates\woord\layout.html" />

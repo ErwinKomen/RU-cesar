@@ -1,4 +1,4 @@
-﻿var django = {
+var django = {
   "jQuery": jQuery.noConflict(true)
 };
 var jQuery = django.jQuery;
@@ -235,6 +235,136 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("volgende", ex);
+        }
+      },
+
+      /**
+       * woord_download
+       *    Facilitate downloading Woord results
+       *
+       */
+      woord_download_new: function (elStart) {
+        var data = null,
+            frm = null,
+            downloadtype = "",
+            ajaxurl = "",
+            request = new XMLHttpRequest();
+
+        try {
+          // Make sure downloadtype is set
+          $("#downloadtype").val($(elStart).attr("downloadtype"));
+          // Get the data
+          frm = $(elStart).closest("form");
+          // data = $(frm).serializeArray();
+          data = $(frm).serialize();
+
+          // Get the URL
+          ajaxurl = $(elStart).attr("ajaxurl");
+          // Create the request
+          request.open('POST', ajaxurl, true);
+          request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+          request.responseType = 'blob';
+
+          // Function for when it is loaded
+          request.onload = function (e) {
+            if (this.status === 200) {
+              var filename = "",
+                  disposition = request.getResponseHeader('Content-Disposition');
+
+              // check if filename is given
+              if (disposition && disposition.indexOf('attachment') !== -1) {
+                let filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                let matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+              }
+              let blob = this.response;
+              if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveBlob(blob, filename);
+              }
+              else {
+                let downloadLink = window.document.createElement('a');
+                let contentTypeHeader = request.getResponseHeader("Content-Type");
+                downloadLink.href = window.URL.createObjectURL(new Blob([blob], { type: contentTypeHeader }));
+                downloadLink.download = filename;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+              }
+            } else {
+              alert('Download failed');
+            }
+          }
+
+          // What to do when request is finished
+          request.onreadystatechange = function () {
+            switch (this.readyState) {
+              case 1:
+              case 2:
+              case 3:
+                break;
+              case 4:
+                // Enable downloading
+                ru.cesar.woord.woord_disable_download(elStart, false);
+
+                break;
+            }
+          }
+
+          // Disable downloading
+          ru.cesar.woord.woord_disable_download(elStart, true);
+
+          // Now send it
+          request.send(data);
+
+        } catch (ex) {
+          private_methods.errMsg("woord_download", ex);
+        }
+      },
+
+      /**
+       * woord_download
+       *    Facilitate downloading Woord results
+       *
+       */
+      woord_download: function (elStart) {
+        try {
+
+          // Now make the actual call for the downloading
+          ru.basic.post_download(elStart, {
+            onstart: function () {
+              ru.cesar.woord.woord_disable_download(elStart, true);
+            },
+            onready: function () {
+              ru.cesar.woord.woord_disable_download(elStart, false);
+            },
+          });
+        } catch (ex) {
+          private_methods.errMsg("woord_download", ex);
+        }
+      },
+
+      /**
+       * woord_disable_download
+       *    Disable the correct button 
+       *
+       */
+      woord_disable_download: function (elStart, bDoDisable) {
+        var elButton = "#result_download_excel";
+
+        try {
+          if (bDoDisable === undefined || bDoDisable === true) {
+            $(elButton).addClass("hidden");
+            $(elStart).closest("form").find(".waiting").removeClass("hidden");
+            $(elStart).closest("form").find(".dropdown-menu").addClass("hidden");
+            $(elStart).closest("form").find(".dropdown-toggle").attr("disabled", true);
+          } else {
+            $(elButton).removeClass("hidden");
+            $(elStart).closest("form").find(".waiting").addClass("hidden");
+            $(elStart).closest("form").find(".dropdown-menu").removeClass("hidden");
+            $(elStart).closest("form").find(".dropdown-toggle").attr("disabled", false);
+          }
+        } catch (ex) {
+          private_methods.errMsg("woord_disable_download", ex);
         }
       },
 

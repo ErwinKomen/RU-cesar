@@ -1420,21 +1420,33 @@ var ru = (function ($, ru) {
       },
 
       /**
-        * result_download
+        * post_download
         *   Trigger creating and downloading a result CSV / XLSX / JSON
         *
         */
-      post_download: function (elStart) {
+      post_download: function (elStart, options) {
         var ajaxurl = "",
+            action = "",
             contentid = null,
             response = null,
+            call_onready = null,
+            call_onstart = null,
+            scaleFactor = 4,  // Scaling of images to make sure the result is not blurry
             frm = null,
             el = null,
+            canvas = null,
+            elData = null,
             sHtml = "",
             oBack = null,
+            // options = {},
             dtype = "",
+            bProcessing = false,
+            data = "",
             sMsg = "",
-            method = "normal",
+            svgText = "",
+            request = null,
+            waitclass = null,
+            method = "xhtp",  // Options: 'normal', 'erwin', 'xhtp'
             data = [];
 
         try {
@@ -1444,6 +1456,12 @@ var ru = (function ($, ru) {
           // obligatory parameter: ajaxurl
           ajaxurl = $(elStart).attr("ajaxurl");
           contentid = $(elStart).attr("contentid");
+
+          if (options !== undefined) {
+            if ("waitclass" in options) { waitclass = "." + options.waitclass; }
+            if ("onready" in options) { call_onready = options.onready; }
+            if ("onstart" in options) { call_onstart = options.onstart; }
+          }
 
           // Gather the information
           frm = $(elStart).closest(".container-small").find("form");
@@ -1475,23 +1493,224 @@ var ru = (function ($, ru) {
                 var iready = 1;
               });
               break;
+            case "xhtp":
+              request = new XMLHttpRequest();
+              // Create the request
+              request.open('POST', ajaxurl, true);
+              request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+              request.responseType = 'blob';
+              // Function for when it is loaded
+              request.onload = function (e) {
+                if (this.status === 200) {
+                  var filename = "",
+                      disposition = request.getResponseHeader('Content-Disposition');
+
+                  // check if filename is given
+                  if (disposition && disposition.indexOf('attachment') !== -1) {
+                    let filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    let matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+                  }
+                  let blob = this.response;
+                  if (window.navigator.msSaveOrOpenBlob) {
+                    window.navigator.msSaveBlob(blob, filename);
+                  }
+                  else {
+                    let downloadLink = window.document.createElement('a');
+                    let contentTypeHeader = request.getResponseHeader("Content-Type");
+                    downloadLink.href = window.URL.createObjectURL(new Blob([blob], { type: contentTypeHeader }));
+                    downloadLink.download = filename;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                  }
+                } else {
+                  alert('Download failed');
+                }
+              }
+
+              // What to do when request is finished
+              request.onreadystatechange = function () {
+                if (this.readyState === 4 && call_onready !== null) {
+                  // Call the function on ready
+                  call_onready(elStart);
+                }
+              }
+
+              // Call the function on start
+              if (call_onstart !== null) { call_onstart(elStart); }
+
+              // Do we have a contentid?
+              if (contentid !== undefined && contentid !== null && contentid !== "") {
+                // Generic
+                elData = $(frm).find("#downloaddata");
+                // Process download data
+                switch (dtype) {
+                  case "hist-png":  // Download (histogram) as PNG
+                    // Need to show waiting?
+                    if (waitclass !== null) {
+                      // Start waiting
+                      $(frm).find(waitclass).removeClass("hidden");
+                      $(frm).find(".dropdown-menu").addClass("hidden");
+                    }
+
+                    // Convert the HTML into a canvas and turn the canvas into a PNG
+                    el = $(contentid).first().get(0);
+
+                    el.scrollIntoView();
+                    html2canvas(el, {
+                      scale: scaleFactor, y: window.scrollY, x: window.scrollX,
+                      logging: true, foreignObjectRendering: true,
+                      removeContainer: true
+                    })
+                      .then(function (canvas) {
+                        // Convert to data
+                        var imageData = canvas.toDataURL("image/png");
+                        if (elData.length > 0) {
+                          $(elData).val(imageData);
+                        }
+
+                        // Need to stop showing waiting?
+                        if (waitclass !== null) {
+                          // Start waiting
+                          $(frm).find(waitclass).addClass("hidden");
+                        }
+
+                        // Now submit the form with the proper data
+                        data = $(frm).serialize();
+                        request.send(data);
+
+                        // Call the function on ready
+                        if (call_onready !== null) { call_onready(elStart); }
+
+                      });
+                    bProcessing = true;
+                    break;
+                  case "hist-svg":
+                    sHtml = private_methods.prepend_styles(contentid, "svg");
+                    // Set it
+                    if (elData.length > 0) {
+                      $(elData).val(sHtml);
+                    }
+                    // Now send it with the proper data
+                    data = $(frm).serialize();
+                    request.send(data);
+
+                    // Call the function on ready
+                    if (call_onready !== null) { call_onready(elStart); }
+                    bProcessing = true;
+                    break;
+                }
+              } 
+              // If it hasn't yet been processed
+              if (!bProcessing) {
+                // Process download data
+                switch (dtype) {
+                  case "json":
+                  case "xlsx":
+                  case "csv":
+                    // Need to show waiting?
+                    if (waitclass !== null) {
+                      // Start waiting
+                      $(frm).find(waitclass).removeClass("hidden");
+                      $(frm).find(".dropdown-menu").addClass("hidden");
+                    }
+                    // Now send it with proper data
+                    data = $(frm).serialize();
+                    request.send(data);
+
+                    // Note: the 'onreadystate' function picks up the onready callback
+                    // DO NOT put a callback here!
+                    break;
+                  default:
+                    // TODO: add error message here
+                    return;
+                }
+              }
+
+              break;
             default:
               // Set the 'action; attribute in the form
+              action = frm.attr("action");
               frm.attr("action", ajaxurl);
               // Make sure we do a POST
               frm.attr("method", "POST");
 
               // Do we have a contentid?
               if (contentid !== undefined && contentid !== null && contentid !== "") {
+                // Generic
+                elData = $(frm).find("#downloaddata");
                 // Process download data
                 switch (dtype) {
+                  case "hist-png":  // Download (histogram) as PNG
+                    // Need to show waiting?
+                    if (waitclass !== null) {
+                      // Start waiting
+                      $(frm).find(waitclass).removeClass("hidden");
+                      $(frm).find(".dropdown-menu").addClass("hidden");
+                    }
+
+                    // Convert the HTML into a canvas and turn the canvas into a PNG
+                    el = $(contentid).first().get(0);
+
+                    el.scrollIntoView();
+                    html2canvas(el, {
+                      scale: scaleFactor, y: window.scrollY, x: window.scrollX,
+                      logging: true, foreignObjectRendering: true,
+                      removeContainer: true
+                    })
+                      .then(function (canvas) {
+                        // Convert to data
+                        var imageData = canvas.toDataURL("image/png");
+                        if (elData.length > 0) {
+                          $(elData).val(imageData);
+                        }
+
+                        // Need to stop showing waiting?
+                        if (waitclass !== null) {
+                          // Start waiting
+                          $(frm).find(waitclass).addClass("hidden");
+                        }
+
+                        // Now submit the form
+                        oBack = frm.submit();
+
+                      });
+                    break;
+                  case "hist-svg":
+                    sHtml = private_methods.prepend_styles(contentid, "svg");
+                    // Set it
+                    if (elData.length > 0) {
+                      $(elData).val(sHtml);
+                    }
+                    // Now submit the form
+                    oBack = frm.submit();
+                    break;
+                  case "json":
+                  case "xlsx":
+                    // Need to show waiting?
+                    if (waitclass !== null) {
+                      // Start waiting
+                      $(frm).find(waitclass).removeClass("hidden");
+                      $(frm).find(".dropdown-menu").addClass("hidden");
+                    }
+                    // Now submit the form
+                    oBack = frm.submit();
+                    break;
                   default:
                     // TODO: add error message here
                     return;
                 }
               } else {
+                // Need to show waiting?
+                if (waitclass !== null) {
+                  // Start waiting
+                  $(frm).find(waitclass).removeClass("hidden");
+                  $(frm).find(".dropdown-menu").addClass("hidden");
+                }
                 // Do a plain submit of the form
                 oBack = frm.submit();
+
               }
               break;
           }

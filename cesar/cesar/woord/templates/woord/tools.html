@@ -40,6 +40,35 @@
 
     </div>
 
+    {% if is_app_user or is_superuser %}
+      <div class="row">
+        <div class="col-md-8 col-md-offset-1">
+          <h4>Result processing</h4>
+
+          <div class="container-small">
+            <form>
+              {% csrf_token %}
+              <div id="downloadcenter" class="hidden">
+                <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+              </div>
+              <div class="col-md-5">
+                Download results: 
+                {% include 'woord/download.html' with downloadid="res" urlname="woord_download" object_id=1 %}
+              </div>
+
+              <!-- Waiting symbol -->
+              <div class="col-md-1 waiting hidden">
+                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+    {% endif %}
+
     {% if is_app_editor or is_superuser %}
 
       <div class="row">&nbsp;</div>

@@ -1,0 +1,33 @@
+﻿
+<a id="download_{{downloadid}}" role="button" 
+    class="btn jumbo-1 btn-xs dropdown-toggle" 
+    data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+  Download&nbsp;<span class="caret"></span>
+</a>
+<ul class="dropdown-menu" aria-labelledby="download_{{downloadid}}">
+  <!-- Downloading as CSV -->
+  <li>
+    <a href="#" 
+        downloadtype="csv"
+        ajaxurl="{% url urlname object_id %}"
+        onclick="ru.cesar.woord.woord_download(this);" >CSV</a>
+  </li>
+
+  <!-- Downloading as Excel -->
+  <li>
+    <a href="#" 
+        downloadtype="xlsx"
+        onclick="ru.cesar.woord.woord_download(this);"
+        ajaxurl="{% url urlname object_id %}">Excel</a>
+  </li>
+  <li class="divider" role="separator"></li>
+
+  <!-- Downloading JSON data -->
+  <li>
+    <a href="#" 
+        downloadtype="json"
+        onclick="ru.cesar.woord.woord_download(this);"
+        ajaxurl="{% url urlname object_id %}">JSON</a>
+  </li>
+</ul>
+
