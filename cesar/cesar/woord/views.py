@@ -419,6 +419,10 @@ def tools(request):
     done_count = Result.objects.count()
     context['progr_done'] = done_count
     context['progr_users'] = len(working_id)
+    # Get the percentage of responses provided by the 'resonding users'
+    responses_expected = context['progr_users'] * context['count_question']
+    responses_given = context['progr_done']
+    context['progr_ptc'] = 100 * responses_given / responses_expected
 
     # Render and return the page
     return render(request, template_name, context)
