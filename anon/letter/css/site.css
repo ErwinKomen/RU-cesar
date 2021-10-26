@@ -169,3 +169,14 @@ body > div > footer a {
   z-index: 1000;
 }
 
+.regel {
+    color: blue; font-size: x-small; vertical-align: super;
+}
+
+.focus {
+    color: darkblue; font-weight: bolder;
+}
+
+.language-choice {
+    font-size: x-large;
+}

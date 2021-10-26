@@ -16,7 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-l nl -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\02_shaj.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\02_shaj_stories.doc"</CommandLineArguments>
+    <CommandLineArguments>-l ce -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\04_gheenash.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\04_gheenash_eng.doc"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -85,6 +85,8 @@
     <Folder Include="letter\css\" />
     <Folder Include="letter\js\" />
     <Folder Include="brief\" />
+    <Folder Include="letter\gheenash\" />
+    <Folder Include="letter\tallam\" />
     <Folder Include="processor\" />
     <Folder Include="processor\entity_mapping\" />
   </ItemGroup>
@@ -97,10 +99,20 @@
     <Content Include="brief\scripts\jquery-1.10.2.js" />
     <Content Include="brief\scripts\pbrief.js" />
     <Content Include="letter\css\site.css" />
-    <Content Include="letter\info.html" />
+    <Content Include="letter\js\tallam.js" />
+    <Content Include="letter\tallam.html" />
+    <Content Include="letter\gheenash\diicar_02.html" />
+    <Content Include="letter\gheenash\diicar_01.html" />
+    <Content Include="letter\gheenash\diicar_00.html" />
+    <Content Include="letter\gheenash\diicar_04.html" />
+    <Content Include="letter\gheenash\diicar_03.html" />
+    <Content Include="letter\gheenash\info.html" />
     <Content Include="letter\gheenash.html" />
     <Content Include="letter\gulam.html" />
     <Content Include="letter\elpash.html" />
+    <Content Include="letter\js\gheenash.js" />
+    <Content Include="letter\tallam\diicar_01.html" />
+    <Content Include="letter\tallam\info.html" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
