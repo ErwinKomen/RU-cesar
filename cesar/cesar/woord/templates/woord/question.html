@@ -13,12 +13,18 @@
 <!-- Show the next stimuli for this particular user -->
 {% for item in lst_stimulus %}
   <div class="centerfield">
-    <p class="stimulus">{{item.stimulus|safe}}</p>
-
     <!-- Hidden: the id of this question-->
     <div class="hidden questionid">{{item.questionid}}</div>
 
-    <span class="dontknow"><input class="knowcheck" type="checkbox"> Ken ik niet</span>
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2 stimulus">
+        {{item.stimulus|safe}}
+      </div>
+      <div class="col-md-2">
+        <input class="knowcheck" type="checkbox"> Ken ik niet
+      </div>
+    </div>
+
     <div class="sliderfield">
       <!-- The two options -->
       <div class="leftoption">{{item.left}}</div>

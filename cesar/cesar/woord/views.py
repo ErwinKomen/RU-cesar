@@ -422,7 +422,10 @@ def tools(request):
     # Get the percentage of responses provided by the 'resonding users'
     responses_expected = context['progr_users'] * context['count_question']
     responses_given = context['progr_done']
-    context['progr_ptc'] = 100 * responses_given / responses_expected
+    if responses_expected == 0:
+        context['progr_ptc'] = 0
+    else:
+        context['progr_ptc'] = 100 * responses_given / responses_expected
 
     # Render and return the page
     return render(request, template_name, context)
@@ -737,6 +740,11 @@ def question(request):
                     else:
                         # Call the process verification
                         context, template_name = do_process(woorduser, lResults, context, calltype, next, title, altnext, alttitle, consent)
+
+                        # Double check the feedback
+                        if template_name == "woord/.html":
+                            # This means we have probably finished
+                            template_name = "woord/lastdone.html"
 
                     # Make sure to get out of this loop!
                     break
