@@ -373,39 +373,45 @@ class FrogLink(models.Model):
                         postag = pos.cls.split("(")[0]
                         lemma = word.annotation(folia.LemmaAnnotation)                     
                         lemmatag = lemma.cls
+
                         # Check if we need to process this word (if it is a 'content' word)
-                        # OLD: if re_content.match(postag):
                         if treat_word(postag, pos, lemmatag):
-                            # Get the *FIRST* brysbaert equivalent if existing
-                            brys = Brysbaert.objects.filter(stimulus=lemmatag).first()
-                            if brys == None:
-                                if word.text() == "pensioenregeling":
-                                    bStop = True
-                                # Check if there are multiple morph parts
-                                morph_parts = [m.text() for m in word.morphemes()]
-                                score = -1
-                                if len(morph_parts)>0:
-                                    # There are multiple morphemes
-                                    brysb_parts = []
-                                    score = 0
-                                    for idx, m in enumerate(morph_parts):
-                                        brys = Brysbaert.objects.filter(stimulus=m).first()
-                                        if brys == None:
-                                            score = -1
-                                            break
-                                        # Add the score to the list
-                                        brysb_parts.append(brys.get_concreteness())
-                                    if score == 0:
-                                        # Determine the average
-                                        for m in brysb_parts:
-                                            score += m
-                                        score = score / len(brysb_parts)
-                                    else:
-                                        # change the 'lemmatag' to reflect the breaking up of this word into morphemes
-                                        lemmatag = "{} (={})".format(lemmatag, "-".join(morph_parts))
-                            else:
+                            # First check if a word is in the brysbaertlist
+                            brys = Brysbaert.objects.filter(stimulus=word).first()
+                            if brys != None:
                                 # The concreteness of this word is in brys
                                 score = brys.get_concreteness()
+                            else:
+                                # Get the *FIRST* brysbaert equivalent if existing
+                                brys = Brysbaert.objects.filter(stimulus=lemmatag).first()
+                                if brys == None:
+                                    if word.text() == "pensioenregeling":
+                                        bStop = True
+                                    # Check if there are multiple morph parts
+                                    morph_parts = [m.text() for m in word.morphemes()]
+                                    score = -1
+                                    if len(morph_parts)>0:
+                                        # There are multiple morphemes
+                                        brysb_parts = []
+                                        score = 0
+                                        for idx, m in enumerate(morph_parts):
+                                            brys = Brysbaert.objects.filter(stimulus=m).first()
+                                            if brys == None:
+                                                score = -1
+                                                break
+                                            # Add the score to the list
+                                            brysb_parts.append(brys.get_concreteness())
+                                        if score == 0:
+                                            # Determine the average
+                                            for m in brysb_parts:
+                                                score += m
+                                            score = score / len(brysb_parts)
+                                        else:
+                                            # change the 'lemmatag' to reflect the breaking up of this word into morphemes
+                                            lemmatag = "{} (={})".format(lemmatag, "-".join(morph_parts))
+                                else:
+                                    # The concreteness of this word is in brys
+                                    score = brys.get_concreteness()
                             # Process the score of this content word
                             oScore = {}
                             oScore['word'] = word.text()
