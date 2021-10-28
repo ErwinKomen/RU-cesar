@@ -9,6 +9,7 @@ from io import StringIO
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.db import models, transaction
 from cesar.utils import ErrHandle
 from cesar.seeker.models import import_data_file
 from cesar.settings import WRITABLE_DIR, TIME_ZONE
@@ -339,6 +340,7 @@ class FrogLink(models.Model):
         bResult = False
         sMsg = ""
         oErr = ErrHandle()
+        method = "erwin"    # Alternatives: 'erwin', 'alpino', 'simple'
 
         def treat_word(posonly, posfull, lemma):
             """Check if this category must be included"""
@@ -394,14 +396,37 @@ class FrogLink(models.Model):
                                         # There are multiple morphemes
                                         brysb_parts = []
                                         score = 0
+                                        bIgnore = False
                                         for idx, m in enumerate(morph_parts):
                                             brys = Brysbaert.objects.filter(stimulus=m).first()
                                             if brys == None:
                                                 score = -1
-                                                break
-                                            # Add the score to the list
-                                            brysb_parts.append(brys.get_concreteness())
-                                        if score == 0:
+                                                bIgnore = True
+                                                #break
+                                                brysb_parts.append(-1)
+                                            else:
+                                                # Add the score to the list
+                                                brysb_parts.append(brys.get_concreteness())
+                                        # debugging: get the parts as string
+                                        sParts = json.dumps(brysb_parts)
+
+                                        # TRYING
+                                        if bIgnore:
+                                            if method == "erwin":
+                                                lst_parts, brysb_parts = Brysbaert.best_fit(word.text())
+                                                # Do we have something?
+                                                if len(lst_parts) > 0:
+                                                    bIgnore = False
+                                                # debugging: get the parts as string
+                                                sParts = json.dumps(brysb_parts)
+                                            elif method == "simple":
+                                                # DOn't do anything additional
+                                                pass
+                                            elif method == "alpino":
+                                                # Make use of Alpino parsing
+                                                pass
+
+                                        if not bIgnore: # Was: score == 0:
                                             # Determine the average
                                             for m in brysb_parts:
                                                 score += m
@@ -649,8 +674,73 @@ class Brysbaert(models.Model):
     def __str__(self):
         return self.stimulus
 
-    def get_concreteness(self):
-        return self.m
+    def best_fit(woord):
+        """Break up a word in parts, and find the best Brysbaert fit"""
+
+        def get_best(sWord, lst_id, lst_m):
+            """"""
+            sBest = ""
+            lExpression = []
+
+            # Sanity check
+            if sWord != "":
+                for ln in range(len(sWord)):
+                    # Add this to the expression
+                    if ln > 0:
+                        lExpression.append(sWord[0:ln+1])
+                # Now make a regular search expression
+                sExpression = "^({})$".format( "|".join(lExpression))
+                # Search for the longest entry in BrysBaert
+                lst_qs = Brysbaert.objects.filter(stimulus__iregex=sExpression).values('stimulus', 'id')
+                # Do we have a match?
+                if len(lst_qs) > 0:
+                    # Yes, we have a match - at least partial
+                    lst_sorted = sorted( lst_qs, key=lambda o:len(o['stimulus']), reverse=True)
+                    oMatch = lst_sorted[0]
+                    sMatch = oMatch['stimulus']
+                    idMatch = oMatch['id']
+                    # Add this to the list we return
+                    lst_id.append(idMatch)
+                    lst_m.append(sMatch)
+                    # COntinue searching and adding
+                    return get_best(sWord[len(sMatch):], lst_id, lst_m)
+                else:
+                    # No match: try starting from the next character
+                    lst_id.append(-1)
+                    lst_m.append(sWord[1:1])
+                    return get_best(sWord[1:], lst_id, lst_m)
+            return lst_id, lst_m
+
+        oErr = ErrHandle()
+        lst_part = []
+        lst_brysb = []
+        try:
+            # Get a list of Brysbaert ID's
+            lst_id, lst_m = get_best(woord, [], [])
+            # Get the actual Brysbaert objects in a list
+            if len(lst_id) > 0:
+                lst_part = []
+                lst_skip = []
+                with transaction.atomic():
+                    for idx, id in enumerate(lst_id):
+                        if id < 0:
+                            lst_skip.append(lst_m[idx])
+                        else:
+                            obj = Brysbaert.objects.filter(id=id).first()
+                            lst_part.append(obj)
+                            lst_brysb.append(obj.get_concreteness())
+                    # We now have all valid parts
+                iStop = 1
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Brysbaert/best_fit")
+            lst_part = []
+            lst_brysb = []
+        return lst_part, lst_brysb
+
+    def clear():
+        Brysbaert.objects.all().delete()
+        return True
 
     def find_or_create(stimulus, listnum, m, sd, ratings, responses, subjects):
         """Find existing or create new item"""
@@ -669,9 +759,8 @@ class Brysbaert(models.Model):
         # Return the result
         return obj, sMsg
 
-    def clear():
-        Brysbaert.objects.all().delete()
-        return True
+    def get_concreteness(self):
+        return self.m
 
 
 # ======================= NEXIS UNI =======================
