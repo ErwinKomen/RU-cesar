@@ -531,21 +531,6 @@ class FoliaProcessor():
         self.re_single = re.compile(u"[‘’´]")
         self.re_double = re.compile(u"[“”]")
 
-        ## Check if we can create a client
-        #try:
-        #    self.frogClient = FrogClient('localhost', FROGPORT, returnall=True)
-        #    # Send a word
-        #    tuple = self.frogClient.process("hallo")
-        #except:
-        #    # There is no connection
-        #    pass
-
-        ## Check if [Frog] is local
-        #try:
-        #    self.frog = Frog(FrogOptions(parser=False))
-        #except:
-        #    pass
-
     def location(self):
         """Give the location we can work from: local, client or remote"""
 
@@ -611,7 +596,11 @@ class FoliaProcessor():
                         for s in s_list:
                             sentence = para.add(folia.Sentence)
                             for token in s:
-                                sentence.add(folia.Word, token)
+                                # Strip off anything from x0100 upwards (unicode)
+                                token = re.sub(r'[^\x00-\xFF]', '', token)
+                                # ANything left?
+                                if token != "":
+                                    sentence.add(folia.Word, token)
                             # Add text to sentence
                             sentence.settext(sentence.text())
                     # Add text to paragraph
