@@ -14,7 +14,7 @@
         <div id="concrete_results" class="row">
           {% for otext in concretes %}
             <h4>{{otext.text}}</h4>
-            <p>Overall score: {{otext.score|floatformat:3}} (n={{otext.n}})</p>
+            <p>Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} (n={{otext.n}})</p>
             <table class="func-view">
               <thead>
                 <tr><th>p</th><th>s</th><th>w</th><th>text</th><th>score</th><th>n</th></tr>

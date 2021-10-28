@@ -170,7 +170,7 @@
               </form>
             </div>
             <div class="row">
-              <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} (n={{otext.n}})</div>
+              <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} (n={{otext.n}})</div>
               <div class="col-md-3 dropdown">
                 {% if otext.show %}
                   <form>

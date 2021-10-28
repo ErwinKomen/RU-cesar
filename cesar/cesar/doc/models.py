@@ -341,6 +341,7 @@ class FrogLink(models.Model):
         sMsg = ""
         oErr = ErrHandle()
         method = "erwin"    # Alternatives: 'erwin', 'alpino', 'simple'
+        scorecalc = "issue166"
 
         def treat_word(posonly, posfull, lemma):
             """Check if this category must be included"""
@@ -449,33 +450,57 @@ class FrogLink(models.Model):
 
                     # Process the results of this sentence
                     score = 0
+                    total = 0
                     n = len(word_scores)
                     for obj in word_scores:
                         if obj['concr'] == "NiB":
                             n -= 1
                         else:
                             score += float(obj['concr'])
+                            total += float(obj['concr'])
                     if n < 1:
                         n = 1
                     avg = score / n
-                    sent_scores.append({'score': avg, 'n': n, 'sentence': sent.text(), 'list': word_scores})
+                    sent_scores.append({'score': avg, 'n': n, 'total': total, 'sentence': sent.text(), 'list': word_scores})
                 # Process the results of this paragraph
                 score = 0
                 n = 0
+                total = 0
                 for obj in sent_scores:
-                    score += obj['score']
-                    n += obj['n']
-                avg = score / len(sent_scores)
-                para_scores.append({'score': avg, 'n': n, 'paragraph': para.text(), 'list': sent_scores})
+                    if scorecalc == "issue166":
+                        total += obj['total']
+                        n += obj['n']
+                    else:
+                        score += obj['score']
+                        n += obj['n']
+                if n == 0:
+                    avg = 0.0
+                else:
+                    if scorecalc == "issue166":
+                        avg = total / n
+                    else:
+                        avg = score / len(sent_scores)
+                para_scores.append({'score': avg, 'n': n, 'total': total, 'paragraph': para.text(), 'list': sent_scores})
 
             # Process the results of this text
             score = 0
             n = 0
+            total = 0
             for obj in para_scores:
-                score += obj['score']
-                n += obj['n']
-            avg = score / len(para_scores)
-            oText = {'text': self.name, 'score': avg, 'n': n, 'list': para_scores}
+                if scorecalc == "issue166":
+                    total += obj['total']
+                    n += obj['n']
+                else:
+                    score += obj['score']
+                    n += obj['n']
+            if n == 0:
+                avg = 0.0
+            else:
+                if scorecalc == "issue166":
+                    avg = total / n
+                else:
+                    avg = score / len(para_scores)
+            oText = {'text': self.name, 'score': avg, 'n': n, 'total': total, 'list': para_scores}
 
             # Add the concreteness as string
             self.concr = json.dumps(oText)
