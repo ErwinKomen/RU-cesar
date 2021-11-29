@@ -1576,7 +1576,7 @@ class ResearchPart(View):
         # Return the information
         return JsonResponse(self.data)
         
-    def get(self, request, object_id=None): 
+    def get(self, request, object_id=None): # , *args, **kwargs): # ): 
         self.data['status'] = 'ok'
         # Perform the initializations that need to be made anyway
         self.initializations(request, object_id)
@@ -4579,7 +4579,7 @@ class ResultHitView(ResultPart5):
     action = "downloadhit"
 
 
-class ResultDownload(ResearchPart):
+class SeekerResultDownload(ResearchPart):
     MainModel = Basket
     template_name = "seeker/download_status.html"
     qcTarget = 1

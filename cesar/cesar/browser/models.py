@@ -1106,6 +1106,38 @@ class Part(models.Model):
         qs = Part.objects.all().order_by('corpus__lng', 'corpus__name', 'name')
         return qs
 
+    def get_text_count(self):
+        lst_format = [{"format": 0, "name": "psdx", "count": 0},
+                      {"format": 1, "name": "folia", "count": 0}]
+        html = []
+        for oFormat in lst_format:
+            oFormat['count'] += self.part_texts.filter(format=oFormat['format']).count()
+            html.append("{}: {}".format( oFormat['name'], oFormat['count']))
+        sBack = " ".join(html)
+        return sBack
+
+    def get_line_count(self):
+        lst_format = [{"format": 0, "name": "psdx", "count": 0},
+                      {"format": 1, "name": "folia", "count": 0}]
+        html = []
+        for oFormat in lst_format:
+            for oItem in self.part_texts.filter(format=oFormat['format']).values("lines"):
+                oFormat['count'] += oItem['lines']
+            html.append("{}: {}".format( oFormat['name'], oFormat['count']))
+        sBack = " ".join(html)
+        return sBack
+
+    def get_word_count(self):
+        lst_format = [{"format": 0, "name": "psdx", "count": 0},
+                      {"format": 1, "name": "folia", "count": 0}]
+        html = []
+        for oFormat in lst_format:
+            for oItem in self.part_texts.filter(format=oFormat['format']).values("words"):
+                oFormat['count'] += oItem['words']
+            html.append("{}: {}".format( oFormat['name'], oFormat['count']))
+        sBack = " ".join(html)
+        return sBack
+
 
 class Download(models.Model):
     """Download information for one corpus part in one format"""

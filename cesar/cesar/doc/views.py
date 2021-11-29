@@ -27,13 +27,16 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
-from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date
-from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm
+from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
+    LocTimeInfo, Expression
+from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
+    LocTimeForm, ExpressionForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
 bDebug = False
 
+TABLET_EDITOR = "tablet_editor"
 
 def user_is_ingroup(request, sGroup):
     # Is this user part of the indicated group?
@@ -53,6 +56,16 @@ def user_is_ingroup(request, sGroup):
     # Evaluate the list
     bIsInGroup = (sGroup in glist)
     return bIsInGroup
+
+def user_is_superuser(request):
+    bFound = False
+    # Is this user part of the indicated group?
+    username = request.user.username
+    if username != "":
+        user = User.objects.filter(username=username).first()
+        if user != None:
+            bFound = user.is_superuser
+    return bFound
 
 # Views belonging to the Cesar Document Processing app.
 
@@ -568,13 +581,18 @@ class ConcreteListView(BasicList):
                 {'name': 'Name',  'id': 'filter_name',  'enabled': False},
                 {'name': 'Owner', 'id': 'filter_owner', 'enabled': False}
                 ]
-            self.searches [
-                {'section': '', 'filterlist': [
+            self.searches = [
+                {'section': '', 
+                 'filterlist': [
                     {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
                     {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
-                    ]},
-                {'section': 'other', 'filterlist': [
-                    {'filter': 'fdocs',     'fkfield': 'fdocs',  'keyFk': 'fdocs'}]}
+                    ]
+                 },
+                {'section': 'other', 
+                 'filterlist': [
+                    {'filter': 'fdocs', 'fkfield': 'fdocs', 'keyFk': 'fdocs'}
+                    ]
+                 }
                 ]
 
 
@@ -615,6 +633,123 @@ class ConcreteListView(BasicList):
         context['is_app_uploader'] = context['is_app_editor']
         return context
 
+
+class LocTimeEdit(BasicDetails):
+    """Edit a loctime information element"""
+
+    model = LocTimeInfo
+    mForm = LocTimeForm
+    prefix = "loct"
+    title = "Location and time Edit"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'plain', 'label': "Example:", 'value': instance.example, 'field_key': "example"},
+                {'type': 'plain', 'label': "Score:",   'value': instance.score,   'field_key': "score"}
+                ]       
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+        # Return the context we have made
+        return context
+    
+
+class LocTimeDetails(LocTimeEdit):
+    """Viewing LocTime information items"""
+    rtype = "html"
+
+
+class LocTimeList(BasicList):
+    """List loctime elements"""
+
+    model = LocTimeInfo
+    listform = LocTimeForm
+    prefix = "loct"
+    sg_name = "Location and time item"
+    plural_name = "Location and time items"
+    new_button = True      # Do show a new button
+    order_cols = ['example', 'score']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Example', 'order': 'o=1', 'type': 'str', 'field': 'example', 'main': True, 'linkdetails': True},
+        {'name': 'Score',   'order': 'o=2', 'type': 'str', 'field': 'score',   'linkdetails': True},
+        ]
+    filters = [ {"name": "Example", "id": "filter_example", "enabled": False}
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'project',   'dbfield': 'example', 'keyS': 'example'}]} 
+        ] 
+
+    def add_to_context(self, context, initial):
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+        return context
+
+
+class ExpressionEdit(BasicDetails):
+    """Edit a Expression information element"""
+
+    model = Expression
+    mForm = ExpressionForm
+    prefix = "expr"
+    title = "Multi-word Expression"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'plain', 'label': "Expression:", 'value': instance.full,   'field_key': "full"},
+                {'type': 'plain', 'label': "Score:",      'value': instance.score,  'field_key': "score"}
+                ]       
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+        # Return the context we have made
+        return context
+    
+
+class ExpressionDetails(ExpressionEdit):
+    """Viewing Expression information items"""
+    rtype = "html"
+
+
+class ExpressionList(BasicList):
+    """List Expression elements"""
+
+    model = Expression
+    listform = ExpressionForm
+    prefix = "expr"
+    sg_name = "Multi-word Expression"
+    plural_name = "Multi-word Expressions"
+    new_button = True      # Do show a new button
+    order_cols = ['full', 'score']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Expression', 'order': 'o=1', 'type': 'str', 'field': 'full', 'main': True, 'linkdetails': True},
+        {'name': 'Score',      'order': 'o=2', 'type': 'str', 'field': 'score',   'linkdetails': True},
+        ]
+    filters = [ {"name": "Expression", "id": "filter_full", "enabled": False}
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'full',   'dbfield': 'full', 'keyS': 'full'}]} 
+        ] 
+
+    def add_to_context(self, context, initial):
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+        return context
 
 
 # ================ NEXIS UNI ===========================

@@ -75,6 +75,47 @@ class FrogLinkForm(forms.ModelForm):
         self.fields['ownlist'].queryset = User.objects.all()
 
 
+class LocTimeForm(forms.ModelForm):
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = LocTimeInfo
+        fields = ['example', 'score']
+        widgets = {
+            'example':  forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'score':    forms.TextInput(attrs={'style': 'width: 100%;'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(LocTimeForm, self).__init__(*args, **kwargs)
+        # Make sure some are not obligatory
+        self.fields['example'].required = False
+        self.fields['score'].required = False
+
+
+class ExpressionForm(forms.ModelForm):
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Expression
+        fields = ['full', 'score']
+        widgets = {
+            'full':     forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'score':    forms.TextInput(attrs={'style': 'width: 100%;'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(ExpressionForm, self).__init__(*args, **kwargs)
+        # Make sure some are not obligatory
+        self.fields['full'].required = False
+        self.fields['score'].required = False
+
+
+
+# ================= NEXIS FORMS =======================================
+
 class NexisBatchForm(forms.ModelForm):
 
     class Meta:

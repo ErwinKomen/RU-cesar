@@ -47,7 +47,9 @@
             <td><span class="part-item-corp">{{item.corpus}}</span></td>
             <td><span class="part-item-name"><a onclick="ru.cesar.part_detail_toggle({{item.id}})">{{item.name}}</a></span></td>
             <td>
-                <span class="part-item-desc">{{item.descr}}</span>
+                <span class="part-item-desc">{{item.descr}}
+                  <a class="btn btn-default btn-xs" href="{% url 'part_details' item.id %}">Details</a>
+                </span>
                 {% if is_in_tsg %}
                   <span><a class="btn btn-success btn-xs" href="/{{app_prefix}}admin/browser/part/{{item.id}}/change/">Edit</a></span>
                 {% endif %}

@@ -163,6 +163,25 @@ class TextForm(forms.ModelForm):
                 self.fields[field].widget.attrs.update({'class': wClass})
 
 
+#class PartForm(forms.ModelForm):
+
+#    class Meta:
+#        model = Part
+#        fields = ['name', 'description', 'url']
+#        widgets={'name':        forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Name of this part...'}),
+#                 'description': forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Description of the part...'}),
+#                 'url':         forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'URL...'}),
+#                 }
+
+#    def __init__(self, *args, **kwargs):
+#        # First perform the default thing
+#        super(PartForm, self).__init__(*args, **kwargs)
+
+#        self.fields['name'].required = False
+#        self.fields['description'].required = False
+#        self.fields['url'].required = False
+
+
 class PartSearchForm(forms.ModelForm):
 
     search = forms.CharField(label=_("Corpus name"))

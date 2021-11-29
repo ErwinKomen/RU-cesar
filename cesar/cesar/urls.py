@@ -99,6 +99,8 @@ urlpatterns = [
 
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
+    url(r'^part/edit(?:/(?P<pk>\d+))?/$', PartEdit.as_view(), name='part_edit'),
+    url(r'^part/details(?:/(?P<pk>\d+))?/$', PartDetails.as_view(), name='part_details'),
 
     url(r'^text/info/(?P<pk>\d+)', TextDetailInfo.as_view(), name='text_info'),
     url(r'^text/list/$', cesar.browser.views.TextListView.as_view(), name='text_list'),
@@ -107,11 +109,18 @@ urlpatterns = [
     url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
     url(r'^text/syntax/download/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='syntax_download'),
 
-    url(r'^doc/concrete/$', cesar.doc.views.concrete_main, name='concrete_main'),
-    url(r'^doc/concrete/list/$', ConcreteListView.as_view(), name='froglink_list'),
-    url(r'^doc/concrete/details(?:/(?P<pk>\d+))?/$', ConcreteDetails.as_view(), name='froglink_details'),
-    url(r'^doc/concrete/edit(?:/(?P<pk>\d+))?/$', ConcreteEdit.as_view(), name='froglink_edit'),
-    url(r'^doc/concrete/download/(?P<pk>\d+)/$', ConcreteDownload.as_view(), name='concrete_download'),
+    url(r'^tablet/$', cesar.doc.views.concrete_main, name='concrete_main'),
+    url(r'^tablet/concrete/list/$', ConcreteListView.as_view(), name='froglink_list'),
+    url(r'^tablet/doc/details(?:/(?P<pk>\d+))?/$', ConcreteDetails.as_view(), name='froglink_details'),
+    url(r'^tablet/doc/edit(?:/(?P<pk>\d+))?/$', ConcreteEdit.as_view(), name='froglink_edit'),
+    url(r'^tablet/doc/download/(?P<pk>\d+)/$', ConcreteDownload.as_view(), name='concrete_download'),
+    url(r'^tablet/loctime/list/$', LocTimeList.as_view(), name='loctimeinfo_list'),
+    url(r'^tablet/loctime/details(?:/(?P<pk>\d+))?/$', LocTimeDetails.as_view(), name='loctimeinfo_details'),
+    url(r'^tablet/loctime/edit(?:/(?P<pk>\d+))?/$', LocTimeEdit.as_view(), name='loctimeinfo_edit'),
+    url(r'^tablet/expression/list/$', ExpressionList.as_view(), name='expression_list'),
+    url(r'^tablet/expression/details(?:/(?P<pk>\d+))?/$', ExpressionDetails.as_view(), name='expression_details'),
+    url(r'^tablet/expression/edit(?:/(?P<pk>\d+))?/$', ExpressionEdit.as_view(), name='expression_edit'),
+
     url(r'^doc/nexis/$', cesar.doc.views.nexis_main, name='nexis_main'),
     url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),
     url(r'^doc/nexis/details(?:/(?P<pk>\d+))?/$', NexisBatchDetails.as_view(), name='nexisbatch_details'),
@@ -156,7 +165,7 @@ urlpatterns = [
     url(r'^seek/result/hit/(?P<object_id>\d+)/$', ResultPart4.as_view(), name='result_part_4'),
     url(r'^seek/result/tree/(?P<object_id>\d+)/$', ResultPart5.as_view(), name='result_part_5'),
     url(r'^seek/result/htable/(?P<object_id>\d+)/$', ResultPart6.as_view(), name='result_part_6'),
-    url(r'^seek/result/download/(?P<object_id>\d+)/$', ResultDownload.as_view(), name='result_download'),
+    url(r'^seek/result/download/(?P<object_id>\d+)/$', SeekerResultDownload.as_view(), name='result_download'),
     url(r'^seek/result/hit/download/(?P<object_id>\d+)/$', ResultHitView.as_view(), name='hit_download'),
     url(r'^seek/result/delete/(?P<object_id>\d+)/$', ResultDelete.as_view(), name='result_delete'),
 

@@ -25,6 +25,7 @@ from cesar.browser.models import *
 from cesar.browser.forms import *
 from cesar.utils import ErrHandle
 from cesar.viewer.models import NewsItem
+from cesar.basic.views import BasicDetails
 import fnmatch
 import sys
 import base64
@@ -205,6 +206,7 @@ def home(request):
     # Make sure we add special group permission(s)
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
     context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
+    context['is_tablet_editor'] = user_is_ingroup(request, "tablet_editor")
     context['is_brief_user'] = user_is_ingroup(request, "brief_user")
     context['is_superuser'] = user_is_superuser(request)
     # Render and return the page
@@ -598,12 +600,47 @@ class PartDetailView(DetailView):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated: 
             return nlogin(request)
-        return super(PartDetailView).get(request, *args, **kwargs)
+        return super(PartDetailView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated: 
             return nlogin(request)
-        return super(PartDetailView).post(request, *args, **kwargs)
+        return super(PartDetailView, self).post(request, *args, **kwargs)
+
+
+class PartEdit(BasicDetails):
+    """Details of one part"""
+
+    model = Part
+    mForm = PartForm
+    prefix = "prt"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Name:",                 'value': instance.name},
+            {'type': 'plain', 'label': "Description:",          'value': instance.descr},
+            {'type': 'plain', 'label': "Release:",              'value': instance.url},
+            {'type': 'plain', 'label': "Meta variable:",        'value': instance.metavar.name},
+            {'type': 'plain', 'label': "Corpus name:",          'value': instance.corpus.name  },
+            {'type': 'plain', 'label': "Corpus language:",      'value': instance.language()},
+            {'type': 'plain', 'label': "Ethnologue:",           'value': instance.corpus.get_eth_display()},
+            {'type': 'safe', 'label': "Number of texts",   'value': instance.get_text_count()},
+            {'type': 'safe', 'label': "Number of lines",   'value': instance.get_line_count()},
+            {'type': 'safe', 'label': "Number of words",   'value': instance.get_word_count()},
+            ]
+
+
+        # Return the context we have made
+        return context
+
+
+class PartDetails(PartEdit):
+    """Show the details of a [Part]"""
+    rtype = "html"
 
 
 class PartListView(ListView):

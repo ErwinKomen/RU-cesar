@@ -64,6 +64,56 @@ def get_crpp_date(dtThis, readable=False):
     return sDate
 
 
+class LocTimeInfo(models.Model):
+    """Information about a particular location or time"""
+
+    # [1] Example kind of textt
+    example = models.TextField("Example text")
+    # [1] Concreteness score
+    score = models.CharField("Concreteness score", default="0.0", max_length=MAXPARAMLEN)
+
+    def __str__(self):
+        return self.example
+
+
+class Expression(models.Model):
+    """Multi-word expression"""
+
+    # [1] The multi-word expression
+    full = models.TextField("Multi-word expression")
+    # [0-1] The lemma parts of the expression in a stringified JSON
+    lemmas = models.TextField("The lemma parts", blank=True, null=True)
+    # [1] Concreteness score
+    score = models.CharField("Concreteness score", default="0.0", max_length=MAXPARAMLEN)
+
+    def __str__(self):
+        return self.full
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        # Check if 'lemmas' is okay with 'full'
+        sFull = json.dumps( dict(score=self.score,lemmas= re.split("\s+", self.full)))
+        if self.lemmas != sFull:
+            self.lemmas = sFull
+        # Perform the actual saving
+        response = super(Expression, self).save(force_insert, force_update, using, update_fields)
+        # Return the appropriate response
+
+    def get_mwe_list():
+        """get a list of objects, where each object has the score + the list of lemma parts"""
+
+        oErr = ErrHandle()
+        lBack = []
+        try:
+            lAll = Expression.objects.all().values('score', 'lemmas')
+            for oItem in lAll:
+                score = oItem['score']
+                lemmas = json.loads(oItem['lemmas'])
+                lBack.append(dict(score=score, lemmas=lemmas))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("doc/Expression/get_mwe_list")
+        return lBack
+
 
 class FoliaDocs(models.Model):
     """Set of folia-encoded documents"""
