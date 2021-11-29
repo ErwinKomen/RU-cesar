@@ -631,6 +631,7 @@ class ConcreteListView(BasicList):
         # Allow simple seeker_user to work with this
         context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
         context['is_app_uploader'] = context['is_app_editor']
+        context['is_tablet_editor'] = user_is_ingroup(request, "tablet_editor")
         return context
 
 
@@ -654,6 +655,7 @@ class LocTimeEdit(BasicDetails):
                 ]       
             # Adapt the app editor status
             context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
         # Return the context we have made
         return context
     
@@ -690,6 +692,7 @@ class LocTimeList(BasicList):
         if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
             # Adapt the app editor status
             context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
         return context
 
 
@@ -713,6 +716,7 @@ class ExpressionEdit(BasicDetails):
                 ]       
             # Adapt the app editor status
             context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
         # Return the context we have made
         return context
     
@@ -749,6 +753,7 @@ class ExpressionList(BasicList):
         if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
             # Adapt the app editor status
             context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
         return context
 
 
