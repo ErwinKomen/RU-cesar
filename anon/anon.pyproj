@@ -16,7 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-l ce -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\04_gheenash.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\04_gheenash_eng.doc"</CommandLineArguments>
+    <CommandLineArguments>-l en -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\06_gheenash.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\06_gheenash.doc"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -99,6 +99,11 @@
     <Content Include="brief\scripts\jquery-1.10.2.js" />
     <Content Include="brief\scripts\pbrief.js" />
     <Content Include="letter\css\site.css" />
+    <Content Include="letter\gheenash\diicar_12.html" />
+    <Content Include="letter\gheenash\diicar_08.html" />
+    <Content Include="letter\gheenash\diicar_06.html" />
+    <Content Include="letter\gheenash\gheenash.json" />
+    <Content Include="letter\gheenash\spare.html" />
     <Content Include="letter\js\tallam.js" />
     <Content Include="letter\tallam.html" />
     <Content Include="letter\gheenash\diicar_02.html" />
@@ -111,6 +116,7 @@
     <Content Include="letter\gulam.html" />
     <Content Include="letter\elpash.html" />
     <Content Include="letter\js\gheenash.js" />
+    <Content Include="letter\tallam\diicar_02.html" />
     <Content Include="letter\tallam\diicar_01.html" />
     <Content Include="letter\tallam\info.html" />
   </ItemGroup>

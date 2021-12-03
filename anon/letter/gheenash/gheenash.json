@@ -1,0 +1,20 @@
+{
+  "lastedit": "3/dec/2021",
+  "stories": [
+    {"id": "00", "label":  "-",  "name":  "Introduction"},
+    {"id": "01", "label":  "01", "name":  "Hoopoe: аттйокх екачохь"},
+    {"id": "02", "label":  "02", "name":  "Penny: бабийн шай"},
+    {"id": "03", "label":  "03", "name":  "Train: дāдин цІерпошт"},
+    {"id": "04", "label":  "04", "name":  "Abraham: жима ИбрахІим"},
+    {"id": "05", "label":  "05", "name":  "Love: безам"},
+    {"id": "06", "label":  "06", "name":  "No witch: иза-м яц жоьра бāба"},
+    {"id": "07", "label":  "07", "name":  "The missile: йоккхачу тоьпан хІоъ"},
+    {"id": "08", "label":  "08", "name":  "New year: керла шо даздар"},
+    {"id": "09", "label":  "09", "name":  "Cutting hay: мангалхо"},
+    {"id": "10", "label":  "10", "name":  "Where's mum: мичахь ю сан нāна?"},
+    {"id": "11", "label":  "11", "name":  "Clouds: стигалахь кІайчу мархаша нека до"},
+    {"id": "12", "label":  "12", "name":  "Mistake: цхьа гІāлат"},
+    {"id": "13", "label":  "13", "name":  "The swallow: чІегІардиган кІорни"},
+    {"id": "14", "label":  "14", "name":  "The mill: хьерахь буьйса яккхар"}
+  ]
+}

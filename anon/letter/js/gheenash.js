@@ -49,11 +49,66 @@ var ru = (function ($, ru) {
        *    Initialize eent listeners for this module
        */
       init_event_listeners: function () {
+        var datasource = "",
+            elTbody = null,
+            tr_story = "",
+            tr_collapse = "";
+
         // Bind on the language choice changes radio buttons
         $(".language-choice input[type=radio]").bind('change', ru.gheenash.lang_change);
         // Show the first language only
         $(".story").addClass("hidden");
         $(".story").first().removeClass("hidden");
+
+        // Read the sample html
+        tr_story = $(".hidden.one-story-sample")[0].outerHTML;
+        tr_collapse = $(".collapse.one-collapse-sample")[0].outerHTML;
+        elTbody = $("table.table tbody").first();
+
+        // Read the gheenash.json file
+        datasource = $("#data-source").attr("href");
+        $.getJSON(datasource, function (data) {
+          var i = 0,
+              tr_a = "",
+              tr_b = "",
+              id = "",
+              label = "",
+              name = "";
+          // set the date correctly
+          $(".lastedit").html("(Update: " + data.lastedit + ")");
+          // Walk the stories
+          for (i = 0; i < data.stories.length; i++) {
+            id = data.stories[i].id;
+            label = data.stories[i].label;
+            name = data.stories[i].name;
+            // Create elements
+            tr_a = tr_story.replaceAll("{{id}}", id).replaceAll("{{label}}", label).replaceAll("{{name}}", name).replace("one-story-sample", "one-story");
+            tr_b = tr_collapse.replaceAll("{{id}}", id).replaceAll("{{label}}", label).replaceAll("{{name}}", name).replace("one-collapse-sample", "");
+            // Create and append element for this story
+            $(tr_a).appendTo(elTbody);
+            $(tr_b).appendTo(elTbody);
+          }
+
+          // Show pages that actually exist
+          $("tr.one-story").each(function (idx, el) {
+            var elAnchor = null,
+                address = "";
+
+            elAnchor = $(el).find("a").last();
+            address = $(elAnchor).attr("href");
+
+            $.ajax({
+              type: 'HEAD',
+              url: address,
+              success: function () {
+                // Show it
+                $(el).removeClass("hidden");
+              }
+            })
+          });
+
+        });
+
       },
 
       /**

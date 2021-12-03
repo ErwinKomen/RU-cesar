@@ -22,13 +22,15 @@
 
     <!-- Possibility to show errors -->
     <div id="gheenash_err"></div>
+    <!-- Sample -->
+    <div class="hidden" id="data-source" href="gheenash/gheenash.json"></div>
 
     <section class="row">
       <!-- The stories -->
       <div class="col-md-12 col-xs-12">
         <h3>
           <span>Stories</span>
-          <span class="pull-right" style="font-size: xx-small;">(Update: 4/Nov/2021)</span>
+          <span class="pull-right lastedit" style="font-size: xx-small;">(Update: 4/Nov/2021)</span>
         </h3>
 
         <table class="table">
@@ -40,315 +42,27 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Introduction -->
-            <tr>
-              <td>-</td>
-              <td>Introduction</td>
+            <tr class="hidden one-story-sample">
+              <td>{{label}}</td>
+              <td>{{name}}</td>
               <td>
-                <a href="#story_00" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm" disabled>pdf...</a>
-                <a href="gheenash/diicar_00.html" title="Documents" class="btn btn-primary btn-sm" disabled>view</a>
+                <a href="#story_{{id}}" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdf...</a>
+                <a href="gheenash/diicar_{{id}}.html" title="Documents" class="btn btn-primary btn-sm">view</a>
               </td>
             </tr>
-            <tr id="story_00" class="collapse">
+            <tr id="story_{{id}}" class="collapse one-collapse-sample">
               <td></td>
-              <td colspan="4" title="Documents for the Intro">
-                <div><i>(to appear...)</i></div>
+              <td colspan="4" title="Documents for story {{label}}">
+                <!-- Chechen original -->
+                <div><span>Chechen original:</span><span><a href="gheenash/pdf/{{id}}_gheenash_che.pdf">pdf</a></span></div>
+                <!-- English translation -->
+                <div><span>English:</span><span><a href="gheenash/pdf/{{id}}_gheenash_eng.pdf">pdf</a></span></div>
+                <!-- Dutch translation -->
+                <div><span>Dutch:</span><span><a href="gheenash/pdf/{{id}}_gheenash_nld.pdf">pdf</a></span></div>
               </td>
             </tr>
 
-            <!-- Story 01 -->
-            <tr>
-              <td>01</td>
-              <td>Hoopoe: аттйокх екачохь</td>
-              <td>
-                <a href="#story_01" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_01.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_01" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 1">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/01_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/01_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/01_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
 
-            <!-- Story 02 -->
-            <tr>
-              <td>02</td>
-              <td>Penny: бабийн шай</td>
-              <td>
-                <a href="#story_02" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_02.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_02" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 3">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/02_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/02_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/02_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 03 -->
-            <tr>
-              <td>03</td>
-              <td>Train: дāдин цІерпошт</td>
-              <td>
-                <a href="#story_03" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_03.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_03" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 3">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/03_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/03_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/03_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 04 -->
-            <tr>
-              <td>04</td>
-              <td>Abraham: жима ИбрахІим</td>
-              <td>
-                <a href="#story_04" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_04.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_04" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 4">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/04_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/04_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/04_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 05 -->
-            <tr>
-              <td>05</td>
-              <td>Love: безам</td>
-              <td>
-                <a href="#story_05" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_05.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_05" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 5">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/05_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/05_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/05_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 06 -->
-            <tr>
-              <td>06</td>
-              <td>No witch: иза-м яц жоьра бāба</td>
-              <td>
-                <a href="#story_06" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_06.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_06" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 6">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/06_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/06_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/06_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 07 -->
-            <tr>
-              <td>07</td>
-              <td>The missile: йоккхачу тоьпан хІоъ</td>
-              <td>
-                <a href="#story_07" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_07.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_07" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 7">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/07_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/07_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/07_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 08 -->
-            <tr>
-              <td>08</td>
-              <td>New year: керла шо даздар</td>
-              <td>
-                <a href="#story_08" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_08.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_08" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 8">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/08_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/08_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/08_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 09 -->
-            <tr>
-              <td>09</td>
-              <td>Cutting hay: мангалхо</td>
-              <td>
-                <a href="#story_09" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_09.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_09" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 9">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/09_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/09_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/09_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 10 -->
-            <tr>
-              <td>10</td>
-              <td>Where's mum: мичахь ю сан нāна?</td>
-              <td>
-                <a href="#story_10" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_10.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_10" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 10">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/10_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/10_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/10_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 11 -->
-            <tr>
-              <td>11</td>
-              <td>Clouds: стигалахь кІайчу мархаша нека до</td>
-              <td>
-                <a href="#story_11" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_11.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_11" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 11">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/11_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/11_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/11_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 12 -->
-            <tr>
-              <td>12</td>
-              <td>Mistake: цхьа гІāлат</td>
-              <td>
-                <a href="#story_12" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_12.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_12" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 12">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/12_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/12_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/12_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 13 -->
-            <tr>
-              <td>13</td>
-              <td>The swallow: чІегІардиган кІорни</td>
-              <td>
-                <a href="#story_13" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_13.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_13" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 13">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/13_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/13_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/13_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
-
-            <!-- Story 14 -->
-            <tr>
-              <td>14</td>
-              <td>The mill: хьерахь буьйса яккхар</td>
-              <td>
-                <a href="#story_14" data-toggle="collapse" title="Documents" class="btn btn-default btn-sm">pdfs...</a>
-                <a href="gheenash/diicar_14.html" title="Documents" class="btn btn-primary btn-sm">view</a>
-              </td>
-            </tr>
-            <tr id="story_14" class="collapse">
-              <td></td>
-              <td colspan="4" title="Documents for chapter 14">
-                <!-- Chechen original -->
-                <div><span>Chechen original:</span><span><a href="gheenash/pdf/14_gheenash_che.pdf">pdf</a></span></div>
-                <!-- English translation -->
-                <div><span>English:</span><span><a href="gheenash/pdf/14_gheenash_eng.pdf">pdf</a></span></div>
-                <!-- Dutch translation -->
-                <div><span>Dutch:</span><span><a href="gheenash/pdf/14_gheenash_nld.pdf">pdf</a></span></div>
-              </td>
-            </tr>
           </tbody>
         </table>
 
