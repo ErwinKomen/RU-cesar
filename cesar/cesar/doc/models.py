@@ -389,9 +389,23 @@ class FrogLink(models.Model):
                     {'pos': 'WW', 'lemma_excl': ['hebben', 'zijn', 'zullen', 'willen', 'worden', 'moeten', 'mogen', 'kunnen', 'laten', 'doen']} ]
         bResult = False
         sMsg = ""
+        str_parts = ""
         oErr = ErrHandle()
-        method = "erwin"    # Alternatives: 'erwin', 'alpino', 'simple'
+        method = "hidde"    # Alternatives: 'erwin', 'alpino', 'simple', 'hidde'
         scorecalc = "issue166"
+        re_diminuative = re.compile(r'.*(m|n|l|ng|p|b|t|d|k|f|v|s|z|ch|g)je(s)?$')
+        re_etje = re.compile(r'.*(nn|mm|ll)etje$')
+        re_etjes = re.compile(r'.*(nn|mm|ll)etjes$')
+        re_ngetje = re.compile(r'.*ngetje$')
+        re_ngetjes = re.compile(r'.*ngetjes$')
+        re_obs_je = re.compile(r'.*(p|b|t|d|k|f|v|s|z|ch|g)je$')
+        re_obs_jes = re.compile(r'.*(p|b|t|d|k|f|v|s|z|ch|g)jes$')
+        re_kje = re.compile(r'.*nkje$')
+        re_kjes = re.compile(r'.*nkjes$')
+        re_pje = re.compile(r'.*mpje$')
+        re_pjes = re.compile(r'.*mpjes$')
+        re_tje = re.compile(r'.*tje$')
+        re_tjes = re.compile(r'.*tjes$')
 
         def treat_word(posonly, posfull, lemma):
             """Check if this category must be included"""
@@ -406,6 +420,48 @@ class FrogLink(models.Model):
                     # Whatever the outcome, we have found our result now
                     break
             return bFound
+
+        def strip_diminuative(sWord):
+            """Take the diminuative ending from the word"""
+
+            sBack = sWord
+            oErr = ErrHandle()
+            try:
+                # Sonorant -etje
+                if re_etje.match(sWord):
+                    sBack = sWord[:-5]
+                elif re_etjes.match(sWord):
+                    sBack = sWord[:-6]
+                elif re_ngetje.match(sWord):
+                    sBack = sWord[:-4]
+                elif re_ngetjes.match(sWord):
+                    sBack = sWord[:-5]
+                elif re_tje.match(sWord):
+                    # beentje >> been
+                    sBack = sWord[:-3]
+                elif re_tjes.match(sWord):
+                    # leeuwtjes >> leeuw
+                    sBack = sWord[:-4]
+                elif re_obs_je.match(sWord):
+                    sBack = sWord[:-2]
+                elif re_obs_jes.match(sWord):
+                    sBack = sWord[:-3]
+                elif re_kje.match(sWord):
+                    # koninkje >> koning
+                    sBack = sWord[:-3] + "g"
+                elif re_kjes.match(sWord):
+                    # palinkjes >> paling
+                    sBack = sWord[:-4] + "g"
+                elif re_pje.match(sWord):
+                    # duimpje >> duim
+                    sBack = sWord[:-3]
+                elif re_pjes.match(sWord):
+                    # kruimpjes >> kruim
+                    sBack = sWord[:-4]
+            except:
+                msg = oErr.get_error_message()
+                oErr.DoError("strip_diminuative")
+            return sBack
 
         try:
             # Create a regular expression to detect a content word
@@ -464,12 +520,33 @@ class FrogLink(models.Model):
                                         # TRYING
                                         if bIgnore:
                                             if method == "erwin":
-                                                lst_parts, brysb_parts = Brysbaert.best_fit(word.text())
+                                                lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(word.text())
                                                 # Do we have something?
                                                 if len(lst_parts) > 0:
                                                     bIgnore = False
                                                 # debugging: get the parts as string
                                                 sParts = json.dumps(brysb_parts)
+                                                lemmatag = "{} ({})".format(lemmatag,str_parts)
+                                            elif method == "hidde":
+                                                # Break up the word *right-to-left* in largest Brysbaert known parts:
+                                                lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(word.text(), right_to_left=True)
+                                                # Do we have something?
+                                                if len(lst_parts) > 0:
+                                                    bIgnore = False
+                                                    # Check the last part not being [je]
+                                                    if len(word.text()) > 2 and lst_parts[0].stimulus == "je":
+                                                        bIgnore = True
+                                                        # Check if this is a diminuative that needs separate treatment
+                                                        sKernwoord = strip_diminuative(word.text())
+                                                        if sKernwoord != word.text():
+                                                            # Break up the word *right-to-left* in largest Brysbaert known parts:
+                                                            lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(sKernwoord, right_to_left=True)
+                                                            # Do we have something?
+                                                            if len(lst_parts) > 0:
+                                                                bIgnore = False
+                                                # debugging: get the parts as string
+                                                sParts = json.dumps(brysb_parts)
+                                                lemmatag = "{} ({})".format(lemmatag,str_parts)
                                             elif method == "simple":
                                                 # DOn't do anything additional
                                                 pass
@@ -749,11 +826,11 @@ class Brysbaert(models.Model):
     def __str__(self):
         return self.stimulus
 
-    def best_fit(woord):
+    def best_fit(woord, right_to_left=False):
         """Break up a word in parts, and find the best Brysbaert fit"""
 
         def get_best(sWord, lst_id, lst_m):
-            """"""
+            """Left-to-right version of get_best()"""
             sBest = ""
             lExpression = []
 
@@ -762,7 +839,11 @@ class Brysbaert(models.Model):
                 for ln in range(len(sWord)):
                     # Add this to the expression
                     if ln > 0:
-                        lExpression.append(sWord[0:ln+1])
+                        length = ln+1
+                        if right_to_left:
+                            lExpression.append(sWord[-length:])
+                        else:
+                            lExpression.append(sWord[0:length])
                 # Now make a regular search expression
                 sExpression = "^({})$".format( "|".join(lExpression))
                 # Search for the longest entry in BrysBaert
@@ -778,7 +859,14 @@ class Brysbaert(models.Model):
                     lst_id.append(idMatch)
                     lst_m.append(sMatch)
                     # COntinue searching and adding
-                    return get_best(sWord[len(sMatch):], lst_id, lst_m)
+                    if right_to_left:
+                        # Right to left: the new string is *until* the match
+                        end = len(sWord) - len(sMatch)
+                        new_string = sWord[0:end]
+                    else:
+                        # Left to right: the new string starts just *after* the match
+                        new_string = sWord[len(sMatch):]
+                    return get_best(new_string, lst_id, lst_m)
                 else:
                     # No match: try starting from the next character
                     lst_id.append(-1)
@@ -787,8 +875,11 @@ class Brysbaert(models.Model):
             return lst_id, lst_m
 
         oErr = ErrHandle()
+        sBack = ""
         lst_part = []
         lst_brysb = []
+        ignore_bound_morphemes_pref = ['af', 'ver', 'in']   # Initial or medial
+        ignore_bound_morphemes_post = ['en']                # Final only
         try:
             # Get a list of Brysbaert ID's
             lst_id, lst_m = get_best(woord, [], [])
@@ -796,22 +887,36 @@ class Brysbaert(models.Model):
             if len(lst_id) > 0:
                 lst_part = []
                 lst_skip = []
+                # Reverse the list if this is needed
+                if right_to_left:
+                    # Yes, reverse the lists
+                    lst_id.reverse()
+                    lst_m.reverse()
                 with transaction.atomic():
                     for idx, id in enumerate(lst_id):
+                        is_last = (idx == len(lst_id) -1)
                         if id < 0:
                             lst_skip.append(lst_m[idx])
                         else:
                             obj = Brysbaert.objects.filter(id=id).first()
-                            lst_part.append(obj)
-                            lst_brysb.append(obj.get_concreteness())
+                            bSkip = False
+                            if is_last and obj.stimulus in ignore_bound_morphemes_post:
+                                bSkip = True
+                            elif (not is_last) and (obj.stimulus in ignore_bound_morphemes_pref):
+                                bSkip = True
+                            if not bSkip:
+                                lst_part.append(obj)
+                                lst_brysb.append(obj.get_concreteness())
                     # We now have all valid parts
                 iStop = 1
+            # Create a string of the stuf we found
+            sBack = "-".join([x.stimulus for x in lst_part])
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Brysbaert/best_fit")
             lst_part = []
             lst_brysb = []
-        return lst_part, lst_brysb
+        return lst_part, lst_brysb, sBack
 
     def clear():
         Brysbaert.objects.all().delete()
