@@ -923,6 +923,32 @@ class BasicList(ListView):
         # Return the resulting filtered and sorted queryset
         return qs
 
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # Do not allow to get a good response
+            response = redirect(reverse('nlogin'))
+        else:
+            # FIrst do my own initializations
+            self.initializations()
+
+            # Get the parameters passed on with the GET or the POST request
+            get = request.GET if request.method == "GET" else request.POST
+            get = get.copy()
+            # If this is a 'usersearch' then replace the parameters
+            usersearch_id = get.get("usersearch")
+            if usersearch_id != None:
+                get = UserSearch.load_parameters(usersearch_id, get)
+            self.qd = get
+
+            # Then check if we have a redirect or not
+            if self.redirectpage == "":
+                # We can continue with the normal 'get()'
+                response = super(BasicList, self).get(request, *args, **kwargs)
+            else:
+                response = redirect(self.redirectpage)
+        # REturn the appropriate response
+        return response
+
     def post(self, request, *args, **kwargs):
         return self.get(request, *args, **kwargs)
     
@@ -976,7 +1002,7 @@ class BasicDetails(DetailView):
 
                 response = JsonResponse(data)
             else:
-                response = reverse('nlogin')
+                response = redirect(reverse('nlogin'))
         else:
             context = self.get_context_data(object=self.object)
 

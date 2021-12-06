@@ -739,7 +739,7 @@ class PartListView(ListView):
         self.qs = qs
 
         # Set the entry count
-        self.entrycount = len(self.qs)
+        self.entrycount = self.qs.count()
 
         # Return the resulting filtered and sorted queryset
         return qs
@@ -1315,7 +1315,8 @@ class TextListView(ListView):
         self.qs = qs
 
         # Set the entry count
-        self.entrycount = len(self.qs)
+        # This workds SLOW: self.entrycount = len(self.qs)
+        self.entrycount = self.qs.count()
 
         # Return the resulting filtered and sorted queryset
         return qs
