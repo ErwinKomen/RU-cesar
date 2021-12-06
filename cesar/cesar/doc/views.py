@@ -674,6 +674,7 @@ class LocTimeList(BasicList):
     sg_name = "Location and time item"
     plural_name = "Location and time items"
     new_button = True      # Do show a new button
+    view_only = False
     order_cols = ['example', 'score']
     order_default = order_cols
     order_heads = [
@@ -684,16 +685,42 @@ class LocTimeList(BasicList):
                ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'project',   'dbfield': 'example', 'keyS': 'example'}]} 
+            {'filter': 'example',   'dbfield': 'example', 'keyS': 'example'}]} 
         ] 
+    
+    def initializations(self):
+        oErr = ErrHandle()
+        try:
+            if self.view_only:
+                for oItem in self.order_heads:
+                    if 'linkdetails' in oItem:
+                        oItem.pop("linkdetails")
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("LocTimeTable/init")
+        return None
 
     def add_to_context(self, context, initial):
         # Only moderators are to be allowed
-        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+        allow_editing = False
+        if not self.view_only:
+            allow_editing = user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request)
+
+        if allow_editing:
             # Adapt the app editor status
-            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_app_editor'] = True
+            context['is_tablet_editor'] = context['is_app_editor']
+        else:
+            # View only
+            context['is_app_editor'] = False
             context['is_tablet_editor'] = context['is_app_editor']
         return context
+
+
+class LocTimeTable(LocTimeList):
+    """Just provide a table (listview) of loctime elements"""
+
+    view_only = True
 
 
 class ExpressionEdit(BasicDetails):

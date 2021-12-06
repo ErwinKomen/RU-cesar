@@ -82,7 +82,7 @@ class LocTimeForm(forms.ModelForm):
         model = LocTimeInfo
         fields = ['example', 'score']
         widgets = {
-            'example':  forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'example':  forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Use * as wildcard when searching'}),
             'score':    forms.TextInput(attrs={'style': 'width: 100%;'})
             }
 
@@ -101,7 +101,7 @@ class ExpressionForm(forms.ModelForm):
         model = Expression
         fields = ['full', 'score']
         widgets = {
-            'full':     forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'full':     forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Use * as wildcard when searching'}),
             'score':    forms.TextInput(attrs={'style': 'width: 100%;'})
             }
 

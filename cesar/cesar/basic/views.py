@@ -519,6 +519,7 @@ class BasicList(ListView):
     delete_line = False
     none_on_empty = False
     use_team_group = False
+    redirectpage = ""
     lst_typeaheads = []
     sort_order = ""
     param_list = []
@@ -934,10 +935,11 @@ class BasicList(ListView):
             # Get the parameters passed on with the GET or the POST request
             get = request.GET if request.method == "GET" else request.POST
             get = get.copy()
-            # If this is a 'usersearch' then replace the parameters
-            usersearch_id = get.get("usersearch")
-            if usersearch_id != None:
-                get = UserSearch.load_parameters(usersearch_id, get)
+
+            ## If this is a 'usersearch' then replace the parameters
+            #usersearch_id = get.get("usersearch")
+            #if usersearch_id != None:
+            #    get = UserSearch.load_parameters(usersearch_id, get)
             self.qd = get
 
             # Then check if we have a redirect or not

@@ -115,6 +115,7 @@ urlpatterns = [
     url(r'^tablet/doc/edit(?:/(?P<pk>\d+))?/$', ConcreteEdit.as_view(), name='froglink_edit'),
     url(r'^tablet/doc/download/(?P<pk>\d+)/$', ConcreteDownload.as_view(), name='concrete_download'),
     url(r'^tablet/loctime/list/$', LocTimeList.as_view(), name='loctimeinfo_list'),
+    url(r'^tablet/loctime/table/$', LocTimeTable.as_view(), name='loctimeinfo_table'),
     url(r'^tablet/loctime/details(?:/(?P<pk>\d+))?/$', LocTimeDetails.as_view(), name='loctimeinfo_details'),
     url(r'^tablet/loctime/edit(?:/(?P<pk>\d+))?/$', LocTimeEdit.as_view(), name='loctimeinfo_edit'),
     url(r'^tablet/expression/list/$', ExpressionList.as_view(), name='expression_list'),
