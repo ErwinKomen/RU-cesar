@@ -5237,6 +5237,10 @@ def research_simple_save(request):
                     sData = oProj['json_data'].decode("utf-8")
                     oData = json.loads(sData)
 
+                    # Since this is only called when a Simple research is converted...
+                    oData['stype'] = 'p'    #plain
+                    iStop = 1
+
                     # Create a new research based on the JSON definition
                     research = Research.read_data(owner.username, "", arErr, oData, sSaveName)
                     # Check if a new object has been made

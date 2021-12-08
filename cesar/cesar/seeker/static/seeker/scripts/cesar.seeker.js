@@ -4110,14 +4110,14 @@ var ru = (function ($, ru) {
       },
 
       /**
-       *  save_as
+       *  save_as_advanced
        *
        */
-      save_as : function() {
+      save_as_advanced: function () {
         try {
-          $("#save_as").removeClass("hidden");
+          $("#save_as_advanced").removeClass("hidden");
         } catch (ex) {
-          private_methods.errMsg("save_as", ex);
+          private_methods.errMsg("save_as_advanced", ex);
         }
       },
 
@@ -4221,7 +4221,7 @@ var ru = (function ($, ru) {
               sUrl = response['editurl'];
               // Create a response
               lHtml.push("<div>");
-              lHtml.push("<p>Reloading <span class='badge'>" + sSaveName + "</span>" + loc_sWaiting + "</p>");
+              lHtml.push("<p>Open project <span class='badge'>" + sSaveName + "</span> here below</p>");
               lHtml.push("<p>");
               switch (savetype) {
                 case "project":
