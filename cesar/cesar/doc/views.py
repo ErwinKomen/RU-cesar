@@ -92,14 +92,20 @@ def concrete_main(request):
             obj['created'] = item.get_created()
             # obj['download'] = reverse('concrete_download', kwargs={'pk': item.id})
             text_list.append(obj)
-    context = {'title': 'Document processing',
+    context = {'title': 'Tablet process',
                'frmUpload': frmUpload,
                'frmBrysb': frmBrysb,
                'superuser': superuser,
                'message': 'Radboud University CESAR',
                'textlist': text_list,
-               'intro_breadcrumb': 'Concreteness',
+               'intro_breadcrumb': 'Tablet',
                'year': datetime.now().year}
+
+    if user_is_ingroup(request, TABLET_EDITOR) or  user_is_superuser(request):
+        # Adapt the app editor status
+        context['is_app_editor'] = True
+        context['is_tablet_editor'] = context['is_app_editor']
+
     return render(request, template, context)
 
 def import_brysbaert(request):
@@ -506,6 +512,9 @@ class ConcreteEdit(BasicDetails):
             ]
         context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
         context['is_app_uploader'] = context['is_app_editor']
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request):
+            # Adapt the app editor status
+            context['is_tablet_editor'] = True
 
         # Return the context we have made
         return context
@@ -563,38 +572,43 @@ class ConcreteListView(BasicList):
             {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'}
             ]},
         {'section': 'other', 'filterlist': [
+            {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'},
             {'filter': 'fdocs',     'fkfield': 'fdocs',  'keyFk': 'fdocs'}]}
         ]
 
     def initializations(self):
-        # Check if I am superuser or not
-        self.superuser = self.request.user.is_superuser
-        if self.superuser:
-            self.order_cols = ['created', 'fdocs__owner__username', 'name', '']
-            self.order_default = ['-created', 'fdocs__owner__username', 'name']
-            self.order_heads = [
-                {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
-                {'name': 'Owner', 'order': 'o=2', 'type': 'str', 'custom': 'owner',      'linkdetails': True},
-                {'name': 'Name',  'order': 'o=3', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
-                {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
-            self.filters = [
-                {'name': 'Name',  'id': 'filter_name',  'enabled': False},
-                {'name': 'Owner', 'id': 'filter_owner', 'enabled': False}
-                ]
-            self.searches = [
-                {'section': '', 
-                 'filterlist': [
-                    {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
-                    {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
+        oErr = ErrHandle()
+        try:
+            # Check if I am superuser or not
+            self.superuser = self.request.user.is_superuser
+            if self.superuser:
+                self.order_cols = ['created', 'fdocs__owner__username', 'name', '']
+                self.order_default = ['-created', 'fdocs__owner__username', 'name']
+                self.order_heads = [
+                    {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
+                    {'name': 'Owner', 'order': 'o=2', 'type': 'str', 'custom': 'owner',      'linkdetails': True},
+                    {'name': 'Name',  'order': 'o=3', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+                    {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
+                self.filters = [
+                    {'name': 'Name',  'id': 'filter_name',  'enabled': False},
+                    {'name': 'Owner', 'id': 'filter_owner', 'enabled': False}
                     ]
-                 },
-                {'section': 'other', 
-                 'filterlist': [
-                    {'filter': 'fdocs', 'fkfield': 'fdocs', 'keyFk': 'fdocs'}
+                self.searches = [
+                    {'section': '', 
+                     'filterlist': [
+                        {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
+                        {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
+                        ]
+                     },
+                    {'section': 'other', 
+                     'filterlist': [
+                        {'filter': 'fdocs', 'fkfield': 'fdocs', 'keyFk': 'fdocs'}
+                        ]
+                     }
                     ]
-                 }
-                ]
-
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteListView/initializations")
 
         return None
 
@@ -602,13 +616,17 @@ class ConcreteListView(BasicList):
         sBack = ""
         sTitle = ""
         html = []
+        oErr = ErrHandle()
+        try:
 
-        # Figure out what to show
-        if custom == "created":
-            sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
-        elif custom == "owner":
-            sBack = instance.fdocs.owner.username
-
+            # Figure out what to show
+            if custom == "created":
+                sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
+            elif custom == "owner":
+                sBack = instance.fdocs.owner.username
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteListView/get_field_value")
         # Retourneer wat kan
         return sBack, sTitle
 
@@ -616,13 +634,15 @@ class ConcreteListView(BasicList):
         # Initialisations
         lstExclude=None
         qAlternative = None
-        if not self.superuser:
-            # Make sure only batches are shown for which this user is the owner
-            username = self.request.user.username
-            owner = User.objects.filter(username = username).first()
-            fdocs = FoliaDocs.objects.filter(owner=owner)
-            if fdocs != None:
-                fields['fdocs'] = fdocs
+        oErr = ErrHandle()
+        try:
+            if not self.superuser:
+                # Make sure only batches are shown for which this user is the owner
+                username = self.request.user.username
+                fields['ownlist'] = User.objects.filter(username = username)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteListView/adapt_search")
 
         # Return standard
         return fields, lstExclude, qAlternative
@@ -631,7 +651,7 @@ class ConcreteListView(BasicList):
         # Allow simple seeker_user to work with this
         context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
         context['is_app_uploader'] = context['is_app_editor']
-        context['is_tablet_editor'] = user_is_ingroup(request, "tablet_editor")
+        context['is_tablet_editor'] = user_is_ingroup(self.request, "tablet_editor")
         return context
 
 
@@ -739,7 +759,8 @@ class ExpressionEdit(BasicDetails):
             # Define the main items to show and edit
             context['mainitems'] = [
                 {'type': 'plain', 'label': "Expression:", 'value': instance.full,   'field_key': "full"},
-                {'type': 'plain', 'label': "Score:",      'value': instance.score,  'field_key': "score"}
+                {'type': 'plain', 'label': "Score:",      'value': instance.score,  'field_key': "score"},
+                {'type': 'plain', 'label': "Lemma's:",    'value': instance.get_lemmas()                },
                 ]       
             # Adapt the app editor status
             context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)

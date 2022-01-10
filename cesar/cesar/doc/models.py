@@ -90,13 +90,37 @@ class Expression(models.Model):
         return self.full
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        # Check if 'lemmas' is okay with 'full'
-        sFull = json.dumps( dict(score=self.score,lemmas= re.split("\s+", self.full)))
-        if self.lemmas != sFull:
-            self.lemmas = sFull
-        # Perform the actual saving
-        response = super(Expression, self).save(force_insert, force_update, using, update_fields)
+        oErr = ErrHandle()
+        try:
+            # Check if 'lemmas' is okay with 'full'
+            sFull = json.dumps( dict(score=self.score,lemmas= re.split("\s+", self.full)))
+            oErr.Status("Expression: {}".format(sFull))
+            if self.lemmas != sFull:
+                self.lemmas = sFull
+            # Perform the actual saving
+            response = super(Expression, self).save(force_insert, force_update, using, update_fields)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Expression/save")
         # Return the appropriate response
+        return response
+
+    def get_lemmas(self):
+        """Show the lemma's of this MWE"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            if not self.lemmas is None:
+                oMwe = json.loads(self.lemmas)
+                lst_lemma = oMwe.get("lemmas")
+                if not lst_lemma is None:
+                    sBack = ", ".join(lst_lemma)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Expression/get_lemmas")
+
+        return sBack
 
     def get_mwe_list():
         """get a list of objects, where each object has the score + the list of lemma parts"""
@@ -107,7 +131,8 @@ class Expression(models.Model):
             lAll = Expression.objects.all().values('score', 'lemmas')
             for oItem in lAll:
                 score = oItem['score']
-                lemmas = json.loads(oItem['lemmas'])
+                oFull = json.loads(oItem['lemmas'])
+                lemmas = oFull['lemmas']
                 lBack.append(dict(score=score, lemmas=lemmas))
         except:
             msg = oErr.get_error_message()
@@ -392,6 +417,9 @@ class FrogLink(models.Model):
         str_parts = ""
         oErr = ErrHandle()
         method = "hidde"    # Alternatives: 'erwin', 'alpino', 'simple', 'hidde'
+        # Make sure we have a list of MWEs available for process_mwe()
+        lst_mwe = Expression.get_mwe_list()
+
         re_diminuative = re.compile(r'.*(m|n|l|ng|p|b|t|d|k|f|v|s|z|ch|g)je(s)?$')
         re_etje = re.compile(r'.*(nn|mm|ll)etje$')
         re_etjes = re.compile(r'.*(nn|mm|ll)etjes$')
@@ -462,6 +490,48 @@ class FrogLink(models.Model):
                 oErr.DoError("strip_diminuative")
             return sBack
 
+        def is_sub(sub, lst):
+            ln = len(sub)
+            for i in range(len(lst) - ln + 1):
+                if all(sub[j] == lst[i+j] for j in range(ln)):
+                    return True, i
+            return False, -1
+
+        def process_mwe(lst_sent):
+            """Find any MWEs in the sentences list's lemma's and take them out"""
+            lst_back = []
+            lst_found_mwe = []
+            # Create a list of lemma's
+            lst_lemma = []
+            for word in lst_sent:
+                lemma = word.annotation(folia.LemmaAnnotation)
+                lst_lemma.append(lemma.cls)
+            # Check all available MWEs
+            oFound = {}
+            for mwe in lst_mwe:
+                lemmas = mwe['lemmas']
+                score = mwe['score']
+                bFound, idx = is_sub(lemmas, lst_lemma)
+                if bFound:
+                    # Note that this one needs to be taken out
+                    oFound[idx] = mwe
+
+            idx = 0
+            count = len(lst_sent)
+            while idx < count:
+                if idx in oFound:
+                    # Skip a number of items
+                    mwe = oFound[idx]
+                    idx += len(mwe['lemmas'])
+                    lst_found_mwe.append(mwe)
+                else:
+                    # Add item to list
+                    lst_back.append(lst_sent[idx])
+                    # Continue with next one
+                    idx += 1
+
+            return lst_found_mwe, lst_back
+
         try:
             # Create a regular expression to detect a content word
             # re_content = re.compile(r'^(VNW|N)$')
@@ -475,7 +545,15 @@ class FrogLink(models.Model):
                 for sent in para.sentences():
                     # Read through the words
                     word_scores = []
-                    for word in sent.words():
+
+                    # Get an initial list of words
+                    sent_words = [x for x in sent.words()]
+
+                    # Adapt it using MWE
+                    sent_mwes, sent_words = process_mwe(sent_words)
+
+                    # for word in sent.words():
+                    for word in sent_words:
                         # Get to the POS and the lemma of this word
                         pos = word.annotation(folia.PosAnnotation)
                         postag = pos.cls.split("(")[0]
@@ -573,6 +651,19 @@ class FrogLink(models.Model):
                             oScore['concr'] = "NiB" if score < 0 else str(score)
                             # Add it in all lists
                             word_scores.append(oScore)
+                    # Add any MWEs that were found
+                    for oMWE in sent_mwes:
+                        # Get the text of the MWE
+                        sText = " ".join(oMWE['lemmas'])
+                        score = oMWE['score']
+                        oScore = {}
+                        oScore['word'] = sText
+                        oScore['pos'] = "MWE"
+                        oScore['pos_full'] = "MWE"
+                        oScore['lemma'] = sText
+                        oScore['concr'] = str(score)
+                        # Add it in all lists
+                        word_scores.append(oScore)
 
                     # Process the results of this sentence
                     score = 0

@@ -163,12 +163,13 @@
                           <li><a href="{% url 'crpp' %}">Update from /crpp</a></li>
                           <li role="separator" class="divider"></li>
                         {% endif %}
-                        <li><a href="{% url 'concrete_main' %}">Documents (concreteness)</a></li>
-                        <li><a href="{% url 'froglink_list' %}">Concreteness List</a></li>
+                        <li><a href="{% url 'concrete_main' %}">Tablet Process</a></li>
+                        <li><a href="{% url 'froglink_list' %}">Tablet List</a></li>
                         <li><a href="{% url 'loctimeinfo_table' %}" 
-                               title="Table that shows scores for different kinds of location or time">Tablet table</a></li>
+                               title="Table that shows scores for different kinds of location or time">Tablet Location/Time</a></li>
                         {% if is_superuser or is_tablet_editor %}
-                          <li><a href="{% url 'loctimeinfo_list' %}">Tablet location/time</a></li>
+                          <li><a href="{% url 'loctimeinfo_list' %}" 
+                                 title="Location or time score Listview (editable)">Tablet LocTime List</a></li>
                           <li><a href="{% url 'expression_list' %}" title="multi-word expressions">Tablet MWE</a></li>
                         {% endif %}
                         <li role="separator" class="divider"></li>
