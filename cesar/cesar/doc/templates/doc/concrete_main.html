@@ -1,4 +1,4 @@
-﻿{% extends "layout.html" %}
+{% extends "layout.html" %}
 {% load i18n %}
 
 {% block breadcrumbs %}
@@ -170,7 +170,8 @@
               </form>
             </div>
             <div class="row">
-              <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} (n={{otext.n}})</div>
+              <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
+                (n={{otext.n}}, total={{otext.total|floatformat:3}})</div>
               <div class="col-md-3 dropdown">
                 {% if otext.show %}
                   <form>
@@ -229,43 +230,7 @@
               </div>
 
             </div>
-            <table class="func-view">
-              <thead>
-                <tr><th>p</th><th>s</th><th>w</th><th>text</th><th>score</th><th>n</th></tr>
-              </thead>
-              <tbody>
-                {% for para in otext.list %}
-                  <tr>
-                    <td valign="top">{{forloop.counter}}</td>
-                    <td valign="top">(para)</td>
-                    <td valign="top">(para)</td>
-                    <td valign="top">{{para.paragraph}}</td>
-                    <td valign="top" align="right">{% if para.score == "NiB" %}NiB{% else %}{{para.score|floatformat:3}}{% endif %}</td>
-                    <td valign="top" align="right">{{para.n}}</td>
-                  </tr>
-                  {% for sent in para.list %}
-                    <tr>
-                      <td valign="top">{{forloop.parentloop.counter}}</td>
-                      <td valign="top">{{forloop.counter}}</td>
-                      <td valign="top">(sent)</td>
-                      <td valign="top">{{sent.sentence}}</td>
-                      <td valign="top" align="right">{% if sent.score == "NiB" %}NiB{% else %}{{sent.score|floatformat:3}}{% endif %}</td>
-                      <td valign="top" align="right">{{sent.n}}</td>
-                    </tr>
-                    {% for word in sent.list %}
-                      <tr>
-                        <td valign="top">{{forloop.parentloop.parentloop.counter}}</td>
-                        <td valign="top">{{forloop.parentloop.counter}}</td>
-                        <td valign="top">{{forloop.counter}}</td>
-                        <td valign="top">{{word.lemma}}</td>
-                        <td valign="top" align="right">{% if word.concr == "NiB" %}NiB{% else %}{{word.concr|floatformat:3}}{% endif %}</td>
-                        <td valign="top" align="right">1</td>
-                      </tr>
-                    {% endfor %}
-                  {% endfor %}
-                {% endfor %}
-              </tbody>
-            </table>
+            {% include 'doc/text_scores.html' with otext=otext %}
           </div>
         </div>
       {% endfor %}

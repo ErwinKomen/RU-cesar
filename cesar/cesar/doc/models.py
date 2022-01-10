@@ -392,7 +392,6 @@ class FrogLink(models.Model):
         str_parts = ""
         oErr = ErrHandle()
         method = "hidde"    # Alternatives: 'erwin', 'alpino', 'simple', 'hidde'
-        scorecalc = "issue166"
         re_diminuative = re.compile(r'.*(m|n|l|ng|p|b|t|d|k|f|v|s|z|ch|g)je(s)?$')
         re_etje = re.compile(r'.*(nn|mm|ll)etje$')
         re_etjes = re.compile(r'.*(nn|mm|ll)etjes$')
@@ -587,26 +586,21 @@ class FrogLink(models.Model):
                             total += float(obj['concr'])
                     if n < 1:
                         n = 1
+                    # The average of the sentence is the sum of the word-scores divided by the number of word scores
                     avg = score / n
                     sent_scores.append({'score': avg, 'n': n, 'total': total, 'sentence': sent.text(), 'list': word_scores})
+
                 # Process the results of this paragraph
                 score = 0
                 n = 0
                 total = 0
                 for obj in sent_scores:
-                    if scorecalc == "issue166":
-                        total += obj['total']
-                        n += obj['n']
-                    else:
-                        score += obj['score']
-                        n += obj['n']
+                    total += obj['total']
+                    n += obj['n']
                 if n == 0:
                     avg = 0.0
                 else:
-                    if scorecalc == "issue166":
-                        avg = total / n
-                    else:
-                        avg = score / len(sent_scores)
+                    avg = total / n
                 para_scores.append({'score': avg, 'n': n, 'total': total, 'paragraph': para.text(), 'list': sent_scores})
 
             # Process the results of this text
@@ -614,19 +608,12 @@ class FrogLink(models.Model):
             n = 0
             total = 0
             for obj in para_scores:
-                if scorecalc == "issue166":
-                    total += obj['total']
-                    n += obj['n']
-                else:
-                    score += obj['score']
-                    n += obj['n']
+                total += obj['total']
+                n += obj['n']
             if n == 0:
                 avg = 0.0
             else:
-                if scorecalc == "issue166":
-                    avg = total / n
-                else:
-                    avg = score / len(para_scores)
+                avg = total / n
             oText = {'text': self.name, 'score': avg, 'n': n, 'total': total, 'list': para_scores}
 
             # Add the concreteness as string
@@ -642,39 +629,51 @@ class FrogLink(models.Model):
     def get_csv(self):
         """Convert [concr] to CSV-string with header row""" 
 
+        def get_total(oThis):
+            total = oThis.get("total")
+            if total is None or total == "NiB":
+                sBack = "NiB"
+            else:
+                sBack = float(total)
+            return sBack
+
         lCsv = []
         oErr = ErrHandle()
         try:
             # Start with the header
-            oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format("par", "snt", "wrd", "text", "score", "n", "pos")
+            oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format("par", "snt", "wrd", "text", "score", "n", "pos", "total")
             lCsv.append(oLine)
             # Get the concr object
             oConcr = json.loads(self.concr)
             # Process measures for the text as a whole
             score = "NiB" if oConcr['score'] == "NiB" else float(oConcr['score'])
-            oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-                "(text)", "(text)", "(text)", "(the whole text)", score, oConcr['n'], "")
+            total = get_total(oConcr)
+            oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                "(text)", "(text)", "(text)", "(the whole text)", score, oConcr['n'], "", total)
             lCsv.append(oLine)
             # Do paragraphs
             for idx_p, para in enumerate(oConcr['list']):
                 # Output a line for the paragraph
                 score = "NiB" if para['score'] == "NiB" else float(para['score'])
-                oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-                    idx_p+1, "(para)", "(para)", para['paragraph'], score, para['n'], "")
+                total = get_total(para)
+                oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                    idx_p+1, "(para)", "(para)", para['paragraph'], score, para['n'], "", total)
                 lCsv.append(oLine)
                 # Do sentences
                 for idx_s, sent in enumerate(para['list']):
                     # Output a line for the sentence
                     score = "NiB" if sent['score'] == "NiB" else float(sent['score'])
-                    oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-                        idx_p+1, idx_s+1, "(sent)", sent['sentence'], score, sent['n'], "")
+                    total = get_total(sent)
+                    oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                        idx_p+1, idx_s+1, "(sent)", sent['sentence'], score, sent['n'], "", total)
                     lCsv.append(oLine)
                     # Do words
                     for idx_w, word in enumerate(sent['list']):
                         # Output a line for the paragraph
                         score = "NiB" if word['concr'] == "NiB" else float(word['concr'])
-                        oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-                            idx_p+1, idx_s+1, idx_w+1, word['lemma'], score, 1, word['pos_full'])
+                        total = score
+                        oLine = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                            idx_p+1, idx_s+1, idx_w+1, word['lemma'], score, 1, word['pos_full'], total)
                         lCsv.append(oLine)
             # REturn the whole
             return "\n".join(lCsv)
