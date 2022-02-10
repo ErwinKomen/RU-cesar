@@ -1,0 +1,128 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="css/site.css" />
+  <script src="js/jquery-1.10.2.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="js/xaerzhina.js"></script>
+  <title>Хаьржина</title>
+</head>
+<body style="font-family: sans-serif">
+  <section class="container">
+    <div class="jumbotron">
+      <h1>
+        <span>Йāха хаьржина хилар</span>
+        <span class="pull-right hidden"><a href="xaerzhina/info.html" class="btn btn-primary btn-sm">Кхин а &raquo;</a></span>
+      </h1>
+      <p class="lead">Ингалс маттера нохчийн матте тептар гочдар
+      </p>
+    </div>
+
+    <!-- Possibility to show errors -->
+    <div id="xaerzhina_err"></div>
+    <!-- Sample -->
+    <div class="hidden" id="data-source" href="xaerzhina/xaerzhina.json"></div>
+
+    <section class="row">
+      <!-- The stories -->
+      <div class="col-md-12 col-xs-12">
+        <h3>
+          <span>Дāкъош</span>
+          <span class="pull-right lastedit" style="font-size: xx-small;">-</span>
+        </h3>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Корта</th>
+              <th>ЦІе</th>
+              <th>Ингалс</th>
+              <th>Дан</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hidden one-story-sample">
+              <td>{{label}}</td>
+              <td>{{che}}</td>
+              <td>{{name}}</td>
+              <td>
+                <a title="ДІаяздина дāкъа деша" 
+                   href="xaerzhina/diicar_{{id}}.html" 
+                   class="btn btn-primary btn-sm">деша</a>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+
+      </div>
+
+    </section>
+
+    <section class="row">
+      <!-- Background and other material -->
+      <div class="col-md-12 col-xs-12">
+        <h3>Іалашо</h3>
+        <p>
+          Нидарландхойн махкахь хьала а кхиина, студент волчу хенахь сан дāхар хийцина долу цхьа тептар дешна ас.
+          Ткъа хІинца, нохчийн мотт кхидІа а Іамош, сан ойла хилла и тептар нохчийн матте гочдан.
+          Хьуна хьалхā, хьоме дешархо, юьхьара гІулчаш гуш ю. 
+          Схьахетарехь и гоч кхоччуш гІалаташ доцуш хир дац, амма бакъдолчу дагара ду и хьуна.
+          Сан сатийсар ду, хьан дāхар а хуьйцур ду оцу тептаро.
+          Цундела боху ас: ларвина (я ларйина) хилахьа!
+        </p>
+        <h3>ЛадогІа</h3>
+        <p>
+          Сан ойла ю тептаран хІора дāкъа шен-шен подкаста чу дІаяздан.
+          Цунах хІинццалц хІун хилла <a href="https://anchor.fm/erwin-komen">кхузахь</a> хуьлу.
+        </p>
+        <h3>ГІо</h3>
+        <p>
+          Нагахь санна цхьаннан лаам белахь, суна гІо дан а йиш ю.
+          Масала, ингалс мотт дикка хууш волчу нохчо соьца цхьаьна айса дина гоч нисдалур дара.
+          Я мотт цІена бешалочу зудчо (!) подкасташкахь гочдина дакъош дІаяздалур дара.
+          ХІокху адресца соьца зІе тоха мегар ду: 
+          <span style="color: darkgreen">beerallin dot gheenash at solcon dot nl</span>.
+        </p>
+        <h3>Баркалла алар</h3>
+        <p>Къаьстана баркалла ду суна мотт Іамо гІо диначу массо а нохчийн доттагІашна.</p>
+        <h3>Ингалс меттан тептар</h3>
+        <p>
+          Ас ма-аллара, тептар уггар хьалха ингалс маттахь дІаяздина хилла. 
+          Цунах лаьцна атта хІума хаало, интернетехула а лелаш.
+          Ингалс меттан тептаран цІе иштта ю: "Selected to live".
+          Ткъа яздархочуьнан цІе ингалс маттахь ю: "Johanna Ruth Dobschiner".
+          Хаа ду шуна, хІара тептар цхьадолчу меттанашка гочдина ду: 
+        </p>
+          <table>
+            <tbody>
+              <tr><td>нидарландхойн а</td><td><span class="book-title">Te mogen leven</span>,</td></tr>
+              <tr><td>немцойн а</td><td><span class="book-title">Zum leben erwählt</span>,</td></tr>
+              <tr><td>франсахойн а</td><td><span class="book-title">Destinée à survivre</span>,</td></tr>
+              <tr><td>италианийн а</td><td><span class="book-title">La sopravvissuta</span>,</td></tr>
+              <tr><td>датхойн а</td><td><span class="book-title">Udvalgt til at leve</span>,</td></tr>
+              <tr><td>шведхойн а</td><td><span class="book-title">Utvalgt att leva</span>,</td></tr>
+              <tr><td>финхойн а</td><td><span class="book-title">Valittu elämään</span>,</td></tr>
+              <tr><td>венгархойн а</td><td><span class="book-title">Életre választott</span>.</td></tr>
+            </tbody>
+          </table>
+        <p>
+          ХІинцале а хІара тептар оьрсийн матте гочдаза лаьтта...
+        </p>
+      </div>
+
+    </section>
+  </section>
+
+  <!-- Footer section -->
+  <div>
+    <footer>
+      <span>Komen, E.R. &copy; 2022 </span>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+      <span>ЗІе тохар: beerallin dot gheenash at solcon dot nl</span>
+    </footer>
+  </div>
+</body>
+</html>

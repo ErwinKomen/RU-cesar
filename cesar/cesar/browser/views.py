@@ -19,7 +19,7 @@ from django.views.generic import ListView, View
 from datetime import datetime
 from time import sleep
 
-from cesar.settings import APP_PREFIX
+from cesar.settings import APP_PREFIX, WRITABLE_DIR
 from cesar.browser.services import *
 from cesar.browser.models import *
 from cesar.browser.forms import *
@@ -317,6 +317,59 @@ def signup(request):
     else:
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
+
+def signuplist(request):
+    """Create users based on the signuplist in [filename] JSON"""
+
+    oErr = ErrHandle()
+    msg = "done"
+    lUsernames = []
+    iCount = 0
+    user_file = "cesar_user_add.json"
+    try:
+        is_superuser = user_is_superuser(request)
+        if not is_superuser:
+            msg = "Sorry, only allowed for the super user"
+        else:
+            # Figure out what the filename is
+            filename = os.path.abspath(os.path.join(WRITABLE_DIR, "..", user_file))
+            # Read the file
+            if os.path.exists(filename):
+                with open(filename, "r", encoding="utf-8") as fp:
+                    lUsernames = json.load(fp)
+                # Walk through the usernames
+                for oItem in lUsernames:
+                    username = oItem.get("username")
+                    raw_password = oItem.get("password")
+                    email = oItem.get("email")
+                    if not username is None and not raw_password is None:
+                        # First see if this user is already present or not
+                        user = User.objects.filter(username__iexact=username).first()
+                        if user is None:
+                            # Create the user
+                            user = User.objects.create_user(
+                                username=username, 
+                                email=email,
+                                password=raw_password)
+                            # Authenticate password
+                            user = authenticate(username=username, password=raw_password, is_staff=True)
+                            user.is_staff = True
+                            user.save()
+                            # Keep track of the amount of users
+                            iCount += 1
+                            # Add user to the "RegistryUser" group
+                            gQs = Group.objects.filter(name="seeker_user")
+                            if gQs.count() > 0:
+                                g = gQs[0]
+                                g.user_set.add(user)
+                msg = "added {} users".format(iCount)
+            else:
+                msg = "Sorry, cannot find file: {}".format(filename)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("signuplist")
+    oErr.Status("signuplist: {}".format(msg))
+    return redirect('home')
 
 def sync_crpp(request):
     """Synchronize information FROM /crpp"""
