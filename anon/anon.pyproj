@@ -100,6 +100,7 @@
     <Content Include="brief\scripts\jquery-1.10.2.js" />
     <Content Include="brief\scripts\pbrief.js" />
     <Content Include="letter\css\site.css" />
+    <Content Include="letter\simplecesar.html" />
     <Content Include="letter\xaerzhina\diicar_001.html" />
     <Content Include="letter\xaerzhina\diicar_010.html" />
     <Content Include="letter\xaerzhina\diicar_009.html" />

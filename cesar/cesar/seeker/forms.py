@@ -603,35 +603,77 @@ class RelatedForm(forms.Form):
         self.fields['skip'].choices = SEARCHSIMPLE_SKIP
 
     def get_raxis_display(self):
-        if 'raxis' in self.initial:
-            k = self.initial['raxis']
-            v = next(tp[1] for tp in self.fields['raxis'].choices if str(tp[0]) == k)
-        else:
-            v = "Bad raxis: build afresh"
+        oErr = ErrHandle()
+        v = ""
+        try:
+            if 'raxis' in self.initial:
+                k = self.initial['raxis']
+                v = next((tp[1] for tp in self.fields['raxis'].choices if str(tp[0]) == k), "warning: UNKNOWN [raxis]")
+            else:
+                v = "Bad raxis: build afresh"
+            if "warning: UNKNOWN" in v:
+                oErr.Status(v)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("RelatedForm/get_raxis_display")
+            v = "UNKNOWN [raxis]"
         return v
 
     def get_towards_display(self):
-        if 'towards' in self.initial:
-            k = self.initial['towards']
-            v = next(tp[1] for tp in self.fields['towards'].choices if str(tp[0]) == k)
-        else:
-            v = "Bad towards: build afresh"
+        oErr = ErrHandle()
+        v = ""
+        try:
+            if 'towards' in self.initial:
+                k = self.initial['towards']
+                k_strip = k.strip()
+                v = next((tp[1] for tp in self.fields['towards'].choices if str(tp[0]) == k or str(tp[0]) == k_strip), "warning: UNKNOWN [towards]")
+            else:
+                v = "Bad towards: build afresh"
+            if "warning: UNKNOWN" in v:
+                lhtml = []
+                lhtml.append("Looking for [{}] within:".format(k))
+                for item in self.fields['towards'].choices:
+                    lhtml.append(" [{},{}]".format(item[0], item[1]))
+                msg = "{} {}".format(v, "".join(lhtml))
+                oErr.Status(msg)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("RelatedForm/get_towards_display")
+            v = "UNKNOWN [towards]"
         return v
 
     def get_pos_display(self):
-        if 'pos' in self.initial:
-            k = self.initial['pos']
-            v = next(tp[1] for tp in self.fields['pos'].choices if str(tp[0]) == k)
-        else:
-            v = "Bad pos: build afresh"
+        oErr = ErrHandle()
+        v = ""
+        try:
+            if 'pos' in self.initial:
+                k = self.initial['pos']
+                v = next((tp[1] for tp in self.fields['pos'].choices if str(tp[0]) == k), "warning: UNKNOWN [pos]")
+            else:
+                v = "Bad pos: build afresh"
+            if "warning: UNKNOWN" in v:
+                oErr.Status(v)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("RelatedForm/get_pos_display")
+            v = "UNKNOWN [pos]"
         return v
 
     def get_skip_display(self):
-        if 'skip' in self.initial:
-            k = self.initial['skip']
-            v = next(tp[1] for tp in self.fields['skip'].choices if str(tp[0]) == k)
-        else:
-            v = "Bad skip: build afresh"
+        oErr = ErrHandle()
+        v = ""
+        try:
+            if 'skip' in self.initial:
+                k = self.initial['skip']
+                v = next((tp[1] for tp in self.fields['skip'].choices if str(tp[0]) == k), "warning: UNKNOWN [skip]")
+            else:
+                v = "Bad skip: build afresh"
+            if "warning: UNKNOWN" in v:
+                oErr.Status(v)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("RelatedForm/get_skip_display")
+            v = "UNKNOWN [skip]"
         return v
 
      
