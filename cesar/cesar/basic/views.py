@@ -888,7 +888,10 @@ class BasicList(ListView):
                         filter = filter & item
                     if qAlternative:
                         filter = ( filter ) | ( ( qAlternative ) & filter )
-                    qs = self.model.objects.filter(Q(fdocs__owner_id=64))
+
+                    # DEBUG
+                    #qs = self.model.objects.filter(Q(fdocs__owner_id=64))
+
                     # Check if excluding is needed
                     if lstExclude:
                         # qs = self.model.objects.filter(*lstQ).exclude(*lstExclude).distinct()
