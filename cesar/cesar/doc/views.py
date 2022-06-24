@@ -144,8 +144,9 @@ def import_brysbaert(request):
                 # Get the contents of the imported file
                 file = request.FILES['file_field']
 
-                # Clear whatever there was in Brysbaert
-                Brysbaert.clear()
+                if bClean:
+                    # Clear whatever there was in Brysbaert
+                    Brysbaert.clear()
 
                 # Read the file into a structure
                 lLines = []
