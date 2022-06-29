@@ -1889,6 +1889,7 @@ var ru = (function ($, ru) {
           private_methods.errMsg("search_start", ex);
         }
       },
+
       /**
        * search_ordered_start
        *    Perform a simple 'submit' call to search_start
@@ -2110,6 +2111,32 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("toggle_click", ex);
+        }
+      },
+
+
+      aws_filter_test: function (e) {
+        var data = [],
+            url = "https://rkxy8021l6.execute-api.eu-central-1.amazonaws.com/Prod/filter/";
+
+        try {
+          // Call using  get
+          $.get(url, function (data) {
+            var deze;
+
+            deze = data;
+          });
+
+          //// Call the AWS url
+          //$.getJSON(url, function(result) {
+
+          //  $.each(result, function(i, field) {
+          //    var x = field;
+          //  })
+          //});
+
+        } catch (ex) {
+          private_methods.errMsg("aws_filter_test", ex);
         }
       },
 

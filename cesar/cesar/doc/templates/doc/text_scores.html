@@ -30,7 +30,15 @@
             <td valign="top">{{forloop.parentloop.counter}}</td>
             <td valign="top">{{forloop.counter}}</td>
             <td valign="top">{{word.lemma}}</td>
-            <td valign="top" align="right">{% if word.concr == "NiB" %}NiB{% else %}{{word.concr|floatformat:3}}{% endif %}</td>
+            <td valign="top" align="right" {% if mode == "editable" %}class="editable"{% endif %}>
+              {% if mode == "editable" %}
+                <div contenteditable="true">
+                  {% if word.concr == "NiB" %}NiB{% else %}{{word.concr|floatformat:3}}{% endif %}
+                </div>
+              {% else %}
+                {% if word.concr == "NiB" %}NiB{% else %}{{word.concr|floatformat:3}}{% endif %}
+              {% endif %}
+            </td>
             <td valign="top" align="right">{% if word.concr == "NiB" %}0{% else %}1{% endif %}</td>
             <td valign="top" align="right">{% if word.concr == "NiB" %}NiB{% else %}{{word.concr|floatformat:3}}{% endif %}</td>
           </tr>
@@ -39,3 +47,13 @@
     {% endfor %}
   </tbody>
 </table>
+
+{% if user.is_superuser %}
+  <div>
+    <a role="button" class="btn btn-xs jumbo-1"
+       onclick="ru.basic.aws_filter_test(this);">
+      Test AWS filter
+    </a>
+  </div>
+{% endif %}
+

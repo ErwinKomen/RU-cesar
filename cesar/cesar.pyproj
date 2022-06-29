@@ -188,6 +188,9 @@
     <Folder Include="cesar\browser\templates\browser\" />
     <Folder Include="cesar\doc\" />
     <Folder Include="cesar\doc\migrations\" />
+    <Folder Include="cesar\doc\static\" />
+    <Folder Include="cesar\doc\static\doc\" />
+    <Folder Include="cesar\doc\static\doc\scripts\" />
     <Folder Include="cesar\doc\templates\" />
     <Folder Include="cesar\doc\templates\doc\" />
     <Folder Include="cesar\lingo\" />
@@ -296,6 +299,7 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\text_info.html" />
+    <Content Include="cesar\doc\static\doc\scripts\cesar.doc.js" />
     <Content Include="cesar\doc\templates\doc\import_docs.html" />
     <Content Include="cesar\doc\templates\doc\import_nexis.html" />
     <Content Include="cesar\doc\templates\doc\nexis_main.html" />
@@ -303,6 +307,7 @@
     <Content Include="cesar\doc\templates\doc\foliadocs_view.html" />
     <Content Include="cesar\doc\templates\doc\import_brys.html" />
     <Content Include="cesar\doc\templates\doc\import_concrete.html" />
+    <Content Include="cesar\doc\templates\doc\text_scores.html" />
     <Content Include="cesar\lingo\static\lingo\content\bootstrap.min.css" />
     <Content Include="cesar\lingo\static\lingo\content\lingo.css" />
     <Content Include="cesar\lingo\static\lingo\content\ru-base.css" />

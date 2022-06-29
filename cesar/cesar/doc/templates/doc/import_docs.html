@@ -16,7 +16,7 @@
             <h4>{{otext.text}}</h4>
             <p>Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
               (n={{otext.n}}, total={{otext.total|floatformat:3}})</p>
-            {% include 'doc/text_scores.html' with otext=otext %}
+            {% include 'doc/text_scores.html' with otext=otext mode='view' %}
         {% endfor %}
         </div>
 
