@@ -1,0 +1,281 @@
+{% extends extend_template %}
+{% load i18n %}
+
+{% block scripts %}
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'basic/content/basic.css' %}" />
+    <script src="{% static 'basic/scripts/basic.js' %}"></script>
+{% endblock %}
+
+
+{% block breadcrumbs %}
+    {% include 'breadcrumb_list.html' %}
+{% endblock %}
+
+{% block content %}
+  <div>
+    {% if authenticated and permission %}
+      <!-- Upper part of the generic details view interface -->
+      <div class="panel panel-default gold-head subform">
+        <div class="row">&nbsp;</div>
+        <div class="row">
+          <!-- Possibility to go back-->
+          <div class="col-md-1">
+            <a class="btn jumbo-1" 
+               href="{{listview}}"
+               title="Return to the list of items">&lt;&lt;</a>
+            <!-- Any additional buttons here in the topleft -->
+            {% for buttonspec in topleftbuttons %}
+              <a class="btn jumbo-1" href="{{buttonspec.url}}" title="{{buttonspec.title}}">{{buttonspec.label}}</a>
+            {% endfor %}
+          </div>
+
+          <!-- Actual contents -->
+          <div class="col-md-10">
+
+            <div class="row">
+              <div class="col-md-12">
+                <h3>
+                  <span>{{titlesg}} details</span>
+                  {% if title_addition %}
+                    <span>{{title_addition|safe}}</span>
+                  {% endif %}
+                  {% if title_right %}
+                    <span class="pull-right">{{title_right|safe}}</span>
+                  {% elif is_app_editor and new_button %}
+                    <span id="add_{{new_button_name}}" class="pull-right">
+                      {% csrf_token %}
+                      <a class="btn btn-xs jumbo-3" role="button" 
+                          onclick="document.getElementById('create_new_{{new_button_name}}').submit();" >
+                        <span class="glyphicon glyphicon-plus"></span>{{add_text}} {{new_button_title}}
+                      </a>
+                    </span>
+                  {% endif %}
+                </h3>
+
+                <!-- Room to have the form-link to create a new list-item -->
+                <div class="hidden" >
+                  <form action="{{new_button_url}}" method="post" id="create_new_{{new_button_name}}">
+                    {% csrf_token %}
+                    <!-- Any parameters that need adding -->
+                    {% if new_button_params %}
+                      {% for item in new_button_params %}
+                        <input name="{{item.name}}" value="{{item.value}}" />
+                      {% endfor %}
+                    {% endif %}
+                  </form>
+                </div>
+
+                {% block detailsview %}{% endblock detailsview %}
+
+                <!-- Show the main items in a standard way -->
+                <div id="{{modelname}}_edit">
+                    {% include 'basic/basic_edit.html' %}
+                </div>
+
+              </div>
+
+            </div>
+
+            {% if after_details %}
+              <!-- Optionally more after the details view -->
+              <div id="after_details">{{after_details|safe}}</div>
+            {% endif %}
+
+            {% if sections and sections|length > 1 %}
+              <!-- List of buttons for sections -->
+              <div class="row">
+                <div class="col-md-12">
+                {% for section in sections %}
+                  <span>
+                    <a class="btn btn-xs jumbo-1" role="button" targetid="{{section.id}}" title="Show/Hide {{section.name}}"
+                       onclick="ru.basic.toggle_click(this);">{{section.name}}</a>
+                  </span>
+                {% endfor %}
+                </div>
+              </div>
+
+              <!-- Room for each section -->
+              {% for section in sections %}
+                <div id="{{section.id}}" class="hidden panel panel-default">
+                  <!-- Show this section in a standard way -->
+                  <h4>{{section.name}}</h4>
+                  <table>
+                    <tbody>
+                      {% for item in section.fields %}
+                        <tr class="view-row">
+                          <td class="tdnowrap" valign="top">{{item.label}}</td>
+                          <td class="hoverable" {% if item.align %}align="{{item.align}}"{% endif %}>
+                            {% spaceless %}
+                              {% if item.type == "bold" %}{% if item.link == "" %}<b>{{item.value}}</b>{% else %}<a href="{{item.link}}"><b>{{item.value}}</b></a>{% endif %}
+                              {% elif item.type == "line" %}<div style="white-space: pre-line;">{{item.value|safe}}</div>
+                              {% elif item.type == "safe" %}{{item.value|safe}}
+                              {% elif item.type == "safeline" %}<div style="white-space: pre-line;">{{item.value|safe}}</div>
+                              {% else %}{{item.value}}
+                              {% endif %}
+                            {% endspaceless %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+
+                    </tbody>
+                  </table>
+                </div>
+              {% endfor %}
+            {% endif %}
+
+            <!-- List of post-load items -->
+            {% for postload in postload_objects %}
+              <div class="row">&nbsp;</div>
+              <div id="{{postload.prefix}}_postload_set" class="post-load" targeturl="{{postload.url}}">
+                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+              </div>
+            {% endfor %}
+
+
+            <!-- Lists of related items -->
+            {% for related in related_objects %}
+              <div class="row" id="basic_{{related.prefix}}_set">
+                <div class="col-md-12">
+                  <h4>{{related.title}}</h4>
+
+                  <!-- Check if there is any contents -->
+                  {% if related.rel_list|length == 0 %}
+                    <div><i>(the list of {{related.title}} for this {{titlesg}} is empty)</i></div>
+                  {% else %}
+                    <!-- List of related items -->
+                    <table class="func-view compact-simple" style="width: 100%;">
+                      <thead>
+                        <tr>
+                          {% if related.use_counter %}
+                            <th colspan="{% if related.editable %}2{% else %}1{% endif %}" class="tdnowrap">#</th>
+                          {% endif %}
+                          {% for col in related.columns %}<th class="tdnowrap">{{col}}</th>{% endfor %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for relrow in related.rel_list %}
+                        <tr class="form-row">
+                          <!-- Counter-->
+                          {% if related.use_counter %}<td>{{forloop.counter}}</td>{% endif %}
+
+                          <!-- Remaining cells -->
+                          {% for relcol in relrow %}
+                            <td {% if relcol.title %}title="{{relcol.title}}"{% endif %}
+                                class="tdnowrap {% if relcol.link %}clickable{% endif %}"
+                                {% if relcol.align %}align="{{relcol.align}}"{% endif %}
+                                {% if relcol.main %}style="width: 100%;"{% endif %}
+                                >
+                              {% if relcol.value %}
+                                {% if relcol.link %}
+                                  <a href="{{relcol.link}}" class="nostyle">{{relcol.value|safe}}</a>
+                                {% else %}
+                                  {{relcol.value|safe}}
+                                {% endif %}
+                              {% endif %}
+                            </td>
+                          {% endfor %}
+
+                          <!-- Possible delete cell -->
+
+                        </tr>
+                        {% endfor %}
+
+                        {% if related.editable and is_app_editor %}
+                          <!-- Provide an empty row that can be added -->
+                          <tr class="form-row empty-form">
+                            <!-- A 1-based counter for the forms in this set-->
+                            {% if related.use_counter %}<td style="min-width: 20px;"><span>__counter__</span></td>{% endif %}
+
+                            <!-- A button to edit or save this item -->
+                            <td valign="top" class="clickable hightlighted"  style="min-width: 20px;">
+                              <div class="view-mode hidden">
+                                <a onclick="ru.passim.seeker.gold_row_edit(this, 'edit');" title="Edit this item">
+                                  <span class="glyphicon glyphicon-pencil"></span>
+                                </a>
+                              </div>
+                              <div class="edit-mode">
+                                <a title="Save changes to this item"
+                                    onclick="ru.basic.formset_update(this);"
+                                    targetid="sermongold_eqset"
+                                    targeturl="">
+                                  <span class="glyphicon glyphicon-ok"></span>
+                                </a>
+                              </div>
+                            </td>
+
+                          </tr>
+
+                          <!-- Add row -->
+                          <tr class="basic-add-row">
+                            <td colspan="5">
+                              <span id="add_one_{{related.prefix}}">
+                                <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add an item</a>
+                              </span>
+                            </td>
+                          </tr>
+                        {% endif %}
+
+                      </tbody>
+                    </table>
+                  {% endif %}
+                </div>
+
+              </div>
+            {% endfor %}
+
+            {% if add_to_details %}
+              <div id="add_to_details">{{add_to_details|safe}}</div>
+            {% endif %}
+
+          </div>
+
+          <!-- Button for History and for Editing (if user has permission) -->
+          <div class="col-md-1">
+            {% if history_button %}
+              <!-- History button -->
+            <a class="view-mode btn jumbo-1"
+               data-toggle="modal" 
+               data-target="#modal-history">
+              <span class="glyphicon glyphicon-stats" title="Revision history"></span>
+            </a>
+            {% endif %}
+
+            {% if is_app_editor and admindetails and show_admin %}
+              <!-- Edit button -->
+              <a mode="edit" class="view-mode btn jumbo-1"
+                  onclick="ru.basic.goto_url('{{admindetails}}')">
+                <span class="glyphicon glyphicon-pencil" title="Edit these data"></span>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="row">&nbsp;</div>
+
+      </div>
+
+    {% elif authenticated and not permission %}
+      <div class="explanation">
+        <p>Dear user, you do not have permission to view this item.</p>
+      </div>
+    {% else %}
+      <div class="explanation">
+        <p>Dear user, you are <b>not</b> logged in.</p>
+        <p>Unfortunately this means that you will not be able to perform any searches.</p>
+        <p>Should you want to work with this application, here are your options:
+          <ul>
+            <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
+            <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>
+          </ul>
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+
+<script>
+  ru.basic.init_events();
+</script>
+
+{% endblock content %}
+

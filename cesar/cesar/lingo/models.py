@@ -202,6 +202,9 @@ class Experiment(models.Model):
     # [1] The URL to this experiment
     home = models.CharField("Home page part",  max_length=MAX_TEXT_LEN, default="tcpf")
 
+    # [1] The number of questions that need to be asked to each participant
+    responsecount = models.IntegerField("Number of responses per participant", default=10)
+
     # [0-1] optional time after which this should not be shown anymore
     until = models.DateTimeField("Remove at", null=True, blank=True)
     # [1] the explanatory message that needs to be shown (in html)
@@ -212,6 +215,8 @@ class Experiment(models.Model):
     ptcpfields = models.TextField("Participant fields", default="[]", blank=True)
     # [0-1] full metadata specification
     metafields = models.TextField("Participant metadata", default = "{}", blank=True)
+    # [1] Show the end button or not?
+    showendbutton = models.TextField("Show the end button", default = "no")
     # [1] the status of this message (can e.g. be 'archived')
     status = models.CharField("Status", choices=build_abbr_list(EXPERIMENT_STATUS), 
                               max_length=5)
@@ -334,6 +339,9 @@ class Experiment(models.Model):
     def meta_lngother_include(self): 
         return self.meta_include("lngother")
     
+    def meta_teaches_include(self): 
+        return self.meta_include("teaches")
+    
     def meta_eduother_include(self): 
         return self.meta_include("eduother")
     
@@ -363,6 +371,9 @@ class Experiment(models.Model):
 
     def meta_lngother_display(self):
         return self.get_meta("lngother")
+
+    def meta_teaches_display(self):
+        return self.get_meta("teaches")
 
     def meta_eduother_display(self):
         return self.get_meta("eduother")
@@ -419,6 +430,8 @@ class Participant(models.Model):
     eduother = models.TextField("Other education", blank=True, default="")
     # [0-1] Email (optional)
     email = models.CharField("E-mailadres", max_length=MAX_TEXT_LEN, blank=True, default="")
+    # [0-1] Teaches (optional)
+    teaches = models.CharField("Teaches", max_length=MAX_TEXT_LEN, blank=True, default="")
     # [1] Record when it was created
     created = models.DateTimeField(default=timezone.now)
 
@@ -440,9 +453,9 @@ class Response(models.Model):
     """Answers of one participant to one experiment"""
 
     # [1] The experiment
-    experiment = models.ForeignKey(Experiment)
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name="experiment_responses")
     # [1] The Participant
-    participant = models.ForeignKey(Participant)
+    participant = models.ForeignKey(Participant, on_delete=models.CASCADE, related_name="participant_responses")
     # [0-1] The answers as a json object (stringified)
     answer = models.TextField("Answers", blank=True, null=True)
     # [1] Record when this response was created

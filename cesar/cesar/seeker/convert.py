@@ -238,9 +238,16 @@ def ConvertProjectToCrpx(basket):
         # Add the user-defined features
         iLastNum = len(standard_features)+1
         feature_list = gateway.get_feature_list()
+        forbidden_names = [x.lower() for x in standard_features]
         for idx in range(0, len(feature_list)):
             iNum = iLastNum + idx
             ft = feature_list[idx]
+            # Name check
+            if ft.name.lower() in forbidden_names:
+                sCrpxName = ""
+                sCrpxContent = ["Sorry, please don't use the feature name [{}]".format(ft.name)]
+                return sCrpxName, sCrpxContent
+            # We are okay...
             oDbFeat = {"name": ft.name, "QCid": iQCid, "FtNum": iNum}
             dbfeatlist.append(oDbFeat)
 

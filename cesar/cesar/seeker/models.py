@@ -154,6 +154,10 @@ class SearchMain(models.Model):
     category = models.CharField("Constituent category", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [0-1] Extended: lemma
     lemma = models.CharField("Lemma", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] Extended: feature category
+    fcat = models.CharField("Feature category", max_length=MAX_TEXT_LEN, null=True, blank=True)
+    # [0-1] Extended: feature value
+    fval = models.CharField("Feaure value", max_length=MAX_TEXT_LEN, null=True, blank=True)
     # [0-1] Extended: related
     related = models.TextField("Related constituent(s)", null=True, blank=True)
     # [0-1] None of the above: CQL
@@ -183,7 +187,7 @@ class SearchMain(models.Model):
         # Return the new copy
         return new_copy
 
-    def create_item(function, value, operator, exclude=None, category=None, lemma=None, related=None, cql=None):
+    def create_item(function, value, operator, exclude=None, category=None, lemma=None, fcat=None, fval=None, related=None, cql=None):
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
         function_word = choice_value(SEARCH_FUNCTION, function)
         # Create initial object
@@ -200,6 +204,12 @@ class SearchMain(models.Model):
         if lemma != None: 
             obj.lemma = lemma
             need_saving = True
+        if fcat != None:
+            obj.fcat = fcat
+            need_saving = True
+        if fval != None:
+            obj.fval = fval
+            need_saving = True
         if related != None: 
             obj.related = related
             need_saving = True
@@ -214,7 +224,7 @@ class SearchMain(models.Model):
         # Return the object as we have it
         return obj
 
-    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None, related=None, cql=None):
+    def adapt_item(self, function, value, operator, exclude=None, category=None, lemma=None, fcat=None, fval=None, related=None, cql=None):
         """Adapt the search and save it"""
 
         operator_matches = choice_value(SEARCH_OPERATOR, operator)
@@ -239,6 +249,12 @@ class SearchMain(models.Model):
             need_saving = True
         if self.lemma != lemma: 
             self.lemma = lemma
+            need_saving = True
+        if self.fcat != fcat:
+            self.fcat = fcat
+            need_saving = True
+        if self.fval != fval:
+            self.fval = fval
             need_saving = True
         if self.related != related: 
             self.related = related
@@ -292,12 +308,14 @@ class SearchMain(models.Model):
             # CQL definition
             response =  {'cql': self.cql }
         elif targetType == 'e': 
-            # Extended: look for combination of word/lemma/category
+            # Extended: look for combination of word/lemma/category/fcat/fval
             sSingle, sMulti = val_convert(self.value)
             response = {'single': sSingle, 
                     'line_list': sMulti,
                     'cat_incl': self.category, 
                     'cat_excl': self.exclude,
+                    'fcat': self.fcat,
+                    'fval': self.fval,
                     'lemma': self.lemma}
         # Only add 'related'if it is there
         if self.related != None and self.related != "":
@@ -541,34 +559,42 @@ class Gateway(models.Model):
 
     def get_search_list(self):
         """List the names of the constructions plus their search group and specification"""
-        qs = self.constructions.all().select_related()
-        targetType = self.research.targetType
+
+        oErr = ErrHandle()
         lBack = []
-        for item in qs:
-            oSearch = item.search.get_search_spec(targetType)
-            if targetType == 'w':
-                # Only word
-                oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
-            elif targetType == 'c':
-                # Only constituent category
-                oItem = {'name': item.name, 'cat_incl': oSearch['cat_incl'], 'cat_excl': oSearch['cat_excl']}
-            elif targetType == 'e':
-                # Etended: combination of word(s), lemma, category
-                oItem = {'name': item.name, 
-                         'single': oSearch['single'], 
-                         'line_list': oSearch['line_list'], 
-                         'cat_incl': oSearch['cat_incl'], 
-                         'cat_excl': oSearch['cat_excl'],
-                         'lemma': oSearch['lemma']}
-            elif targetType == 'q':
-                # CQL type definition
-                oItem = {'cql': oSearch['cql'] }
-            else:
-                oItem = {}
-            # Potentially also 'related'
-            if (targetType == 'c' or targetType == 'e' or targetType =='w') and ('related' in oSearch):
-                oItem['related'] = oSearch['related']
-            lBack.append(oItem)
+        try:
+            qs = self.constructions.all().select_related()
+            targetType = self.research.targetType
+            for item in qs:
+                oSearch = item.search.get_search_spec(targetType)
+                if targetType == 'w':
+                    # Only word
+                    oItem = {'name': item.name, 'single': oSearch['single'], 'line_list': oSearch['line_list']}
+                elif targetType == 'c':
+                    # Only constituent category
+                    oItem = {'name': item.name, 'cat_incl': oSearch['cat_incl'], 'cat_excl': oSearch['cat_excl']}
+                elif targetType == 'e':
+                    # Extended: combination of word(s), lemma, category, feature-category, feature-value
+                    oItem = {'name': item.name, 
+                             'single': oSearch['single'], 
+                             'line_list': oSearch['line_list'], 
+                             'cat_incl': oSearch['cat_incl'], 
+                             'cat_excl': oSearch['cat_excl'],
+                             'fcat': oSearch['fcat'],
+                             'fval': oSearch['fval'],
+                             'lemma': oSearch['lemma']}
+                elif targetType == 'q':
+                    # CQL type definition
+                    oItem = {'cql': oSearch['cql'] }
+                else:
+                    oItem = {}
+                # Potentially also 'related'
+                if (targetType == 'c' or targetType == 'e' or targetType =='w') and ('related' in oSearch):
+                    oItem['related'] = oSearch['related']
+                lBack.append(oItem)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_search_list")
         return lBack
 
     def do_simple_related(self):
@@ -628,6 +654,10 @@ class Gateway(models.Model):
 
                             # Get the correct relation from raxis_id
                             raxis = Relation.objects.filter(id=raxis_id).first()
+                            if raxis == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: there is no raxis id {}".format(raxis_id)
+                                return False, msg
 
                             # Get the constituent towards with we are working
                             cnstype = "hit" if towards == "search" else "dvar"
@@ -641,7 +671,8 @@ class Gateway(models.Model):
                         
                             # First add a DVAR for this line -- this automatically creates a CVAR
                             dvar_order += 1
-                            dvar = VarDef(name=sName, order=dvar_order, description="dvar for line #{}".format(idx),
+                            dvar = VarDef(name=sName, order=dvar_order, 
+                                          description="dvar for line #{}".format(idx),
                                           type=varType, gateway=gateway)
                             trials = 10
                             bDone = False
@@ -656,8 +687,17 @@ class Gateway(models.Model):
                                     # Are we out of bounds?
                                     if trials <= 0:
                                         return False, sMsg
+                            if dvar == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: no dvar is created for line ${} trials={}".format(idx, trials)
+                                return False, msg
+
                             # Retrieve the CVAR
                             cvar = ConstructionVariable.objects.filter(construction=construction, variable=dvar).first()
+                            if cvar == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: no cvar could be created for line {} (trials={})".format(idx, trials)
+                                return False, msg
                             cvar.type=varType
 
                             # Add details for function [get_first_relative_cns]
@@ -716,6 +756,10 @@ class Gateway(models.Model):
                             cond = Condition(name="exist_{}".format(sName), order=cond_order,
                                           description="check existence of ${}".format(sName), include="true",
                                           condtype="func", gateway=gateway)
+                            if cond == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: could not create condition for {}".format(sName)
+                                return False, msg
                             cond.save()
                             # Create and add details for the function: exist
                             arglist = []
@@ -723,6 +767,10 @@ class Gateway(models.Model):
                             lFunc = [ {"function": "exists", "line": 0, "arglist": arglist}]
                             # Yes, create the functions
                             func_main = Function.create_from_list(lFunc, gateway, "cond", None, cond, None)
+                            if func_main == None:
+                                # Proved a good error message
+                                msg = "Gateway/do_simplerelated: could not create main function for {}".format(sName)
+                                return False, msg
                             func_main.save()
                             cond.function = func_main
                             cond.functiondef = func_main.functiondef
@@ -806,6 +854,7 @@ class Gateway(models.Model):
             return True, "ok"
         except:
             sMsg = oErr.get_error_message()
+            oErr.DoError("Gateway/do_simple_related")
             return False, sMsg
         
     def delete(self, using = None, keep_parents = False):
@@ -891,40 +940,55 @@ class Gateway(models.Model):
         sMsg = ""
         oErr = ErrHandle()
         try:
+            # Step 1: Add combination[s] of vardef/construction if it doesn't yet exist
             with transaction.atomic():
                 # Step 1: add CVAR for all Construction/Vardef combinations
                 for vardef in self.get_vardef_list():
                     # Walk all constructions
                     for construction in self.constructions.all():
                         # Check if a cvar exists
-                        qs = ConstructionVariable.objects.filter(variable=vardef, construction=construction)
-                        if qs.count() == 0:
+                        cvar = ConstructionVariable.objects.filter(variable=vardef, construction=construction).first()
+                        if cvar == None:
                             # Doesn't exist: create it
-                            cvar = ConstructionVariable(variable=vardef, construction=construction)
-                            trials = 10
-                            bDone = False
-                            while not bDone:
-                                try:
-                                    cvar.save()
-                                    bDone=True
-                                except:
-                                    trials -= 10
-                                    if trials <=0:
-                                        # Cannot do it
-                                        sMsg = oErr.get_error_message()
-                                        return False, sMsg
-                # Step 2: Find CVAR that do not belong to a gateway
-                gateway_pk_list = [item.pk for item in Gateway.objects.all()]
-                cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list)]
-                # Remove these instances
-                for cvar in cvar_orphans:
-                    cvar.delete()
-                cvar_orphans = [cvar for cvar in ConstructionVariable.objects.exclude(variable__gateway__in=gateway_pk_list)]
-                # Remove these instances
-                for cvar in cvar_orphans:
-                    cvar.delete()
+                            cvar = ConstructionVariable.objects.create(variable=vardef, construction=construction)
+
+            # Step 2: Find CVAR that do not belong to a gateway
+            gateway_pk_list = [x['id'] for x in Gateway.objects.all().values("id")]
+
+            #cvar_orphans = [cvar['id'] for cvar in ConstructionVariable.objects.exclude(construction__gateway__in=gateway_pk_list).values("id")]
+            #if len(cvar_orphans) > 0:
+            #    ConstructionVariable.objects.filter(id__in=cvar_orphans).delete()
+
+            #cvar_orphans = [cvar['id'] for cvar in ConstructionVariable.objects.exclude(variable__gateway__in=gateway_pk_list).values("id")]
+            #if len(cvar_orphans) > 0:
+            #    ConstructionVariable.objects.filter(id__in=cvar_orphans).delete()
+
+            # GEt a list of Gateway IDs that are mentioned from ConstructionVariable
+            delete_cv = []
+            lst_variable_gateway = ConstructionVariable.objects.all().values("id", "variable__gateway__id").distinct()
+            lst_construc_gateway = ConstructionVariable.objects.all().values("id", "construction__gateway__id").distinct()
+            for item in lst_variable_gateway:
+                cv_id=item['id']
+                gw_id=item['variable__gateway__id']
+                if gw_id not in gateway_pk_list:
+                    # Add the CV id to the deletable ones
+                    delete_cv.append(cv_id)
+            for item in lst_construc_gateway:
+                cv_id=item['id']
+                gw_id=item['construction__gateway__id']
+                if gw_id not in gateway_pk_list:
+                    # Add the CV id to the deletable ones
+                    delete_cv.append(cv_id)
+
+            # If there is something to be deleted, then 
+            if len(delete_cv) > 0:
+                ConstructionVariable.objects.filter(id__in=delete_cv).delete()
+
+
+
         except:
             sMsg = oErr.get_error_message()
+            oErr.DoError("Gateway/check_var")
             bResult = False
         # Make sure we are happy
         return bResult, sMsg
@@ -1002,9 +1066,9 @@ class Construction(models.Model):
     # [1] Construction name
     name = models.CharField("Name of this search construction", max_length=MAX_TEXT_LEN)
     # [1] Main search item
-    search = models.ForeignKey(SearchMain, blank=False, null=False)
+    search = models.ForeignKey(SearchMain, blank=False, null=False, on_delete=models.CASCADE, related_name="search_constructions")
     # [1] Every gateway has one or more constructions it may look for
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="constructions")
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, on_delete=models.CASCADE, related_name="constructions")
 
     def __str__(self):
         return self.name
@@ -1070,13 +1134,18 @@ class VarDef(Variable):
     """Each research project may have a number of variables that are construction-specific"""
 
     # [1] Link to the Gateway the variable belongs to
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="definitionvariables")
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, on_delete=models.CASCADE, related_name="definitionvariables")
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
       # Perform the normal saving
       save_result = super(VarDef, self).save(force_insert, force_update, using, update_fields)
-      # Check and add/delete CVAR instances for this gateway
-      bCheck, msg = Gateway.check_cvar(self.gateway)
+      oErr = ErrHandle()
+      try:
+          # Check and add/delete CVAR instances for this gateway
+          bCheck, msg = Gateway.check_cvar(self.gateway)
+      except:
+          msg2 = oErr.get_error_message()
+          oErr.DoError("VarDef/save ({})".format(msg))
       # Return the result of normal saving
       return save_result
 
@@ -1190,7 +1259,7 @@ class GlobalVariable(Variable):
     # [1] Value of the variable
     value = models.TextField("Value")
     # [1] Link to the Gateway the variable belongs to
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="globalvariables")
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, on_delete=models.CASCADE, related_name="globalvariables")
 
     def __str__(self):
         # The default string-value of a global variable is its name
@@ -1295,7 +1364,7 @@ class FunctionCode(models.Model):
     # [1] Room for a place to define the xquery code
     xquery = models.TextField("Xquery code", null=True, blank=True, default="(: Xquery code for function :)")
     # [1] Must belong to one functiondef
-    functiondef = models.ForeignKey(FunctionDef, null=False, related_name="functioncodings")
+    functiondef = models.ForeignKey(FunctionDef, null=False, on_delete=models.CASCADE, related_name="functioncodings")
     
     def __str__(self):
         return "{} ({})".format(self.functiondef.name, self.format)
@@ -1305,15 +1374,15 @@ class Function(models.Model):
     """Realization of one function based on a definition"""
 
     # [1] Must point to a definition
-    functiondef = models.ForeignKey(FunctionDef, null=False)
+    functiondef = models.ForeignKey(FunctionDef, null=False, on_delete=models.CASCADE, related_name="functiondef_functions")
     # [0-1] A function belongs to a construction variable - but this is not necessarily the parent
-    root = models.ForeignKey("ConstructionVariable", null=True, related_name="functionroot")
+    root = models.ForeignKey("ConstructionVariable", null=True, on_delete=models.SET_NULL, related_name="functionroot")
     # [0-1] Alternatively, a function belongs to a condition
-    rootcond = models.ForeignKey("Condition", null=True, related_name="functioncondroot")
+    rootcond = models.ForeignKey("Condition", null=True, on_delete=models.SET_NULL, related_name="functioncondroot")
     # [0-1] Alternatively, a function belongs to a condition
-    rootfeat = models.ForeignKey("Feature", null=True, related_name="functionfeatroot")
+    rootfeat = models.ForeignKey("Feature", null=True, on_delete=models.SET_NULL, related_name="functionfeatroot")
     # [0-1] A function MAY belong to a particular ARGUMENT, which then is its parent
-    parent = models.ForeignKey("Argument", null=True, blank=True, related_name="functionparent")
+    parent = models.ForeignKey("Argument", null=True, blank=True, on_delete=models.SET_NULL, related_name="functionparent")
     # [0-1] The output type of the function. May be unknown initially and then calculated
     type = models.CharField("Type", blank=True, choices=build_choice_list(SEARCH_TYPE), 
                               max_length=5, help_text=get_help(SEARCH_TYPE))
@@ -1972,7 +2041,7 @@ class ArgumentDef(models.Model):
     #     This is a JSON list, it can contain any number of bool, int, string
     argval = models.TextField("(Default value)", blank=True, default="[]")
     # Each function may take a number of input arguments
-    function = models.ForeignKey(FunctionDef, null=False, related_name = "arguments")
+    function = models.ForeignKey(FunctionDef, null=False, on_delete=models.CASCADE, related_name = "arguments")
 
     def __str__(self):
         return "argdef_{}".format(self.id)
@@ -1982,28 +2051,28 @@ class Argument(models.Model):
     """The realization of an argument, based on its definition"""
 
     # [1] Must point to a definition
-    argumentdef = models.ForeignKey(ArgumentDef, null=False)
+    argumentdef = models.ForeignKey(ArgumentDef, null=False, on_delete=models.CASCADE, related_name="argumentdef_arguments" )
     # [1] The value can be of type: fixed, global variable, construction variable, function-output
     argtype = models.CharField("Variable type", choices=build_abbr_list(SEARCH_ARGTYPE), 
                               max_length=5, help_text=get_help(SEARCH_ARGTYPE))
     # [1] In the end, the value is calculated and appears here
     argval = models.TextField("JSON value", blank=True, default="[]")
     # [0-1] This argument may link to a Global Variable
-    gvar = models.ForeignKey("GlobalVariable", null=True)
+    gvar = models.ForeignKey("GlobalVariable", null=True, on_delete=models.SET_NULL, related_name="gvar_arguments")
     # [0-1] This argument may link to a Construction Variable
-    cvar = models.ForeignKey("ConstructionVariable", null=True)
+    cvar = models.ForeignKey("ConstructionVariable", null=True, on_delete=models.SET_NULL, related_name="cvar_arguments")
     # [0-1] This argument may link to a Data-dependant Variable
-    dvar = models.ForeignKey("VarDef", null=True)
+    dvar = models.ForeignKey("VarDef", null=True, on_delete=models.SET_NULL, related_name="dvar_arguments")
     # [0-1] This argument is any of the three relation types (axis, const, cond)
-    raxis = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'axis' }, related_name='arg_raxis')
-    rcond = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'cond' }, related_name='arg_rcond')
-    rconst = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'const' }, related_name='arg_rconst')
+    raxis = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'axis' }, on_delete=models.SET_NULL, related_name='arg_raxis')
+    rcond = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'cond' }, on_delete=models.SET_NULL, related_name='arg_rcond')
+    rconst = models.ForeignKey("Relation", null=True, limit_choices_to={'type': 'const' }, on_delete=models.SET_NULL, related_name='arg_rconst')
     # [0-1] This argument may link to a Function (not its definition)
-    function = models.ForeignKey("Function", null=True, related_name ="functionarguments")
+    function = models.ForeignKey("Function", null=True, related_name ="functionarguments", on_delete=models.SET_NULL)
     # [0-1] If a function is needed, we need to have a link to its definition
     # NOTE: this is the definition of the function having function.parent = ME
     #       get it by ME.functionparent.all().first().functiondef
-    functiondef = models.ForeignKey(FunctionDef, null=True)
+    functiondef = models.ForeignKey(FunctionDef, null=True, on_delete=models.SET_NULL, related_name="functiondef_arguments")
 
     def __str__(self):
         return "arg_{}".format(self.id)
@@ -2419,20 +2488,20 @@ class ConstructionVariable(models.Model):
     """Each construction may provide its own value to the variables belonging to the gateway"""
 
     # [1] Link to the Construction the variable value belongs to
-    construction = models.ForeignKey(Construction, blank=False, null=False, related_name="constructionvariables")
+    construction = models.ForeignKey(Construction, blank=False, null=False, on_delete=models.CASCADE, related_name="constructionvariables")
     # [1] Link to the name of this variable
-    variable = models.ForeignKey(VarDef,  blank=False, null=False, related_name="variablenames")
+    variable = models.ForeignKey(VarDef,  blank=False, null=False, on_delete=models.CASCADE, related_name="variablenames")
     # [1] Type of value: string or expression
     type = models.CharField("Variable type", choices=build_abbr_list(SEARCH_VARIABLE_TYPE), 
                               max_length=5, help_text=get_help(SEARCH_VARIABLE_TYPE))
     # [1] String value of the variable for this combination of Gateway/Construction
     svalue = models.TextField("Value", blank=True)
     # [0-1] This variable may be determined by a Global Variable
-    gvar = models.ForeignKey("GlobalVariable", null=True)
+    gvar = models.ForeignKey("GlobalVariable", null=True, on_delete=models.SET_NULL, related_name="gvar_cvars")
     # [0-1] This variable may be determined by a Function
-    function = models.OneToOneField(Function, null=True)
+    function = models.OneToOneField(Function, null=True, on_delete=models.SET_NULL, related_name="function_cvars")
     # [0-1] If a function is supplied, then here's the place to define the function def to be used
-    functiondef = models.ForeignKey(FunctionDef, null=True)
+    functiondef = models.ForeignKey(FunctionDef, null=True, on_delete=models.SET_NULL, related_name="functiondef_cvars")
     # [1] Text-json to indicate the status of this 
     status = models.TextField("Status", default="{}")
 
@@ -2690,14 +2759,14 @@ class Condition(models.Model):
     condtype = models.CharField("Condition type", choices=build_abbr_list(SEARCH_CONDTYPE), 
                               max_length=5, help_text=get_help(SEARCH_CONDTYPE))
     # [0-1] One option for a condition is to be equal to the value of a data-dependant variable
-    variable = models.ForeignKey(VarDef, null=True, related_name ="variablecondition")
+    variable = models.ForeignKey(VarDef, null=True, on_delete=models.SET_NULL, related_name ="variablecondition")
     # [1] The numerical order of this argument
     order = models.IntegerField("Order", blank=False, default=0)
 
     # [0-1] Another option for a condition is to be defined in a function
-    function = models.OneToOneField(Function, null=True)
+    function = models.OneToOneField(Function, null=True, on_delete=models.SET_NULL)
     # [0-1] If a function is needed, we need to have a link to its definition
-    functiondef = models.ForeignKey(FunctionDef, null=True, related_name ="functiondefcondition")
+    functiondef = models.ForeignKey(FunctionDef, null=True, on_delete=models.SET_NULL, related_name ="functiondefcondition")
 
     # [0-1] Include this condition in the search or not?
     include = models.CharField("Include", choices=build_abbr_list(SEARCH_INCLUDE), 
@@ -2706,7 +2775,7 @@ class Condition(models.Model):
     # [1] Text-json to indicate the status of this 
     status = models.TextField("Status", default="{}")
     # [1] Every gateway has zero or more conditions it may look for
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="conditions")
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, on_delete=models.CASCADE, related_name="conditions")
 
     def __str__(self):
         return self.name
@@ -2917,14 +2986,14 @@ class Feature(models.Model):
     feattype = models.CharField("Feature type", choices=build_abbr_list(SEARCH_FEATTYPE), 
                               max_length=5, help_text=get_help(SEARCH_FEATTYPE))
     # [0-1] One option for a condition is to be equal to the value of a data-dependant variable
-    variable = models.ForeignKey(VarDef, null=True, related_name ="variablefeature")
+    variable = models.ForeignKey(VarDef, null=True, on_delete=models.SET_NULL, related_name ="variablefeature")
     # [1] The numerical order of this argument
     order = models.IntegerField("Order", blank=False, default=0)
 
     # [0-1] Another option for a condition is to be defined in a function
-    function = models.OneToOneField(Function, null=True)
+    function = models.OneToOneField(Function, null=True, on_delete=models.SET_NULL)
     # [0-1] If a function is needed, we need to have a link to its definition
-    functiondef = models.ForeignKey(FunctionDef, null=True, related_name ="functiondeffeature")
+    functiondef = models.ForeignKey(FunctionDef, null=True, on_delete=models.SET_NULL, related_name ="functiondeffeature")
 
     # [0-1] Include this condition in the search or not?
     include = models.CharField("Include", choices=build_abbr_list(SEARCH_INCLUDE), 
@@ -2933,7 +3002,7 @@ class Feature(models.Model):
     # [1] Boolean to indicate this feature has been checked
     status = models.TextField("Status", default="{}")
     # [1] Every gateway has zero or more output features
-    gateway = models.ForeignKey(Gateway, blank=False, null=False, related_name="features")
+    gateway = models.ForeignKey(Gateway, blank=False, null=False, on_delete=models.CASCADE, related_name="features")
 
     def __str__(self):
         return self.name
@@ -3142,7 +3211,7 @@ class SearchItem(models.Model):
     operator = models.CharField("Operator", choices=build_choice_list(SEARCH_OPERATOR), 
                               max_length=5, help_text=get_help(SEARCH_OPERATOR))
     # [1] Every ConstructionVariable instance can have one or more search items
-    construction = models.ForeignKey(Construction, blank=False, null=False, related_name="searchitems")
+    construction = models.ForeignKey(Construction, blank=False, null=False, on_delete=models.CASCADE, related_name="searchitems")
 
     def __str__(self):
         return self.name
@@ -3156,9 +3225,9 @@ class ResGroup(models.Model):
     # [1] Description of this group
     description = models.TextField("Description", default="-")
     # [1] Each research group has its owner: obligatory, but not to be selected by the user himself
-    owner = models.ForeignKey(User, editable=False)
+    owner = models.ForeignKey(User, editable=False, on_delete=models.CASCADE, related_name="owner_resgroups")
     # [0-1] Each group may be part of another group
-    parent = models.ForeignKey("ResGroup", null=True, blank=True, related_name="parentgroup")
+    parent = models.ForeignKey("ResGroup", null=True, blank=True, on_delete=models.SET_NULL, related_name="parentgroup")
 
     def __str__(self):
         return self.name
@@ -3189,14 +3258,14 @@ class Research(models.Model):
     # [0-1] A stringified JSON representation of the search, if it is simple
     compact = models.TextField("Compressed specification", null=True, blank=True)
     # [1] Each research project has a 'gateway': a specification for the $search element
-    gateway = models.OneToOneField(Gateway, blank=False, null=False)
+    gateway = models.OneToOneField(Gateway, blank=False, null=False, on_delete=models.CASCADE)
     # [1] Each research project has its owner: obligatory, but not to be selected by the user himself
-    owner = models.ForeignKey(User, editable=False)
+    owner = models.ForeignKey(User, editable=False, on_delete=models.CASCADE, related_name="owner_researches")
     # [0-1] create date and lastsave date
     created = models.DateTimeField(default=timezone.now)
     saved = models.DateTimeField(null=True, blank=True)
     # [0-1] A research project can optionally belong to a group
-    group = models.ForeignKey(ResGroup, null=True, blank=True, related_name="childresearch")
+    group = models.ForeignKey(ResGroup, null=True, blank=True, on_delete=models.SET_NULL, related_name="childresearch")
 
     def __str__(self):
         return self.name
@@ -3290,6 +3359,7 @@ class Research(models.Model):
                     obj.save()
         except:
             msg = errHandle.get_error_message()
+            errHandle.DoError("Research/create_simple")
             obj=None
 
         # Return the object that has been created
@@ -3442,6 +3512,8 @@ class Research(models.Model):
                             search.exclude = cns['exclude']
                             search.category = cns['category']
                             search.lemma = cns['lemma']
+                            search.fcat = cns['fcat']
+                            search.fval = cns['fval']
                         elif targetType == "q":
                             search.cql = cns['cql']
                         search.save()
@@ -3607,6 +3679,7 @@ class Research(models.Model):
         # Validate
         if partId == None or partId == "" or sFormat == None or sFormat == "":
             return None
+
         try:
             # Prepare data
             oData = {'targetType': self.targetType,
@@ -3623,6 +3696,8 @@ class Research(models.Model):
                 # Check errors
                 errors = self.gateway.get_errors()
                 if errors != "" and errors != "[]":
+                    # Also show errors here
+                    errHandle.Status("Error in to_xquery: {}".format(errors))
                     return None
                 # Save the basket
                 basket.save()
@@ -3691,6 +3766,8 @@ class Research(models.Model):
                         self.gateway.error_clear()
                 oBack['msg'] = sMsg
                 oBack['status'] = 'error'
+                # Also show this error in the console
+                oErr.Status("Error in to_crpx: {}".format(sMsg))
                 return oBack
         except:
             msg_list = []
@@ -3700,6 +3777,8 @@ class Research(models.Model):
             oBack['msg_list'] = msg_list
             oBack['msg'] = " ".join(msg_list)
             oBack['status'] = 'error'
+            # Also show this error in the console
+            oErr.Status("Error in to_crpx: {}".format(" ".join(msg_list)))
             return oBack
         # Add basket to the return object, provided all went well
         oBack['basket'] = basket
@@ -3718,7 +3797,7 @@ class Research(models.Model):
         if sCrpxName == "":
             # An error has returned
             oBack['status'] = 'error'
-            oBack['msg'] = "/n".join(sCrpxText)
+            oBack['msg'] = "\n".join(sCrpxText)
             return oBack
 
         # Return what we have created
@@ -3881,7 +3960,7 @@ class Basket(models.Model):
     format = models.CharField("XML format", choices=build_abbr_list(CORPUS_FORMAT), 
                               max_length=5, help_text=get_help(CORPUS_FORMAT))
     # [1] The corpus-part this points to
-    part = models.ForeignKey(Part, blank=False, null=False)
+    part = models.ForeignKey(Part, blank=False, null=False, on_delete=models.CASCADE, related_name="part_baskets")
     # [1] The Xquery definitions (targeted for the corpus)
     codedef = models.TextField("Xquery definitions", blank=True)
     # [1] The Xquery code for the main query
@@ -3896,7 +3975,7 @@ class Basket(models.Model):
     created = models.DateTimeField(default=timezone.now)
     saved = models.DateTimeField(null=True, blank=True)
     # [1] Each basket is linked to one research project
-    research = models.ForeignKey(Research, blank=False, null=False, related_name="baskets")
+    research = models.ForeignKey(Research, blank=False, null=False, on_delete=models.CASCADE, related_name="baskets")
 
     def __str__(self):
         # COmbine: research project name, research id, processing status
@@ -4227,7 +4306,7 @@ class Kwic(models.Model):
     # [0-1] Stringified JSON that explains which results (if any) are already present
     resultKey = models.TextField("Result key", blank=True, null=True)
     # [1] There must be a link to the Basket the results belong to
-    basket = models.ForeignKey(Basket, blank=False, null=False, related_name="kwiclines")
+    basket = models.ForeignKey(Basket, blank=False, null=False, on_delete=models.CASCADE, related_name="kwiclines")
 
     def __str__(self):
         return "{}".format(self.qc)
@@ -4371,7 +4450,7 @@ class KwicFilter(models.Model):
     # [1] The value of the filter
     value = models.CharField("Value", max_length=MAX_TEXT_LEN)
     # [1] Link this filter the the KWIC it belongs to
-    kwic = models.ForeignKey(Kwic, blank=False, null=False, related_name="kwicfilters")
+    kwic = models.ForeignKey(Kwic, blank=False, null=False, on_delete=models.CASCADE, related_name="kwicfilters")
 
     def __str__(self):
         return "{}".format(self.field)
@@ -4385,7 +4464,7 @@ class KwicResult(models.Model):
     # [1] Result details in the form of a JSON object (stringified)
     result = models.TextField("JSON details")
     # [1] Link this filter the the KWIC it belongs to
-    kwic = models.ForeignKey(Kwic, blank=False, null=False, related_name="kwicresults")
+    kwic = models.ForeignKey(Kwic, blank=False, null=False, on_delete=models.CASCADE, related_name="kwicresults")
 
     def __str__(self):
         return "{}".format(self.resId)
@@ -4395,7 +4474,7 @@ class Quantor(models.Model):
     """QUantificational results of executing one basket"""
 
     # [1] A Quantor is linked to a basket
-    basket = models.ForeignKey(Basket, blank=False, null=False, related_name="myquantor")
+    basket = models.ForeignKey(Basket, blank=False, null=False, on_delete=models.CASCADE, related_name="myquantor")
     # [1] THe number of files (texts) that have been searched
     total = models.IntegerField("Number of files", default=0)
     # [0-1] The number of lines in the texts
@@ -4474,7 +4553,7 @@ class QCline(models.Model):
     # [1] The number of hits for this QC line
     count = models.IntegerField("Number of hits", default=0)
     # [1] Every QCline is linked to a Quantor with results
-    quantor = models.ForeignKey(Quantor, blank=False, null=False, related_name="qclines")
+    quantor = models.ForeignKey(Quantor, blank=False, null=False, on_delete=models.CASCADE, related_name="qclines")
 
     def __str__(self):
         return "{}".format(self.qc)
@@ -4501,7 +4580,7 @@ class Qsubcat(models.Model):
     # [1] The number of hits for this subcat
     count = models.IntegerField("Number of hits", default=0)
     # [1] Every subcategory is linked to a QCline
-    qcline = models.ForeignKey(QCline, blank=False, null=False, related_name="qsubcats")
+    qcline = models.ForeignKey(QCline, blank=False, null=False, on_delete=models.CASCADE, related_name="qsubcats")
 
     def __str__(self):
         return self.name
@@ -4524,9 +4603,9 @@ class Qsubinfo(models.Model):
     """Information on one subcategory of one file"""
 
     # [1] subcatinfo links to a QUantor-Subcat name
-    subcat = models.ForeignKey(Qsubcat, blank=False, null=False, related_name="qsubinfos")
+    subcat = models.ForeignKey(Qsubcat, blank=False, null=False, on_delete=models.CASCADE, related_name="qsubinfos")
     # [1] subcatinfo also links to a Text (which is under the part)
-    text = models.ForeignKey(Text, blank=False, null=False)
+    text = models.ForeignKey(Text, blank=False, null=False, on_delete=models.CASCADE, related_name="text_qsubinfos")
     # [1] The new information is the COUNT - the number of hits
     count = models.IntegerField("Hits", default=0)
 
@@ -4551,12 +4630,12 @@ class ShareGroup(models.Model):
     """Group witch which a project is shared"""
 
     # [1] The group a project is shared with
-    group = models.ForeignKey(Group, blank=False, null=False)
+    group = models.ForeignKey(Group, blank=False, null=False, on_delete=models.CASCADE, related_name="group_sharegroups")
     # [1] THe permissions granted to this group
     permission = models.CharField("Permissions", choices=build_abbr_list(SEARCH_PERMISSION), 
                               max_length=5, help_text=get_help(SEARCH_PERMISSION))
     # [1] Each Research object can be shared with any number of groups
-    research = models.ForeignKey(Research, blank=False, null=False, related_name="sharegroups")
+    research = models.ForeignKey(Research, blank=False, null=False, on_delete=models.CASCADE, related_name="sharegroups")
 
     def __str__(self):
         return "{}-{}".format(self.group, self.permission)

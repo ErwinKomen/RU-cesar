@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.forms import Textarea
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import redirect
 
 from cesar.lingo.models import *
@@ -88,6 +88,7 @@ class ResponseAdmin(admin.ModelAdmin):
 
     fields = ['experiment', 'participant', 'answer']
     list_display = ['experiment', 'participant', 'answer']
+    list_filter = ['experiment']
     search_fields = ['experiment']
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},

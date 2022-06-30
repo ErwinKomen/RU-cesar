@@ -83,6 +83,7 @@
                         <a href="{% url 'qdata_details' item.id %}">{{item.qmeta}}</a>
                       </td>
                       <td valign="top" class="tdnowrap">{{item.qtopic}}</td>
+                      <td valign="top" class="tdnowrap">{{item.qsuggest}}</td>
                       <td valign="top" title="{{item.qtext}}" style="width: 100%;">
                         <span>{{item.qtext|truncatewords:10}}{% if item.qtext|wordcount > 10 %}...{% endif %}</span>
                       </td>

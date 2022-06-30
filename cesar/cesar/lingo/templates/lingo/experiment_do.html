@@ -1,4 +1,4 @@
-﻿{% extends "lingo/layout.html" %}
+{% extends "lingo/layout.html" %}
 {% load i18n %}
 
 {% block scripts %}
@@ -95,8 +95,8 @@
                 <table style="width: 100%;">
                   <!-- Topic of text #1 -->
                   <tr>
-                    <td align="right">Tekst 1 ging over {{exp_part.left_topic}}</td>
-                    <td align="left">
+                    <td align="right" class="tdnowrap">Tekst 1 ging over {{exp_part.left_topic}}</td>
+                    <td align="left" style="width: 100%;">
                       <div class="btn-group">
                         <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="Yes" />Ja</label>
                         <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer2" value="No" />Nee</label>
@@ -109,8 +109,8 @@
 
                   <!-- Topic of text #2 -->
                   <tr>
-                    <td align="right">Tekst 2 ging over {{exp_part.right_topic}}</td>
-                    <td align="left">
+                    <td align="right" class="tdnowrap">Tekst 2 ging over {{exp_part.right_topic}}</td>
+                    <td align="left" style="width: 100%;">
                       <div class="btn-group">
                         <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="Yes" />Ja</label>
                         <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer3" value="No" />Nee</label>
@@ -123,8 +123,8 @@
 
                   <!-- Which text is better -->
                   <tr>
-                    <td align="right">Welke tekst is beter geschreven?</td>
-                    <td align="left">
+                    <td align="right" class="tdnowrap">Welke tekst is beter geschreven?</td>
+                    <td align="left" style="width: 100%;">
                       <div class="btn-group">
                         <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text1" />Tekst 1 (links)</label>
                         <label class="radio-inline"><input type="radio" name="qans-{{forloop.counter0}}-answer4" value="Text2" />Tekst 2 (rechts)</label>
@@ -134,6 +134,18 @@
                       </div>
                     </td>
                   </tr>
+
+                  <!-- Motivation for choice -->
+                  <tr>
+                    <td align="right" class="tdnowrap">Korte motivatie voor de keuze:</td>
+                    <td align="left" style="width: 100%;">
+                      <div class="btn-motivation">{{exp_part.form.motivation}}</div>
+                      <div class="hidden errmsg" style="color: red; font-weight: bold; font-size: small;">
+                        Antwoord??
+                      </div>
+                    </td>
+                  </tr>
+
                 </table>
                 <p></p>
 
@@ -176,11 +188,13 @@
         <div>&nbsp;</div>
 
         <!-- Mogelijkheden om terug te gaan -->
+        {% if showendbutton %}
         <div>
           <span>
             <a class="view-mode btn jumbo-3" href="{% url 'exp_list' %}" title="List all experiments">Experimenten</a>
           </span>
         </div>
+        {% endif %}
       </div>
     </div>
 

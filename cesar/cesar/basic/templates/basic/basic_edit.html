@@ -1,0 +1,229 @@
+{% load i18n %}
+
+{% block scripts %}
+  {% if has_select2 %}{{basic_form.media.css}}{% endif %}
+{% endblock %}
+
+<!-- SermonGold information -->
+<form>
+  {% csrf_token %}
+  <table style="width: 100%;">
+    <tbody>
+      <!-- The row with buttons -->
+      <tr>
+        <td colspan="2"  class="ms editable table">
+          <!-- Provide the necessary buttons: edit, cancel and save -->
+          <div>
+            {% if is_app_userplus or is_app_editor and permission == "write" %}
+              <!-- Edit button -->
+              <a mode="edit" class="view-mode btn btn-xs jumbo-1"><span class="glyphicon glyphicon-pencil" title="Edit these data"></span></a>
+            {% endif %}
+
+            <!-- Cancel button -->
+            <a mode="cancel" class="edit-mode btn btn-xs jumbo-2 hidden">
+              <span class="glyphicon glyphicon-arrow-left" title="Cancel (do *NOT* save)"></span>
+            </a>
+
+            {% if is_app_userplus or is_app_editor and permission == "write"  %}
+              <!-- Save button -->
+              <a mode="save" class="edit-mode btn btn-xs jumbo-1 hidden" targetid=""
+                 targeturl="{% if basic_form.instance.id %}{{editview}}{% else %}{{addview}}{% endif %}" >
+                <span class="glyphicon glyphicon-ok" title="Save these data">&nbsp;Save</span>
+              </a>
+            {% endif %}
+
+            <!-- Waiting symbol-->
+            <span class="waiting glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+
+            <!-- Little error message room -->
+            <span id="gold_err_msg" class="err-msg"></span>
+
+            {% if is_app_editor  and permission == "write" %}
+              <!-- Put the delete button completely to the right-->
+              <a mode="skip" class="view-mode btn btn-xs jumbo-3 pull-right"
+                 onclick="ru.basic.delete_confirm(this);">
+                <span class="glyphicon glyphicon-remove" title="Delete this item"></span>
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Provide a standard possibility to do delete confirmation *without* a popup form -->
+          {% if is_app_editor and permission == "write"  %}
+            <div class="delete-confirm hidden selected">
+              <span>Are you sure you would like to delete this item?</span>
+              <span>
+                <!-- The button to cancel deletion -->
+                <a title="Cancel deletion" class="btn btn-xs jumbo-1"
+                   onclick="ru.basic.delete_cancel(this);">Cancel</a>
+                <!-- The actual delete button-->
+                <a mode="delete" title="Delete this item" class="btn btn-xs jumbo-3"
+                   afterurl="{{listview}}"
+                   targetid="sermon_edit"
+                   targeturl="{% if basic_form.instance.id %}{{editview}}{% endif %}">
+                  Delete
+                </a>
+              </span>
+              <span class="waiting glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+            </div>
+          {% endif %}
+        </td>
+      </tr>
+
+      <!-- Walk all the fields in mainitems -->
+      {% for mainitem in mainitems %}
+        <!-- Check if this may be shown or not -->
+        {% if 'empty' in mainitem %}
+          {% if mainitem.empty == "idonly" %}
+            <tr class="hidden">
+              <td colspan="2">
+                <input id="id_{{mainitem.field_abbr}}_id" name="{{mainitem.field_abbr}}_id" type="text" value="{{mainitem.value}}" />
+              </td>
+            </tr>
+          {% elif mainitem.empty == "hide" %}
+            <tr class="hidden">
+              <td colspan="2">{{mainitem.field_key}}</td>
+            </tr>
+          {% endif %}
+        {% elif mainitem.empty != "hide" or mainitem.value != "" %}
+          <tr class="view-row">
+            <!-- Cell with the name of the field-->
+            <td class="tdnowrap" valign="top" {% if mainitem.title %}title="{{mainitem.title}}"{% endif %}>
+              <span>{{mainitem.label}}</span>
+              {% if is_app_editor and mainitem.multiple and permission == "write"  %}
+                <!-- Multiple value field, i.e. select2 -->
+                <span>
+                  <a class="edit-mode hidden btn" 
+                     onclick="ru.basic.add_new_select2(this, '{{mainitem.fso.prefix}}' {% if 'template_selection' in mainitem %}, {{mainitem.template_selection}}{% endif %});">
+                    <span class="glyphicon glyphicon-plus"></span>
+                  </a>
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Cell with the value of the field (or editing) -->
+            <td class="hoverable {% if mainitem.hidden %}hidden {% endif %}"  
+                {% if mainitem.align %}align="{{mainitem.align}}"{% endif %}
+                {% if mainitem.title %}title="{{mainitem.title}}"{% endif %} style="width: 100%;">
+
+              {% if mainitem.multiple and not 'field_list' in mainitem %}
+                <!-- Multiple instances choosing using Select2 -->
+                <div class="{% if 'field_list' in mainitem and mainitem.allowing == "edit"  %}view-mode{% else %}any-mode{% endif %} ">
+                  {% if mainitem.value|length > 0 %}
+                    {% for subitem in mainitem.value %}
+                      <span class="keyword"><a href="{{mainitem.link}}?{{mainitem.qlist}}={{subitem.id}}">{{subitem.get_label}}</a></span>
+                    {% endfor %}
+                  {% else %}-{% endif %}
+                </div>
+                {% if 'field_list' in mainitem and  mainitem.allowing == "edit" %}
+                  <div class="edit-mode hidden">{{mainitem.field_list}}</div>
+                  {% if is_app_editor and permission == "write"  %}
+                    <div class="new-mode hidden" id="{{mainitem.fso.prefix}}_formset">
+                      {% if mainitem.unique %}
+                        {% include 'seeker/formset_new.html' with this_formset=mainitem.fso.formsetinstance prefix=mainitem.fso.prefix linkfield=mainitem.fso.linkfield unique=1 %}
+                      {% else %}
+                        {% include 'seeker/formset_new.html' with this_formset=mainitem.fso.formsetinstance prefix=mainitem.fso.prefix linkfield=mainitem.fso.linkfield %}
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+              {% else %}
+                <!-- Basic view mode -->
+                <div class="{% if mainitem.allowing_key_list == "edit" %}view-mode{% else %}any-mode{% endif %} ">
+                  {% spaceless %}
+                  {% if mainitem.type == "bold" %}
+                    {% if mainitem.link == "" %}<b>{% if mainitem.value %}{{mainitem.value}}
+                    {% else %}-{% endif %}</b>{% else %}<a href="{{mainitem.link}}"><b>{% if mainitem.value %}{{mainitem.value}}{% else %}-{% endif %}</b></a>
+                    {% endif %}
+                  {% elif mainitem.type == "line" %}<div style="white-space: pre-line;">{% if mainitem.value %}{{mainitem.value|safe}}{% else %}-{% endif %}</div>
+                  {% elif mainitem.type == "safe" %}{% if mainitem.value %}{{mainitem.value|safe}}{% else %}-{% endif %}
+                  {% elif mainitem.type == "safeline" %}<div style="white-space: pre-line;">{% if mainitem.value %}{{mainitem.value|safe}}{% else %}-{% endif %}</div>
+                  {% else %}
+                    {% if mainitem.value %}{{mainitem.value|safe}}{% else %}-{% endif %}
+                  {% endif %}
+                  {% endspaceless %}
+                </div>
+
+                <!-- This is where the editable input comes -->
+                {% if mainitem.allowing == "edit" %}
+                  <div class="edit-overal">
+                    {% if 'field_ta' in mainitem and 'key_ta' in mainitem and 'field_key' in mainitem %}
+                      <div class="{{mainitem.key_ta}} hidden">{{mainitem.field_key}}</div>
+                      <div class="edit-mode hidden">{{mainitem.field_ta}}</div>
+                    {% elif 'field_key' in mainitem %}
+                      <div class="edit-mode hidden">{{mainitem.field_key}}</div>
+                    {% elif 'field_list' in mainitem %}
+                      <div class="edit-mode hidden" 
+                            {% if 'inline_selection' in mainitem %}select2init="{{mainitem.inline_selection}}"{% endif %}>
+                        <div class="inner">
+                          {{mainitem.field_list}}
+                        </div>
+                      </div>
+                      {% if is_app_editor and 'fso' in mainitem and permission == "write" %}
+                        <div class="new-mode hidden" id="{{mainitem.fso.prefix}}_formset" 
+                             {% if 'template_selection' in mainitem %}select2init="{{mainitem.template_selection}}"{% endif %}>
+                          {% if mainitem.unique %}
+                            {% include 'seeker/formset_new.html' with this_formset=mainitem.fso.formsetinstance prefix=mainitem.fso.prefix linkfield=mainitem.fso.linkfield unique=1 %}
+                          {% else %}
+                            {% include 'seeker/formset_new.html' with this_formset=mainitem.fso.formsetinstance prefix=mainitem.fso.prefix linkfield=mainitem.fso.linkfield %}
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    {% elif 'field_view' in mainitem %}
+                      <div class="hidden">{{mainitem.field_view}}</div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+
+      <!-- add the links here -->
+      {% for link in link_objects %}
+        <tr>
+          <td>{{link.name}}</td>
+          <td><a href="{{link.value}}">{{link.label}}</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
+
+<!-- Modal form for history -->
+<div id="modal-history" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content -->
+    <div class="modal-content">
+      <!-- introduction header -->
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Revision history</h4>
+      </div>
+
+      <!-- Body of the modal-->
+      <div class="modal-body modal-dragpoint" id="view-history">
+        <!-- This is where the current gold-to-gold link shows up -->
+        <div  style='height: 300px; overflow-y: scroll;'>
+          {{history_contents|safe}}
+        </div>
+      </div>
+
+      <!-- Footer with the save button -->
+      <div class="modal-footer">
+        {% if is_app_editor %}
+          <a class="btn jumbo-1" data-dismiss="modal" >
+            <span class="glyphicon glyphicon-ok" title="Close history">&nbsp;Ok</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% block endcontent %} 
+  {% if has_select2 %}{{basic_form.media.js }}{% endif %}
+{% endblock %}

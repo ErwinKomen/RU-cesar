@@ -32,6 +32,24 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="cesar\basic\admin.py" />
+    <Compile Include="cesar\basic\apps.py" />
+    <Compile Include="cesar\basic\migrations\__init__.py" />
+    <Compile Include="cesar\basic\models.py" />
+    <Compile Include="cesar\basic\tests.py" />
+    <Compile Include="cesar\basic\utils.py" />
+    <Compile Include="cesar\basic\views.py" />
+    <Compile Include="cesar\basic\__init__.py" />
+    <Compile Include="cesar\brief\admin.py" />
+    <Compile Include="cesar\brief\apps.py" />
+    <Compile Include="cesar\brief\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cesar\brief\migrations\__init__.py" />
+    <Compile Include="cesar\brief\models.py" />
+    <Compile Include="cesar\brief\tests.py" />
+    <Compile Include="cesar\brief\views.py" />
+    <Compile Include="cesar\brief\__init__.py" />
     <Compile Include="cesar\browser\admin.py" />
     <Compile Include="cesar\browser\apps.py" />
     <Compile Include="cesar\browser\forms.py">
@@ -55,16 +73,6 @@
     <Compile Include="cesar\doc\tests.py" />
     <Compile Include="cesar\doc\views.py" />
     <Compile Include="cesar\doc\__init__.py" />
-    <Compile Include="cesar\ds2\admin.py" />
-    <Compile Include="cesar\ds2\apps.py" />
-    <Compile Include="cesar\ds2\forms.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="cesar\ds2\migrations\__init__.py" />
-    <Compile Include="cesar\ds2\models.py" />
-    <Compile Include="cesar\ds2\tests.py" />
-    <Compile Include="cesar\ds2\views.py" />
-    <Compile Include="cesar\ds2\__init__.py" />
     <Compile Include="cesar\lingo\admin.py" />
     <Compile Include="cesar\lingo\apps.py" />
     <Compile Include="cesar\lingo\forms.py">
@@ -99,6 +107,19 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="cesar\seeker\__init__.py" />
+    <Compile Include="cesar\trans\admin.py" />
+    <Compile Include="cesar\trans\apps.py" />
+    <Compile Include="cesar\trans\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cesar\trans\translit.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cesar\trans\migrations\__init__.py" />
+    <Compile Include="cesar\trans\models.py" />
+    <Compile Include="cesar\trans\tests.py" />
+    <Compile Include="cesar\trans\views.py" />
+    <Compile Include="cesar\trans\__init__.py" />
     <Compile Include="cesar\tsg\admin.py" />
     <Compile Include="cesar\tsg\apps.py" />
     <Compile Include="cesar\tsg\forms.py">
@@ -121,6 +142,16 @@
     <Compile Include="cesar\viewer\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="cesar\woord\admin.py" />
+    <Compile Include="cesar\woord\apps.py" />
+    <Compile Include="cesar\woord\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cesar\woord\migrations\__init__.py" />
+    <Compile Include="cesar\woord\models.py" />
+    <Compile Include="cesar\woord\tests.py" />
+    <Compile Include="cesar\woord\views.py" />
+    <Compile Include="cesar\woord\__init__.py" />
     <Compile Include="manage.py" />
     <Compile Include="cesar\__init__.py" />
     <Compile Include="cesar\settings.py" />
@@ -129,6 +160,23 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="cesar\" />
+    <Folder Include="cesar\basic\" />
+    <Folder Include="cesar\basic\migrations\" />
+    <Folder Include="cesar\basic\static\" />
+    <Folder Include="cesar\basic\static\basic\" />
+    <Folder Include="cesar\basic\static\basic\content\" />
+    <Folder Include="cesar\basic\static\basic\scripts\" />
+    <Folder Include="cesar\basic\templates\" />
+    <Folder Include="cesar\basic\templates\basic\" />
+    <Folder Include="cesar\brief\" />
+    <Folder Include="cesar\brief\migrations\" />
+    <Folder Include="cesar\brief\static\" />
+    <Folder Include="cesar\brief\static\brief\" />
+    <Folder Include="cesar\brief\static\brief\content\" />
+    <Folder Include="cesar\brief\static\brief\fonts\" />
+    <Folder Include="cesar\brief\static\brief\scripts\" />
+    <Folder Include="cesar\brief\templates\" />
+    <Folder Include="cesar\brief\templates\brief\" />
     <Folder Include="cesar\browser\" />
     <Folder Include="cesar\browser\migrations\" />
     <Folder Include="cesar\browser\static\" />
@@ -140,11 +188,11 @@
     <Folder Include="cesar\browser\templates\browser\" />
     <Folder Include="cesar\doc\" />
     <Folder Include="cesar\doc\migrations\" />
+    <Folder Include="cesar\doc\static\" />
+    <Folder Include="cesar\doc\static\doc\" />
+    <Folder Include="cesar\doc\static\doc\scripts\" />
     <Folder Include="cesar\doc\templates\" />
     <Folder Include="cesar\doc\templates\doc\" />
-    <Folder Include="cesar\ds2\" />
-    <Folder Include="cesar\ds2\migrations\" />
-    <Folder Include="cesar\ds2\templates\" />
     <Folder Include="cesar\lingo\" />
     <Folder Include="cesar\lingo\migrations\" />
     <Folder Include="cesar\lingo\static\" />
@@ -163,6 +211,14 @@
     <Folder Include="cesar\seeker\templates\seeker\" />
     <Folder Include="cesar\templates\" />
     <Folder Include="cesar\templates\admin\" />
+    <Folder Include="cesar\trans\" />
+    <Folder Include="cesar\trans\migrations\" />
+    <Folder Include="cesar\trans\static\" />
+    <Folder Include="cesar\trans\static\trans\" />
+    <Folder Include="cesar\trans\static\trans\content\" />
+    <Folder Include="cesar\trans\static\trans\scripts\" />
+    <Folder Include="cesar\trans\templates\" />
+    <Folder Include="cesar\trans\templates\trans\" />
     <Folder Include="cesar\tsg\" />
     <Folder Include="cesar\tsg\migrations\" />
     <Folder Include="cesar\tsg\templates\" />
@@ -170,8 +226,45 @@
     <Folder Include="cesar\viewer\" />
     <Folder Include="cesar\viewer\templates\" />
     <Folder Include="cesar\viewer\templates\viewer\" />
+    <Folder Include="cesar\woord\" />
+    <Folder Include="cesar\woord\migrations\" />
+    <Folder Include="cesar\woord\static\" />
+    <Folder Include="cesar\woord\static\woord\" />
+    <Folder Include="cesar\woord\static\woord\content\" />
+    <Folder Include="cesar\woord\static\woord\fonts\" />
+    <Folder Include="cesar\woord\static\woord\scripts\" />
+    <Folder Include="cesar\woord\templates\" />
+    <Folder Include="cesar\woord\templates\woord\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="cesar\basic\static\basic\content\basic.css" />
+    <Content Include="cesar\basic\static\basic\scripts\basic.js" />
+    <Content Include="cesar\basic\templates\basic\basic_details.html" />
+    <Content Include="cesar\basic\templates\basic\basic_edit.html" />
+    <Content Include="cesar\basic\templates\basic\basic_list.html" />
+    <Content Include="cesar\brief\static\brief\content\bootstrap.min.css" />
+    <Content Include="cesar\brief\static\brief\content\ru-base.css" />
+    <Content Include="cesar\brief\static\brief\content\ru-form.css" />
+    <Content Include="cesar\brief\static\brief\content\ru-widgets.css" />
+    <Content Include="cesar\brief\static\brief\content\sil-base.css" />
+    <Content Include="cesar\brief\static\brief\content\sil_logo.png" />
+    <Content Include="cesar\brief\static\brief\content\site.css" />
+    <Content Include="cesar\brief\static\brief\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="cesar\brief\static\brief\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="cesar\brief\static\brief\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="cesar\brief\static\brief\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="cesar\brief\static\brief\scripts\bootstrap.js" />
+    <Content Include="cesar\brief\static\brief\scripts\cesar.brief.js" />
+    <Content Include="cesar\brief\static\brief\scripts\jquery-1.10.2.js" />
+    <Content Include="cesar\brief\static\brief\scripts\modernizr-2.6.2.js" />
+    <Content Include="cesar\brief\static\brief\scripts\respond.js" />
+    <Content Include="cesar\brief\templates\brief\about.html" />
+    <Content Include="cesar\brief\templates\brief\question_entries.html" />
+    <Content Include="cesar\brief\templates\brief\index.html" />
+    <Content Include="cesar\brief\templates\brief\layout.html" />
+    <Content Include="cesar\brief\templates\brief\pb_master.html" />
+    <Content Include="cesar\brief\templates\brief\report.html" />
+    <Content Include="cesar\brief\templates\brief\topnav.html" />
     <Content Include="cesar\browser\static\browser\content\acad.png" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.css" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.min.css" />
@@ -206,11 +299,15 @@
     <Content Include="cesar\browser\static\browser\scripts\respond.min.js" />
     <Content Include="cesar\browser\templates\browser\crppsync.html" />
     <Content Include="cesar\browser\templates\browser\text_info.html" />
-    <Content Include="cesar\doc\templates\doc\doc_main.html" />
+    <Content Include="cesar\doc\static\doc\scripts\cesar.doc.js" />
+    <Content Include="cesar\doc\templates\doc\import_docs.html" />
+    <Content Include="cesar\doc\templates\doc\import_nexis.html" />
+    <Content Include="cesar\doc\templates\doc\nexis_main.html" />
+    <Content Include="cesar\doc\templates\doc\concrete_main.html" />
     <Content Include="cesar\doc\templates\doc\foliadocs_view.html" />
     <Content Include="cesar\doc\templates\doc\import_brys.html" />
-    <Content Include="cesar\doc\templates\doc\import_docs.html" />
-    <Content Include="cesar\ds2\templates\form.html" />
+    <Content Include="cesar\doc\templates\doc\import_concrete.html" />
+    <Content Include="cesar\doc\templates\doc\text_scores.html" />
     <Content Include="cesar\lingo\static\lingo\content\bootstrap.min.css" />
     <Content Include="cesar\lingo\static\lingo\content\lingo.css" />
     <Content Include="cesar\lingo\static\lingo\content\ru-base.css" />
@@ -333,11 +430,41 @@
     <Content Include="cesar\lingo\templates\lingo\experiment_details.html" />
     <Content Include="cesar\lingo\templates\lingo\experiment_do.html" />
     <Content Include="cesar\lingo\templates\lingo\experiment_list.html" />
+    <Content Include="cesar\trans\static\trans\content\trans-site.css" />
+    <Content Include="cesar\trans\static\trans\scripts\cesar.trans.js" />
+    <Content Include="cesar\trans\templates\trans\index.html" />
     <Content Include="cesar\tsg\templates\tsg\tsghandle_details.html" />
     <Content Include="cesar\tsg\templates\tsg\tsghandle_edit.html" />
     <Content Include="cesar\tsg\templates\tsg\tsghandle_list.html" />
     <Content Include="cesar\tsg\templates\tsg\tsg_main.html" />
     <Content Include="cesar\viewer\templates\index.html" />
+    <Content Include="cesar\woord\static\woord\content\bootstrap.css" />
+    <Content Include="cesar\woord\static\woord\content\jquery-ui.css" />
+    <Content Include="cesar\woord\static\woord\content\woord-site.css" />
+    <Content Include="cesar\woord\static\woord\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="cesar\woord\static\woord\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="cesar\woord\static\woord\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="cesar\woord\static\woord\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="cesar\woord\static\woord\scripts\bootstrap.js" />
+    <Content Include="cesar\woord\static\woord\scripts\cesar.woord.js" />
+    <Content Include="cesar\woord\static\woord\scripts\jquery-ui.min.js" />
+    <Content Include="cesar\woord\static\woord\scripts\jquery-1.11.0.min.js" />
+    <Content Include="cesar\woord\templates\woord\download.html" />
+    <Content Include="cesar\woord\templates\woord\explain_thank.html" />
+    <Content Include="cesar\woord\templates\woord\explain_spec.html" />
+    <Content Include="cesar\woord\templates\woord\explain_conc.html" />
+    <Content Include="cesar\woord\templates\woord\explain_perm.html" />
+    <Content Include="cesar\woord\templates\woord\lastdone.html" />
+    <Content Include="cesar\woord\templates\woord\optout.html" />
+    <Content Include="cesar\woord\templates\woord\que_spec.html" />
+    <Content Include="cesar\woord\templates\woord\que_conc.html" />
+    <Content Include="cesar\woord\templates\woord\rechtstreeks.html" />
+    <Content Include="cesar\woord\templates\woord\wrong.html" />
+    <Content Include="cesar\woord\templates\woord\nlogin.html" />
+    <Content Include="cesar\woord\templates\woord\index.html" />
+    <Content Include="cesar\woord\templates\woord\layout.html" />
+    <Content Include="cesar\woord\templates\woord\question.html" />
+    <Content Include="cesar\woord\templates\woord\tools.html" />
     <Content Include="codemeta.json" />
     <Content Include="requirements.txt" />
   </ItemGroup>

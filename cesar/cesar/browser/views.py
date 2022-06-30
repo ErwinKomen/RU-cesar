@@ -19,12 +19,13 @@ from django.views.generic import ListView, View
 from datetime import datetime
 from time import sleep
 
-from cesar.settings import APP_PREFIX
+from cesar.settings import APP_PREFIX, WRITABLE_DIR
 from cesar.browser.services import *
 from cesar.browser.models import *
 from cesar.browser.forms import *
 from cesar.utils import ErrHandle
 from cesar.viewer.models import NewsItem
+from cesar.basic.views import BasicDetails
 import fnmatch
 import sys
 import base64
@@ -205,6 +206,8 @@ def home(request):
     # Make sure we add special group permission(s)
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
     context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
+    context['is_tablet_editor'] = user_is_ingroup(request, "tablet_editor")
+    context['is_brief_user'] = user_is_ingroup(request, "brief_user")
     context['is_superuser'] = user_is_superuser(request)
     # Render and return the page
     return render(request, template_name, context)
@@ -315,11 +318,67 @@ def signup(request):
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
 
+def signuplist(request):
+    """Create users based on the signuplist in [filename] JSON"""
+
+    oErr = ErrHandle()
+    msg = "done"
+    lUsernames = []
+    iCount = 0
+    user_file = "cesar_user_add.json"
+    try:
+        is_superuser = user_is_superuser(request)
+        if not is_superuser:
+            msg = "Sorry, only allowed for the super user"
+        else:
+            # Figure out what the filename is
+            filename = os.path.abspath(os.path.join(WRITABLE_DIR, "..", user_file))
+            # Read the file
+            if os.path.exists(filename):
+                with open(filename, "r", encoding="utf-8") as fp:
+                    lUsernames = json.load(fp)
+                # Walk through the usernames
+                for oItem in lUsernames:
+                    username = oItem.get("username")
+                    raw_password = oItem.get("password")
+                    email = oItem.get("email")
+                    if not username is None and not raw_password is None:
+                        # First see if this user is already present or not
+                        user = User.objects.filter(username__iexact=username).first()
+                        if user is None:
+                            # Create the user
+                            user = User.objects.create_user(
+                                username=username, 
+                                email=email,
+                                password=raw_password)
+                            # Authenticate password
+                            user = authenticate(username=username, password=raw_password, is_staff=True)
+                            user.is_staff = True
+                            user.save()
+                            # Keep track of the amount of users
+                            iCount += 1
+                            # Add user to the "RegistryUser" group
+                            gQs = Group.objects.filter(name="seeker_user")
+                            if gQs.count() > 0:
+                                g = gQs[0]
+                                g.user_set.add(user)
+                msg = "added {} users".format(iCount)
+            else:
+                msg = "Sorry, cannot find file: {}".format(filename)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("signuplist")
+    oErr.Status("signuplist: {}".format(msg))
+    return redirect('home')
+
 def sync_crpp(request):
     """Synchronize information FROM /crpp"""
 
     assert isinstance(request, HttpRequest)
 
+    is_superuser = user_is_superuser(request)
+    if not is_superuser:
+        return home(request)
     # Gather info
     context =  { 'title':'Sync-Crpp',
             'message':'Radboud University CESAR utility.',
@@ -502,6 +561,7 @@ def sync_crpp_start(request):
                 
 
     except:
+        msg = oErr.get_error_message()
         oErr.DoError("sync_crpp_start error")
         data['status'] = "error"
 
@@ -551,7 +611,8 @@ def sync_crpp_progress(request):
         # Return this response
         return JsonResponse(data)
     except:
-        oErr.DoError("sync_crpp_start error")
+        msg = oErr.get_error_message()
+        oErr.DoError("sync_crpp_progress error")
         data = {'status': 'error'}
 
     # Return this response
@@ -592,12 +653,47 @@ class PartDetailView(DetailView):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated: 
             return nlogin(request)
-        return super(PartDetailView).get(request, *args, **kwargs)
+        return super(PartDetailView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated: 
             return nlogin(request)
-        return super(PartDetailView).post(request, *args, **kwargs)
+        return super(PartDetailView, self).post(request, *args, **kwargs)
+
+
+class PartEdit(BasicDetails):
+    """Details of one part"""
+
+    model = Part
+    mForm = PartForm
+    prefix = "prt"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Name:",                 'value': instance.name},
+            {'type': 'plain', 'label': "Description:",          'value': instance.descr},
+            {'type': 'plain', 'label': "Release:",              'value': instance.url},
+            {'type': 'plain', 'label': "Meta variable:",        'value': instance.metavar.name},
+            {'type': 'plain', 'label': "Corpus name:",          'value': instance.corpus.name  },
+            {'type': 'plain', 'label': "Corpus language:",      'value': instance.language()},
+            {'type': 'plain', 'label': "Ethnologue:",           'value': instance.corpus.get_eth_display()},
+            {'type': 'safe', 'label': "Number of texts",   'value': instance.get_text_count()},
+            {'type': 'safe', 'label': "Number of lines",   'value': instance.get_line_count()},
+            {'type': 'safe', 'label': "Number of words",   'value': instance.get_word_count()},
+            ]
+
+
+        # Return the context we have made
+        return context
+
+
+class PartDetails(PartEdit):
+    """Show the details of a [Part]"""
+    rtype = "html"
 
 
 class PartListView(ListView):
@@ -696,7 +792,7 @@ class PartListView(ListView):
         self.qs = qs
 
         # Set the entry count
-        self.entrycount = len(self.qs)
+        self.entrycount = self.qs.count()
 
         # Return the resulting filtered and sorted queryset
         return qs
@@ -1093,6 +1189,10 @@ class TextDetailView(DetailView):
             status = initial['status']
         context['status'] = status
 
+        # Make sure we add special group permission(s)
+        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+        context['is_superuser'] = user_is_superuser(self.request)
+
         # Return what we have
         return context
 
@@ -1175,6 +1275,9 @@ class TextListView(ListView):
         # Set the title
         context['title'] = "Cesar texts"
 
+        # Make sure we add special group permission(s)
+        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+        context['is_superuser'] = user_is_superuser(self.request)
 
         # Remember where we are
         # ONLY GIVES PARTIAL: context['url'] = self.request.resolver_match.url_name
@@ -1265,7 +1368,8 @@ class TextListView(ListView):
         self.qs = qs
 
         # Set the entry count
-        self.entrycount = len(self.qs)
+        # This workds SLOW: self.entrycount = len(self.qs)
+        self.entrycount = self.qs.count()
 
         # Return the resulting filtered and sorted queryset
         return qs

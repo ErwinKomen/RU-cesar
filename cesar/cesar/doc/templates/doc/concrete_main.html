@@ -1,0 +1,247 @@
+{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+{% block scripts %}
+  {% load staticfiles %}
+    <script src="{% static 'basic/scripts/basic.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">    
+    <h3>Tablet document processing</h3>
+
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- Dashboard to select input file(s) and then allow downloading the results -->
+    <div id="import_docs" class="row" >
+      <div class="col-md-9 panel panel-default">
+      <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+        {% csrf_token %}
+        <!-- Need username and password for the CLAM client webservice -->
+        <div class="row">
+          <div class="col-md-12">
+            <table style="width: 100%;">
+              <tbody>
+                <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
+                <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
+                <tr>
+                  <td>File(s) to be processed:</td>
+                  <td>
+                    <span class="input-group-btn">
+                      <span class="btn btn-default btn-xs btn-file">Browse...{{frmUpload.files_field}}</span>
+                      <!-- The files that have been selected-->
+                      <span></span>
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <div id="docs-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
+                    <progress class="hidden" style="width:100%;" id="docs-import_progress" value="0" min="0" max="100"></progress>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" align="right">
+                    <a class="btn btn-sm jumbo-1"
+                       targetid="docs_data_import"
+                       targeturl="{% url 'import_concrete' %}"
+                       syncurl="{% url 'sync_progress' %}?synctype=docs" 
+                       onclick="ru.cesar.seeker.import_post(this);"
+                       >Start</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <!-- Progress -->
+        <div class="save-warning"></div>
+        <!-- Any error reporting -->
+        <div id="docs-import_error"></div>
+      </form>
+      </div>
+    </div>
+
+    <!-- The normal progress reporting -->
+    <div id="docs_data_import"></div>
+
+    <!-- Brysbaert uploading, if allowed -->
+    {% if superuser %}
+      <!-- Dashboard to select input file(s) and then allow downloading the results -->
+      <div id="import_brysb" class="row" >
+        <div class="col-md-9">
+          <div id="brysbaert-section" class="panel panel-default collapse">
+            <h4>Brysbaert scores</h4>
+            <p>Note: only needed if Brysbaert has not been read yet.</p>
+            <form action="{% url 'import_brysb' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+              {% csrf_token %}
+
+              <div class="row">
+                <div class="col-md-9">
+                  <table>
+                    <tbody>
+                      <tr>
+                        <td>Tab-separated file to be processed:</td>
+                        <td>
+                          <span class="input-group-btn">
+                            <span class="btn btn-default btn-xs btn-file">Browse...{{frmBrysb.file_field}}</span>
+                            <!-- The file that have been selected-->
+                            <span></span>
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <span id="brysb-import_status">&nbsp;</span>
+                          <progress class="hidden" style="width:100%;" id="brysb-import_progress" value="0" min="0" max="100"></progress>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" align="right">
+                          <a class="btn btn-sm jumbo-1"
+                             targetid="brysb_data_import"
+                             targeturl="{% url 'import_brysb' %}"
+                             syncurl="{% url 'sync_progress' %}?synctype=brysb" 
+                             onclick="ru.cesar.seeker.import_post(this);"
+                             >Start</a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+
+              <!-- Progress -->
+              <div class="save-warning"></div>
+              <!-- Any error reporting -->
+              <div id="brysb-import_error"></div>
+            </form>
+          </div>
+        </div>
+        <dic class="col-md-3">
+          <div class="btn btn-sm jumbo-1 collapsed" data-toggle="collapse" data-target="#brysbaert-section">Brysbaert</div>
+        </dic>
+      </div>
+
+      <!-- The normal progress reporting -->
+      <div id="brysb_data_import"></div>
+    {% endif %}
+
+    <!-- Results section -->
+    <div id="concrete_results" class="row">
+      {% for otext in textlist %}
+        <div class="panel panel-default">
+          <div class="panel-heading collapsed" data-toggle="collapse" data-target="#text-number-{{forloop.counter}}">
+            {% if otext.text %}{{otext.text}}{% else %}text # {{forloop.counter}}{% endif %}
+            <span class="pull-right" style="font-size: smaller; color: darkblue;">{{otext.created}}</span>
+          </div>
+          <div id="text-number-{{forloop.counter}}" class="collapse">
+            <div class="delete-confirm hidden">
+              <form>
+                {% csrf_token %}
+                <span class="hidden">
+                  <input name='afterurl' id='afterurl' class='form-control' value='{% url 'concrete_main' %}' >
+                </span>
+                <span>Are you sure you would like to delete this Concreteness file?</span>
+                <span class="ms editable">
+                  <!-- The button to cancel deletion -->
+                  <a title="Cancel deletion" class="btn btn-xs jumbo-1" onclick="ru.basic.delete_cancel(this);">Cancel</a>
+                  <!-- The actual delete button-->
+                  <a mode="delete" title="Delete this Concreteness file" class="btn btn-xs jumbo-3" 
+                     afterurl="{% url 'concrete_main' %}" targetid="froglink_edit" 
+                     targeturl="{% url 'froglink_edit' otext.id %}">
+                    Delete
+                  </a>
+                </span>
+              </form>
+            </div>
+            <div class="row">
+              <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
+                (n={{otext.n}}, total={{otext.total|floatformat:3}})</div>
+              <div class="col-md-3 dropdown">
+                {% if otext.show %}
+                  <form>
+                    {% csrf_token %}
+                    <span id="downloadcenter" class="hidden">
+                      <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+                      <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+                    </span>
+                    <button class="btn btn-default btn-sm dropdown-toggle"
+                            type="button" id="downloadmenu"
+                            data-toggle="dropdown" aria-haspopup="true"
+                            aria-expanded="true">download&nbsp;<span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+                      <li class="fdos_host">
+                        <a href="#" id="fdocs_download_tree"
+                           title="JS object notation"
+                            downloadtype="json"
+                            ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                            onclick="ru.cesar.seeker.post_download(this);" >json</a>
+                      </li>
+                      <li class="fdos_host">
+                        <a href="#" id="fdocs_download_tree"
+                           title="Tab-separated values"
+                            downloadtype="tsv"
+                            ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                            onclick="ru.cesar.seeker.post_download(this);" >tsv</a>
+                      </li>
+                      <!-- <li role="separator" class="divider"></li>-->
+                      <li class="fdos_host">
+                        <a href="#" id="fdocs_download_htable"
+                           title="Microsoft Excel / Open Office "
+                            downloadtype="excel"
+                            ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                            onclick="ru.cesar.seeker.post_download(this);" >Excel</a>
+                      </li>
+                    </ul>
+                    <a class="btn btn-default btn-xs" title="Edit item" role="button" href="{% url 'froglink_details' otext.id %}">
+                      <span class="glyphicon glyphicon-pencil"></span>
+                    </a>
+                    <!-- Put the delete button completely to the right-->
+                    <a mode="skip" class="view-mode btn btn-xs jumbo-1 pull-right" onclick="ru.basic.delete_confirm(this);">
+                      <span class="glyphicon glyphicon-remove" title="Delete this Concreteness file"></span>
+                    </a>
+                  </form>
+                {% else %}
+                  <span><i>(no download for this item)</i></span>
+                  <a class="btn btn-default btn-xs" title="Edit item" role="button" href="{% url 'froglink_details' otext.id %}">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                  </a>
+                  <!-- Put the delete button completely to the right-->
+                  <a mode="skip" class="view-mode btn btn-xs jumbo-1 pull-right" onclick="ru.basic.delete_confirm(this);">
+                    <span class="glyphicon glyphicon-remove" title="Delete this Concreteness file"></span>
+                  </a>
+                {% endif %}
+              </div>
+
+            </div>
+            {% include 'doc/text_scores.html' with otext=otext mode='view' %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+<script>
+  ru.cesar.seeker.init_events();
+</script>
+
+{% endblock content %}
+

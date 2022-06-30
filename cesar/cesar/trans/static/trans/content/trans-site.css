@@ -1,0 +1,12 @@
+﻿body
+{
+}
+
+.Vernacular {
+    color: brown;
+}
+
+.Phonemic {
+    color: darkblue;
+    font-size: smaller;
+}

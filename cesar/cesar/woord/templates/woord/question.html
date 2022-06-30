@@ -1,0 +1,85 @@
+{% extends "woord/layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<!-- Parameters -->
+
+<!-- Show the user name -->
+<div class="usernamefield">{{woordusername}}</div>
+<!-- Show the overall progress -->
+<div class="progressfield">Voortgang: {{percentage|floatformat:2}}% (done {{progr_done}} of {{progr_total}})<div id="progressbar" style="width: 300px;height: 15px;"></div></div>
+
+<!-- Show the next stimuli for this particular user -->
+{% for item in lst_stimulus %}
+  <div class="centerfield">
+    <!-- Hidden: the id of this question-->
+    <div class="hidden questionid">{{item.questionid}}</div>
+
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2 stimulus">
+        {{item.stimulus|safe}}
+      </div>
+      <div class="col-md-2">
+        <input class="knowcheck" type="checkbox"> Ken ik niet
+      </div>
+    </div>
+
+    <div class="sliderfield">
+      <!-- The two options -->
+      <div class="leftoption">{{item.left}}</div>
+      <div class="rightoption">{{item.right}}</div>
+
+      {% if use_slider %}
+        <!-- The actual slider 
+             Issue #152: use radio-buttons instead of slider-->
+        <div class="slider"></div>
+        <div class="slidervalue">5</div>
+      {% else %}
+        <!-- User's evaluation -->
+        <div class="evaluation">
+          <label class="radio-inline"><input type="radio" value="1" name="optradio_{{item.questionid}}" />1</label>
+          <label class="radio-inline"><input type="radio" value="2" name="optradio_{{item.questionid}}" />2</label>
+          <label class="radio-inline"><input type="radio" value="3" name="optradio_{{item.questionid}}" />3</label>
+          <label class="radio-inline"><input type="radio" value="4" name="optradio_{{item.questionid}}" />4</label>
+          <label class="radio-inline"><input type="radio" value="5" name="optradio_{{item.questionid}}" />5</label>
+          <label class="radio-inline"><input type="radio" value="6" name="optradio_{{item.questionid}}" />6</label>
+          <label class="radio-inline"><input type="radio" value="7" name="optradio_{{item.questionid}}" />7</label>
+          <label class="radio-inline"><input type="radio" value="8" name="optradio_{{item.questionid}}" />8</label>
+          <label class="radio-inline"><input type="radio" value="9" name="optradio_{{item.questionid}}" />9</label>
+          <label class="radio-inline"><input type="radio" value="10" name="optradio_{{item.questionid}}" />10</label>
+        </div>
+        <div class="eval-missing hidden">
+          <code>Kies een waarde</code>
+        </div>
+      {% endif %}
+
+      <!-- Warning if response is not given -->
+    </div>
+  </div>
+  <br />
+{% endfor %}
+
+<div id="next_question" class="next-button">
+  <!-- Warning if some questions were not answered to -->
+  <div class="hidden eval-missing eval-warning">
+    <code>Eén of meer waarden zijn nog niet ingevuld</code>
+  </div>
+  <div class="hidden eval-waiting">
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+  </div>
+  <!-- <form method="post" action="{{question_url}}"> -->
+  <form  method="post"  action="{{question_url}}">
+    {% csrf_token %}
+    <input type="hidden" name="username" value="{{woordusername}}" />
+    <input type="hidden" name="results" id="results" />
+    {% include 'woord/rechtstreeks.html' %}
+    <!-- Allow the user to go to the next question -->
+    <a role="button" class="btn btn-primary btn-lg" 
+            targeturl="{{question_url}}" 
+            onclick="ru.cesar.woord.volgende(this, '{{woordusername}}');">Volgende</a>
+
+  </form>
+</div>
+
+{% endblock %}

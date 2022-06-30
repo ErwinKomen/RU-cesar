@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 # Uncomment the next lines to enable the admin:
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.contrib.auth.views import LoginView, LogoutView
 import django.contrib.auth.views
 
 # Import from the app 'browser'
@@ -18,14 +19,12 @@ from cesar.doc.views import *
 from cesar.tsg.views import *
 # The CesarLingo application
 from cesar.lingo.views import *
-
-# Django-select2 testing
-from cesar.ds2.forms import (
-    AddressChainedSelect2WidgetForm, AlbumModelSelect2WidgetForm,
-    HeavySelect2MultipleWidgetForm, HeavySelect2WidgetForm,
-    ModelSelect2TagWidgetForm, Select2WidgetForm
-)
-from cesar.ds2.views import TemplateFormView, heavy_data_1, heavy_data_2
+# The brief application
+from cesar.brief.views import *
+# The WOORD application
+from cesar.woord.views import *
+# The Transliterate application
+from cesar.trans.views import *
 
 # Import from CESAR as a whole
 from cesar.settings import APP_PREFIX
@@ -62,6 +61,34 @@ urlpatterns = [
 
     url(r'^crm/contacts', cesar.lingo.views.crm_contacts, name='crm_contacts'),
 
+    # Cesar woordbeoordelingen:
+    url(r'^woord/$', cesar.woord.views.home, name='woord_home'),
+    url(r'^woord/tools/$', cesar.woord.views.tools, name='woord_tools'),
+    url(r'^woord/question/$', cesar.woord.views.question, name='woord_question'),
+    url(r'^woord/reset/$', cesar.woord.views.reset, name='woord_reset'),
+    url(r'^woord/generate/$', cesar.woord.views.generate, name='woord_generate'),
+    url(r'^woord/download/(?P<pk>\d+)', ResultDownload.as_view(), name='woord_download'),
+
+    # Cesar transliteration:
+    url(r'^trans/$', cesar.trans.views.home, name='trans_home'),
+    url(r'^trans/convert/$', cesar.trans.views.convert, name='trans_convert'),
+    url(r'^trans/download/$', cesar.trans.views.download, name='trans_download'),
+
+    # Cesar brief:
+    url(r'^brief/$', cesar.brief.views.home, name='brief_home'),
+    url(r'^brief/about', cesar.brief.views.about, name='brief_about'),
+    url(r'^brief/update', cesar.brief.views.brief_load, name='brief_update'),
+    url(r'^brief/project/list', ProjectListView.as_view(), name='project_list'),
+    url(r'^brief/project/details(?:/(?P<pk>\d+))?/$', ProjectDetails.as_view(), name='project_details'),
+    url(r'^brief/project/edit(?:/(?P<pk>\d+))?/$', ProjectEdit.as_view(), name='project_edit'),
+    url(r'^brief/project/location/$', cesar.brief.views.set_section, name='project_location'),
+    url(r'^brief/edit(?:/(?P<pk>\d+))?/$', BriefEdit.as_view(), name='brief_edit'),
+    url(r'^brief/master(?:/(?P<pk>\d+))?/$', BriefMaster.as_view(), name='brief_master'),
+    url(r'^brief/report(?:/(?P<pk>\d+))?/$', BriefReport.as_view(), name='brief_report'),
+    url(r'^brief/product/details(?:/(?P<pk>\d+))?/$', BriefProductDetails.as_view(), name='briefproduct_details'),
+    url(r'^brief/product/edit(?:/(?P<pk>\d+))?/$', BriefProductEdit.as_view(), name='briefproduct_edit'),
+    url(r'^brief/product/list', BriefProductList.as_view(), name='briefproduct_list'),
+
     # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),
     url(r'^contact$', cesar.browser.views.contact, name='contact'),
@@ -69,9 +96,12 @@ urlpatterns = [
     url(r'^about', cesar.browser.views.about, name='about'),
     url(r'^short', cesar.browser.views.short, name='short'),
     url(r'^nlogin', cesar.browser.views.nlogin, name='nlogin'),
+    url(r'^api/signuplist', cesar.browser.views.signuplist, name='signuplist'),
 
     url(r'^part/list', cesar.browser.views.PartListView.as_view(), name='part_list'),
     url(r'^part/view/(?P<pk>\d+)', PartDetailView.as_view(), name='part_view'),
+    url(r'^part/edit(?:/(?P<pk>\d+))?/$', PartEdit.as_view(), name='part_edit'),
+    url(r'^part/details(?:/(?P<pk>\d+))?/$', PartDetails.as_view(), name='part_details'),
 
     url(r'^text/info/(?P<pk>\d+)', TextDetailInfo.as_view(), name='text_info'),
     url(r'^text/list/$', cesar.browser.views.TextListView.as_view(), name='text_list'),
@@ -80,11 +110,28 @@ urlpatterns = [
     url(r'^text/line/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='text_line'),
     url(r'^text/syntax/download/(?P<pk>\d+)/$', SentenceDetailView.as_view(), name='syntax_download'),
 
-    url(r'^doc/main/$', cesar.doc.views.docmain, name='doc_main'),
-    url(r'^doc/download/(?P<pk>\d+)/$', FoliaDocumentDetailView.as_view(), name='docs_download'),
+    url(r'^tablet/$', cesar.doc.views.concrete_main, name='concrete_main'),
+    url(r'^tablet/concrete/list/$', ConcreteListView.as_view(), name='froglink_list'),
+    url(r'^tablet/doc/details(?:/(?P<pk>\d+))?/$', ConcreteDetails.as_view(), name='froglink_details'),
+    url(r'^tablet/doc/edit(?:/(?P<pk>\d+))?/$', ConcreteEdit.as_view(), name='froglink_edit'),
+    url(r'^tablet/doc/download/(?P<pk>\d+)/$', ConcreteDownload.as_view(), name='concrete_download'),
+    url(r'^tablet/loctime/list/$', LocTimeList.as_view(), name='loctimeinfo_list'),
+    url(r'^tablet/loctime/table/$', LocTimeTable.as_view(), name='loctimeinfo_table'),
+    url(r'^tablet/loctime/details(?:/(?P<pk>\d+))?/$', LocTimeDetails.as_view(), name='loctimeinfo_details'),
+    url(r'^tablet/loctime/edit(?:/(?P<pk>\d+))?/$', LocTimeEdit.as_view(), name='loctimeinfo_edit'),
+    url(r'^tablet/expression/list/$', ExpressionList.as_view(), name='expression_list'),
+    url(r'^tablet/expression/details(?:/(?P<pk>\d+))?/$', ExpressionDetails.as_view(), name='expression_details'),
+    url(r'^tablet/expression/edit(?:/(?P<pk>\d+))?/$', ExpressionEdit.as_view(), name='expression_edit'),
 
-    url(r'^api/import/docs/$', cesar.doc.views.import_docs, name='import_docs'),
+    url(r'^doc/nexis/$', cesar.doc.views.nexis_main, name='nexis_main'),
+    url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),
+    url(r'^doc/nexis/details(?:/(?P<pk>\d+))?/$', NexisBatchDetails.as_view(), name='nexisbatch_details'),
+    url(r'^doc/nexis/edit(?:/(?P<pk>\d+))?/$', NexisBatchEdit.as_view(), name='nexisbatch_edit'),
+    url(r'^doc/nexis/download(?:/(?P<pk>\d+))?/$', NexisBatchDownload.as_view(), name='nexisbatch_download'),
+
+    url(r'^api/import/concrete/$', cesar.doc.views.import_concrete, name='import_concrete'),
     url(r'^api/import/brysb/$', cesar.doc.views.import_brysbaert, name='import_brysb'),
+    url(r'^api/import/nexis/$', cesar.doc.views.import_nexis, name='import_nexis'),
 
     url(r'^tsg/handle/sync', cesar.tsg.views.tsgsync, name='tsg_sync'),
     url(r'^tsg/handle/list', TsgHandleListView.as_view(), name='tsg_list'),
@@ -120,7 +167,7 @@ urlpatterns = [
     url(r'^seek/result/hit/(?P<object_id>\d+)/$', ResultPart4.as_view(), name='result_part_4'),
     url(r'^seek/result/tree/(?P<object_id>\d+)/$', ResultPart5.as_view(), name='result_part_5'),
     url(r'^seek/result/htable/(?P<object_id>\d+)/$', ResultPart6.as_view(), name='result_part_6'),
-    url(r'^seek/result/download/(?P<object_id>\d+)/$', ResultDownload.as_view(), name='result_download'),
+    url(r'^seek/result/download/(?P<object_id>\d+)/$', SeekerResultDownload.as_view(), name='result_download'),
     url(r'^seek/result/hit/download/(?P<object_id>\d+)/$', ResultHitView.as_view(), name='hit_download'),
     url(r'^seek/result/delete/(?P<object_id>\d+)/$', ResultDelete.as_view(), name='result_delete'),
 
@@ -169,36 +216,16 @@ urlpatterns = [
     # For working with ModelWidgets from the select2 package https://django-select2.readthedocs.io
     url(r'^select2/', include('django_select2.urls')),
 
-    # ds2 app
-    url(r'^ds2/select2_widget', TemplateFormView.as_view(form_class=Select2WidgetForm), name='select2_widget'),
-    url(r'^ds2/heavy_select2_widget', TemplateFormView.as_view(form_class=HeavySelect2WidgetForm), name='heavy_select2_widget'),
-    url(r'^ds2/heavy_select2_multiple_widget', TemplateFormView.as_view(form_class=HeavySelect2MultipleWidgetForm, success_url='/'), name='heavy_select2_multiple_widget'),
-    url(r'^ds2/model_select2_widget', TemplateFormView.as_view(form_class=AlbumModelSelect2WidgetForm), name='model_select2_widget'),
-    url(r'^ds2/model_select2_tag_widget', TemplateFormView.as_view(form_class=ModelSelect2TagWidgetForm), name='model_select2_tag_widget'),
-    url(r'^ds2/model_chained_select2_widget', TemplateFormView.as_view(form_class=AddressChainedSelect2WidgetForm), name='model_chained_select2_widget'),
-    url(r'^ds2/heavy_data_1', heavy_data_1, name='heavy_data_1'),
-    url(r'^ds2/heavy_data_2', heavy_data_2, name='heavy_data_2'),
-
     url(r'^login/user/(?P<user_id>\w[\w\d_]+)$', cesar.browser.views.login_as_user, name='login_as'),
 
-    url(r'^login/$',
-        django.contrib.auth.views.login,
-        {
-            'template_name': 'login.html',
-            'authentication_form': cesar.browser.forms.BootstrapAuthenticationForm,
-            'extra_context':
-            {
-                'title': 'Log in',
-                'year': datetime.now().year,
-            }
-        },
+    url(r'^login/$', LoginView.as_view
+        (
+            template_name= 'login.html',
+            authentication_form= cesar.browser.forms.BootstrapAuthenticationForm,
+            extra_context= {'title': 'Log in','year': datetime.now().year,}
+        ),
         name='login'),
-    url(r'^logout$',
-        django.contrib.auth.views.logout,
-        {
-            'next_page': reverse_lazy('home'),
-        },
-        name='logout'),
+    url(r'^logout$',  LogoutView.as_view(next_page=reverse_lazy('home')), name='logout'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

@@ -1,0 +1,28 @@
+{% extends "woord/layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<h1>Vragenlijst</h1>
+
+<div class="centerfield" style="text-align:left">
+  <p>Welkom bij de concreetheids vragenlijst.</p>
+
+  <!-- Allow submitting the form -->
+  <form action="{% url 'woord_question' %}" method="post">
+    {% csrf_token %}
+    <label for="id_username">Vul hier uw gebruikersnaam in</label>
+    <input type="text" name="username" id="id_username" placeholder="De gebruikersnaam die u heeft ontvangen..." style="width: 100%;">
+
+    <input type="submit" value="Beginnen">
+  </form>
+
+  <!-- For the superuser -->
+  {% if is_superuser %}
+    <div>&nbsp;</div>
+    <a class="btn btn-success" href="{% url 'woord_tools' %}">Superuser Tools</a>
+  {% endif %}
+
+</div>
+
+{% endblock %}

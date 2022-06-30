@@ -1,1 +1,77 @@
-﻿
+{% load i18n %}
+
+{% block scripts %}
+    {% load staticfiles %}
+    <script src="{% static 'doc/scripts/cesar.doc.js' %}"></script>
+{% endblock %}
+
+
+<div class="panel panel-default" style="padding: 0px;">
+  <div class="panel-heading collapsed" data-toggle="collapse" data-target="#text-number-{{tnumber}}">
+    {% if otext.text %}{{otext.text}}{% else %}text # {{tnumber}}{% endif %}
+  </div>
+  <div id="text-number-{{tnumber}}" class="collapse container-small">
+    <div class="row">
+      <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
+        (n={{otext.n}}, total={{otext.total|floatformat:3}})</div>
+      <div class="col-md-3 dropdown">
+        {% if otext.show %}
+          <form>
+            {% csrf_token %}
+            <div id="downloadcenter" class="hidden">
+              <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+              <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+            </div>
+            <button class="btn btn-default btn-sm dropdown-toggle"
+                    type="button" id="downloadmenu"
+                    data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="true">download&nbsp;<span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+              <li class="fdos_host">
+                <a href="#" id="fdocs_download_tree"
+                    title="JS object notation"
+                    downloadtype="json"
+                    ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                    onclick="ru.cesar.seeker.post_download(this);" >json</a>
+              </li>
+              <li class="fdos_host">
+                <a href="#" id="fdocs_download_tree"
+                    title="Tab-separated values"
+                    downloadtype="tsv"
+                    ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                    onclick="ru.cesar.seeker.post_download(this);" >tsv</a>
+              </li>
+              <!-- <li role="separator" class="divider"></li>-->
+              <li class="fdos_host">
+                <a href="#" id="fdocs_download_htable"
+                    title="Microsoft Excel / Open Office "
+                    downloadtype="excel"
+                    ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                    onclick="ru.cesar.seeker.post_download(this);" >Excel</a>
+              </li>
+            </ul>
+          </form>
+        {% else %}
+          <div><i>(no download for this item)</i></div>
+        {% endif %}
+        {% if is_tablet_editor %}
+          <div id="concrete_process" class="hidden">
+            <form action="{% url 'froglink_details' pk=otext.id %}" method="post">
+              {% csrf_token %}
+              <div class="hidden">
+                <input name="concretedata" id="concretedata" class="form-control" value="" />
+              </div>
+              <a id="process_changes" title="Process editing changes in the Concreteness data"
+                 class="btn btn-sm jumbo-4"
+                 onclick="ru.cesar.doc.concrete_changes(this);">Save changes</a>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+    {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
+  </div>
+</div>
+

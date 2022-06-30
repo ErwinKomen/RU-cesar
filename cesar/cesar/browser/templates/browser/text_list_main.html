@@ -1,4 +1,4 @@
-﻿      {% if object_list %}
+      {% if object_list %}
         <h3>Text overview</h3>
         {% if is_paginated %}
         <div class="row">
@@ -18,7 +18,7 @@
         {% endif %}
         <!-- The contents as a table -->
         <table class="table table-hover">
-          <thead><tr><th class="hidden">id</th><th>Part</th><th>File</th><th>Lines</th><th>Genre</th><th>Title</th></tr></thead>
+          <thead><tr><th class="hidden">id</th><th>Part</th><th>File</th><th>Lines</th><th>Genre</th><th>Title</th><th></th></tr></thead>
           <tbody>
           {% for item in text_list %}
             <tr class="part-item">
@@ -29,6 +29,8 @@
               <td><span class="part-item-corp">{{item.genre}}</span></td>
               <td>
                 <span class="part-item-desc">{{item.title}}</span>
+              </td>
+              <td>
                 <span>
                   <a class="btn btn-warning btn-xs" 
                      title="Text details"
@@ -37,13 +39,15 @@
                     <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
                   </a>
                 </span>
-                <span>
-                  <a class="btn btn-default btn-xs" 
-                     title="Edit text details"
-                     href="{% url 'text_view' pk=item.pk %}/?last_url={{url|urlencode}}">
-                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-                  </a>
-                </span>
+                {% if is_superuser %}
+                  <span>
+                    <a class="btn btn-default btn-xs" 
+                       title="Edit text details"
+                       href="{% url 'text_view' pk=item.pk %}/?last_url={{url|urlencode}}">
+                      <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                    </a>
+                  </span>
+                {% endif %}
               </td>
             </tr>
             <tr class="text-info">

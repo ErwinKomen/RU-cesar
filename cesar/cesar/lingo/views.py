@@ -29,6 +29,7 @@ from cesar.utils import ErrHandle
 from cesar.lingo.models import *
 from cesar.lingo.forms import ExperimentForm, ParticipantForm, AnswerForm, QdataListForm
 from cesar.seeker.views import csv_to_excel
+from cesar.browser.views import user_is_superuser
 
 # Debugging for certain functions in this views.py
 bDebug = True
@@ -184,6 +185,7 @@ def home(request):
     # Make sure we add special group permission(s)
     context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
+    context['is_superuser'] = user_is_superuser(request)
     # Render and return the page
     return render(request, template_name, context)
 
@@ -1123,10 +1125,10 @@ class ExperimentDo(LingoDetails):
     permu_method = "permutations"   # options: "combinations", "permutations"
                                     # combinations('ABCD', 2) >> AB AC AD BC BD CD
                                     # permutations('ABCD', 2) >> AB AC AD BA BC BD CA CB CD DA DB DC
-    NUM_RESPONSES = 10
+    # NUM_RESPONSES = 10
     NUM_PERMU = 10
     NUM_TEXTS = 25
-    AnswerFormset = formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
+    AnswerFormset = None    # formset_factory(AnswerForm, min_num=NUM_RESPONSES, extra=0, )
 
     def get_context_data(self, **kwargs):
         # Get the initial context
@@ -1161,6 +1163,13 @@ class ExperimentDo(LingoDetails):
         context['exp_okay'] = "no"
         context['exp_msg'] = "-"
 
+        # Allow button "Experimenten" at the end or not
+        context['showendbutton'] = (instance.showendbutton in ['t', 'true', 'y', 'yes'])
+
+        # Initialize the formset
+        num_responses = instance.responsecount
+        self.AnswerFormset = formset_factory(AnswerForm, min_num=num_responses, extra=0, )
+
         # Provide data based on 'home' field of experiment
         if instance.home == "tcpf":
             pfx = "qans"
@@ -1182,6 +1191,7 @@ class ExperimentDo(LingoDetails):
                         best_text = form.cleaned_data['answer4']
                         text1_id = form.cleaned_data['answer5']
                         text2_id = form.cleaned_data['answer6']
+                        motivation = form.cleaned_data['motivation']
                         # Get the correct participant
                         participant = Participant.objects.filter(id=ptcpid).first()
                         if participant != None:
@@ -1208,6 +1218,7 @@ class ExperimentDo(LingoDetails):
                                 answer['preference_id'] = preference_id
                                 answer['text1_id'] = text1.id
                                 answer['text2_id'] = text2_id
+                                answer['motivation'] = motivation
                                 # Create a response object
                                 response = Response(experiment=self.object, participant=participant, answer= json.dumps(answer), created=timezone.now())
                                 response.save()
@@ -1237,15 +1248,15 @@ class ExperimentDo(LingoDetails):
                 context['answer_formset'] = formset
                 if self.random_method == "choose_subset":
                     # Get a list of texts
-                    qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic' )
+                    qs_texts = Qdata.objects.filter(experiment=instance).values('id', 'qmeta', 'qtext', 'qtopic', 'qsuggest' )
                     if len(qs_texts) == self.NUM_TEXTS:
                         combi_list = []
 
                         # Create data: 20 random texts from the 25
-                        text_selection = random.sample(list(qs_texts), 2 * self.NUM_RESPONSES)
+                        text_selection = random.sample(list(qs_texts), 2 * num_responses)
                         # NOTE: compare the first ten with the second ten
                         # Create a list of text combinations
-                        for idx in range(self.NUM_RESPONSES):
+                        for idx in range(num_responses):
                             left = text_selection[idx]
                             right = text_selection[idx+10]
                             # Create and fill a combi object
@@ -1253,11 +1264,11 @@ class ExperimentDo(LingoDetails):
                             # 1: left part
                             combi['left_id'] = left['id']
                             combi['left'] = left['qtext']
-                            combi['left_topic'] = left['qtopic']
+                            combi['left_topic'] = left['qsuggest']
                             # 2: right part
                             combi['right_id'] = right['id']
                             combi['right'] = right['qtext']
-                            combi['right_topic'] = right['qtopic']
+                            combi['right_topic'] = right['qsuggest']
                             # 3: Add the form from the formset
                             form = formset[idx]
                             combi['form'] = form
@@ -1270,7 +1281,7 @@ class ExperimentDo(LingoDetails):
                     statistics = instance.statistics()
                     if statistics['status'] == "ok":
                         # Create a list of all permutations
-                        qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic' )
+                        qs_texts = Qdata.objects.filter(experiment=instance, include='y').values('id', 'qmeta', 'qtext', 'qtopic', 'qsuggest' )
                         if len(qs_texts) == self.NUM_PERMU:
                             combi_list = []
                             if self.permu_method == "permutations":
@@ -1294,24 +1305,26 @@ class ExperimentDo(LingoDetails):
                                     pms_copy.append(selection)
 
                             # Check if the resulting pms_copy is not too small
-                            if len(pms_copy) >= self.NUM_RESPONSES:
+                            if len(pms_copy) >= num_responses:
                                 # We can take [pms_copy] completely
-                                text_selection = random.sample(pms_copy, self.NUM_RESPONSES)
+                                text_selection = random.sample(pms_copy, num_responses)
                             elif len(pms_copy) == 0:
                                 # We take [pms] completely
-                                text_selection = random.sample(pms, self.NUM_RESPONSES)
+                                text_selection = random.sample(pms, num_responses)
                             else:
                                 # First take some from [pms_copy] 
-                                text_sel_part1 = random.shuffle(pms_copy)
+                                random.shuffle(pms_copy)
+                                text_sel_part1 = pms_copy
+                                if text_sel_part1 == None: text_sel_part1 = []
                                 # and then the remainder
-                                remainder = self.NUM_RESPONSES - len(pms_copy)
+                                remainder = num_responses - len(pms_copy)
                                 text_sel_part2 = random.sample(pms, remainder)
                                 # Combine them
                                 text_selection = text_sel_part1 + text_sel_part2
 
                             # Choose NUM_RESPONSES random combinations from  the total
                             # text_selection = random.sample(pms, self.NUM_RESPONSES)
-                            for idx in range(self.NUM_RESPONSES):
+                            for idx in range(num_responses):
                                 left = text_selection[idx][0]
                                 right = text_selection[idx][1]
                                 # Create and fill a combi object
@@ -1319,11 +1332,11 @@ class ExperimentDo(LingoDetails):
                                 # 1: left part
                                 combi['left_id'] = left['id']
                                 combi['left'] = left['qtext']
-                                combi['left_topic'] = left['qtopic']
+                                combi['left_topic'] = left['qsuggest']
                                 # 2: right part
                                 combi['right_id'] = right['id']
                                 combi['right'] = right['qtext']
-                                combi['right_topic'] = right['qtopic']
+                                combi['right_topic'] = right['qsuggest']
                                 # 3: Add the form from the formset
                                 form = formset[idx]
                                 combi['form'] = form
@@ -1394,11 +1407,12 @@ class ExperimentDetails(LingoDetails):
                     rel_item = []
                     rel_item.append({'value': item.qmeta, 'title': 'View this question', 'link': reverse('qdata_details', kwargs={'pk': item.id})})
                     rel_item.append({'value': item.qtopic})
+                    rel_item.append({'value': item.qsuggest})
                     rel_item.append({'value': item.qtext})
                     rel_item.append({'value': item.get_include_display()})
                     rel_list.append(rel_item)
                 questions['rel_list'] = rel_list
-                questions['columns'] = ['Meta', 'Topic', 'Text', 'Include']
+                questions['columns'] = ['Meta', 'Topic', 'Suggestion', 'Text', 'Include']
             # Add the questions - no matter how many there are
             related_objects.append(questions)
 
@@ -1415,7 +1429,7 @@ class ExperimentEdit(BasicLingo):
     prefix = "exp"
     need_authentication = False
     form_objects = [{'form': ExperimentForm, 'prefix': prefix, 'readonly': False}]
-    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'email']
+    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'teaches', 'email']
 
     def add_to_context(self, context):
         # Who am I?
@@ -1486,8 +1500,9 @@ class ExperimentDownload(BasicLingo):
         lCsv = []
         oErr = ErrHandle()
         # headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Education', 'Age', 'Gender', 'Email', 'Start', 'Finish']
-        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Start', 'Finish']
-        columns = {"age": "Age", "edu": "Education", "email": "Email", "gender": "Gender", "ptcpid": "Other ptcp ID", "engfirst": "L1 English", "lngfirst": "L1", "lngother": "Languages"}
+        headers = ['ParticipantId', 'Text1', 'Text2', 'Identified1', 'Identified2', 'Preference', 'Motivation', 'Start', 'Finish']
+        columns = {"age": "Age", "edu": "Education", "email": "Email", "gender": "Gender", \
+            "ptcpid": "Other ptcp ID", "engfirst": "L1 English", "lngfirst": "L1", "lngother": "Languages", 'teaches': "Teaches"}
 
 
         try:
@@ -1518,6 +1533,8 @@ class ExperimentDownload(BasicLingo):
                 elif 'identified' in answer:
                     identified2 = answer['identified']
 
+                motivation = '(not found)' if 'motivation' not in answer else answer['motivation']
+
                 education = participant.get_edu()
 
                 # Start creating the line for the CSV
@@ -1528,6 +1545,7 @@ class ExperimentDownload(BasicLingo):
                 line.append("{}".format(identified1))
                 line.append("{}".format(identified2))
                 line.append("{}".format(answer['preference']))
+                line.append("{}".format(motivation))
                 line.append("{}".format(participant.created))
                 line.append("{}".format(obj.created))
 
@@ -1665,11 +1683,12 @@ class QdataListView(BasicListView):
     listform = QdataListForm
     prefix = "qdata"
     template_name = 'lingo/qdata_list.html'
-    order_cols = ['qmeta', 'qtopic', 'qtext', 'include']
+    order_cols = ['qmeta', 'qtopic', 'qsuggest', 'qtext', 'include']
     order_heads = [{'name': 'Meta', 'order': 'o=1', 'type': 'str'}, 
                    {'name': 'Topic', 'order': 'o=2', 'type': 'str'}, 
-                   {'name': 'Text', 'order': 'o=3', 'type': 'str'}, 
-                   {'name': 'Include', 'order': 'o=4', 'type': 'str'}]
+                   {'name': 'Suggestion', 'order': 'o=3', 'type': 'str'}, 
+                   {'name': 'Text', 'order': 'o=4', 'type': 'str'}, 
+                   {'name': 'Include', 'order': 'o=5', 'type': 'str'}]
 
 
 class QdataDetailsView(LingoDetails):

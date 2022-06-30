@@ -1,0 +1,53 @@
+{% extends "woord/layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<h1>Concreetheid</h1>
+
+<div class="centerfield" style="text-align:left">
+  <p>Je bent nu halverwege het onderzoek en hebt alle woorden beoordeeld op hun concreetheid. 
+Nu ga je dezelfde 2000 woorden nogmaals beoordelen, maar dan op hun specificiteit. </p>
+
+<p>Tussen concreetheid en specificiteit bestaat een duidelijk onderscheid. Met specifiek bedoelen we hoe zeer een woord een begrip verbijzondert. 
+Een weinig specifieke term is van toepassing op heel veel zaken. Het zelfstandig naamwoord "dier" en het werkwoord "handelen" gaan over heel veel begrippen en activiteiten. 
+Een woord als "vlinder" of "timmeren" is specifieker omdat het over een bijzonder soort dier of een bijzonder soort handelen gaat. 
+Specifiekere woorden geven een wat preciezere omschrijving, doordat ze meer inzoomen op dat wat beschreven wordt.</p>
+
+<p>Specificiteit is dus wat anders dan concreetheid. Onderstaande voorbeelden illustreren het verschil: 
+<ul>
+  <li>Het woord "herdershond" is heel concreet én heel specifiek. Het begrip is een zintuiglijk waarneembare of tastbare entiteit. 
+  Daarnaast is de omschrijving van het woord precies: je weet precies om welke hondensoort het gaat.</li>
+  <li>Het woord "wet" is heel abstract en heel weinig specifiek. Het begrip is niet zintuiglijk waarneembaar of tastbaar. 
+  Daarnaast is het niet duidelijk om wat voor wet het gaat. Het begrip is daarvoor niet precies genoeg.</li>
+  <li>Het woord "verkeersovertreding" is heel abstract, maar wel heel specifiek. Het begrip is niet zintuiglijk waarneembaar of tastbaar, 
+  maar het is wel duidelijk om wat voor soort overtreding het gaat. De omschrijving van het begrip is precies en dus specifiek.</li>
+  <li>Het woord "plant" is heel concreet, maar heel weinig specifiek. Het begrip is een zintuiglijk waarneembare of tastbare entiteit, 
+  maar het is niet duidelijk om wat voor soort plant het hier gaat. Het begrip is daarvoor niet precies genoeg.</li>
+</ul>
+</p>
+
+<p>Je gaat dezelfde 2000 woorden ook beoordelen op een schaal van 1 tot 10, waarbij 1 staat voor 'heel weinig specifiek' en 10 voor 'heel erg specifiek'. 
+Een werkwoord als "zijn" zal dichter bij de 1 dan bij de 10 uitkomen en een werkwoord als "figuurzagen" dichter bij 10.
+
+
+  <p>Druk op "Verder gaan" om je deelname te starten.</p>
+
+  <!-- Allow submitting the form -->
+  <form action="{% url 'woord_question' %}" method="post">
+    {% csrf_token %}
+    <label for="id_username">Vul hier uw gebruikersnaam in</label>
+    <input type="text" name="username" id="id_username" placeholder="De gebruikersnaam die u heeft ontvangen..." style="width: 100%;">
+
+    <input type="submit" value="Verder gaan">
+  </form>
+
+  <!-- For the superuser -->
+  {% if is_superuser %}
+    <div>&nbsp;</div>
+    <a class="btn btn-success" href="{% url 'woord_tools' %}">Superuser Tools</a>
+  {% endif %}
+
+</div>
+
+{% endblock %}

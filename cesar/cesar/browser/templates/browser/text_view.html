@@ -1,4 +1,4 @@
-﻿{% extends "layout.html" %}
+{% extends "layout.html" %}
 
 {% block breadcrumbs %}
   <div class="breadcrumbs">
@@ -16,6 +16,7 @@
     <h1>Details of this text</h1>
 
     <div id="content-main">
+      {% if is_in_tsg %}
         <h3>{% if text.title %}{{text.title}}{% else %}(no title){% endif %}</h3>
         <form enctype="multipart/form-data" 
               action="{{form_url}}" 
@@ -53,16 +54,19 @@
             {% endfor %}
           </fieldset>
           {% if user.is_superuser %}
-          <div class="submit-row">
-              <input type="submit" value="Save" class="default" name="_save" />
-              <p class="deletelink-box">
-                  <a href="{% url 'home' %}" class="deletelink">Delete</a>
-              </p>
-              <input type="submit" value="Save and add another" name="_addanother" />
-              <input type="submit" value="Save and continue editing" name="_continue" />
-          </div>
+            <div class="submit-row">
+                <input type="submit" value="Save" class="default" name="_save" />
+                <p class="deletelink-box">
+                    <a href="{% url 'home' %}" class="deletelink">Delete</a>
+                </p>
+                <input type="submit" value="Save and add another" name="_addanother" />
+                <input type="submit" value="Save and continue editing" name="_continue" />
+            </div>
           {% endif %}
         </form>
+      {% else %}
+        <p>Sorry, you're not allowed to edit this text's details</p>
+      {% endif %}
     </div>
 
 

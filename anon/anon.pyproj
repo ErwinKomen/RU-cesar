@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d565a16b-3481-4b3c-8554-8308d2d5d15f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>cmdilist.py</StartupFile>
+    <StartupFile>flex2text.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -16,7 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-i "d:/etc/corpora/nld/ParsedSonar/WR-P-P-G_newspapers/079" </CommandLineArguments>
+    <CommandLineArguments>-l en -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\06_gheenash.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\06_gheenash.doc"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -29,6 +29,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="anon.py" />
+    <Compile Include="che2wordvec.py" />
+    <Compile Include="flex2text.py" />
+    <Compile Include="psdx2sent.py" />
     <Compile Include="erwin.py" />
     <Compile Include="filter.py" />
     <Compile Include="lingoconvert.py">
@@ -40,6 +43,9 @@
     <Compile Include="main.py" />
     <Compile Include="cmdilist.py" />
     <Compile Include="metadate.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="nexiscorona.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="processor\anonymizer.py" />
@@ -73,8 +79,64 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="brief\content\" />
+    <Folder Include="brief\scripts\" />
+    <Folder Include="letter\" />
+    <Folder Include="letter\css\" />
+    <Folder Include="letter\js\" />
+    <Folder Include="brief\" />
+    <Folder Include="letter\gheenash\" />
+    <Folder Include="letter\xaerzhina\" />
+    <Folder Include="letter\tallam\" />
     <Folder Include="processor\" />
     <Folder Include="processor\entity_mapping\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="brief\content\bootstrap.css" />
+    <Content Include="brief\content\sil_logo.png" />
+    <Content Include="brief\content\site.css" />
+    <Content Include="brief\pbrief.html" />
+    <Content Include="brief\scripts\bootstrap.js" />
+    <Content Include="brief\scripts\jquery-1.10.2.js" />
+    <Content Include="brief\scripts\pbrief.js" />
+    <Content Include="letter\css\site.css" />
+    <Content Include="letter\simplecesar.html" />
+    <Content Include="letter\xaerzhina\diicar_001.html" />
+    <Content Include="letter\xaerzhina\diicar_010.html" />
+    <Content Include="letter\xaerzhina\diicar_009.html" />
+    <Content Include="letter\xaerzhina\diicar_008.html" />
+    <Content Include="letter\xaerzhina\diicar_007.html" />
+    <Content Include="letter\xaerzhina\diicar_006.html" />
+    <Content Include="letter\xaerzhina\diicar_005.html" />
+    <Content Include="letter\xaerzhina\diicar_004.html" />
+    <Content Include="letter\xaerzhina\diicar_003.html" />
+    <Content Include="letter\xaerzhina\diicar_002.html" />
+    <Content Include="letter\xaerzhina\container.html" />
+    <Content Include="letter\xaerzhina\filling_001.html" />
+    <Content Include="letter\xaerzhina\xaerzhina.json" />
+    <Content Include="letter\xaerzhina.html" />
+    <Content Include="letter\gheenash\diicar_07.html" />
+    <Content Include="letter\gheenash\diicar_12.html" />
+    <Content Include="letter\gheenash\diicar_08.html" />
+    <Content Include="letter\gheenash\diicar_06.html" />
+    <Content Include="letter\gheenash\gheenash.json" />
+    <Content Include="letter\gheenash\spare.html" />
+    <Content Include="letter\js\xaerzhina.js" />
+    <Content Include="letter\js\tallam.js" />
+    <Content Include="letter\tallam.html" />
+    <Content Include="letter\gheenash\diicar_02.html" />
+    <Content Include="letter\gheenash\diicar_01.html" />
+    <Content Include="letter\gheenash\diicar_00.html" />
+    <Content Include="letter\gheenash\diicar_04.html" />
+    <Content Include="letter\gheenash\diicar_03.html" />
+    <Content Include="letter\gheenash\info.html" />
+    <Content Include="letter\gheenash.html" />
+    <Content Include="letter\gulam.html" />
+    <Content Include="letter\elpash.html" />
+    <Content Include="letter\js\gheenash.js" />
+    <Content Include="letter\tallam\diicar_02.html" />
+    <Content Include="letter\tallam\diicar_01.html" />
+    <Content Include="letter\tallam\info.html" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

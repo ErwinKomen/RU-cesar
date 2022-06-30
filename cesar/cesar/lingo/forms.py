@@ -10,7 +10,7 @@ from django.forms.widgets import Textarea
 from cesar.lingo.models import *
 
 class ExperimentForm(ModelForm):
-    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'email']
+    meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'teaches', 'email']
     meta_initial = [
         "Wat is uw participant ID?",
         "Wat is uw leeftijd?",
@@ -20,16 +20,18 @@ class ExperimentForm(ModelForm):
         "Welke andere talen kent u?",
         "Anders: ",
         "Wat is uw hoogste school?",
+        "Welk vak doceert u?",
         "Wat is uw email adres (optioneel)?"
         ]
 
     class Meta:
         model = Experiment
-        fields = ['title', 'home', 'msg', 'consent', 'ptcpfields', 'status' ]
+        fields = ['title', 'home', 'msg', 'responsecount', 'consent', 'ptcpfields', 'status' ]
         widgets={'title':   forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Title as will appear in the list of experiments'}),
                  'home':    forms.TextInput(attrs={'style': 'width: 20%;', 'placeholder': 'Experiment code (default is [tcpf])'}),
                  'msg':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;', 
                                                     'placeholder': 'Purpose of this experiment (for your own administration)'}),
+                 'responsecount': forms.NumberInput(attrs={'style': 'width: 100%;', 'placeholder': 'Number of responses per participant'}),
                  'ptcpfields':  forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;'}),
                  'consent':     forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;', 
                                                     'placeholder': 'Consent statement that any participant will need to agree with. This can also contain an explanation of the experiment.'}),
@@ -69,15 +71,12 @@ class ExperimentForm(ModelForm):
                 self.fields[fld_include].initial = "y"
                 self.fields[fld_text].initial = self.meta_initial[idx]
 
-        # self.fields['meta_ptcpid_include'].choices = build_abbr_list(EXPERIMENT_YESNO, language="nld", maybe_empty=True)
-
-
 
 class ParticipantForm(ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'edu', 'eduother', 'email']
+        fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'edu', 'eduother', 'teaches', 'email']
         widgets={'ptcpid':      forms.TextInput(attrs={'style': 'width: 40%;', 'placeholder':'Jouw participant ID'}),
                  'age':         forms.TextInput(attrs={'style': 'width: 40%;', 'placeholder':'Leeftijd (getal)'}),
                  'gender':      forms.Select(),
@@ -86,6 +85,7 @@ class ParticipantForm(ModelForm):
                  'lngother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Noem de andere talen die u kent'}),
                  'eduother':    forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Beschrijf het schooltype waar u lesgeeft'}),
                  'edu':         forms.Select(),
+                 'teaches':     forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Het vak dat u doceert'}),
                  'email':       forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder':'Uw e-mailadres'})
                  }
 
@@ -111,6 +111,8 @@ class AnswerForm(forms.Form):
     answer7 = forms.CharField(label="Answer7", max_length=255, required=False)
     answer8 = forms.CharField(label="Answer8", max_length=255, required=False)
     answer9 = forms.CharField(label="Answer9", max_length=255, required=False)
+    motivation = forms.CharField(label="Motivation", required=False,
+        widget= forms.TextInput(attrs={'placeholder': 'Toelichting...', 'style': 'width: 100%; background-color: whitesmoke;'}))
 
 
 class QdataListForm(forms.ModelForm):

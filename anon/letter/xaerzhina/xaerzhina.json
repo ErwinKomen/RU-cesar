@@ -1,0 +1,14 @@
+{
+  "lastedit": "18/feb/2022",
+  "stories": [
+    {"id": "001", "ch":  0, "part":  1, "name":  "Foreword",     "che":  "Гочдархочуьнгара", "link":  "001-e1c0asn"},
+    {"id": "002", "ch":  0, "part":  2, "name":  "Introduction", "che":  "Дешхьалхе",        "link":  "002-e1d3nps"},
+    {"id": "003", "ch":  1, "part":  1, "name":  "Childhood",    "che":  "Тайниг",           "link":  "003-e1d3pnn"},
+    {"id": "004", "ch":  1, "part":  2, "name":  "Childhood",    "che":  "Сан доьзал",       "link":  "004-e1d40me"},
+    {"id": "005", "ch":  2, "part":  1, "name":  "Moving",       "che":  "Махка кхалха",     "link":  "005-e1dj4lb"},
+    {"id": "006", "ch":  2, "part":  2, "name":  "Moving",       "che":  "Керла цІа",        "link":  "006-e1du57h"},
+    {"id": "007", "ch":  2, "part":  3, "name":  "Moving",       "che":  "Юкъара хан",       "link":  "007-e1eiu52"},
+    {"id": "008", "ch":  3, "part":  1, "name":  "War",          "che":  "ТІом",             "link":  "008-e1fdis4"},
+    {"id": "009", "ch":  3, "part":  2, "name":  "War",          "che":  "Тегархо",          "link":  "009-e1fdiuc"}
+  ]
+}

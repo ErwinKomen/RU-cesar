@@ -1,4 +1,4 @@
-﻿{% extends "layout.html" %}
+{% extends "layout.html" %}
 {% load staticfiles %}
 
 
@@ -36,6 +36,7 @@
       <p>
         <a class="btn btn-default" href="mailto:e.komen@let.ru.nl">Request assistance &raquo;</a>
         <span class="pull-right">
+          <a class="btn btn-primary" href="{% static 'browser/content/CesarStepByStep.pdf' %}" target="_blank">Step-by-step (pdf)</a>
           <a class="btn btn-primary" href="{% static 'browser/content/CesarManual.pdf' %}" target="_blank">Manual (pdf)</a>
           <a class="btn btn-primary" href="{% url 'short' %}">Short overview</a>
         </span>

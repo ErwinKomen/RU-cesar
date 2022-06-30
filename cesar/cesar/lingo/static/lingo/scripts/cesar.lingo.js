@@ -2429,6 +2429,33 @@ var ru = (function ($, ru) {
                     }
                   }
                 });
+
+                // Check the motivation input field
+                $(elQitem).find(".btn-motivation").each(function (idx, elGrp) {
+                  var bChecked = false,
+                      i = 0,
+                      warning = "",
+                      arText = null;
+
+                  arText = $(elGrp).find("input");
+                  if (arText.length > 0) {
+                    // There are radio buttons to check
+                    for (i = 0; i < arText.length; i++) {
+                      if (arText[i].value.replace(/^\s+/g, '') !== "") { bChecked = true; }
+                    }
+                    // Check if all is well
+                    if (!bChecked) {
+                      // Show the error message
+                      $(elGrp).closest("tr").find(".errmsg").removeClass("hidden");
+                      bCanNext = false;
+                      // return;
+                    } else {
+                      // HIDE the error message
+                      $(elGrp).closest("tr").find(".errmsg").addClass("hidden");
+                    }
+                  }
+                });
+
                 if (bCanNext) {
                   // Hide current questions
                   $(".questionItem").addClass("hidden");

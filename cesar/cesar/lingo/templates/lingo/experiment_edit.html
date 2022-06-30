@@ -1,4 +1,4 @@
-﻿{% load i18n %}
+{% load i18n %}
 
 <!-- Information on this specific handle -->
 <form>
@@ -63,6 +63,17 @@
         <div class="view-mode">{% if expForm.instance.msg %}{{expForm.instance.get_msg_markdown|safe}}{% else %}-{% endif %}</div>
         {% if is_lingo_editor %}
           <div class="edit-mode hidden">{{expForm.msg}}</div>
+        {% endif %}
+      </td>
+    </tr>
+
+    <!-- The number of responses per participant -->
+    <tr class="form-row">
+      <td class="hoverable" valign="top"  style="min-width: 150px;">Number of responses</td>
+      <td  style="width: 100%;">
+        <div class="view-mode">{% if expForm.instance.responsecount %}{{expForm.instance.responsecount}}{% else %}-{% endif %}</div>
+        {% if is_lingo_editor %}
+          <div class="edit-mode hidden">{{expForm.responsecount}}</div>
         {% endif %}
       </td>
     </tr>
@@ -209,6 +220,23 @@
                     <td>{{expForm.meta_lngother_text}}</td>
                     <td align="right">Include:</td>
                     <td style="width: 60px;">{{expForm.meta_lngother_include}}</td>
+                  </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Metadata: teaches -->
+          <tr class="form-row lingo-meta collapse">
+            <td class="tdnowrap hoverable" valign="top"  style="min-width: 150px;">Teaches subject</td>
+            <td  style="width: 100%;">
+              <table style="width: 100%;">
+                <tr class="view-mode"><td colspan="2">{{expForm.instance.meta_teaches_display|safe}}</td></tr>
+                {% if is_lingo_editor %}
+                  <tr class="edit-mode hidden">
+                    <td>{{expForm.meta_teaches_text}}</td>
+                    <td align="right">Include:</td>
+                    <td style="width: 60px;">{{expForm.meta_teaches_include}}</td>
                   </tr>
                 {% endif %}
               </table>

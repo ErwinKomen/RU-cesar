@@ -135,6 +135,14 @@
                       <td colspan="3" style="width: 100%;">{{simpleform.searchlemma}}</td>
                     </tr>
 
+                    <!-- Looking for a Feature -->
+                    <tr id="simple_specify_c" class="tablefield simple-search-2 hidden">
+                      <td class="tdnowrap vmiddle" >Feature category:</td>
+                      <td style="width: 50%;">{{simpleform.searchfcat}}</td>
+                      <td class="tdnowrap vmiddle" title="The feature value (use wildcards if needed)">Value:</td>
+                      <td style="width: 50%;">{{simpleform.searchfval}}</td>
+                    </tr>
+
                     <!-- Hidden row with a table for related constituent specifications -->
                     <tr id="related_constituents" class="hidden">
                       <td colspan="4">
@@ -464,7 +472,7 @@
                 <button type="button" class="btn jumbo-3" id="research_start" 
                         title="Start searching the corpus"
                         ajaxurl="{% url 'search_prepare' object_id %}"
-                        onclick="ru.cesar.seeker.search_start(this, ru.cesar.seeker.save_as);">Start</button>
+                        onclick="ru.cesar.seeker.search_start(this, ru.cesar.seeker.save_as_advanced);">Start</button>
               </div>
 
               <div class="col-md-offset-4 col-md-2 ">
@@ -489,7 +497,7 @@
         <div class="col-md-9 panel panel-default">
           <span><b>Progress</b></span>
           <!-- Save button is shown upon completion -->
-          <span id="save_as" class="pull-right hidden">
+          <span id="save_as_advanced" class="pull-right hidden">
                 <a class="btn jumbo-1 btn-xs" title="let me save this search as an ADVANCED search" 
                    targetid="save-as-service"
                    onclick="ru.cesar.seeker.toggle_click(this);">keep this as advanced search...</a>

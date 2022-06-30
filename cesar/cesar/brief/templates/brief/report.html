@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% load staticfiles %}
+    {{bootstrapcss|safe}}
+    {{silbasecss|safe}}
+    
+</head>
+
+<body>
+{% load i18n %}
+{% if authenticated and permission and is_app_user %}
+
+  <div class="body-content">
+    <!-- Start out first page with logo -->
+    <div class="row">
+      <div class="col-md-12 pull-right">
+        <!-- Images for identification -->
+        <img src="data:image/png;base64,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" />
+      </div>
+    </div>
+
+    <!-- Work through each Module -->
+    {% for mod in modules %}
+      <h3>{{mod.module.order}}. {{mod.module.name}}</h3>
+
+      {% if mod.module.order == 1 %}
+        <!-- Show project name box on first page -->
+        <h4>Project name:</h4>
+        <div style="margin-left: 20px; position: absolute; ">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="background-color: aliceblue;">{% if pname %}{{pname}}{% else %}*{% endif %}</td></tr>
+          </table>
+        </div>
+      {% endif %}
+
+      {% for sec in mod.sections %}
+        {% if sec.section.order > 0 %}
+          <!-- Show the section name -->
+          <div>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="background-color: deepskyblue;">{{sec.section.order}}. {{sec.section.name}}</td></tr>
+            </table>
+          </div>
+        {% endif %}
+        {% if sec.section.intro|length > 0 %}
+          <div style="margin-left: 20px;">{{sec.section.get_intro_markdown|safe}}</div>
+        {% endif %}
+
+        <!-- All questions for this section -->
+        {% if sec.questions|length == 0 %}
+          <div style="margin-left: 20px; position: absolute; color: darkgray; margin-top: 5px; margin-bottom: 5px;"><i>(no questions...)</i></div>
+        {% else %}
+          {% for que in sec.questions %}
+            <div style="margin-left: 20px; position: absolute; " >
+            <table style="width: 100%; margin-top: 5px; margin-bottom: 5px; border-collapse: collapse;">
+              <!-- Row with the question -->
+              <tr>
+                <td valign="top" class="tdnowrap" style="min-width: 20px;">{{que.question.get_order_letter}}</td>
+                <td valign="top" style="width: 100%;">
+                  {{que.question.content}}&nbsp;
+                  {% if que.question.ntype == "alw" %}
+                    <span class="obligatory">**</span>
+                  {% elif que.question.ntype == "fir" %}
+                    <span class="obligatory">*</span>
+                  {% else %}&nbsp;
+                  {% endif %}
+                </td>
+              </tr>
+              <!-- Row with the response -->
+              <tr>
+                <td valign="top">&nbsp;</td>
+                <td style="background-color: aliceblue; width: 100%;">
+                  <div>
+                    {% if que.formfield %}
+                      <div {% if is_app_editor %}class="view-mode"{% endif %} style="color: darkblue;">
+                        {% if que.formfield.value %}{{que.formfield.value|safe}}
+                        {% else %}
+                          {% if que.question.ntype == "alw" %}**
+                          {% elif que.question.ntype == "fir" %}*
+                          {% else %}-
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                    {% elif que.entries %}
+                      <table class="func-view sermons" style="width: 100%">
+                        <tbody>
+                          <!-- Existing projects -->
+                          {% for prj in instance.projectquestionproducts.all %}
+                            <tr>
+                              <td class="sermonnumber tdnowrap" valign="top">{{forloop.counter}}</td>
+                              <td class="tdnowrap clickable" style="width: 100%;" valign="top">
+                                <span style="color: darkblue;">
+                                  {% if prj.scripture %}
+                                    {{prj.scripture}}
+                                  {% else %}(none){% endif %}
+                                </span>
+                                <span><b>{{prj.name}}</b></span>
+                                <span style="color: darkred; font-size: smaller;">{{prj.timing}}</span>
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+
+                    {% else %}
+                      <span>-</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            </table>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+      {% endfor %}
+
+    {% endfor %}
+
+  </div>
+
+{% elif authenticated and not permission or not is_app_user %}
+  <div class="explanation">
+    <p>Dear user, you do not have permission to view this item.</p>
+  </div>
+{% else %}
+  <div class="explanation">
+    <p>Dear user, you are <b>not</b> logged in.</p>
+    <p>Unfortunately this means that you will not be able to view or use project briefs.</p>
+    <p>Should you want to work with this application, here are your options:
+      <ul>
+        <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
+        <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>
+      </ul>
+    </p>
+  </div>
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends "woord/layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<h1>Bedankt</h1>
+
+<div class="centerfield" style="text-align:center">
+  <p>Hartelijk dank voor je deelname aan het onderzoek.</p>
+
+  <p>&nbsp;</p>
+  <p>Als je vragen hebt over het onderzoek, kun je een mail sturen naar <a href="mailto:hidde.vangestel@ru.nl">Hidde van Gestel</a></p>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
+
+  <div>
+    <!-- Allow submitting the form -->
+    <form action="{% url 'woord_question' %}" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="username" value="{{woordusername}}" />
+
+      {% include 'woord/rechtstreeks.html' %}
+      <input type="submit" value="Kies rechtstreeks">
+    </form>
+
+    <!-- For the superuser -->
+    {% if is_superuser %}
+      <div>&nbsp;</div>
+      <a class="btn btn-success" href="{% url 'woord_tools' %}">Superuser Tools</a>
+    {% endif %}
+  </div>
+
+</div>
+
+
+{% endblock %}
+

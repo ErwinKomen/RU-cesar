@@ -30,27 +30,32 @@ CRPP_HOME = 'http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/crpp'
 PROJECT_DIR = '/etc/project'
 
 APP_PREFIX = "dd/"
+ADMIN_SITE_URL = "/dd"
 if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     APP_PREFIX = ""
-    admin.site.site_url = '/'
+    # admin.site.site_url = '/'
+    ADMIN_SITE_URL = "/"
     # Ponyland: use through 8080-8080 SSH tunnel
     CRPP_HOME = 'http://localhost:8080/CrppS'
     PROJECT_DIR = '/var/www/tomcat8/live/tomcat8/crpp/project'
 elif "131.174" in hst:
     # Configuration within the Radboud University environment
     APP_PREFIX = ""
-    admin.site.site_url = '/'
+    # admin.site.site_url = '/'
+    ADMIN_SITE_URL = "/"
     # Ponyland-internal:
     CRPP_HOME = 'http://localhost:8080/CrppS'
     PROJECT_DIR = '/var/www/tomcat8/live/tomcat8/crpp/project'
 elif "/var/www" in WRITABLE_DIR:
     # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/cesar
     APP_PREFIX = "cesar/"
-    admin.site.site_url = '/cesar'
+    # admin.site.site_url = '/'
+    ADMIN_SITE_URL = "/cesar"
 else:
-    admin.site.site_url = '/dd'
+    # admin.site.site_url = '/dd'
+    ADMIN_SITE_URL = "/dd"
 
-FORCE_SCRIPT_NAME = admin.site.site_url
+# FORCE_SCRIPT_NAME = admin.site.site_url
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
 
@@ -62,7 +67,13 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = None
 SECRET_KEY = '379848c4-ce15-403e-a74a-f994d720554b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False # True
+if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
+    DEBUG = True
+
+# if the request URL does not match any of the patterns in the URLconf and it doesn’t end in a slash, 
+#   an HTTP redirect is issued to the same URL with a slash appended.
+APPEND_SLASH = True
 
 ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl', 'corpus-studio-web.cttnww-meertens.surf-hosted.nl']
 
@@ -78,14 +89,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_select2',
-    'basic',
+    # 'basic',
+    'cesar.basic',
     'cesar.browser',
     'cesar.viewer',
     'cesar.seeker',
     'cesar.doc',
+    'cesar.trans',
     'cesar.tsg',
     'cesar.lingo',
-    'cesar.ds2'
+    'cesar.brief',
+    'cesar.woord'
 ]
 
 # MIDDLEWARE_CLASSES = [

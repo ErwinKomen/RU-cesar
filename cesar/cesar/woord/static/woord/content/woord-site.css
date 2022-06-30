@@ -1,0 +1,157 @@
+﻿body
+{
+	background-color: aliceblue;  
+}
+
+body, button, input
+{
+    text-align: center;
+    font-family: arial, helvetica, sans-serif;
+    font-size: 14px;
+}
+
+button
+{
+    margin-top: 40px;
+}
+
+.centerfield
+{
+    margin: auto;
+    width: 850px;
+    text-align: center;
+	margin-top: 30px;
+}
+
+.stimulus
+{
+	font-size:16px;
+	font-weight:bold;
+}
+
+.slidervalue
+{
+	margin-top: 10px
+}
+
+.slider
+{
+    margin: auto;
+    width: 440px;
+}
+
+.leftoption
+{
+    float: left;
+	width: 180px;
+}
+
+.rightoption
+{
+    float:right;
+	width: 180px;
+}
+
+.dontknow
+{
+	top: -30px;
+	position: relative;
+	left: 300px;
+}
+
+.progressfield
+{
+	margin-left: auto;
+	width: 300px;
+}
+
+.usernamefield
+{
+	margin-right: auto;
+	width: 300px;
+}
+
+.glyphicon-refresh-animate {
+    animation: spin .7s infinite linear;
+    -webkit-animation: spin2 .7s infinite linear;
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}
+
+.tdnowrap {
+    white-space:nowrap !important;
+}
+
+.next-button {
+    padding-bottom: 50px;
+}
+
+.warning {
+    background-color: yellow; border: 1px solid darkred; text-align: center; margin: 5px;
+}
+
+.rechtstreeks {
+    width: 350px; margin: auto; padding: 10px; background-color: yellow;
+}
+
+/* Colors of jumbo parts */
+.jumbo-1 {
+  background-color: lavender;
+  color: chocolate;
+  fill: lavender;
+}
+.jumbo-1 text {
+  fill: mediumaquamarine;
+}
+.jumbo-2 {
+  background-color: chocolate;
+  color: lavender;
+  fill: chocolate;
+}
+.jumbo-3 {
+  background-color: #355e3b;
+  color: lavender;
+  fill: #355e3b;
+}
+.jumbo-4 {
+  background-color: #ff2400;
+  color: lavender;
+  fill: #ff2400;
+}
+.jumbo-2 text, .jumbo-3 text, .jumbo-4 text {
+  fill: lavender;
+}
+
+.jumbo-1:hover {
+    color: black;
+    background-color: mediumaquamarine;
+    fill: mediumaquamarine;
+    cursor: pointer;
+}
+.jumbo-1:hover text {
+  fill: black;
+}
+.jumbo-2:hover, .jumbo-3:hover, .jumbo-4:hover {
+    color: white;
+    background-color: mediumaquamarine;
+    fill: mediumaquamarine;
+    cursor: pointer;
+    /* stroke: white; */
+}
+
+/* What to do when the button is disabled */
+.jumbo-1:disabled, .jumbo-2:disabled, .jumbo-3:disabled, .jumbo-4:disabled {
+    color: lightgray;
+    background-color: darkgray;
+    fill: darkgray;
+    cursor: wait;
+}
+

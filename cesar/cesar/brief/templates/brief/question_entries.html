@@ -1,0 +1,38 @@
+<tr class="form-row {{emptyform}}">
+  <!-- A 1-based counter for the forms in this set-->
+  <td style="min-width: 20px;"><span>{{counter}}</span></td>
+
+  <!-- Table with all necessary values and input boxes -->
+  <td style="width: 100%;">
+    <!-- the entries in this answer -->
+    {% for entry in que.entries %}
+      <!-- The question itself -->
+      <div>
+        <div>
+          {{entry.content}}
+          {% if entry.help %}
+            <a role="button" data-toggle="collapse" data-target="#pbrief_he_{{entry.id}}">
+              <span class="glyphicon glyphicon-question-sign" style="color: blue;"></span>
+            </a>
+          {% endif %}
+        </div>
+        {% if entry.help %}
+          <div id="pbrief_he_{{entry.id}}" class="collapse" style="font-size: smaller;">
+            {{entry.help|safe}}
+          </div>
+        {% endif %}
+      </div>
+      <!-- Room or an answer to this question -->
+      <div>
+        <input id="id_qaent-{{counter}}-{{entry.order}}" style="width: 100%;"
+                name="qaent-{{counter}}-{{entry.order}}"
+                placeholder="{{entry.placeholder}}..." />
+      </div>
+    {% endfor %}
+  </td>
+
+  <!-- A delete button -->
+  <td title="Delete this row" style="vertical-align: middle; width: 20px; " class="clickable">
+    <a onclick="sil.pbrief.delete_confirm(this);"><span class="glyphicon glyphicon-remove">&nbsp;</span></a>
+  </td>
+</tr>

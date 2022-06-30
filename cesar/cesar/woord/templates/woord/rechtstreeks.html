@@ -1,0 +1,23 @@
+  {% if is_app_user %}    
+      <!-- Show options for a different stage -->
+      <div class="rechtstreeks">
+        <div>
+          <label for="rechtstreeks">Direct naar:</label>
+          <select id="rechtstreeks" name="rechtstreeks">
+            <option value="">-</option>
+            <option value="created">Start</option>
+            <option value="explain_perm">Toestemming</option>
+            <option value="optout">Afwijzen</option>
+            <option value="explain_conc">Concreetheid</option>
+            <option value="que_conc">Vragen:1</option>
+            <option value="explain_spec">Specificiteit</option>
+            <option value="que_spec">Vragen:2</option>
+            <option value="lastdone">Bedankt</option>
+          </select>
+          <div class="pull-right" style="font-size: xx-small;">
+            (Alleen voor onderhoud)
+          </div>
+        </div>
+      </div>
+  {% endif %}
+

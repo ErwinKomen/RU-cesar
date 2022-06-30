@@ -1,0 +1,108 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">    
+    <h3>Nexis Uni Tools</h3>
+    <div id="research_err">
+      {% for item in error_list %}
+      {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- Dashboard to select input file(s) and then allow downloading the results -->
+    <div id="import_docs" class="row" >
+      <div class="col-md-9 panel panel-default">
+      <form action="{% url 'import_nexis' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+        {% csrf_token %}
+
+        <!-- Information to import Nexis Uni text files -->
+        <div class="row">
+          <div class="col-md-9">
+            <table>
+              <tbody>
+                <tr>
+                  <td>File(s) to be processed:</td>
+                  <td>
+                    <span class="input-group-btn">
+                      <span class="btn btn-default btn-xs btn-file">Browse...{{frmUpload.files_field}}</span>
+                      <!-- The files that have been selected-->
+                      <span></span>
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <span id="docs-import_status" class="kwcat">&nbsp;</span>
+                    <progress class="hidden" style="width:100%;" id="docs-import_progress" value="0" min="0" max="100"></progress>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" align="right">
+                    <a class="btn btn-sm jumbo-1"
+                       targetid="docs_nexis_import"
+                       targeturl="{% url 'import_nexis' %}"
+                       syncurl="{% url 'sync_progress' %}?synctype=nexis" 
+                       onclick="ru.cesar.seeker.import_post(this);"
+                       >Start</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <!-- Progress -->
+        <div class="save-warning"></div>
+        <!-- Any error reporting -->
+        <div id="docs-import_error"></div>
+      </form>
+      </div>
+    </div>
+
+    <!-- The normal progress reporting -->
+    <div id="docs_nexis_import"></div>
+
+    <!-- Results section -->
+    <div id="nexis_results" class="row">
+      <div class="col-md-9">
+        <table class="func-view" style="width: 100%;">
+          <thead>
+            <tr><th>#</th><th>Date</th><th>Count</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for obatch in batchlist %}
+              <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{obatch.created}}</td>
+                <td align="right">{{obatch.count}}</td>
+                <td align="right">
+                  <a href="">
+                    <span class="glyphicon glyphicon-download"></span>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  ru.cesar.seeker.init_events();
+</script>
+
+{% endblock content %}
+

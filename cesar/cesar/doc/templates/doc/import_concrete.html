@@ -1,0 +1,42 @@
+{% load i18n %}
+
+  {% if statuscode == "completed" %}
+  <div class="row">
+    <div class='col-md-9 panel panel-default'>
+      <div class="">
+        <div class="row">
+          <div class="col-md-10">A list of {{results|length}} (text) files has been processed.</div>
+          <div class="col-md-2">
+            <a class="btn btn-sm jumbo-1" href="{% url 'concrete_main' %}">Continue...</a>
+          </div>
+        </div>
+        <!-- Results section -->
+        <div id="concrete_results" class="row">
+          {% for otext in concretes %}
+            <h4>{{otext.text}}</h4>
+            <p>Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
+              (n={{otext.n}}, total={{otext.total}})</p>
+            {% include 'doc/text_scores.html' with otext=otext  mode='view' %}
+        {% endfor %}
+        </div>
+
+      </div>
+    </div>
+    <div class="col-md-offset-1 col-md-2">
+      <!-- For future purposes -->
+    </div>
+  </div>
+
+
+  {% endif %}
+
+  <!-- Any errors are shown here too-->
+  <div class="errors">
+    {% if error_list and statuscode != "error" %} 
+      <h4>Errors:</h4>
+      <div>statuscode = {{statuscode}}</div>
+      {% for item in error_list %}
+        <div class="error-item">{{item}}</div>
+      {% endfor %}
+    {% endif %}
+  </div>
