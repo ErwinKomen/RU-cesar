@@ -551,18 +551,11 @@ class ConcreteDetails(ConcreteEdit):
                 for oPara in obj['list']:
                     for oSent in oPara['list']:
                         for oWord in oSent['list']:
-                            word_id = oWord.get('word_id')
-                            if word_id is None:
+                            id = oWord.get('word_id')
+                            if id is None:
                                 oWord['word_id'] = word_id
                                 word_id += 1
                                 bNeedSaving = True
-                            #elif str(word_id) in concretedata:
-                            #    oWord['concr'] = concretedata[str(word_id)]
-                            #    bNeedSaving = True
-                            #    bRecalculate = True
-                ## Is recalculation needed?
-                #if bRecalculate:
-                #    obj = FrogLink.recalculate(obj)
 
                 # Do we need to save the (recalculated) results?
                 if bNeedSaving:
@@ -607,12 +600,14 @@ class ConcreteUpdate(ConcreteEdit):
                 for oPara in obj['list']:
                     for oSent in oPara['list']:
                         for oWord in oSent['list']:
-                            word_id = oWord.get('word_id')
-                            if word_id is None:
+                            id = oWord.get('word_id')
+                            if id is None:
                                 oWord['word_id'] = word_id
                                 word_id += 1
                                 bNeedSaving = True
-                            elif str(word_id) in concretedata:
+                            else:
+                                word_id = id
+                            if str(word_id) in concretedata:
                                 oWord['concr'] = concretedata[str(word_id)]
                                 bNeedSaving = True
                                 bRecalculate = True
