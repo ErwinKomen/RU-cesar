@@ -12,9 +12,9 @@
   </div>
   <div id="text-number-{{tnumber}}" class="collapse container-small">
     <div class="row">
-      <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
+      <div class="col-md-8">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
         (n={{otext.n}}, total={{otext.total|floatformat:3}})</div>
-      <div class="col-md-3 dropdown">
+      <div class="col-md-2 dropdown">
         {% if otext.show %}
           <form>
             {% csrf_token %}
@@ -55,6 +55,8 @@
         {% else %}
           <div><i>(no download for this item)</i></div>
         {% endif %}
+      </div>
+      <div class="col-m2-2">
         {% if is_tablet_editor %}
           <div id="concrete_process" class="hidden">
             <form action="{% url 'froglink_details' pk=otext.id %}" method="post">

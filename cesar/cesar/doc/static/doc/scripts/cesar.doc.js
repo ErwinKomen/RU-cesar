@@ -197,6 +197,27 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * aws_filter_test
+       *    Test AWS filter (ad-hoc)
+       *
+       */
+      aws_filter_test: function (e) {
+        var data = [],
+            url = "https://rkxy8021l6.execute-api.eu-central-1.amazonaws.com/Prod/filter/";
+
+        try {
+          // Call using  get
+          $.get(url, function (result) {
+            var deze;
+
+            deze = result;
+          });
+        } catch (ex) {
+          private_methods.errMsg("aws_filter_test", ex);
+        }
+      },
+
+      /**
        * concrete_changes
        *   Process changes in concreteness
        *
