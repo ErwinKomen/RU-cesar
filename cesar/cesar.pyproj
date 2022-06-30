@@ -32,14 +32,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="cesar\basic\admin.py" />
-    <Compile Include="cesar\basic\apps.py" />
-    <Compile Include="cesar\basic\migrations\__init__.py" />
-    <Compile Include="cesar\basic\models.py" />
-    <Compile Include="cesar\basic\tests.py" />
-    <Compile Include="cesar\basic\utils.py" />
-    <Compile Include="cesar\basic\views.py" />
-    <Compile Include="cesar\basic\__init__.py" />
     <Compile Include="cesar\browser\admin.py" />
     <Compile Include="cesar\browser\apps.py" />
     <Compile Include="cesar\browser\forms.py">
@@ -137,14 +129,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="cesar\" />
-    <Folder Include="cesar\basic\" />
-    <Folder Include="cesar\basic\migrations\" />
-    <Folder Include="cesar\basic\static\" />
-    <Folder Include="cesar\basic\static\basic\" />
-    <Folder Include="cesar\basic\static\basic\content\" />
-    <Folder Include="cesar\basic\static\basic\scripts\" />
-    <Folder Include="cesar\basic\templates\" />
-    <Folder Include="cesar\basic\templates\basic\" />
     <Folder Include="cesar\browser\" />
     <Folder Include="cesar\browser\migrations\" />
     <Folder Include="cesar\browser\static\" />
@@ -188,11 +172,6 @@
     <Folder Include="cesar\viewer\templates\viewer\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="cesar\basic\static\basic\content\basic.css" />
-    <Content Include="cesar\basic\static\basic\scripts\basic.js" />
-    <Content Include="cesar\basic\templates\basic\basic_details.html" />
-    <Content Include="cesar\basic\templates\basic\basic_edit.html" />
-    <Content Include="cesar\basic\templates\basic\basic_list.html" />
     <Content Include="cesar\browser\static\browser\content\acad.png" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.css" />
     <Content Include="cesar\browser\static\browser\content\bootstrap.min.css" />
