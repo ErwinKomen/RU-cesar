@@ -59,13 +59,14 @@
       <div class="col-m2-2">
         {% if is_tablet_editor %}
           <div id="concrete_process" class="hidden">
-            <form action="{% url 'froglink_details' pk=otext.id %}" method="post">
+            <form action="{% url 'concrete_update' pk=otext.id %}" method="post">
               {% csrf_token %}
               <div class="hidden">
                 <input name="concretedata" id="concretedata" class="form-control" value="" />
               </div>
               <a id="process_changes" title="Process editing changes in the Concreteness data"
                  class="btn btn-sm jumbo-4"
+                 targeturl="{% url 'froglink_details' pk=otext.id %}"
                  onclick="ru.cesar.doc.concrete_changes(this);">Save changes</a>
             </form>
           </div>

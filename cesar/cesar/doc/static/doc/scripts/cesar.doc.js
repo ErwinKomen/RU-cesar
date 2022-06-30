@@ -22,6 +22,7 @@ var ru = (function ($, ru) {
   ru.cesar.doc = (function ($, config) {
     // Define variables for ru.collbank here
     var loc_example = "",
+        loc_concrete = {},
         loc_divErr = "doc_err",
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         loc_month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -178,8 +179,18 @@ var ru = (function ($, ru) {
           $("[contenteditable=true]").on("focus", function (e) { $(this).data("currentText", $(this).text()); });
 
           $("[contenteditable=true]").on('blur', function (e) {
+            var fNew = 0.0,
+                word_id = 0;
+
             if ($(this).text() !== $(this).data("currentText")) {
+              // Signal that the SAVE button must display
               $(this).trigger("change");
+              // Get the new float value
+              fNew = parseFloat(e.target.textContent.trim().replace(/,/, "."));
+              // Get the word id
+              word_id = parseInt(e.target.attributes['wordid'].value, 10);
+              // Add to dictionary
+              loc_concrete[word_id] = fNew;
             }
           });
           $("[contenteditable=true]").on('change', function (e) {
@@ -227,6 +238,8 @@ var ru = (function ($, ru) {
             divTarget = "",
             divTable = "",
             elConcreteData = "",
+            posturl = "",
+            geturl = "",
             frm = null,
             data = null;
 
@@ -237,44 +250,22 @@ var ru = (function ($, ru) {
           // Find the target table
           divTable = $(elStart).closest(".container-small").find("table.func-view").first();
 
-          // Find the concretedata input
-          elConcreteData = $("#concretedata").first();
+          // Set the concretedata input to the current list
+          $("#concretedata").val(JSON.stringify(loc_concrete));
 
-          // Gather the data from the existing table
+          // Reset the changes
+          loc_concrete = {};
 
           // Get the form and the associated data
-          frm = $(elStart).closest("form")
+          frm = $(elStart).closest("form");
+          posturl = $(frm).attr("action");
+          geturl = $(elStart).attr("targeturl");
           data = frm.serializeArray();
+          $.post(posturl, data, function (e) {
+            // The data has been processed, now re-load
+            window.location = geturl;
+          });
 
-          // Submit the form
-          $(frm).submit();
-
-          //// Make a call to the URL with the data
-          //$.post(ajaxurl, data, function (response) {
-          //  if (response.status === undefined) {
-          //    // Show an error somewhere
-          //    private_methods.errMsg("Bad execute response");
-          //  } else if (response.status === "error") {
-          //    // Show the error that has occurred
-          //    if ("error_list" in response && response['error_list'] !== "") {
-          //      // Don't really use this:
-          //      sMsg += response['error_list'];
-          //      // Experimental: only show this error list
-          //      lHtml.push("<span style=\"color: darkred;\">");
-          //      lHtml.push(response['error_list']);
-          //      lHtml.push("</span>");
-          //      private_methods.errMsg(lHtml.join("\n"));
-          //    } else {
-          //      private_methods.errMsg("Execute error: " + response.msg);
-          //    }
-          //    // Clear the target
-          //    $(divTarget).html("<code>error (see above)</code>");
-          //  } else {
-          //    // Everything went well: show the transliteration
-          //    $(divTarget).html(response.msg);
-          //  }
-          //});
-  
         } catch (ex) {
           private_methods.errMsg("concrete_changes", ex);
         }

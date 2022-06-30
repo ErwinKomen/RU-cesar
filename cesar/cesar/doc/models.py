@@ -539,6 +539,7 @@ class FrogLink(models.Model):
             doc = folia.Document(file=self.fullname)
             # Read through paragraphs
             para_scores = []
+            word_id = 1
             for para in doc.paragraphs():
                 # Read sentences
                 sent_scores = []
@@ -645,10 +646,12 @@ class FrogLink(models.Model):
                             # Process the score of this content word
                             oScore = {}
                             oScore['word'] = word.text()
+                            oScore['word_id'] = word_id
                             oScore['pos'] = postag
                             oScore['pos_full'] = pos.cls
                             oScore['lemma'] = lemmatag
                             oScore['concr'] = "NiB" if score < 0 else str(score)
+                            word_id += 1
                             # Add it in all lists
                             word_scores.append(oScore)
                     # Add any MWEs that were found
@@ -658,10 +661,12 @@ class FrogLink(models.Model):
                         score = oMWE['score']
                         oScore = {}
                         oScore['word'] = sText
+                        oScore['word_id'] = word_id
                         oScore['pos'] = "MWE"
                         oScore['pos_full'] = "MWE"
                         oScore['lemma'] = sText
                         oScore['concr'] = str(score)
+                        word_id += 1
                         # Add it in all lists
                         word_scores.append(oScore)
 
@@ -716,6 +721,64 @@ class FrogLink(models.Model):
             bResult = False
             sMsg = oErr.get_error_message()
             return bResult, sMsg
+
+    def recalculate(oConcr):
+        """Re-calculate the concreteness measures and return"""
+
+        oErr = ErrHandle()
+        try:
+            for oPara in oConcr['list']:
+                for oSent in oPara['list']:
+                    # Process the results of this sentence
+                    score = 0
+                    total = 0
+                    n = len(oSent['list'])
+                    for obj in oSent['list']:
+                        if obj['concr'] == "NiB":
+                            n -= 1
+                        else:
+                            score += float(obj['concr'])
+                            total += float(obj['concr'])
+                    if n < 1:
+                        n = 1
+                    # The average of the sentence is the sum of the word-scores divided by the number of word scores
+                    avg = score / n
+                    # Adapt the sentence totals
+                    oSent['score'] = avg
+                    oSent['n'] = n
+                    oSent['total'] = total
+                # Process the results of this paragraph
+                score = 0
+                n = 0
+                total = 0
+                for obj in oPara['list']:
+                    total += obj['total']
+                    n += obj['n']
+                if n == 0:
+                    avg = 0.0
+                else:
+                    avg = total / n
+                oPara['score'] = avg
+                oPara['n'] = n
+                oPara['total'] = total
+            # Process the results of this text
+            score = 0
+            n = 0
+            total = 0
+            for obj in oConcr['list']:
+                total += obj['total']
+                n += obj['n']
+            if n == 0:
+                avg = 0.0
+            else:
+                avg = total / n
+            oConcr['score'] = avg
+            oConcr['n'] = n
+            oConcr['total'] = total
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("FrogLink.recalculate")
+        return oConcr
 
     def get_csv(self):
         """Convert [concr] to CSV-string with header row""" 

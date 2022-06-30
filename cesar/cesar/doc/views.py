@@ -537,11 +537,93 @@ class ConcreteDetails(ConcreteEdit):
                 obj = dict(id=instance.id, show=False)
             else:
                 obj = json.loads(instance.concr)
+
+                ## Check if there is any concretedata
+                #sConcretedata = self.qd.get("concretedata")
+                #concretedata = {}
+                #if not sConcretedata is None:
+                #    concretedata = json.loads(sConcretedata)
+
+                # Double check if changes are needed in the object
+                bNeedSaving = False
+                bRecalculate = False
+                word_id = 1
+                for oPara in obj['list']:
+                    for oSent in oPara['list']:
+                        for oWord in oSent['list']:
+                            word_id = oWord.get('word_id')
+                            if word_id is None:
+                                oWord['word_id'] = word_id
+                                word_id += 1
+                                bNeedSaving = True
+                            #elif str(word_id) in concretedata:
+                            #    oWord['concr'] = concretedata[str(word_id)]
+                            #    bNeedSaving = True
+                            #    bRecalculate = True
+                ## Is recalculation needed?
+                #if bRecalculate:
+                #    obj = FrogLink.recalculate(obj)
+
+                # Do we need to save the (recalculated) results?
+                if bNeedSaving:
+                    instance.concr = json.dumps(obj)
+                    instance.save()
+
                 obj['id'] = instance.id
                 obj['show'] = True
             context['otext'] = obj
             sAfter = render_to_string('doc/foliadocs_view.html', context, self.request)
             context['after_details'] = sAfter
+
+        # Return the adapted context
+        return context
+
+class ConcreteUpdate(ConcreteEdit):
+    """Update concreteness information"""
+
+    def add_to_context(self, context, instance):
+        # Call the base implementation first to get a context
+        context = super(ConcreteUpdate, self).add_to_context(context, instance)
+
+        # Do we have a JSON response in self.concr?
+        if instance.concr != None and instance.concr != "":
+            # Make sure to add [otext] and[tnumber]
+            context['tnumber'] = 1
+            if instance.concr == None or instance.concr == "":
+                obj = dict(id=instance.id, show=False)
+            else:
+                obj = json.loads(instance.concr)
+
+                # Check if there is any concretedata
+                sConcretedata = self.qd.get("concretedata")
+                concretedata = {}
+                if not sConcretedata is None:
+                    concretedata = json.loads(sConcretedata)
+
+                # Double check if changes are needed in the object
+                bNeedSaving = False
+                bRecalculate = False
+                word_id = 1
+                for oPara in obj['list']:
+                    for oSent in oPara['list']:
+                        for oWord in oSent['list']:
+                            word_id = oWord.get('word_id')
+                            if word_id is None:
+                                oWord['word_id'] = word_id
+                                word_id += 1
+                                bNeedSaving = True
+                            elif str(word_id) in concretedata:
+                                oWord['concr'] = concretedata[str(word_id)]
+                                bNeedSaving = True
+                                bRecalculate = True
+                # Is recalculation needed?
+                if bRecalculate:
+                    obj = FrogLink.recalculate(obj)
+
+                # Do we need to save the (recalculated) results?
+                if bNeedSaving:
+                    instance.concr = json.dumps(obj)
+                    instance.save()
 
         # Return the adapted context
         return context

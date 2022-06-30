@@ -32,7 +32,7 @@
             <td valign="top">{{word.lemma}}</td>
             <td valign="top" align="right" {% if mode == "editable" %}class="editable"{% endif %}>
               {% if mode == "editable" %}
-                <div contenteditable="true">
+                <div contenteditable="true" wordid="{{word.word_id}}">
                   {% if word.concr == "NiB" %}NiB{% else %}{{word.concr|floatformat:3}}{% endif %}
                 </div>
               {% else %}
