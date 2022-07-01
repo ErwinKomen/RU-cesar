@@ -1482,11 +1482,15 @@ class BasicDetails(DetailView):
         # Initialisations
         bNew = False
         mForm = self.mForm
+        frm = None
         oErr = ErrHandle()
         username=self.request.user.username
         team_group=app_editor
         userplus = app_userplus
 
+        # If there is no mForm, leave
+        if mForm is None:
+            return None
 
         # Determine the prefix
         if self.prefix_type == "":
