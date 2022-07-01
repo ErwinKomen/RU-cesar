@@ -137,6 +137,14 @@ TEMPLATES = [
     },
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': None,
+    }
+}
+
 WSGI_APPLICATION = 'cesar.wsgi.application'
 
 
