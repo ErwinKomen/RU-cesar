@@ -16,7 +16,7 @@
     <InterpreterVersion>3.5</InterpreterVersion>
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-l en -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\06_gheenash.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\06_gheenash.doc"</CommandLineArguments>
+    <CommandLineArguments>-l ce -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\09_gheenash.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\09_gheenash.doc"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -100,6 +100,7 @@
     <Content Include="brief\scripts\jquery-1.10.2.js" />
     <Content Include="brief\scripts\pbrief.js" />
     <Content Include="letter\css\site.css" />
+    <Content Include="letter\gheenash\diicar_09.html" />
     <Content Include="letter\simplecesar.html" />
     <Content Include="letter\xaerzhina\diicar_001.html" />
     <Content Include="letter\xaerzhina\diicar_010.html" />

@@ -30,7 +30,7 @@ from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
     LocTimeInfo, Expression
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
-    LocTimeForm, ExpressionForm
+    LocTimeForm, ExpressionForm, UploadMwexForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -920,6 +920,12 @@ class ExpressionList(BasicList):
         {'section': '', 'filterlist': [
             {'filter': 'full',   'dbfield': 'full', 'keyS': 'full'}]} 
         ] 
+    uploads = [
+        {"title": "mwex", 
+         "label": "MWE Excel", 
+         "url": "import_mwex", 
+         "msg": "Upload MWE Excel file", 
+         "type": "single"}]
 
     def add_to_context(self, context, initial):
         # Only moderators are to be allowed
@@ -1099,6 +1105,113 @@ def import_nexis(request):
         else:
             data['html'] = 'invalid form: {}'.format(form.errors)
             data['status'] = "error"
+    else:
+        data['html'] = 'Only use POST and make sure you are logged in'
+        data['status'] = "error"
+ 
+    # Return the information
+    return JsonResponse(data)
+
+def import_mwex(request):
+    """Import one MWE Excel file"""
+
+    # Initialisations
+    # NOTE: do ***not*** add a breakpoint until *AFTER* form.is_valid
+    arErr = []
+    error_list = []
+    statuscode = ""
+    data = {'status': 'ok', 'html': ''}
+    template_name = 'doc/import_mwex.html'
+    username = request.user.username
+    oErr = ErrHandle()
+
+    # Check if the user is authenticated and if it is POST
+    if request.user.is_authenticated and request.method == 'POST':
+
+        # Remove previous status object for this user
+        Status.objects.filter(user=username).delete()
+        # Create a status object
+        oStatus = Status(user=username, type="mwex", status="preparing", msg="please wait")
+        oStatus.save()
+        
+        form = UploadMwexForm(request.POST, request.FILES)
+        lResults = []
+        if form.is_valid():
+            # NOTE: from here a breakpoint may be inserted!
+            print('import_mwex: valid form')
+
+            # Get the contents of the imported file
+            files = request.FILES.getlist('file_source')
+            if files != None:
+                if len(files) > 0:
+                    # Only read the first
+                    data_file = files[0]
+                    filename = data_file.name
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        arErr.append("No source file specified for the MWE Excel list")
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+                        sBare = arFile[0].strip()
+
+                        # Further processing depends on the extension
+                        oResult = None
+                        if extension == "xlsx":
+                            # Read the excel
+                            wb = openpyxl.load_workbook(data_file)
+                            ws = wb.worksheets[0]
+                            pass
+                        else:
+                            # Cannot process these
+                            oResult = {'status': 'error', 'msg': 'cannot process non Excel (xlsx) files'}
+
+
+                        if oResult == None:
+                            arErr.append("There was an error. No Excel file has been loaded")
+                        else:
+                            lResults.append(oResult)
+
+
+            if statuscode == "error":
+                data['status'] = "error"
+            else:
+                # Set the number of files in this batch
+                iCount = batch.batchlinks.all().count()
+                batch.count = iCount
+                batch.save()
+                # Show we are ready
+                oStatus.set("ready", msg="Read all files")
+            # Get a list of errors
+            error_list = [str(item) for item in arErr if len(str(item)) > 0]
+
+            # Create the context
+            context = dict(
+                statuscode=statuscode,
+                results=lResults,
+                object=nd,
+                error_list=error_list
+                )
+
+            if len(arErr) == 0 or len(arErr[0]) == 0:
+                # Get the HTML response
+                data['html'] = render_to_string(template_name, context, request)
+            else:
+                lHtml = []
+                lHtml.append("There are errors in importing this mwex")
+                for item in arErr:
+                    lHtml.append("<br />- {}".format(str(item)))
+                data['html'] = "\n".join(lHtml)
+
+        else:
+            data['html'] = 'invalid form: {}'.format(form.errors)
+            data['status'] = "error"
+
     else:
         data['html'] = 'Only use POST and make sure you are logged in'
         data['status'] = "error"

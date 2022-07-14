@@ -52,6 +52,13 @@ class UploadOneFileForm(forms.Form):
                                   widget=forms.ClearableFileInput())
 
 
+class UploadMwexForm(forms.Form):
+    """This is for uploading one file"""
+
+    file_source = forms.FileField(label="Specify which file should be imported",
+                                  widget=forms.ClearableFileInput())
+
+
 class FrogLinkForm(forms.ModelForm):
     ownlist = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=UserWidget(attrs={'data-placeholder': 'Select multiple users...', 'style': 'width: 100%;', 'class': 'searching'}))
