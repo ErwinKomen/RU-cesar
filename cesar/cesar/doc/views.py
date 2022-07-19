@@ -1165,8 +1165,27 @@ def import_mwex(request):
                         if extension == "xlsx":
                             # Read the excel
                             wb = openpyxl.load_workbook(data_file)
+                            # We expect the data to be in the first worksheet
                             ws = wb.worksheets[0]
-                            pass
+                            # Expectations: first  column is *WOORD*
+                            #               second column is *SCORE* (concreetheid)
+                            row_no = 2
+                            while ws.cell(row=row_no, column=1).value != None:
+                                # Get the woord and the score
+                                woord = ws.cell(row=row_no, column=1).value
+                                score = ws.cell(row=row_no, column=2).value
+                                if isinstance(score,float):
+                                    # Turn it into a string with a period decimal separator
+                                    score = str(score).replace(",", ".")
+                                # Check if these are already processed in the Epression table
+                                obj = Expression.objects.filter(full=woord, score=score).first()
+                                if obj is None:
+                                    # Add this expression
+                                    obj = Expression.objects.create(full=woord, score=score)
+
+                                # Go to the next row
+                                row_no += 1
+
                         else:
                             # Cannot process these
                             oResult = {'status': 'error', 'msg': 'cannot process non Excel (xlsx) files'}
@@ -1186,7 +1205,7 @@ def import_mwex(request):
                 batch.count = iCount
                 batch.save()
                 # Show we are ready
-                oStatus.set("ready", msg="Read all files")
+                oStatus.set("ready", msg="Read all data")
             # Get a list of errors
             error_list = [str(item) for item in arErr if len(str(item)) > 0]
 
