@@ -139,6 +139,22 @@ class Expression(models.Model):
             oErr.DoError("doc/Expression/get_mwe_list")
         return lBack
 
+    def get_fullmwe_list():
+        """get a list of objects, where each object has the score + the full MWE"""
+
+        oErr = ErrHandle()
+        lBack = []
+        try:
+            lAll = Expression.objects.all().values('score', 'lemmas')
+            for oItem in lAll:
+                score = oItem['score']
+                full = oItem['fill']
+                lBack.append(dict(score=score, full=full))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("doc/Expression/get_fullmwe_list")
+        return lBack
+
 
 class FoliaDocs(models.Model):
     """Set of folia-encoded documents"""
