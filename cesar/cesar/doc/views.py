@@ -1163,6 +1163,7 @@ def import_mwex(request):
                     # Get the source file
                     if data_file == None or data_file == "":
                         arErr.append("No source file specified for the MWE Excel list")
+                        statuscode = "error"
                     else:
                         # Check the extension
                         arFile = filename.split(".")
@@ -1179,6 +1180,8 @@ def import_mwex(request):
                             # Expectations: first  column is *WOORD*
                             #               second column is *SCORE* (concreetheid)
                             row_no = 2
+                            lAdded = []
+                            lSkipped = []
                             while ws.cell(row=row_no, column=1).value != None:
                                 # Get the woord and the score
                                 woord = ws.cell(row=row_no, column=1).value
@@ -1186,19 +1189,29 @@ def import_mwex(request):
                                 if isinstance(score,float):
                                     # Turn it into a string with a period decimal separator
                                     score = str(score).replace(",", ".")
+                                oItem = dict(woord=woord, score=score)
                                 # Check if these are already processed in the Epression table
                                 obj = Expression.objects.filter(full=woord, score=score).first()
                                 if obj is None:
                                     # Add this expression
                                     obj = Expression.objects.create(full=woord, score=score)
-
+                                    lAdded.append(oItem)
+                                else:
+                                    lSkipped.append(oItem)
                                 # Go to the next row
                                 row_no += 1
-
+                            # Add results
+                            oResult = {}
+                            oResult['added'] = lAdded
+                            oResult['skipped'] = lSkipped
+                            oResult['added_count'] = len(lAdded)
+                            oResult['skipped_count'] = len(lSkipped)
+                            # Show where we are
+                            statuscode = "completed"
                         else:
                             # Cannot process these
                             oResult = {'status': 'error', 'msg': 'cannot process non Excel (xlsx) files'}
-
+                            statuscode = "error"
 
                         if oResult == None:
                             arErr.append("There was an error. No Excel file has been loaded")
@@ -1209,10 +1222,6 @@ def import_mwex(request):
             if statuscode == "error":
                 data['status'] = "error"
             else:
-                # Set the number of files in this batch
-                iCount = batch.batchlinks.all().count()
-                batch.count = iCount
-                batch.save()
                 # Show we are ready
                 oStatus.set("ready", msg="Read all data")
             # Get a list of errors
@@ -1221,8 +1230,8 @@ def import_mwex(request):
             # Create the context
             context = dict(
                 statuscode=statuscode,
+                filename=filename,
                 results=lResults,
-                object=nd,
                 error_list=error_list
                 )
 

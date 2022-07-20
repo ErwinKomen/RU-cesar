@@ -151,7 +151,7 @@ var ru = (function ($, ru) {
           // Call the URL
           $.get(progrurl, function (response) {
             // Action depends on the response
-            if (response === undefined || response === null || !("status" in response)) {
+            if (response === undefined || response === null || response.status === undefined) {
               private_methods.errMsg("No status returned");
             } else {
               switch (response.status) {
@@ -163,14 +163,14 @@ var ru = (function ($, ru) {
                   break;
                 case "error":
                   // Show the error
-                  if ('msg' in response) {
+                  if (response.msg !== undefined) {
                     $(elTarget).html(response.msg);
                   } else {
                     $(elTarget).html("An error has occurred (basic check_progress)");
                   }
                   break;
                 default:
-                  if ("msg" in response) { sMsg = response.msg; }
+                  if (response.msg !== undefined) { sMsg = response.msg; }
                   // Combine the status
                   sMsg = "<tr><td>" + response.status + "</td><td>" + sMsg + "</td></tr>";
                   // Check if it is on the stack already
@@ -540,7 +540,7 @@ var ru = (function ($, ru) {
               $(".save-warning").html("saving..." + loc_sWaiting);
 
               // First leg has been done
-              if (response === undefined || response === null || !("status" in response)) {
+              if (response === undefined || response === null || response.status === undefined) {
                 private_methods.errMsg("No status returned");
               } else {
                 switch (response.status) {
@@ -551,7 +551,7 @@ var ru = (function ($, ru) {
                       $(".save-warning").html("retrieving..." + loc_sWaiting);
 
                       $.get(targeturl, function (response) {
-                        if (response === undefined || response === null || !("status" in response)) {
+                        if (response === undefined || response === null || response.status === undefined) {
                           private_methods.errMsg("No status returned");
                         } else {
                           switch (response.status) {
@@ -562,9 +562,9 @@ var ru = (function ($, ru) {
                               break;
                             default:
                               // Check how/what to show
-                              if ("err_view" in response) {
+                              if (response.err_view !== undefined) {
                                 private_methods.errMsg(response['err_view']);
-                              } else if ("error_list" in response) {
+                              } else if (response.error_list !== undefined) {
                                 private_methods.errMsg(response['error_list']);
                               } else {
                                 // Just show the HTML
@@ -602,9 +602,9 @@ var ru = (function ($, ru) {
                   default:
                     // Check WHAT to show
                     sMsg = "General error (unspecified)";
-                    if ("err_view" in response) {
+                    if (response.err_view !== undefined) {
                       sMsg = response['err_view'];
-                    } else if ("error_list" in response) {
+                    } else if (response.error_list !== undefined) {
                       sMsg = response['error_list'];
                     } else {
                       // Indicate that the status is not okay
@@ -746,7 +746,7 @@ var ru = (function ($, ru) {
               $(targetid).removeClass("post-load");
 
               // Action depends on the response
-              if (response === undefined || response === null || !("status" in response)) {
+              if (response === undefined || response === null || response.status === undefined) {
                 private_methods.errMsg("No status returned");
               } else {
                 switch (response.status) {
@@ -756,14 +756,14 @@ var ru = (function ($, ru) {
                     // Call initialisation again
                     ru.basic.init_events(sUrlShow);
                     // Handle type aheads
-                    if ("typeaheads" in response) {
+                    if (response.typeaheads !== undefined) {
                       // Perform typeahead for these ones
                       // ru.basic.init_event_listeners(response.typeaheads);
                     }
                     break;
                   case "error":
                     // Show the error
-                    if ('msg' in response) {
+                    if (response.msg !== undefined) {
                       $(targetid).html(response.msg);
                     } else {
                       $(targetid).html("An error has occurred (basic init_events)");
@@ -987,13 +987,13 @@ var ru = (function ($, ru) {
                     // Make a post to the targeturl
                     $.post(targeturl, data, function (response) {
                       // Action depends on the response
-                      if (response === undefined || response === null || !("status" in response)) {
+                      if (response === undefined || response === null || response.status === undefined) {
                         private_methods.errMsg("No status returned");
                       } else {
                         switch (response.status) {
                           case "ready":
                           case "ok":
-                            if ("html" in response) {
+                            if (response.html !== undefined) {
                               // Show the HTML in the targetid
                               $("#" + elTarget).html(response['html']);
                             }
@@ -1075,14 +1075,14 @@ var ru = (function ($, ru) {
 
                 $.get(targeturl, data, function (response) {
                   // Action depends on the response
-                  if (response === undefined || response === null || !("status" in response)) {
+                  if (response === undefined || response === null || response.status === undefined) {
                     private_methods.errMsg("No status returned");
                   } else {
                     switch (response.status) {
                       case "ready":
                       case "ok":
                       case "error":
-                        if ("html" in response) {
+                        if (response.html !== undefined) {
                           // Show the HTML in the targetid
                           $("#" + targetid).html(response['html']);
                           // Make sure invisible ancestors show up
@@ -1129,7 +1129,7 @@ var ru = (function ($, ru) {
 
                           // If there is an error, indicate this
                           if (response.status === "error") {
-                            if ("msg" in response) {
+                            if (response.msg !== undefined) {
                               if (typeof response['msg'] === "object") {
                                 lHtml = []
                                 lHtml.push("Errors:");
@@ -1210,7 +1210,7 @@ var ru = (function ($, ru) {
                 // Try to save the form data: send a POST
                 $.post(targeturl, data, function (response) {
                   // Action depends on the response
-                  if (response === undefined || response === null || !("status" in response)) {
+                  if (response === undefined || response === null || response.status === undefined) {
                     private_methods.errMsg("No status returned");
                   } else {
                     switch (response.status) {
@@ -1218,7 +1218,7 @@ var ru = (function ($, ru) {
                         // Indicate there is an error
                         bOkay = false;
                         // Show the error in an appropriate place
-                        if ("msg" in response) {
+                        if (response.msg !== undefined) {
                           if (typeof response['msg'] === "object") {
                             lHtml = [];
                             lHtml.push("Errors:");
@@ -1227,7 +1227,7 @@ var ru = (function ($, ru) {
                           } else {
                             $(err).html("Error: " + response['msg']);
                           }
-                        } else if ("errors" in response) {
+                        } else if (response.errors !== undefined) {
                           lHtml = [];
                           lHtml.push("<h4>Errors</h4>");
                           for (i = 0; i < response['errors'].length; i++) {
@@ -1236,7 +1236,7 @@ var ru = (function ($, ru) {
                             });
                           }
                           $(err).html(lHtml.join("<br />"));
-                        } else if ("error_list" in response) {
+                        } else if (response.error_list !== undefined) {
                           lHtml = [];
                           lHtml.push("Errors:");
                           $.each(response['error_list'], function (key, value) { lHtml.push(key + ": " + value); });

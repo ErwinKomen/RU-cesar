@@ -1,0 +1,64 @@
+﻿{% load i18n %}
+
+  {% if statuscode == "completed" %}
+    <div class="row">
+      <div class='col-md-9 panel panel-default'>
+        The file [{{filename}}] has been imported.
+        See the results here below.
+        Return to the full list: 
+        <a class="btn btn-xs jumbo-1" role="button" href="{% url 'expression_list' %}">Full list</a>
+      </div>
+    </div>
+    {% for oResult in results %}
+      <div class="row">
+        <div class="col-md-9 panel panel-default">
+          {% if oResult.added_count == 0 %}
+            <div>(Nothing has been added)</div>
+          {% else %}
+            <h3>Added</h3>
+            <table>
+              <thead>
+                <tr><th>word</th><th>score</th></tr>
+                {% for oAdded in oResult.added %}
+                  <tr>
+                    <td>{{oAdded.woord}}</td>
+                    <td>{{oAdded.score}}</td>
+                  </tr>
+                {% endfor %}
+              </thead>
+            </table>
+          {% endif %}
+
+          {% if oResult.skipped_count == 0 %}
+            <div>(Nothing has been skipped)</div>
+          {% else %}
+            <h3>Skipped</h3>
+            <table>
+              <thead>
+                <tr><th>word</th><th>score</th></tr>
+                {% for oSkipped in oResult.skipped %}
+                  <tr>
+                    <td>{{oSkipped.woord}}</td>
+                    <td>{{oSkipped.score}}</td>
+                  </tr>
+                {% endfor %}
+              </thead>
+            </table>
+          {% endif %}
+        </div>
+      </div>
+
+    {% endfor %}
+
+  {% endif %}
+
+  <!-- Any errors are shown here too-->
+  <div class="errors">
+    {% if error_list and statuscode != "error" %} 
+      <h4>Errors:</h4>
+      <div>statuscode = {{statuscode}}</div>
+      {% for item in error_list %}
+        <div class="error-item">{{item}}</div>
+      {% endfor %}
+    {% endif %}
+  </div>
