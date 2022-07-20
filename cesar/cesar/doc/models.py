@@ -574,10 +574,13 @@ class FrogLink(models.Model):
                     for oWord in lst_sent:
                         word = str(oWord)
                         lst_word.append(word)
-                    ##lst_word = [str(word) for word in lst_sent]
+                    # NOTE: the following doesn't work, apparently...
+                    # lst_word = [str(word) for word in lst_sent]
 
                     # Look at the full MWE expressions
-                    for idx_full in range(len(lst_word)):
+                    idx_full = 0
+                    while idx_full < len(lst_word):
+                        # for idx_full in range(len(lst_word)):
                         # Check if there is a fit for an MWE starting at this point
                         oResult = Expression.get_fullmwe_fit(lst_word[idx_full:])
                         if oResult['status'] == "ok":
@@ -585,15 +588,16 @@ class FrogLink(models.Model):
                             mwe_size = oResult['size']
                             mwe = oResult['mwe']
                             mwe['size'] = mwe_size
-                            for idx_back in range(len(lst_word)):
-                                if idx_back < idx_full or idx_back > idx_full + mwe_size:
-                                    # Return the Folia Word object
-                                    lst_back.append(copy.copy(lst_sent[idx_back]))
-                                elif idx_back == idx_full:
-                                    # Return the MWE as one whole expression
-                                    lst_found_mwe.append(mwe)
-                            # Now break away from the loop
-                            break
+                            mwe['idx'] = idx_full
+                            # Return the MWE as one whole expression
+                            lst_found_mwe.append(mwe)
+                            # Skip to the next one
+                            idx_full += mwe_size
+                        else:
+                            # Return the Folia Word object
+                            oBack = dict(idx=idx_full, word=copy.copy(lst_sent[idx_full]))
+                            lst_back.append(oBack)
+                            idx_full += 1
                 elif mwe_method == "lemmas":
                     # Look at a list of lemma's
 
@@ -653,7 +657,8 @@ class FrogLink(models.Model):
                     sent_mwes, sent_words = process_mwe(sent_words)
 
                     # for word in sent.words():
-                    for word in sent_words:
+                    for oWord in sent_words:
+                        word = oWord['word']
                         # Get to the POS and the lemma of this word
                         pos = word.annotation(folia.PosAnnotation)
                         postag = pos.cls.split("(")[0]
@@ -750,6 +755,7 @@ class FrogLink(models.Model):
                             oScore['pos_full'] = pos.cls
                             oScore['lemma'] = lemmatag
                             oScore['concr'] = "NiB" if score < 0 else str(score)
+                            oScore['idx'] = oWord['idx']
                             word_id += 1
                             # Add it in all lists
                             word_scores.append(oScore)
@@ -766,6 +772,7 @@ class FrogLink(models.Model):
                             oScore['pos_full'] = "MWE"
                             oScore['lemma'] = sText
                             oScore['concr'] = str(score)
+                            oScore['idx'] = oMWE['idx']
                             word_id += oMWE['size']
                         elif mwe_method == "lemmas":
                             sText = " ".join(oMWE['lemmas'])
@@ -779,6 +786,9 @@ class FrogLink(models.Model):
                             word_id += 1
                         # Add it in all lists
                         word_scores.append(oScore)
+
+                    # Sort word scores, based on idx
+                    word_scores = sorted(word_scores, key = lambda x: x['idx'])
 
                     # Process the results of this sentence
                     score = 0
