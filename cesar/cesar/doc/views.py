@@ -23,7 +23,7 @@ from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 
 from cesar.settings import APP_PREFIX
-from cesar.basic.views import BasicList, BasicDetails, BasicPart
+from cesar.basic.views import BasicList, BasicDetails, BasicPart, user_is_authenticated
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
@@ -79,6 +79,11 @@ def concrete_main(request):
     frmUpload = UploadFilesForm()
     frmBrysb = UploadOneFileForm()
     superuser = request.user.is_superuser
+
+    # Basic authentication
+    if not user_is_authenticated(request):
+        return nlogin(request)
+
     # Get a list of already uploaded files too
     text_list = []
     for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created'):
@@ -946,6 +951,10 @@ def nexis_main(request):
 
     # Make sure this is just a HTTP request
     assert isinstance(request, HttpRequest)
+
+    # Basic authentication
+    if not user_is_authenticated(request):
+        return nlogin(request)
 
     # Other initializations
     superuser = request.user.is_superuser

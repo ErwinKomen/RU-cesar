@@ -145,15 +145,55 @@ class Expression(models.Model):
         oErr = ErrHandle()
         lBack = []
         try:
-            lAll = Expression.objects.all().values('score', 'lemmas')
+            lAll = Expression.objects.all().values('score', 'full')
             for oItem in lAll:
                 score = oItem['score']
-                full = oItem['fill']
+                full = oItem['full']
                 lBack.append(dict(score=score, full=full))
         except:
             msg = oErr.get_error_message()
             oErr.DoError("doc/Expression/get_fullmwe_list")
         return lBack
+
+    def get_fullmwe_fit(lst_word):
+        """Find the first Expression, where all its words match those consecutively in [lst_word]
+
+        NOTE: *all* of the Expression's words should match, but lst_word may have words left
+        """
+
+        oBack = dict(status="none")
+        oErr = ErrHandle()
+        try:
+            lAll = Expression.objects.all().values('score', 'full')
+            for oItem in lAll:
+                score = oItem['score']
+                full =  oItem['full']
+                # Split the full into words
+                mwe_words = [x.lower() for x in full.split()]
+                mwe_size = len(mwe_words)
+
+                # Check if this MWE would fit
+                if mwe_size <= len(lst_word):
+                    bMatches = True
+                    for idx in range(len(mwe_words)):
+                        # Compare case-insensitive
+                        if mwe_words[idx] != lst_word[idx].lower():
+                            bMatches = False
+                            break
+                    # Do we have a match?
+                    if bMatches:
+                        # Yes, we have a match!
+                        oBack['status'] = "ok"
+                        oBack['mwe'] = copy.copy(oItem)
+                        oBack['size'] = mwe_size
+                        # Return what we found
+                        return oBack
+            # Getting here means that we did not find any match
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("doc/Expression/get_fullmwe_fit")
+
+        return oBack
 
 
 class FoliaDocs(models.Model):
@@ -432,9 +472,16 @@ class FrogLink(models.Model):
         sMsg = ""
         str_parts = ""
         oErr = ErrHandle()
-        method = "hidde"    # Alternatives: 'erwin', 'alpino', 'simple', 'hidde'
+        method = "hidde"        # Alternatives: 'erwin', 'alpino', 'simple', 'hidde'
+        mwe_method = "full"     # Alternatives: 'lemmas'
+
+
         # Make sure we have a list of MWEs available for process_mwe()
-        lst_mwe = Expression.get_mwe_list()
+        lst_mwe = None
+        if mwe_method == "full":
+           lst_mwe = Expression.get_fullmwe_list()
+        elif mwe_method == "lemmas":
+           lst_mwe = Expression.get_mwe_list()
 
         re_diminuative = re.compile(r'.*(m|n|l|ng|p|b|t|d|k|f|v|s|z|ch|g)je(s)?$')
         re_etje = re.compile(r'.*(nn|mm|ll)etje$')
@@ -517,34 +564,70 @@ class FrogLink(models.Model):
             """Find any MWEs in the sentences list's lemma's and take them out"""
             lst_back = []
             lst_found_mwe = []
-            # Create a list of lemma's
-            lst_lemma = []
-            for word in lst_sent:
-                lemma = word.annotation(folia.LemmaAnnotation)
-                lst_lemma.append(lemma.cls)
-            # Check all available MWEs
-            oFound = {}
-            for mwe in lst_mwe:
-                lemmas = mwe['lemmas']
-                score = mwe['score']
-                bFound, idx = is_sub(lemmas, lst_lemma)
-                if bFound:
-                    # Note that this one needs to be taken out
-                    oFound[idx] = mwe
 
-            idx = 0
-            count = len(lst_sent)
-            while idx < count:
-                if idx in oFound:
-                    # Skip a number of items
-                    mwe = oFound[idx]
-                    idx += len(mwe['lemmas'])
-                    lst_found_mwe.append(mwe)
-                else:
-                    # Add item to list
-                    lst_back.append(lst_sent[idx])
-                    # Continue with next one
-                    idx += 1
+            oErr = ErrHandle()
+            try:
+                # Action depends on the method that we are following
+                if mwe_method == "full":
+                    # Convert the sentence into a list of words
+                    lst_word = []
+                    for oWord in lst_sent:
+                        word = str(oWord)
+                        lst_word.append(word)
+                    ##lst_word = [str(word) for word in lst_sent]
+
+                    # Look at the full MWE expressions
+                    for idx_full in range(len(lst_word)):
+                        # Check if there is a fit for an MWE starting at this point
+                        oResult = Expression.get_fullmwe_fit(lst_word[idx_full:])
+                        if oResult['status'] == "ok":
+                            # We have a match! Look at: score, full, size
+                            mwe_size = oResult['size']
+                            mwe = oResult['mwe']
+                            mwe['size'] = mwe_size
+                            for idx_back in range(len(lst_word)):
+                                if idx_back < idx_full or idx_back > idx_full + mwe_size:
+                                    # Return the Folia Word object
+                                    lst_back.append(copy.copy(lst_sent[idx_back]))
+                                elif idx_back == idx_full:
+                                    # Return the MWE as one whole expression
+                                    lst_found_mwe.append(mwe)
+                            # Now break away from the loop
+                            break
+                elif mwe_method == "lemmas":
+                    # Look at a list of lemma's
+
+                    # Create this list of lemma's
+                    lst_lemma = []
+                    for word in lst_sent:
+                        lemma = word.annotation(folia.LemmaAnnotation)
+                        lst_lemma.append(lemma.cls)
+                    # Check all available MWEs
+                    oFound = {}
+                    for mwe in lst_mwe:
+                        lemmas = mwe['lemmas']
+                        score = mwe['score']
+                        bFound, idx = is_sub(lemmas, lst_lemma)
+                        if bFound:
+                            # Note that this one needs to be taken out
+                            oFound[idx] = mwe
+
+                    idx = 0
+                    count = len(lst_sent)
+                    while idx < count:
+                        if idx in oFound:
+                            # Skip a number of items
+                            mwe = oFound[idx]
+                            idx += len(mwe['lemmas'])
+                            lst_found_mwe.append(mwe)
+                        else:
+                            # Add item to list
+                            lst_back.append(lst_sent[idx])
+                            # Continue with next one
+                            idx += 1
+            except:
+                msg = oErr.get_error_message()
+                oErr.DoError("process_mwe")
 
             return lst_found_mwe, lst_back
 
@@ -672,17 +755,28 @@ class FrogLink(models.Model):
                             word_scores.append(oScore)
                     # Add any MWEs that were found
                     for oMWE in sent_mwes:
+                        oScore = dict(word="", word_id=word_id, pos="",pos_full="", lemma="", concr=0.0)
                         # Get the text of the MWE
-                        sText = " ".join(oMWE['lemmas'])
-                        score = oMWE['score']
-                        oScore = {}
-                        oScore['word'] = sText
-                        oScore['word_id'] = word_id
-                        oScore['pos'] = "MWE"
-                        oScore['pos_full'] = "MWE"
-                        oScore['lemma'] = sText
-                        oScore['concr'] = str(score)
-                        word_id += 1
+                        if mwe_method == "full":
+                            sText = oMWE['full']
+                            score = oMWE['score']
+                            oScore['word'] = sText
+                            oScore['word_id'] = word_id
+                            oScore['pos'] = "MWE"
+                            oScore['pos_full'] = "MWE"
+                            oScore['lemma'] = sText
+                            oScore['concr'] = str(score)
+                            word_id += oMWE['size']
+                        elif mwe_method == "lemmas":
+                            sText = " ".join(oMWE['lemmas'])
+                            score = oMWE['score']
+                            oScore['word'] = sText
+                            oScore['word_id'] = word_id
+                            oScore['pos'] = "MWE"
+                            oScore['pos_full'] = "MWE"
+                            oScore['lemma'] = sText
+                            oScore['concr'] = str(score)
+                            word_id += 1
                         # Add it in all lists
                         word_scores.append(oScore)
 
