@@ -659,6 +659,7 @@ class FrogLink(models.Model):
                     # for word in sent.words():
                     for oWord in sent_words:
                         word = oWord['word']
+                        word_text = str(word)
                         # Get to the POS and the lemma of this word
                         pos = word.annotation(folia.PosAnnotation)
                         postag = pos.cls.split("(")[0]
@@ -667,89 +668,98 @@ class FrogLink(models.Model):
 
                         # Check if we need to process this word (if it is a 'content' word)
                         if treat_word(postag, pos, lemmatag):
+
                             # First check if a word is in the brysbaertlist
-                            brys = Brysbaert.objects.filter(stimulus=word).first()
-                            if brys != None:
-                                # The concreteness of this word is in brys
-                                score = brys.get_concreteness()
+                            obj_fixed = Brysbaert.objects.filter(stimulus=word_text).first()
+                            if not obj_fixed is None:
+                                # The concreteness of this word is in obj_fixed
+                                score = obj_fixed.get_concreteness()
                             else:
                                 # Get the *FIRST* brysbaert equivalent if existing
-                                brys = Brysbaert.objects.filter(stimulus=lemmatag).first()
-                                if brys == None:
-                                    if word.text() == "pensioenregeling":
-                                        bStop = True
-                                    # Check if there are multiple morph parts
-                                    morph_parts = [m.text() for m in word.morphemes()]
-                                    score = -1
-                                    if len(morph_parts)>0:
-                                        # There are multiple morphemes
-                                        brysb_parts = []
-                                        score = 0
-                                        bIgnore = False
-                                        for idx, m in enumerate(morph_parts):
-                                            brys = Brysbaert.objects.filter(stimulus=m).first()
-                                            if brys == None:
-                                                score = -1
-                                                bIgnore = True
-                                                #break
-                                                brysb_parts.append(-1)
-                                            else:
-                                                # Add the score to the list
-                                                brysb_parts.append(brys.get_concreteness())
-                                        # debugging: get the parts as string
-                                        sParts = json.dumps(brysb_parts)
+                                obj_fixed = Brysbaert.objects.filter(stimulus=lemmatag).first()
+                                if obj_fixed is None:
+                                    # Try to get it as a neologism
+                                    obj_fixed = Neologism.objects.filter(stimulus__iexact=lemmatag).first()
+                                    if obj_fixed is None:
+                                        # Get the *first* neologism fitting
+                                        obj_fixed = Neologism.objects.filter(stimulus__iexact=word_text).first()
 
-                                        # TRYING
-                                        if bIgnore:
-                                            if method == "erwin":
-                                                lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(word.text())
-                                                # Do we have something?
-                                                if len(lst_parts) > 0:
-                                                    bIgnore = False
-                                                # debugging: get the parts as string
-                                                sParts = json.dumps(brysb_parts)
-                                                lemmatag = "{} ({})".format(lemmatag,str_parts)
-                                            elif method == "hidde":
-                                                # Break up the word *right-to-left* in largest Brysbaert known parts:
-                                                lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(word.text(), right_to_left=True)
-                                                # Do we have something?
-                                                if len(lst_parts) > 0:
-                                                    bIgnore = False
-                                                    # Check the last part not being [je]
-                                                    if len(word.text()) > 2 and lst_parts[0].stimulus == "je":
-                                                        bIgnore = True
-                                                        # Check if this is a diminuative that needs separate treatment
-                                                        sKernwoord = strip_diminuative(word.text())
-                                                        if sKernwoord != word.text():
-                                                            # Break up the word *right-to-left* in largest Brysbaert known parts:
-                                                            lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(sKernwoord, right_to_left=True)
-                                                            # Do we have something?
-                                                            if len(lst_parts) > 0:
-                                                                bIgnore = False
-                                                # debugging: get the parts as string
-                                                sParts = json.dumps(brysb_parts)
-                                                lemmatag = "{} ({})".format(lemmatag,str_parts)
-                                            elif method == "simple":
-                                                # DOn't do anything additional
-                                                pass
-                                            elif method == "alpino":
-                                                # Make use of Alpino parsing
-                                                pass
 
-                                        if not bIgnore: # Was: score == 0:
-                                            # Determine the average
-                                            for m in brysb_parts:
-                                                score += m
-                                            score = score / len(brysb_parts)
+                            if obj_fixed is None:
+                                if word.text() == "pensioenregeling":
+                                    bStop = True
+                                # Check if there are multiple morph parts
+                                morph_parts = [m.text() for m in word.morphemes()]
+                                score = -1
+                                if len(morph_parts)>0:
+                                    # There are multiple morphemes
+                                    brysb_parts = []
+                                    score = 0
+                                    bIgnore = False
+                                    for idx, m in enumerate(morph_parts):
+                                        obj_fixed = Brysbaert.objects.filter(stimulus=m).first()
+                                        if obj_fixed == None:
+                                            score = -1
+                                            bIgnore = True
+                                            #break
+                                            brysb_parts.append(-1)
                                         else:
-                                            # change the 'lemmatag' to reflect the breaking up of this word into morphemes
-                                            lemmatag = "{} (={})".format(lemmatag, "-".join(morph_parts))
-                                else:
-                                    # The concreteness of this word is in brys
-                                    score = brys.get_concreteness()
+                                            # Add the score to the list
+                                            brysb_parts.append(obj_fixed.get_concreteness())
+                                    # debugging: get the parts as string
+                                    sParts = json.dumps(brysb_parts)
+
+                                    # TRYING
+                                    if bIgnore:
+                                        if method == "erwin":
+                                            lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(word.text())
+                                            # Do we have something?
+                                            if len(lst_parts) > 0:
+                                                bIgnore = False
+                                            # debugging: get the parts as string
+                                            sParts = json.dumps(brysb_parts)
+                                            lemmatag = "{} ({})".format(lemmatag,str_parts)
+                                        elif method == "hidde":
+                                            # Break up the word *right-to-left* in largest Brysbaert known parts:
+                                            lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(word.text(), right_to_left=True)
+                                            # Do we have something?
+                                            if len(lst_parts) > 0:
+                                                bIgnore = False
+                                                # Check the last part not being [je]
+                                                if len(word.text()) > 2 and lst_parts[0].stimulus == "je":
+                                                    bIgnore = True
+                                                    # Check if this is a diminuative that needs separate treatment
+                                                    sKernwoord = strip_diminuative(word.text())
+                                                    if sKernwoord != word.text():
+                                                        # Break up the word *right-to-left* in largest Brysbaert known parts:
+                                                        lst_parts, brysb_parts, str_parts = Brysbaert.best_fit(sKernwoord, right_to_left=True)
+                                                        # Do we have something?
+                                                        if len(lst_parts) > 0:
+                                                            bIgnore = False
+                                            # debugging: get the parts as string
+                                            sParts = json.dumps(brysb_parts)
+                                            lemmatag = "{} ({})".format(lemmatag,str_parts)
+                                        elif method == "simple":
+                                            # DOn't do anything additional
+                                            pass
+                                        elif method == "alpino":
+                                            # Make use of Alpino parsing
+                                            pass
+
+                                    if not bIgnore: # Was: score == 0:
+                                        # Determine the average
+                                        for m in brysb_parts:
+                                            score += m
+                                        score = score / len(brysb_parts)
+                                    else:
+                                        # change the 'lemmatag' to reflect the breaking up of this word into morphemes
+                                        lemmatag = "{} (={})".format(lemmatag, "-".join(morph_parts))
+                            else:
+                                # The concreteness of this word is in obj_fixed
+                                score = obj_fixed.get_concreteness()
                             # Process the score of this content word
                             oScore = {}
-                            oScore['word'] = word.text()
+                            oScore['word'] = word_text # word.text()
                             oScore['word_id'] = word_id
                             oScore['pos'] = postag
                             oScore['pos_full'] = pos.cls
@@ -1072,6 +1082,43 @@ class FoliaProcessor():
             bReturn = False
         # Return what has happened
         return bReturn, sMsg
+
+
+class Neologism(models.Model):
+    """Neologism list"""
+
+    # [1] The lemma 
+    stimulus = models.CharField("Lemma of word", max_length=MAXPARAMLEN)
+    # [1] Metric 1: concrete_m
+    m = models.FloatField("Concrete m", default=0.0)
+    # [0-1] Possibly the POS tag
+    postag = models.CharField("POS tag", blank=True, null=True, max_length=MAXPARAMLEN)
+
+    def __str__(self):
+        return self.stimulus
+
+    def clear():
+        Neologism.objects.all().delete()
+        return True
+
+    def find_or_create(stimulus, m, postag=None):
+        """Find existing or create new item"""
+        
+        obj = None
+        sMsg = ""
+        oErr = ErrHandle()
+        try:
+            obj = Neologism.objects.filter(stimulus=stimulus).first()
+            if obj == None:
+                obj = Neologism.objects.create(stimulus=stimulus, m=m, postag=postag)
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError("find_or_create")
+        # Return the result
+        return obj, sMsg
+
+    def get_concreteness(self):
+        return self.m
 
 
 class Brysbaert(models.Model):

@@ -92,7 +92,7 @@
 
               <div class="row">
                 <div class="col-md-9">
-                  <table>
+                  <table style="width: 100%;">
                     <tbody>
                       <tr>
                         <td>Tab-separated file to be processed:</td>
@@ -102,6 +102,15 @@
                             <!-- The file that have been selected-->
                             <span></span>
                           </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Import type (choose)</td>
+                        <td>
+                          <input type="radio" id="bry" name="import_type" value="bry" />
+                          <label for="bry">Brysbaert</label>
+                          <input type="radio" id="neo" name="import_type" value="neo" />
+                          <label for="bry">Neologism</label>
                         </td>
                       </tr>
                       <tr>

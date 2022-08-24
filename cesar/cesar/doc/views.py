@@ -28,7 +28,7 @@ from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
-    LocTimeInfo, Expression
+    LocTimeInfo, Expression, Neologism
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     LocTimeForm, ExpressionForm, UploadMwexForm
 from cesar.utils import ErrHandle
@@ -146,80 +146,153 @@ def import_brysbaert(request):
                 # NOTE: from here a breakpoint may be inserted!
                 print('import_brysb: valid form')
 
+                # Check what the import type is
+                qd = request.POST
+                import_type = qd.get('import_type', 'bry')
+                import_name = "Brysbaert" if import_type == "bry" else "Neologism"
+
                 # Get the contents of the imported file
                 file = request.FILES['file_field']
 
                 if bClean:
-                    # Clear whatever there was in Brysbaert
-                    Brysbaert.clear()
+                    # Clear whatever there was in either Brysbaert or Neologism
+                    if import_type == "bry":
+                        Brysbaert.clear()
+                    elif import_type == "neo":
+                        Neologism.clear()
 
-                # Read the file into a structure
-                lLines = []
-                bFirst = True
-                for line in file:
-                    if bFirst:
-                        bFirst = False
-                    else:
-                        sLine = line.decode("utf-8-sig").strip()
-                        if sLine != "":
-                            lLines.append(sLine.split("\t"))
-                # Create an iterator for this list
-                lIter = iter(lLines)
+                # The kind of file reading depends on the import_type
+                if import_type == "bry":
+                    # Expecting a tab-separated file
 
-                # Now we have it all, so indicate that
-                oStatus.set("phase 2", msg="chunk-adding information")
+                    # Read the file into a structure
+                    lLines = []
+                    bFirst = True
+                    for line in file:
+                        if bFirst:
+                            bFirst = False
+                        else:
+                            sLine = line.decode("utf-8-sig").strip()
+                            if sLine != "":
+                                lLines.append(sLine.split("\t"))
+                    # Create an iterator for this list
+                    lIter = iter(lLines)
 
-                # Iterate over the contents in chunks
-                iChunk = 0
-                iChunkSize = 100
-                iChunkLen = len(lLines) // iChunkSize + 1
-                iNum = 0
+                    # Now we have it all, so indicate that
+                    oStatus.set("phase 2", msg="chunk-adding information")
 
-                iCount = 0
-                iPass = 0
-                # Iterate over the chunks
-                arPart = next(lIter)
-                for chunk_this in range(iChunkLen):
-                    iChunk += 1
-                    # Show where we are
-                    oStatus.set("chunking", msg="processing chunk {} of {}".format(iChunk, iChunkLen))
-                    print("working Brysbaert #{}".format(iCount), file=sys.stderr)
-                    # Treat the items from 
-                    with transaction.atomic():
-                        for idx in range(iChunkSize):
-                            # Check if there is some meat
-                            if arPart != None:
-                                # Double check length
-                                if len(arPart) == 7:
+                    # Iterate over the contents in chunks
+                    iChunk = 0
+                    iChunkSize = 100
+                    iChunkLen = len(lLines) // iChunkSize + 1
+                    iNum = 0
+
+                    iCount = 0
+                    iPass = 0
+                    # Iterate over the chunks
+                    arPart = next(lIter)
+                    for chunk_this in range(iChunkLen):
+                        iChunk += 1
+                        # Show where we are
+                        oStatus.set("chunking", msg="processing chunk {} of {}".format(iChunk, iChunkLen))
+                        print("working Brysbaert File #{}".format(iCount), file=sys.stderr)
+                        # Treat the items from 
+                        with transaction.atomic():
+                            for idx in range(iChunkSize):
+                                # Check if there is some meat
+                                if arPart != None:
+                                    # Double check length
+                                    if len(arPart) == 7:
+                                        try:
+                                            # get the different parts
+                                            stimulus = arPart[0]
+                                            listnum = arPart[1]
+                                            m = float( arPart[2].replace(",", "."))
+                                            sd = float(arPart[3].replace(",", "."))
+                                            ratings = float(arPart[4].replace(",", "."))
+                                            responses = float(arPart[5].replace(",", "."))
+                                            subjects = float(arPart[6].replace(",", "."))
+
+                                            # Just add in one go
+                                            obj = Brysbaert(stimulus=stimulus, list=listnum, m=m, sd=sd, ratings=ratings, responses=responses, subjects=subjects)
+                                            obj.save()
+
+                                            # Keep track of where we are
+                                            iCount += 1
+                                        except:
+                                            iPass += 1
+
+
+                                    # Get to the next text
                                     try:
-                                        # get the different parts
-                                        stimulus = arPart[0]
-                                        listnum = arPart[1]
-                                        m = float( arPart[2].replace(",", "."))
-                                        sd = float(arPart[3].replace(",", "."))
-                                        ratings = float(arPart[4].replace(",", "."))
-                                        responses = float(arPart[5].replace(",", "."))
-                                        subjects = float(arPart[6].replace(",", "."))
+                                        arPart = next(lIter)
+                                    except StopIteration as e:
+                                        break
 
-                                        # Just add in one go
-                                        obj = Brysbaert(stimulus=stimulus, list=listnum, m=m, sd=sd, ratings=ratings, responses=responses, subjects=subjects)
-                                        obj.save()
+                    # We are ready
+                    statuscode = "completed"
 
-                                        # Keep track of where we are
-                                        iCount += 1
-                                    except:
-                                        iPass += 1
-                                # Get to the next text
-                                try:
-                                    arPart = next(lIter)
-                                except StopIteration as e:
-                                    break
+                elif import_type == "neo":
+                    # Expecting an XLSX file
+
+                    # Read the excel
+                    wb = openpyxl.load_workbook(file)
+                    # We expect the data to be in the first worksheet
+                    ws = wb.worksheets[0]
+
+                    # Skip the first row with headings
+                    row_no = 2
+                    iCount = 0
+                    iPass = 0
+                    # Walk all rows that have content in cell 1
+                    while ws.cell(row=row_no, column=1).value != None:
+                        # Get the woord and the score
+                        woord = ws.cell(row=row_no, column=1).value
+                        score = ws.cell(row=row_no, column=2).value
+                        postag = None
+
+                        # Adapt the score into a string
+                        if isinstance(score,float):
+                            # Turn it into a string with a period decimal separator
+                            score = str(score).replace(",", ".")
+
+                        # Make sure we are stripped of spaces and the like
+                        woord = woord.strip()
+                        # Adapt the word: take off anything starting with left bracket
+                        arWoord = woord.split("(")
+                        if len(arWoord) > 1:
+                            woord = arWoord[0].strip()
+                            postag = arWoord[1].strip()
+                            if "ZN" in postag:
+                                postag = "N"
+                            elif "BNW" in postag:
+                                postag = "ADJ"
+                            elif "WW" in postag:
+                                postag = "WW"
+                            elif "TUSSENWERPSEL" in postag:
+                                postag = "BW"
+                            else:
+                                postag = None
+
+                        # find or create an item based on this information
+                        obj = Neologism.objects.filter(stimulus=woord, postag=postag).first()
+                        if obj is None:
+                            # Create it
+                            obj = Neologism.objects.create(stimulus=woord, m=score, postag=postag)
+                            iCount += 1
+                        else:
+                            iPass += 1
+
+                        # Go to the next row
+                        row_no += 1
+                    # We are ready
+                    statuscode = "completed"
 
                 if statuscode == "error":
                     data['status'] = "error"
                     print("error import_brysbaert #1", file=sys.stderr)
                 else:
-                    oStatus.set("ready", msg="Read all of Brysbaert: {}, skipped {}".format(iCount, iPass))
+                    oStatus.set("ready", msg="Read all of {}: {}, skipped {}".format(import_name, iCount, iPass))
                 # Get a list of errors
                 error_list = [str(item) for item in arErr]
 
@@ -235,7 +308,7 @@ def import_brysbaert(request):
                     # Get the HTML response
                     data['html'] = render_to_string(template_name, context, request)
                 else:
-                    data['html'] = "There are errors in importing Brysbaert"
+                    data['html'] = "There are errors in importing {}".format(import_name)
 
 
             else:
@@ -247,7 +320,7 @@ def import_brysbaert(request):
     except:
         msg = oErr.get_error_message()
         data['status'] = "error"
-        data['html'] = "Import Brysbaert error: {}".format(msg)
+        data['html'] = "Import Brysbaert/Neologism error: {}".format(msg)
  
     # Return the information
     return JsonResponse(data)
