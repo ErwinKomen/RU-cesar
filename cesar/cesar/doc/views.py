@@ -528,7 +528,7 @@ class ConcreteDownload(DetailView):
                     ddata = self.object.get_csv()
 
                 # Determine a file name
-                sBase = self.object.name
+                sBase = self.object.get_name()
                 sFileName = "{}_concreet{}".format(sBase, dext)
 
                 # Excel needs additional conversion

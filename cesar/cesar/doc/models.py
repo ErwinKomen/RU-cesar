@@ -256,6 +256,16 @@ class FrogLink(models.Model):
         sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
         return sBack
 
+    def get_name(self):
+        """Either get the defined name or a unique name"""
+
+        sBack = ""
+        if self.name is None or self.name =="":
+            sBack = "item_{}".format(self.id)
+        else:
+            sBack = self.name
+        return sBack
+
     def get_owner(self):
         """Return the owner of this concreteness document"""
 
