@@ -7,9 +7,40 @@
 
 
 <div class="panel panel-default" style="padding: 0px;">
-  <div class="panel-heading collapsed" data-toggle="collapse" data-target="#text-number-{{tnumber}}">
-    {% if otext.text %}{{otext.text}}{% else %}text # {{tnumber}}{% endif %}
+  <div class="panel-heading" >
+    <!-- Button to open/close Loc/Time table -->
+    <span class="badge jumbo-1 collapsed pull-right" data-toggle="collapse" data-target="#loctime-table">
+      Location/Time
+    </span>
+    <!-- The button to open/close the text details -->
+    <span class="badge jumbo-1 collapsed" data-toggle="collapse" data-target="#text-number-{{tnumber}}">
+      {% if otext.text %}{{otext.text}}{% else %}text # {{tnumber}}{% endif %}
+    </span>
   </div>
+
+  <!-- Actually showing the table of Loc/Time -->
+  <div id="loctime-table" class="collapse container-small">
+    <div class="row">
+      <div class="col-md-offset-4 col-md-8">
+        {% if loctimes|length == 0 %}
+          (There are no location/time objects defined yet)
+        {% else %}
+          <table class="func-view" style="width: 100%;">
+            <tbody>
+              {% for loctime in loctimes %}
+                <tr>
+                  <td style="width: 100%;">{{loctime.example}}</td>
+                  <td class="tdnowrap">{{loctime.score}}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Actually showing text details -->
   <div id="text-number-{{tnumber}}" class="collapse container-small">
     <div class="row">
       <div class="col-md-8">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
@@ -56,7 +87,7 @@
           <div><i>(no download for this item)</i></div>
         {% endif %}
       </div>
-      <div class="col-m2-2">
+      <div class="col-md-2">
         {% if is_tablet_editor %}
           <div id="concrete_process" class="hidden">
             <form action="{% url 'concrete_update' pk=otext.id %}" method="post">
