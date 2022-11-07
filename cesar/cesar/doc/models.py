@@ -1094,6 +1094,45 @@ class FoliaProcessor():
         return bReturn, sMsg
 
 
+class Homonym(models.Model):
+    """Homonym list"""
+
+    # [1] The lemma 
+    stimulus = models.CharField("Lemma of word", max_length=MAXPARAMLEN)
+    # [0-1] Possibly the POS tag
+    postag = models.CharField("POS tag", blank=True, null=True, max_length=MAXPARAMLEN)
+    # [0-1] The meaning of this variant
+    meaning = models.TextField("Meaning", blank=True, null=True)
+    # [1] Metric 1: concrete_m
+    m = models.FloatField("Concrete m", default=0.0)
+
+    def __str__(self):
+        return self.stimulus
+
+    def clear():
+        Homonym.objects.all().delete()
+        return True
+
+    def find_or_create(stimulus, m, postag=None):
+        """Find existing or create new item"""
+        
+        obj = None
+        sMsg = ""
+        oErr = ErrHandle()
+        try:
+            obj = Homonym.objects.filter(stimulus=stimulus).first()
+            if obj == None:
+                obj = Homonym.objects.create(stimulus=stimulus, m=m, postag=postag)
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError("find_or_create")
+        # Return the result
+        return obj, sMsg
+
+    def get_concreteness(self):
+        return self.m
+
+
 class Neologism(models.Model):
     """Neologism list"""
 

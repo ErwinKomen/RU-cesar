@@ -28,7 +28,7 @@ from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
-    LocTimeInfo, Expression, Neologism
+    LocTimeInfo, Expression, Neologism, Homonym
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     LocTimeForm, ExpressionForm, UploadMwexForm
 from cesar.utils import ErrHandle
@@ -128,6 +128,11 @@ def import_brysbaert(request):
     bClean = False
     username = request.user.username
     statuscode = ""
+    oImportName = {
+        "bry": "Brysbaert",
+        "neo": "Neologism",
+        "hom": "Homonym"
+        }
     oErr = ErrHandle()
 
     try:
@@ -149,7 +154,12 @@ def import_brysbaert(request):
                 # Check what the import type is
                 qd = request.POST
                 import_type = qd.get('import_type', 'bry')
-                import_name = "Brysbaert" if import_type == "bry" else "Neologism"
+
+                # Extinct: there can be a different type of import
+                # import_name = "Brysbaert" if import_type == "bry" else "Neologism"
+
+                # Issue #180: allow at least three import types, one of which is neologism
+                import_name = oImportName.get(import_type, "Brysbaert")
 
                 # Get the contents of the imported file
                 file = request.FILES['file_field']
@@ -160,6 +170,8 @@ def import_brysbaert(request):
                         Brysbaert.clear()
                     elif import_type == "neo":
                         Neologism.clear()
+                    elif import_type == "hom":
+                        Homonym.clean()
 
                 # The kind of file reading depends on the import_type
                 if import_type == "bry":
@@ -279,6 +291,62 @@ def import_brysbaert(request):
                         if obj is None:
                             # Create it
                             obj = Neologism.objects.create(stimulus=woord, m=score, postag=postag)
+                            iCount += 1
+                        else:
+                            iPass += 1
+
+                        # Go to the next row
+                        row_no += 1
+                    # We are ready
+                    statuscode = "completed"
+
+                elif import_type == "hom":
+                    # This is homonyms
+
+                    # Read the excel
+                    wb = openpyxl.load_workbook(file)
+                    # We expect the data to be in the first worksheet
+                    ws = wb.worksheets[0]
+
+                    # Skip the first row with headings
+                    row_no = 2
+                    iCount = 0
+                    iPass = 0
+                    # Walk all rows that have content in cell 1
+                    while ws.cell(row=row_no, column=1).value != None:
+                        # Get the woord and the score
+                        woord = ws.cell(row=row_no, column=1).value
+                        postag = ws.cell(row=row_no, column=2).value
+                        meaning = ws.cell(row=row_no, column=3).value
+                        score = ws.cell(row=row_no, column=5).value
+
+                        # Adapt the score into a string
+                        if isinstance(score,float):
+                            # Turn it into a string with a period decimal separator
+                            score = str(score).replace(",", ".")
+
+                        # Make sure we are stripped of spaces and the like
+                        woord = woord.strip()
+                        postag = postag.strip()
+                        meaning = meaning.strip()
+
+                        # Possibly adapt postag
+                        if "ZN" in postag:
+                            postag = "N"
+                        elif "BNW" in postag:
+                            postag = "ADJ"
+                        elif "WW" in postag:
+                            postag = "WW"
+                        elif "TUSSENWERPSEL" in postag:
+                            postag = "BW"
+                        else:
+                            postag = None
+
+                        # find or create an item based on this information
+                        obj = Homonym.objects.filter(stimulus=woord, postag=postag, meaning=meaning).first()
+                        if obj is None:
+                            # Create it
+                            obj = Homonym.objects.create(stimulus=woord, m=score, postag=postag, meaning=meaning)
                             iCount += 1
                         else:
                             iPass += 1

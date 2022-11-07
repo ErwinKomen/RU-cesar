@@ -82,7 +82,7 @@
     <!-- Brysbaert uploading, if allowed -->
     {% if superuser %}
       <!-- Dashboard to select input file(s) and then allow downloading the results -->
-      <div id="import_brysb" class="row" >
+      <div id="import_wordlist" class="row" >
         <div class="col-md-9">
           <div id="brysbaert-section" class="panel panel-default collapse">
             <h4>Brysbaert scores</h4>
@@ -111,6 +111,8 @@
                           <label for="bry">Brysbaert</label>
                           <input type="radio" id="neo" name="import_type" value="neo" />
                           <label for="bry">Neologism</label>
+                          <input type="radio" id="hom" name="import_type" value="hom" />
+                          <label for="bry">Homonym</label>
                         </td>
                       </tr>
                       <tr>
