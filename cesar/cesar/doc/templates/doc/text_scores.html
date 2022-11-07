@@ -25,11 +25,37 @@
           <td valign="top" align="right">{{sent.total|floatformat:3}}</td>
         </tr>
         {% for word in sent.list %}
-          <tr>
+          <tr class="docword">
             <td valign="top">{{forloop.parentloop.parentloop.counter}}</td>
             <td valign="top">{{forloop.parentloop.counter}}</td>
             <td valign="top">{{forloop.counter}}</td>
-            <td valign="top">{{word.lemma}}</td>
+            <td valign="top">
+              {% if word.homonyms|length == 0 %}{{word.lemma}}{% else %}
+                <table class="no-view">
+                  <tbody>
+                    <tr>
+                      <td valign="top">{{word.lemma}}</td>
+                      <td valign="top">
+                        <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#wtable_{{word.word_id}}">Homonyms...</a>
+                      </td>
+                      <td valign="top">
+                        <div id="wtable_{{word.word_id}}" class="collapse">
+                          {% for worddef in word.homonyms %}
+                            <label class="radio">
+                              <input type="radio" value="w_{{forloop.counter}}" 
+                                     onclick="ru.cesar.doc.hnym_select(this);"
+                                     name="w_{{word.word_id}}" score="{{worddef.score}}"
+                                     {% if forloop.first %}checked {% endif %} />
+                              {{worddef.meaning}}
+                            </label>
+                          {% endfor %}
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              {% endif %}
+            </td>
             <td valign="top" align="right" {% if mode == "editable" %}class="editable"{% endif %}>
               {% if mode == "editable" %}
                 <div contenteditable="true" wordid="{{word.word_id}}">

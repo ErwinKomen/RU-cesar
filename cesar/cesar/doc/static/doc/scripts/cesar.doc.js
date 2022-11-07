@@ -250,6 +250,26 @@ var ru = (function ($, ru) {
         }
       },
 
+      /**
+       * hnym_select
+       *   Process change in homonym selection
+       *
+       */
+      hnym_select: function (elStart) {
+        var elTr = null,
+            elEditable = null;
+
+        try {
+          elTr = $(elStart).closest("tr.docword");
+          elEditable = $(elTr).find("[contenteditable=true]").first();
+          // Get the value of the selected one
+          $(elEditable).html($(elStart).attr("score"));
+          $(elEditable).trigger("change");
+        } catch (ex) {
+          private_methods.errMsg("hnym_select", ex);
+        }
+      },
+
     };
   }($, ru.config));
 

@@ -667,6 +667,7 @@ class FrogLink(models.Model):
                     sent_mwes, sent_words = process_mwe(sent_words)
 
                     # for word in sent.words():
+                    # Note: these are the 'remaining' words, that are not part of the MWEs
                     for oWord in sent_words:
                         word = oWord['word']
                         word_text = str(word)
@@ -678,26 +679,57 @@ class FrogLink(models.Model):
 
                         # Check if we need to process this word (if it is a 'content' word)
                         if treat_word(postag, pos, lemmatag):
+                            # Start out: we have not found it yet
+                            obj_fixed = None
+                            lst_homonyms = []       # Empty homonym list to start with
 
-                            # First check if a word is in the brysbaertlist
-                            obj_fixed = Brysbaert.objects.filter(stimulus=word_text).first()
-                            if not obj_fixed is None:
-                                # The concreteness of this word is in obj_fixed
-                                score = obj_fixed.get_concreteness()
-                            else:
-                                # Get the *FIRST* brysbaert equivalent if existing
-                                obj_fixed = Brysbaert.objects.filter(stimulus=lemmatag).first()
+                            # (1) Attempt to find Quantity/measure
+                            if obj_fixed is None:
+                                # TODO: which issue is this??
+                                pass
+
+                            # (2) Attempt to find neologisms
+                            if obj_fixed is None:
+                                obj_fixed = Neologism.objects.filter(stimulus__iexact=lemmatag).first()
                                 if obj_fixed is None:
-                                    # Try to get it as a neologism
-                                    obj_fixed = Neologism.objects.filter(stimulus__iexact=lemmatag).first()
-                                    if obj_fixed is None:
-                                        # Get the *first* neologism fitting
-                                        obj_fixed = Neologism.objects.filter(stimulus__iexact=word_text).first()
+                                    # Get the *first* neologism fitting
+                                    obj_fixed = Neologism.objects.filter(stimulus__iexact=word_text).first()
 
+                            # (3) Attempt to find homonyms
+                            if obj_fixed is None:
+                                # Search the homonym list
+                                homonyms = Homonym.objects.filter(stimulus__iexact=lemmatag, postag=postag)
+                                # Found any homonyms?
+                                h_found = homonyms.count()
+                                if h_found == 1:
+                                    # There is one unique respons -- take it
+                                    obj_fixed = homonyms.first()
+                                    score = obj_fixed.get_concreteness()
+                                elif h_found > 0:
+                                    # There are multiple possibilities: Add details for the choice for a user
+                                    for obj_this in homonyms:
+                                        # Create a homonym object
+                                        oHomonym = {}
+                                        oHomonym['pos'] = obj_this.postag
+                                        oHomonym['meaning'] = obj_this.meaning
+                                        oHomonym['score'] = obj_this.get_concreteness()
+                                        # Add this object to the list
+                                        lst_homonyms.append(oHomonym)
+                                    # The default score will be the first one
+                                    obj_fixed = homonyms.first()
+                                    score = obj_fixed.get_concreteness()
+
+                            # (4) Brysbaert: check if a word is in the brysbaertlist
+                            if obj_fixed is None:
+                                obj_fixed = Brysbaert.objects.filter(stimulus=word_text).first()
+                                if not obj_fixed is None:
+                                    # The concreteness of this word is in obj_fixed
+                                    score = obj_fixed.get_concreteness()
+                                else:
+                                    # Get the *FIRST* brysbaert equivalent if existing
+                                    obj_fixed = Brysbaert.objects.filter(stimulus=lemmatag).first()
 
                             if obj_fixed is None:
-                                if word.text() == "pensioenregeling":
-                                    bStop = True
                                 # Check if there are multiple morph parts
                                 morph_parts = [m.text() for m in word.morphemes()]
                                 score = -1
@@ -775,10 +807,12 @@ class FrogLink(models.Model):
                             oScore['pos_full'] = pos.cls
                             oScore['lemma'] = lemmatag
                             oScore['concr'] = "NiB" if score < 0 else str(score)
+                            oScore['homonyms'] = lst_homonyms
                             oScore['idx'] = oWord['idx']
                             word_id += 1
                             # Add it in all lists
                             word_scores.append(oScore)
+
                     # Add any MWEs that were found
                     for oMWE in sent_mwes:
                         oScore = dict(word="", word_id=word_id, pos="",pos_full="", lemma="", concr=0.0)

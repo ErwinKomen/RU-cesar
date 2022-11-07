@@ -1069,3 +1069,8 @@ table.func-view td .view-mode:hover {
     color: darkred;
 }
 
+
+table.no-view td {
+  border: 1px solid transparent;
+}
+
