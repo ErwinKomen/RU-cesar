@@ -30,30 +30,30 @@
             <td valign="top">{{forloop.parentloop.counter}}</td>
             <td valign="top">{{forloop.counter}}</td>
             <td valign="top">
-              {% if word.homonyms|length == 0 %}{{word.lemma}}{% else %}
-                <table class="no-view">
-                  <tbody>
-                    <tr>
-                      <td valign="top">{{word.lemma}}</td>
-                      <td valign="top">
-                        <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#wtable_{{word.word_id}}">Homonyms...</a>
-                      </td>
-                      <td valign="top">
-                        <div id="wtable_{{word.word_id}}" class="collapse">
-                          {% for worddef in word.homonyms %}
-                            <label class="radio">
-                              <input type="radio" value="w_{{forloop.counter}}" 
-                                     onclick="ru.cesar.doc.hnym_select(this);"
-                                     name="w_{{word.word_id}}" score="{{worddef.score}}"
-                                     {% if forloop.first %}checked {% endif %} />
-                              {{worddef.meaning}}
-                            </label>
-                          {% endfor %}
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <span>{{word.lemma}}</span>
+              {% if word.homonyms|length > 0 %}
+                {% if mode == "editable" %}
+                  <span>
+                    <select id="wtable_{{word.word_id}}" class="homonym" wordid="{{word.word_id}}"
+                            value="{{word.hnum}}"
+                            onchange="ru.cesar.doc.hnym_select(this);">
+                      {% for worddef in word.homonyms %}
+                        <option value="{{worddef.hnum}}" score="{{worddef.score}}"
+                                {% if word.hnum == worddef.hnum %}selected="" {% endif %}>
+                          {{worddef.meaning}} ({{worddef.pos}})
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </span>
+                {% else %}
+                  word.hnum={{word.hnum}}
+                  {% for worddef in word.homonyms %}
+                    worddef.hnum={{worddef.hnum}}
+                    {% if worddef.hnum == word.hnum %}
+                      <span class="kwname">{{worddef.meaning}} ({{worddef.pos}})</span>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
               {% endif %}
             </td>
             <td valign="top" align="right" {% if mode == "editable" %}class="editable"{% endif %}>

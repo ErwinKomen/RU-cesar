@@ -754,6 +754,14 @@ class ConcreteUpdate(BasicDetails):
                             word_id = id
                         if str(word_id) in concretedata:
                             oWord['concr'] = concretedata[str(word_id)]
+                            # Check if this change is due to a homonym
+                            lst_homonyms = oWord.get("homonyms")
+                            if not lst_homonyms is None:
+                                for oItem in lst_homonyms:
+                                    if oItem['score'] == oWord['concr']:
+                                        # Found it!
+                                        oWord['hnum'] = oItem['hnum']
+                                        break
                             bNeedSaving = True
                             bRecalculate = True
             # Is recalculation needed?

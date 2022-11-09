@@ -257,14 +257,19 @@ var ru = (function ($, ru) {
        */
       hnym_select: function (elStart) {
         var elTr = null,
+            hnym_id = "",
+            score = "",
             elEditable = null;
 
         try {
           elTr = $(elStart).closest("tr.docword");
           elEditable = $(elTr).find("[contenteditable=true]").first();
           // Get the value of the selected one
-          $(elEditable).html($(elStart).attr("score"));
-          $(elEditable).trigger("change");
+          hnym_id = $(elStart).val();
+          score = $(elStart).find("option[value='" + hnym_id + "']").attr("score");
+          $(elEditable).html(score);
+          // Trigger processing the numerical change
+          $(elEditable).trigger("blur");
         } catch (ex) {
           private_methods.errMsg("hnym_select", ex);
         }

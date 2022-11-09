@@ -1074,3 +1074,6 @@ table.no-view td {
   border: 1px solid transparent;
 }
 
+select.homonym {
+    font-size: 11px;    
+}

@@ -707,9 +707,10 @@ class FrogLink(models.Model):
                                     score = obj_fixed.get_concreteness()
                                 elif h_found > 0:
                                     # There are multiple possibilities: Add details for the choice for a user
-                                    for obj_this in homonyms:
+                                    for idx, obj_this in enumerate(homonyms):
                                         # Create a homonym object
                                         oHomonym = {}
+                                        oHomonym['hnum'] = idx + 1
                                         oHomonym['pos'] = obj_this.postag
                                         oHomonym['meaning'] = obj_this.meaning
                                         oHomonym['score'] = obj_this.get_concreteness()
@@ -808,6 +809,9 @@ class FrogLink(models.Model):
                             oScore['lemma'] = lemmatag
                             oScore['concr'] = "NiB" if score < 0 else str(score)
                             oScore['homonyms'] = lst_homonyms
+                            if len(lst_homonyms) > 0:
+                                # By default select the first homonym
+                                oScore['hnum'] = '1'
                             oScore['idx'] = oWord['idx']
                             word_id += 1
                             # Add it in all lists
