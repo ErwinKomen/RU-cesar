@@ -123,6 +123,9 @@ urlpatterns = [
     url(r'^tablet/expression/list/$', ExpressionList.as_view(), name='expression_list'),
     url(r'^tablet/expression/details(?:/(?P<pk>\d+))?/$', ExpressionDetails.as_view(), name='expression_details'),
     url(r'^tablet/expression/edit(?:/(?P<pk>\d+))?/$', ExpressionEdit.as_view(), name='expression_edit'),
+    url(r'^tablet/homonym/list/$', HomonymList.as_view(), name='homonym_list'),
+    url(r'^tablet/homonym/details(?:/(?P<pk>\d+))?/$', HomonymDetails.as_view(), name='homonym_details'),
+    url(r'^tablet/homonym/edit(?:/(?P<pk>\d+))?/$', HomonymEdit.as_view(), name='homonym_edit'),
 
     url(r'^doc/nexis/$', cesar.doc.views.nexis_main, name='nexis_main'),
     url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),

@@ -30,7 +30,7 @@ from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
     LocTimeInfo, Expression, Neologism, Homonym
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
-    LocTimeForm, ExpressionForm, UploadMwexForm
+    LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -1030,6 +1030,76 @@ class ExpressionList(BasicList):
          "url": "import_mwex", 
          "msg": "Upload MWE Excel file", 
          "type": "single"}]
+
+    def add_to_context(self, context, initial):
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
+        return context
+
+
+class HomonymEdit(BasicDetails):
+    """Edit a Homonym information element"""
+
+    model = Homonym
+    mForm = HomonymForm
+    prefix = "hnym"
+    title = "Homonym"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'plain', 'label': "Lemma:",            'value': instance.stimulus, 'field_key': "stimulus"},
+                {'type': 'plain', 'label': "Part-of-speech:",   'value': instance.postag,   'field_key': "postag"},
+                {'type': 'plain', 'label': "Sense of meaning:", 'value': instance.meaning,  'field_key': "meaning"},
+                {'type': 'plain', 'label': "Metric:",           'value': instance.m,        'field_key': "m"    },
+                ]       
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
+        # Return the context we have made
+        return context
+    
+
+class HomonymDetails(HomonymEdit):
+    """Viewing Homonym information items"""
+    rtype = "html"
+
+
+class HomonymList(BasicList):
+    """List Homonym elements"""
+
+    model = Homonym
+    listform = HomonymForm
+    prefix = "hnym"
+    sg_name = "Homonym"
+    plural_name = "Homonyms"
+    new_button = True      # Do show a new button
+    order_cols = ['stimulus', 'meaning', 'postag', 'm']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Lemma',               'order': 'o=1', 'type': 'str', 'field': 'stimulus', 'linkdetails': True},
+        {'name': 'Sense of meaning',    'order': 'o=3', 'type': 'str', 'field': 'meaning',  'linkdetails': True, 'main': True},
+        {'name': 'POS',                 'order': 'o=2', 'type': 'str', 'field': 'postag',   'linkdetails': True},
+        {'name': 'Metric',              'order': 'o=4', 'type': 'int', 'field': 'm',        'linkdetails': True, 'align': "right"},
+        ]
+    filters = [ 
+        {"name": "Lemma", "id": "filter_stimulus", "enabled": False},
+        {"name": "Sense", "id": "filter_sense", "enabled": False}
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'stimulus',   'dbfield': 'stimulus', 'keyS': 'stimulus'},
+            {'filter': 'sense',      'dbfield': 'meaning',  'keyS': 'meaning'}
+            ]
+         } 
+        ] 
 
     def add_to_context(self, context, initial):
         # Only moderators are to be allowed

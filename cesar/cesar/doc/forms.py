@@ -120,6 +120,30 @@ class ExpressionForm(forms.ModelForm):
         self.fields['score'].required = False
 
 
+class HomonymForm(forms.ModelForm):
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Homonym
+        fields = ['stimulus', 'postag', 'meaning', 'm']
+        widgets = {
+            'stimulus': forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Lemma of word'}),
+            'postag':   forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Part-of-speech tag'}),
+            'meaning':  forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Sense of meaning'}),
+            'm':        forms.NumberInput(attrs={'style': 'width: 100%;', 'placeholder': 'Metric for this sense'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(HomonymForm, self).__init__(*args, **kwargs)
+        # Make sure some are not obligatory
+        self.fields['stimulus'].required = False
+        self.fields['postag'].required = False
+        self.fields['meaning'].required = False
+        self.fields['m'].required = False
+
+        return None
+
 
 # ================= NEXIS FORMS =======================================
 
