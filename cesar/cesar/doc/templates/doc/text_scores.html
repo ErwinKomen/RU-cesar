@@ -46,9 +46,7 @@
                     </select>
                   </span>
                 {% else %}
-                  word.hnum={{word.hnum}}
                   {% for worddef in word.homonyms %}
-                    worddef.hnum={{worddef.hnum}}
                     {% if worddef.hnum == word.hnum %}
                       <span class="kwname">{{worddef.meaning}} ({{worddef.pos}})</span>
                     {% endif %}

@@ -811,7 +811,7 @@ class FrogLink(models.Model):
                             oScore['homonyms'] = lst_homonyms
                             if len(lst_homonyms) > 0:
                                 # By default select the first homonym
-                                oScore['hnum'] = '1'
+                                oScore['hnum'] = 1
                             oScore['idx'] = oWord['idx']
                             word_id += 1
                             # Add it in all lists
