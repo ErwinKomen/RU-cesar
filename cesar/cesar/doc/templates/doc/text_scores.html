@@ -19,7 +19,26 @@
           <td valign="top">{{forloop.parentloop.counter}}</td>
           <td valign="top">{{forloop.counter}}</td>
           <td valign="top">(sent)</td>
-          <td valign="top">{{sent.sentence}}</td>
+          <td valign="top">
+            <div>
+              <span>
+                {{sent.sentence}}
+              </span>
+              {% if mode == "editable" %}
+                <!-- Experimental: recipient of loc/time phrases -->
+                <span class="pull-right" ondragover="ru.cesar.doc.loctime_allowdrop(event);" ondrop="ru.cesar.doc.loctime_drop(event);">
+                  &nbsp;&nbsp;<span class="glyphicon glyphicon-inbox jumbo-3" style="font-size: 120%;"></span>
+                </span>
+              {% endif %}
+            </div>
+            {% if mode == "editable" %}
+              <!-- Interface to indicate what the score of this item is going to be -->
+              <div class="loctime-add hidden">
+                <span>Expression: <code class="loctime-mwe"></code></span>
+                <span>Score: <span class="loctime-score editable" contenteditable="true" >0,000</span></span>
+              </div>
+            {% endif %}
+          </td>
           <td valign="top" align="right">{% if sent.score == "NiB" %}NiB{% else %}{{sent.score|floatformat:3}}{% endif %}</td>
           <td valign="top" align="right">{{sent.n}}</td>
           <td valign="top" align="right">{{sent.total|floatformat:3}}</td>

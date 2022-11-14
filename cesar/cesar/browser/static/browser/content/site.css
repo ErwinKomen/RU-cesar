@@ -820,7 +820,7 @@ table.func-view td.whitecell {
   background-color: white;
   color: black;
 }
-table.func-view td.editable {
+table.func-view td.editable, table.func-view span.editable {
   color: darkblue;
 }
 td.function-name {

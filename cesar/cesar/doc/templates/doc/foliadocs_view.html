@@ -43,8 +43,12 @@
   <!-- Actually showing text details -->
   <div id="text-number-{{tnumber}}" class="collapse container-small">
     <div class="row">
-      <div class="col-md-8">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
-        (n={{otext.n}}, total={{otext.total|floatformat:3}})</div>
+      <div class="col-md-8">
+        <span>
+          Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
+          (n={{otext.n}}, total={{otext.total|floatformat:3}})
+        </span>
+      </div>
       <div class="col-md-2 dropdown container-small">
         {% if otext.show %}
           <form>
@@ -86,6 +90,7 @@
         {% else %}
           <div><i>(no download for this item)</i></div>
         {% endif %}
+
       </div>
       <div class="col-md-2">
         {% if is_tablet_editor %}

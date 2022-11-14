@@ -67,7 +67,7 @@ def get_crpp_date(dtThis, readable=False):
 class LocTimeInfo(models.Model):
     """Information about a particular location or time"""
 
-    # [1] Example kind of textt
+    # [1] Example kind of text
     example = models.TextField("Example text")
     # [1] Concreteness score
     score = models.CharField("Concreteness score", default="0.0", max_length=MAXPARAMLEN)
@@ -194,6 +194,31 @@ class Expression(models.Model):
             oErr.DoError("doc/Expression/get_fullmwe_fit")
 
         return oBack
+
+    def process_item(full, score):
+        """Update or add an expression with the indicated score"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            # Check if this element already exists
+            obj = Expression.objects.filter(full__iexact=full).first()
+            if obj is None:
+                obj = Expression.objects.create(full=full)
+            # Note that internally the score is saved with a "."
+            if isinstance(score, str):
+                score = score.replace(",", ".")
+            else:
+                score = str(score)
+            # Only now check if the score has actually changed
+            if obj.score != score:
+                # Yes it's changed, so save it
+                obj.score = score
+                obj.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Expression/process_item")
+        return bResult
 
 
 class FoliaDocs(models.Model):

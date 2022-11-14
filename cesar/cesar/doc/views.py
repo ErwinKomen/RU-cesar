@@ -737,23 +737,46 @@ class ConcreteUpdate(BasicDetails):
             concretedata = {}
             if not sConcretedata is None:
                 concretedata = json.loads(sConcretedata)
+            concrete_scores = concretedata.get("scores", {})
+            concrete_loctime = concretedata.get("loctime", {})
 
             # Double check if changes are needed in the object
             bNeedSaving = False
             bRecalculate = False
+
+            # If there are any LocTime elements, at least add them to the appropriate list
+            bLocTime = False
+            if len(concrete_loctime) > 0:
+                bLocTime = True
+                for k,v in concrete_loctime.items():
+                    Expression.process_item(k, v)
+                bNeedSaving = True
+                bRecalculate = True
+
+            # Walk through the data with the adapted list
             word_id = 1
             for oPara in obj['list']:
                 for oSent in oPara['list']:
+                    # First try to tackle the added LocTime expressions (if any)
+                    if bLocTime:
+                        for k,v in concrete_loctime.items():
+                            if k in oSent['sentence']:
+                                # add this as MWE
+                                oWord = dict(lemma=k, concr=v, word_id=word_id)
+                                word_id += 1
+                                oSent['list'].insert(0, oWord)
+
+                    # Now continue to treat the separate words
                     for oWord in oSent['list']:
                         id = oWord.get('word_id')
-                        if id is None:
+                        if id is None or bLocTime:
                             oWord['word_id'] = word_id
                             word_id += 1
                             bNeedSaving = True
                         else:
                             word_id = id
-                        if str(word_id) in concretedata:
-                            oWord['concr'] = concretedata[str(word_id)]
+                        if str(word_id) in concrete_scores:
+                            oWord['concr'] = concrete_scores[str(word_id)]
                             # Check if this change is due to a homonym
                             lst_homonyms = oWord.get("homonyms")
                             if not lst_homonyms is None:

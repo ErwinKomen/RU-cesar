@@ -22,7 +22,8 @@ var ru = (function ($, ru) {
   ru.cesar.doc = (function ($, config) {
     // Define variables for ru.collbank here
     var loc_example = "",
-        loc_concrete = {},
+        loc_concrete = {},      // Score per word-id
+        loc_loctime = {},       // Score per (location/time) multi-word expression
         loc_divErr = "doc_err",
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         loc_month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -180,6 +181,7 @@ var ru = (function ($, ru) {
 
           $("[contenteditable=true]").on('blur', function (e) {
             var fNew = 0.0,
+                sLocTime = "",
                 word_id = 0;
 
             if ($(this).text() !== $(this).data("currentText")) {
@@ -187,10 +189,17 @@ var ru = (function ($, ru) {
               $(this).trigger("change");
               // Get the new float value
               fNew = parseFloat(e.target.textContent.trim().replace(/,/, "."));
-              // Get the word id
-              word_id = parseInt(e.target.attributes['wordid'].value, 10);
-              // Add to dictionary
-              loc_concrete[word_id] = fNew;
+              // Find out what situation we are in
+              if ($(e.target).hasClass("loctime-score")) {
+                // This is a location/time score: edit its score
+                sLocTime = $(e.target).closest(".loctime-add").find(".loctime-mwe").text().trim();
+                loc_loctime[sLocTime] = fNew;
+              } else {
+                // Get the word id
+                word_id = parseInt(e.target.attributes['wordid'].value, 10);
+                // Add to dictionary
+                loc_concrete[word_id] = fNew;
+              }
             }
           });
           $("[contenteditable=true]").on('change', function (e) {
@@ -219,6 +228,7 @@ var ru = (function ($, ru) {
             elConcreteData = "",
             posturl = "",
             geturl = "",
+            concretedata = {},
             frm = null,
             data = null;
 
@@ -230,10 +240,13 @@ var ru = (function ($, ru) {
           divTable = $(elStart).closest(".container-small").find("table.func-view").first();
 
           // Set the concretedata input to the current list
-          $("#concretedata").val(JSON.stringify(loc_concrete));
+          concretedata = {scores: loc_concrete, loctime: loc_loctime};
+          // WAS: $("#concretedata").val(JSON.stringify(loc_concrete));
+          $("#concretedata").val(JSON.stringify(concretedata));
 
           // Reset the changes
           loc_concrete = {};
+          loc_loctime = {};
 
           // Get the form and the associated data
           frm = $(elStart).closest("form");
@@ -272,6 +285,55 @@ var ru = (function ($, ru) {
           $(elEditable).trigger("blur");
         } catch (ex) {
           private_methods.errMsg("hnym_select", ex);
+        }
+      },
+
+      /**
+       * loctime_allowdrop
+       *   Open this as a dropping zone
+       *
+       */
+      loctime_allowdrop: function (ev) {
+        try {
+          ev.preventDefault();
+        } catch (ex) {
+          private_methods.errMsg("loctime_allowdrop", ex);
+        }
+      },
+
+      /**
+       * loctime_drop
+       *   Allow dropping
+       *
+       */
+      loctime_drop: function (ev) {
+        var elTd = null,
+            idx = 0,
+            selection = null,
+            selText = "";
+
+        try {
+          // Disable other stuff
+          ev.preventDefault();
+
+          // Get the text that has been transferred
+          // data = ev.dataTransfer.getData("text");
+
+          // Get the selected text
+          selection = window.getSelection();
+          selText = selection.toString().trim();
+          // Show the text
+          elTd = $(ev.target).closest("td");
+          $(elTd).find(".loctime-mwe").text(selText);
+          $(elTd).find(".loctime-add").removeClass("hidden");
+          // Add the combination to the table
+          if (!(selText in loc_loctime)) {
+            // Initialize it to zero -- the user must be able to change it
+            loc_loctime[selText] = 0.0;
+          }
+          // Note: the SAVE button is only showed after this number has been edited
+        } catch (ex) {
+          private_methods.errMsg("loctime_drop", ex);
         }
       },
 
