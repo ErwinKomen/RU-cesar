@@ -224,88 +224,96 @@ def get_exc_message():
 def tsgsync(request):
     """Synchronize TSG handles."""
 
-    # Make sure this is a HttpRequest
-    assert isinstance(request, HttpRequest)
+    oErr = ErrHandle()
+    try:
+        # Make sure this is a HttpRequest
+        assert isinstance(request, HttpRequest)
     
-    # Basic authentication
-    if not user_is_authenticated(request):
-        return nlogin(request)
+        # Basic authentication
+        if not user_is_authenticated(request):
+            return nlogin(request)
 
-    # Check which groups this person belongs to
-    if user_is_ingroup(request, "radboud-tsg"):
-        # Get Handle credentials
-        handle_user = TsgInfo.get_value("handle_user")
-        handle_pw = TsgInfo.get_value("handle_pw")
-        handle_url = TsgInfo.get_value("handle_url")
+        # Check which groups this person belongs to
+        if user_is_ingroup(request, "radboud-tsg"):
+            # Get Handle credentials
+            handle_user = TsgInfo.get_value("handle_user")
+            handle_pw = TsgInfo.get_value("handle_pw")
+            handle_url = TsgInfo.get_value("handle_url")
 
-        msg_lst = []
-        # Validate
-        if handle_pw == None or handle_pw == "":
-            msg_lst.append( "Password is not defined")
-        if handle_url == None or handle_url == "":
-            msg_lst.append("Handle URL is not defined")
-        if handle_user == None or handle_user == "":
-            msg_lst.append("Handle User is not defined")
-        if len(msg_lst) ==0:
-            # Try to get all defined handles
-            oHandles = get_handle_info(handle_url, handle_user, handle_pw)
-            if oHandles['status'] == "error":
-                msg_lst.append("Request returns code {} for handle-list".format(oHandles['code']))
-            else:
-                handle_lst = oHandles['contents']
-                # Compare this list with the handles we already have
-                for handle_code in handle_lst:
-                    oBack = get_handle_info(handle_url, handle_user, handle_pw, handle_code)
-                    if oBack['status'] == "ok":
-                        # Get the information from the handle
-                        info = oBack['contents']
-                        url = ""
-                        date_obj = None
-                        for item in info:
-                            if item['type'].lower() == "url":
-                                url = item['parsed_data'] 
-                                timestamp = item['timestamp']   # E.G: 2017-10-25T07:38:26Z
-                                date_obj = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-                                date_obj = pytz.timezone("UTC").localize(date_obj)
-                                break
-                        if url == "":
-                            msg_lst.append("Cannot find URL for code {}".format(handle_code))
-                        else:
-                            # Try to get the handle from the database
-                            obj = TsgHandle.objects.filter(code=handle_code).first()
-                            if obj == None:
-                                # Add the handle
-                                TsgHandle.add_handle(handle_code, url, info=info)
+            msg_lst = []
+            # Validate
+            if handle_pw == None or handle_pw == "":
+                msg_lst.append( "Password is not defined")
+            if handle_url == None or handle_url == "":
+                msg_lst.append("Handle URL is not defined")
+            if handle_user == None or handle_user == "":
+                msg_lst.append("Handle User is not defined")
+            if len(msg_lst) ==0:
+                # Try to get all defined handles
+                oHandles = get_handle_info(handle_url, handle_user, handle_pw)
+                if oHandles['status'] == "error":
+                    msg_lst.append("Request returns code {} for handle-list".format(oHandles['code']))
+                else:
+                    handle_lst = oHandles['contents']
+                    # Compare this list with the handles we already have
+                    for handle_code in handle_lst:
+                        oBack = get_handle_info(handle_url, handle_user, handle_pw, handle_code)
+                        if oBack['status'] == "ok":
+                            # Get the information from the handle
+                            info = oBack['contents']
+                            url = ""
+                            date_obj = None
+                            for item in info:
+                                if item['type'].lower() == "url":
+                                    url = item['parsed_data'] 
+                                    timestamp = item['timestamp']   # E.G: 2017-10-25T07:38:26Z
+                                    date_obj = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                                    date_obj = pytz.timezone("UTC").localize(date_obj)
+                                    break
+                            if url == "":
+                                msg_lst.append("Cannot find URL for code {}".format(handle_code))
                             else:
-                                bNeedSaving = False
-                                # Check and possibly update the handle
-                                if obj.url != url:
-                                    # The URL has changed
-                                    obj.url = url
-                                    obj.info = json.dumps(info)
-                                    bNeedSaving = True
-                                elif obj.info == None or obj.info == "" or obj.info == "[]":
-                                    obj.info = json.dumps(info)
-                                    bNeedSaving = True
-                                # At any rate: check the date
-                                if obj.created != date_obj:
-                                    history = obj.history
-                                    if history == None or history == "": history = []
-                                    if date_obj == None:
-                                        # First creation
-                                        history.append("Created at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user))
-                                    else:
-                                        # Change
-                                        history.append("Changed at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user))
-                                    obj.created = date_obj
-                                    bNeedSaving = True
+                                # Try to get the handle from the database
+                                obj = TsgHandle.objects.filter(code=handle_code).first()
+                                if obj == None:
+                                    # Add the handle
+                                    TsgHandle.add_handle(handle_code, url, info=info)
+                                else:
+                                    bNeedSaving = False
+                                    # Check and possibly update the handle
+                                    if obj.url != url:
+                                        # The URL has changed
+                                        obj.url = url
+                                        obj.info = json.dumps(info)
+                                        bNeedSaving = True
+                                    elif obj.info == None or obj.info == "" or obj.info == "[]":
+                                        obj.info = json.dumps(info)
+                                        bNeedSaving = True
+                                    # At any rate: check the date
+                                    if obj.created != date_obj:
+                                        history = obj.history
+                                        if history == None or history == "": history = []
+                                        if isinstance(history, str):
+                                            history = json.loads(history)
+                                        if date_obj == None:
+                                            # First creation
+                                            history.append("Created at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user))
+                                        else:
+                                            # Change
+                                            history.append("Changed at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user))
+                                        obj.history = json.dumps(history)
+                                        obj.created = date_obj
+                                        bNeedSaving = True
                             
-                                # Save if needed
-                                if bNeedSaving:
-                                    obj.save()
+                                    # Save if needed
+                                    if bNeedSaving:
+                                        obj.save()
 
-                    else:
-                        msg_lst.append("Request returns code {} for handle {}".format(oBack['code'], handle_code))
+                        else:
+                            msg_lst.append("Request returns code {} for handle {}".format(oBack['code'], handle_code))
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("tsgsync")
 
     # Return by rendering the listview of TsgHandle
     return redirect('tsg_list')
@@ -1170,3 +1178,15 @@ class TsgHandleEdit(BasicPart):
             instance.history = json.dumps(history)
             # Signal that saving is needed
             return True
+
+    def before_delete(self, prefix = None, instance = None):
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            # Delete the 
+            pass
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgHandleEdit/before_delete")
+        # Return what is expected 
+        return bResult
