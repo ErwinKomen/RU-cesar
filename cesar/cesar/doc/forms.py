@@ -34,8 +34,8 @@ class UploadFilesForm(forms.Form):
 
     files_field = forms.FileField(label="Specify which file(s) should be loaded",
                                   widget=forms.ClearableFileInput(attrs={'multiple': True}))
-    clamuser = forms.CharField(label="CLAM service user name")
-    clampw = forms.CharField(max_length=32, widget=forms.PasswordInput)
+    clamuser = forms.CharField(label="CLAM service user name", required=False)
+    clampw = forms.CharField(max_length=32, widget=forms.PasswordInput, required=False)
 
 
 class UploadNexisForm(forms.Form):

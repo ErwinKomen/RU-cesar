@@ -100,6 +100,7 @@ def concrete_main(request):
     context = {'title': 'Tablet process',
                'frmUpload': frmUpload,
                'frmBrysb': frmBrysb,
+               'clamdefine': False,
                'superuser': superuser,
                'message': 'Radboud University CESAR',
                'textlist': text_list,
@@ -429,8 +430,12 @@ def import_concrete(request):
             print('import_docs: valid form')
 
             # Get user name and password
-            clamuser = request.POST.get("clamuser")
-            clampw = request.POST.get("clampw")
+            clamuser = None
+            clampw = None
+            qd = request.POST
+            if 'clamuser' in qd:
+                clamuser = request.POST.get("clamuser")
+                clampw = request.POST.get("clampw")
 
             # Initialisations
             fd = None   # FoliaDocs

@@ -10,9 +10,11 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db import models, transaction
+
 from cesar.utils import ErrHandle
 from cesar.seeker.models import import_data_file
 from cesar.settings import WRITABLE_DIR, TIME_ZONE
+from cesar.tsg.models import TsgInfo
 
 # XML processing
 from xml.dom import minidom
@@ -340,6 +342,10 @@ class FrogLink(models.Model):
 
         folProc = FoliaProcessor(username)
         try:
+            if clamuser is None:
+                clamuser = TsgInfo.get_value("clam_user")
+                clampw = TsgInfo.get_value("clam_pw")
+
             # Check our location
             frogLoc = frogType if frogType != None else folProc.location()
 

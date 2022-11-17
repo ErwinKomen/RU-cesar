@@ -34,8 +34,10 @@
           <div class="col-md-12">
             <table style="width: 100%;">
               <tbody>
-                <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
-                <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
+                {% if clamdefine %}
+                  <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
+                  <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
+                {% endif %}
                 <tr>
                   <td>File(s) to be processed:</td>
                   <td>
