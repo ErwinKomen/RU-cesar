@@ -84,6 +84,12 @@ def concrete_main(request):
     if not user_is_authenticated(request):
         return nlogin(request)
 
+    qd = request.GET
+    clamdefine = False
+    if 'clamdefine' in qd:
+        v = qd.get('clamdefine')
+        clamdefine = (v == "true" or v == "1")
+
     # Get a list of already uploaded files too
     text_list = []
     for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created'):
@@ -100,7 +106,7 @@ def concrete_main(request):
     context = {'title': 'Tablet process',
                'frmUpload': frmUpload,
                'frmBrysb': frmBrysb,
-               'clamdefine': False,
+               'clamdefine': clamdefine,
                'superuser': superuser,
                'message': 'Radboud University CESAR',
                'textlist': text_list,
