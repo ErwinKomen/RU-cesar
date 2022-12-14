@@ -28,9 +28,9 @@ from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
-    LocTimeInfo, Expression, Neologism, Homonym
+    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
-    LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm
+    LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -78,6 +78,7 @@ def concrete_main(request):
     template = 'doc/concrete_main.html'
     frmUpload = UploadFilesForm()
     frmBrysb = UploadOneFileForm()
+    frmTwitter = UploadTwitterExcelForm()
     superuser = request.user.is_superuser
 
     # Basic authentication
@@ -106,6 +107,7 @@ def concrete_main(request):
     context = {'title': 'Tablet process',
                'frmUpload': frmUpload,
                'frmBrysb': frmBrysb,
+               'frmTwitter': frmTwitter,
                'clamdefine': clamdefine,
                'superuser': superuser,
                'message': 'Radboud University CESAR',
@@ -1403,6 +1405,157 @@ def import_mwex(request):
                                     lSkipped.append(oItem)
                                 # Go to the next row
                                 row_no += 1
+                            # Add results
+                            oResult = {}
+                            oResult['added'] = lAdded
+                            oResult['skipped'] = lSkipped
+                            oResult['added_count'] = len(lAdded)
+                            oResult['skipped_count'] = len(lSkipped)
+                            # Show where we are
+                            statuscode = "completed"
+                        else:
+                            # Cannot process these
+                            oResult = {'status': 'error', 'msg': 'cannot process non Excel (xlsx) files'}
+                            statuscode = "error"
+
+                        if oResult == None:
+                            arErr.append("There was an error. No Excel file has been loaded")
+                        else:
+                            lResults.append(oResult)
+
+
+            if statuscode == "error":
+                data['status'] = "error"
+            else:
+                # Show we are ready
+                oStatus.set("ready", msg="Read all data")
+            # Get a list of errors
+            error_list = [str(item) for item in arErr if len(str(item)) > 0]
+
+            # Create the context
+            context = dict(
+                statuscode=statuscode,
+                filename=filename,
+                results=lResults,
+                error_list=error_list
+                )
+
+            if len(arErr) == 0 or len(arErr[0]) == 0:
+                # Get the HTML response
+                data['html'] = render_to_string(template_name, context, request)
+            else:
+                lHtml = []
+                lHtml.append("There are errors in importing this mwex")
+                for item in arErr:
+                    lHtml.append("<br />- {}".format(str(item)))
+                data['html'] = "\n".join(lHtml)
+
+        else:
+            data['html'] = 'invalid form: {}'.format(form.errors)
+            data['status'] = "error"
+
+    else:
+        data['html'] = 'Only use POST and make sure you are logged in'
+        data['status'] = "error"
+ 
+    # Return the information
+    return JsonResponse(data)
+
+def import_twitter_excel(request):
+    """Import one Twitter Excel file"""
+
+    # Initialisations
+    # NOTE: do ***not*** add a breakpoint until *AFTER* form.is_valid
+    arErr = []
+    error_list = []
+    statuscode = ""
+    data = {'status': 'ok', 'html': ''}
+    template_name = 'doc/import_twitter.html'
+    username = request.user.username
+    oErr = ErrHandle()
+
+    # Check if the user is authenticated and if it is POST
+    if request.user.is_authenticated and request.method == 'POST':
+
+        # Remove previous status object for this user
+        Status.objects.filter(user=username).delete()
+        # Create a status object
+        oStatus = Status(user=username, type="mwex", status="preparing", msg="please wait")
+        oStatus.save()
+        
+        form = UploadTwitterExcelForm(request.POST, request.FILES)
+        lResults = []
+        if form.is_valid():
+            # NOTE: from here a breakpoint may be inserted!
+            print('import_twitter: valid form')
+
+            # Get the contents of the imported file
+            files = request.FILES.getlist('file_source')
+            if files != None:
+                if len(files) > 0:
+                    # Only read the first
+                    data_file = files[0]
+                    filename = data_file.name
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        arErr.append("No source file specified for the Twitter Excel")
+                        statuscode = "error"
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+                        sBare = arFile[0].strip()
+
+                        # Create room for all the Twitter cells to be read
+                        lst_twitter = []
+
+                        # Further processing depends on the extension
+                        oResult = None
+                        if extension == "xlsx":
+                            # Read the excel
+                            wb = openpyxl.load_workbook(data_file)
+                            # We expect the data to be in the first worksheet
+                            ws = wb.worksheets[0]
+
+                            # Start reading the excel row-by-row
+                            bFirstRow = True
+                            text_columns = []
+                            for row in ws.iter_rows():
+                                # Check contents of the first cell in this row
+                                v = row[0].value
+                                if v is None or v == "":
+                                    # Break from the loop
+                                    break
+                                # Check for first forw
+                                if bFirstRow:
+                                    # Treat the columns in here
+                                    for cell in row:
+                                        value = cell.value
+                                        if not value is None and isinstance(value, str):
+                                            if "text_tweet_" in value.lower():
+                                                # Need to add this column
+                                                text_columns.append(cell.col_idx)
+                                    # We have treated the first row
+                                    bFirstRow = False
+                                else:
+                                    # Consider all other rows
+                                    for column in text_columns:
+                                        cell = row[column-1]
+                                        if not cell.value is None and cell.value != "":
+                                            # Add this cell and its text value
+                                            lst_twitter.append(dict(coordinate=cell.coordinate, value=cell.value))
+
+                                            # Add this combination as a TwitterMsg object
+                                            obj = TwitterMsg.objects.filter(coordinate=cell.coordinate, message=cell.value).first()
+                                            if obj is None:
+                                                obj = TwitterMsg.objects.create(coordinate=cell.coordinate, message=cell.value)
+                                            # Check and possibly save file
+                                            obj.check_files()
+
                             # Add results
                             oResult = {}
                             oResult['added'] = lAdded

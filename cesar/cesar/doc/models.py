@@ -1475,6 +1475,79 @@ class Brysbaert(models.Model):
         return self.m
 
 
+class TwitterMsg(models.Model):
+    """Room for one twitter message, its set of tokens and its POS tagging"""
+
+    # [1] Must have a message
+    message = models.TextField("Message", blank=False, null=False)
+    # [1] The coordinate / location of this message
+    coordinate = models.CharField("Coordinate", max_length=MAXPARAMLEN)
+
+    # [0-1] Should be tokenized JSON string
+    tokens = models.TextField("Tokens", blank=True, null=True)
+    # [0-1] Should be POS-tagged JSON string
+    postags = models.TextField("POS tags", blank=True, null=True)
+
+    def __str__(self):
+        return self.coordinate
+
+    def check_files(self):
+        """Check if all files that can be made on the basis of what we have are there"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            bare_file = self.get_filename()
+            # Check the text file
+            text_file = "{}.txt".format(bare_file)
+            if not os.path.exists(text_file):
+                # Save it
+                with open(text_file, "w", encoding="utf-8") as f:
+                    f.write(self.message)
+
+            # Check the tokens
+            if not self.tokens is None:
+                tokens_file = "{}.tok".format(bare_file)
+                if not os.path.exists(tokens_file):
+                    # Save it
+                    with open(tokens_file, "w", encoding="utf-8") as f:
+                        f.write(self.tokens)
+
+            # Check the tokens
+            if not self.postags is None:
+                postags_file = "{}.tok".format(bare_file)
+                if not os.path.exists(postags_file):
+                    # Save it
+                    with open(postags_file, "w", encoding="utf-8") as f:
+                        f.write(self.postags)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("check_files")
+
+        return bResult
+
+    def get_filename(self):
+        """Construct and pass on the filename for this twitter message"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Check and/or create the appropriate directory for the user
+            dir = os.path.abspath(os.path.join( WRITABLE_DIR, "../folia", "twitter"))
+            if not os.path.exists(dir):
+                os.mkdir(dir)
+
+            # Combine into a filename
+            sBack = os.path.abspath(os.path.join(dir, "tw_{}".format(self.coordinate)))
+            # NOTE: 
+            #   the calling program should append e.g. ".txt" or what is needed
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_filename")
+
+        return sBack
+
+
 # ======================= NEXIS UNI =======================
 
 class NexisDocs(models.Model):

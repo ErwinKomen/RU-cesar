@@ -137,6 +137,7 @@ urlpatterns = [
     url(r'^api/import/brysb/$', cesar.doc.views.import_brysbaert, name='import_brysb'),
     url(r'^api/import/nexis/$', cesar.doc.views.import_nexis, name='import_nexis'),
     url(r'^api/import/mwex/$', cesar.doc.views.import_mwex, name='import_mwex'),
+    url(r'^api/import/twitter/$', cesar.doc.views.import_twitter_excel, name='import_twitter'),
 
     url(r'^tsg/handle/sync', cesar.tsg.views.tsgsync, name='tsg_sync'),
     url(r'^tsg/handle/list', TsgHandleListView.as_view(), name='tsg_list'),

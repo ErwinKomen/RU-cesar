@@ -27,59 +27,111 @@
     <!-- Dashboard to select input file(s) and then allow downloading the results -->
     <div id="import_docs" class="row" >
       <div class="col-md-9 panel panel-default">
-      <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
-        {% csrf_token %}
-        <!-- Need username and password for the CLAM client webservice -->
-        <div class="row">
-          <div class="col-md-12">
-            <table style="width: 100%;">
-              <tbody>
-                {% if clamdefine %}
-                  <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
-                  <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
-                {% endif %}
-                <tr>
-                  <td>File(s) to be processed:</td>
-                  <td>
-                    <span class="input-group-btn">
-                      <span class="btn btn-default btn-xs btn-file">Browse...{{frmUpload.files_field}}</span>
-                      <!-- The files that have been selected-->
-                      <span></span>
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="2">
-                    <div id="docs-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
-                    <progress class="hidden" style="width:100%;" id="docs-import_progress" value="0" min="0" max="100"></progress>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="2" align="right">
-                    <a class="btn btn-sm jumbo-1"
-                       targetid="docs_data_import"
-                       targeturl="{% url 'import_concrete' %}"
-                       syncurl="{% url 'sync_progress' %}?synctype=docs" 
-                       onclick="ru.cesar.seeker.import_post(this);"
-                       >Start</a>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+          {% csrf_token %}
+          <!-- Need username and password for the CLAM client webservice -->
+          <div class="row">
+            <div class="col-md-12">
+              <table style="width: 100%;">
+                <tbody>
+                  {% if clamdefine %}
+                    <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
+                    <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
+                  {% endif %}
+                  <tr>
+                    <td>File(s) to be processed for TABLET:</td>
+                    <td>
+                      <span class="input-group-btn">
+                        <span class="btn btn-default btn-xs btn-file">Browse...{{frmUpload.files_field}}</span>
+                        <!-- The files that have been selected-->
+                        <span></span>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2">
+                      <div id="docs-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
+                      <progress class="hidden" style="width:100%;" id="docs-import_progress" value="0" min="0" max="100"></progress>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" align="right">
+                      <a class="btn btn-sm jumbo-1"
+                         targetid="docs_data_import"
+                         targeturl="{% url 'import_concrete' %}"
+                         syncurl="{% url 'sync_progress' %}?synctype=docs" 
+                         onclick="ru.cesar.seeker.import_post(this);"
+                         >Start</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
 
-        <!-- Progress -->
-        <div class="save-warning"></div>
-        <!-- Any error reporting -->
-        <div id="docs-import_error"></div>
-      </form>
+          <!-- Progress -->
+          <div class="save-warning"></div>
+          <!-- Any error reporting -->
+          <div id="docs-import_error"></div>
+        </form>
+
+        {% if superuser %}
+          <form action="{% url 'import_twitter' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-12">
+                <table style="width: 100%;">
+                  <tbody>
+                    <tr>
+                      <td>File to be processed (Twitter):</td>
+                      <td>
+                        <span class="input-group-btn">
+                          <span class="btn btn-default btn-xs btn-file">Browse...{{frmTwitter.file_source}}</span>
+                          <!-- The file that have been selected-->
+                          <span></span>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2">
+                        <div id="twitter-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
+                        <progress class="hidden" style="width:100%;" id="twitter-import_progress" value="0" min="0" max="100"></progress>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" align="right">
+                        <a class="btn btn-sm jumbo-1"
+                           targetid="twitter_data_import"
+                           targeturl="{% url 'import_twitter' %}"
+                           syncurl="{% url 'sync_progress' %}?synctype=twitter" 
+                           onclick="ru.cesar.seeker.import_post(this);"
+                           >Start</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+
+            <!-- Progress -->
+            <div class="save-warning"></div>
+            <!-- Any error reporting -->
+            <div id="twitter-import_error"></div>
+          </form>
+        {% endif %}
+
       </div>
     </div>
 
     <!-- The normal progress reporting -->
     <div id="docs_data_import"></div>
+
+    <!-- Twitter uploading, if allowed -->
+    {% if superuser %}
+      <div id="twitter_data_import"></div>
+    {% endif %}
 
     <!-- Brysbaert uploading, if allowed -->
     {% if superuser %}
