@@ -1665,7 +1665,7 @@ def import_twitter_excel(request):
                             # Possibly save file
                             if bHasChanged:
                                 # Yes, save file
-                                outfile = os.path.abspath(os.path.join(WRITABLE_DIR, "folia", filename.replace(".xlsx", "-out.xlsx")))
+                                outfile = os.path.abspath(os.path.join(WRITABLE_DIR, "..", "folia", filename.replace(".xlsx", "-out.xlsx")))
                                 wb.save(outfile)
 
                             # Add results
