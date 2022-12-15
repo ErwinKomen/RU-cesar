@@ -127,6 +127,8 @@ urlpatterns = [
     url(r'^tablet/homonym/details(?:/(?P<pk>\d+))?/$', HomonymDetails.as_view(), name='homonym_details'),
     url(r'^tablet/homonym/edit(?:/(?P<pk>\d+))?/$', HomonymEdit.as_view(), name='homonym_edit'),
 
+    url(r'^twitter/$', cesar.doc.views.twitter_main, name='twitter_main'),
+
     url(r'^doc/nexis/$', cesar.doc.views.nexis_main, name='nexis_main'),
     url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),
     url(r'^doc/nexis/details(?:/(?P<pk>\d+))?/$', NexisBatchDetails.as_view(), name='nexisbatch_details'),

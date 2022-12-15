@@ -303,99 +303,6 @@ class FrogLink(models.Model):
                 sBack = self.fdocs.owner.username
         return sBack
 
-    def twitter_ucto(self, coordinate, content, clamuser, clampw):
-        """Perform UCTO on the 'content' and return the result"""
-        oErr = ErrHandle()
-
-        sBack = ""
-        try:
-            # Think of a project name
-            project = "cesar_twitter_{}".format(coordinate)
-            basicauth = True
-            # Get access to the webservice
-            clamclient = CLAMClient(uctourl, clamuser, clampw, basicauth = basicauth)
-            # First delete any previous project, if it exists
-            try:
-                result = clamclient.delete(project)
-                errHandle.Status("Removed previous UCTO project {} = {}".format(project, result))
-            except:
-                # No problem: no project has been removed
-                pass
-            # Only now start creating it
-            result = clamclient.create(project)
-            errHandle.Status("Created new UCTO project {} = {}".format(project, result))
-            data = clamclient.get(project)
-
-        except:
-            sError = oErr.get_error_message()
-            oErr.DoError("")
-        return sBack
-
-    def twitter_cell(self, coordinate, content, clamuser=None, clampw=None):
-        """Process one twitter cell's contents with coordinate within Excel (e.g. W12)"""
-
-        oBack = {'status': 'ok', 'count': 0, 'msg': "", 'user': username}
-        frogType = "remote"     # Fix to remote -- or put to None if automatically choosing
-        iCount = 0
-        oErr = ErrHandle()
-
-        try:
-            if clamuser is None:
-                clamuser = TsgInfo.get_value("clam_user")
-                clampw = TsgInfo.get_value("clam_pw")
-
-            # Check our location
-            frogLoc = frogType if frogType != None else folProc.location()
-
-            # Directory: one directory for each user
-            dir = folProc.dir
-
-            # Perform UCTO
-            bResult, sMsg = self.twitter_ucto(coordinate, content, clamuser, clampw)
-            if not bResult:
-                # There was some kind of error
-                oBack['status'] = 'error'
-                oBack['msg'] = "ucto load error: {}".format(sMsg)
-            else:
-                pass
-
-        except:
-            sError = oErr.get_error_message()
-            oBack['status'] = 'error'
-            oBack['msg'] = sError
-
-        # Return the object that has been created
-        return oBack
-
-    def twitter_excel(self, username, data_file, filename):
-        """Prepare a TWITTER Excel and add POS tags"""
-
-        oBack = {'status': 'ok', 'count': 0, 'msg': "", 'user': username}
-        oErr = ErrHandle()
-        try:
-            # (1) Read the Excel and extract the cells with Twitter text
-
-            # (2) Process all the twitter texts
-
-            # (2.1) Tokenize using UCTO
-
-            # (2.2) Find POS tags
-
-            # (2.3) Re-combine tokens + POS tags
-
-            # (3) Adapt the changed Excel cells
-
-            # (4) Make the output available
-
-            pass
-        except:
-            sError = oErr.get_error_message()
-            oBack['status'] = 'error'
-            oBack['msg'] = sError
-
-        # Return the object that has been created
-        return oBack
-
     def read_doc(self, username, data_file, filename, clamuser, clampw, arErr, xmldoc=None, sName = None, oStatus = None):
         """Import a text file, parse it through the frogger, and create a Folia.xml file"""
 
@@ -1475,6 +1382,9 @@ class Brysbaert(models.Model):
         return self.m
 
 
+# ================= POS-TAGGING TWITTER ========================================
+
+
 class TwitterMsg(models.Model):
     """Room for one twitter message, its set of tokens and its POS tagging"""
 
@@ -1482,8 +1392,10 @@ class TwitterMsg(models.Model):
     message = models.TextField("Message", blank=False, null=False)
     # [1] The coordinate / location of this message
     coordinate = models.CharField("Coordinate", max_length=MAXPARAMLEN)
+    # [0-1] The row number within Excel
+    row = models.IntegerField("Row", blank=True, null=True)
 
-    # [0-1] Should be tokenized JSON string
+    # [0-1] Should be tokenized plain text string
     tokens = models.TextField("Tokens", blank=True, null=True)
     # [0-1] Should be POS-tagged JSON string
     postags = models.TextField("POS tags", blank=True, null=True)
@@ -1506,20 +1418,40 @@ class TwitterMsg(models.Model):
                     f.write(self.message)
 
             # Check the tokens
+            tokens_file = "{}.tok".format(bare_file)
             if not self.tokens is None:
-                tokens_file = "{}.tok".format(bare_file)
                 if not os.path.exists(tokens_file):
                     # Save it
                     with open(tokens_file, "w", encoding="utf-8") as f:
                         f.write(self.tokens)
+            elif os.path.exists(tokens_file):
+                # The file exists - do we need to read it?
+                if self.tokens is None or self.tokens == "":
+                    # Read it
+                    sResult = None
+                    with open(tokens_file, "r", encoding="utf-8") as f:
+                        sResult = f.read()
+                    if not sResult is None:
+                        self.tokens = sResult.strip()
+                        self.save()
 
             # Check the tokens
+            postags_file = "{}.json".format(bare_file)
             if not self.postags is None:
-                postags_file = "{}.tok".format(bare_file)
                 if not os.path.exists(postags_file):
                     # Save it
                     with open(postags_file, "w", encoding="utf-8") as f:
                         f.write(self.postags)
+            elif os.path.exists(postags_file):
+                # The file exists - do we need to read it?
+                if self.postags is None or self.postags == "":
+                    # Read it
+                    sResult = None
+                    with open(postags_file, "r", encoding="utf-8") as f:
+                        sResult = f.read()
+                    if not sResult is None:
+                        self.postags = sResult.strip()
+                        self.save()
         except:
             msg = oErr.get_error_message()
             oErr.DoError("check_files")
@@ -1537,8 +1469,17 @@ class TwitterMsg(models.Model):
             if not os.path.exists(dir):
                 os.mkdir(dir)
 
+            # Check for row-number
+            if not self.row is None:
+                dir = os.path.abspath(os.path.join(dir, "row{:04}".format(self.row)))
+                if not os.path.exists(dir):
+                    os.mkdir(dir)
+
             # Combine into a filename
-            sBack = os.path.abspath(os.path.join(dir, "tw_{}".format(self.coordinate)))
+            if self.row is None:
+                sBack = os.path.abspath(os.path.join(dir, "tw_{}".format(self.coordinate)))
+            else:
+                sBack = os.path.abspath(os.path.join(dir, "tw_{:04}_{}".format(self.row, self.coordinate)))
             # NOTE: 
             #   the calling program should append e.g. ".txt" or what is needed
         except:
@@ -1546,6 +1487,100 @@ class TwitterMsg(models.Model):
             oErr.DoError("get_filename")
 
         return sBack
+
+    def twitter_ucto(self, coordinate, content, clamuser, clampw):
+        """Perform UCTO on the 'content' and return the result"""
+        oErr = ErrHandle()
+
+        sBack = ""
+        try:
+            # Think of a project name
+            project = "cesar_twitter_{}".format(coordinate)
+            basicauth = True
+            # Get access to the webservice
+            clamclient = CLAMClient(uctourl, clamuser, clampw, basicauth = basicauth)
+            # First delete any previous project, if it exists
+            try:
+                result = clamclient.delete(project)
+                errHandle.Status("Removed previous UCTO project {} = {}".format(project, result))
+            except:
+                # No problem: no project has been removed
+                pass
+            # Only now start creating it
+            result = clamclient.create(project)
+            errHandle.Status("Created new UCTO project {} = {}".format(project, result))
+            data = clamclient.get(project)
+
+        except:
+            sError = oErr.get_error_message()
+            oErr.DoError("")
+        return sBack
+
+    def twitter_cell(self, coordinate, content, clamuser=None, clampw=None):
+        """Process one twitter cell's contents with coordinate within Excel (e.g. W12)"""
+
+        oBack = {'status': 'ok', 'count': 0, 'msg': "", 'user': username}
+        frogType = "remote"     # Fix to remote -- or put to None if automatically choosing
+        iCount = 0
+        oErr = ErrHandle()
+
+        try:
+            if clamuser is None:
+                clamuser = TsgInfo.get_value("clam_user")
+                clampw = TsgInfo.get_value("clam_pw")
+
+            # Check our location
+            frogLoc = frogType if frogType != None else folProc.location()
+
+            # Directory: one directory for each user
+            dir = folProc.dir
+
+            # Perform UCTO
+            bResult, sMsg = self.twitter_ucto(coordinate, content, clamuser, clampw)
+            if not bResult:
+                # There was some kind of error
+                oBack['status'] = 'error'
+                oBack['msg'] = "ucto load error: {}".format(sMsg)
+            else:
+                pass
+
+        except:
+            sError = oErr.get_error_message()
+            oBack['status'] = 'error'
+            oBack['msg'] = sError
+
+        # Return the object that has been created
+        return oBack
+
+    def twitter_excel(self, username, data_file, filename):
+        """Prepare a TWITTER Excel and add POS tags"""
+
+        oBack = {'status': 'ok', 'count': 0, 'msg': "", 'user': username}
+        oErr = ErrHandle()
+        try:
+            # (1) Read the Excel and extract the cells with Twitter text
+
+            # (2) Process all the twitter texts
+
+            # (2.1) Tokenize using UCTO
+
+            # (2.2) Find POS tags
+
+            # (2.3) Re-combine tokens + POS tags
+
+            # (3) Adapt the changed Excel cells
+
+            # (4) Make the output available
+
+            pass
+        except:
+            sError = oErr.get_error_message()
+            oBack['status'] = 'error'
+            oBack['msg'] = sError
+
+        # Return the object that has been created
+        return oBack
+
 
 
 # ======================= NEXIS UNI =======================

@@ -22,7 +22,7 @@ import openpyxl
 from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 
-from cesar.settings import APP_PREFIX
+from cesar.settings import APP_PREFIX, WRITABLE_DIR
 from cesar.basic.views import BasicList, BasicDetails, BasicPart, user_is_authenticated
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
@@ -1146,6 +1146,62 @@ class HomonymList(BasicList):
         return context
 
 
+# ================ TWITTER =============================
+
+def twitter_main(request):
+    """The main page of working with documents for concreteness."""
+
+    assert isinstance(request, HttpRequest)
+    template = 'doc/twitter_main.html'
+    frmUpload = UploadFilesForm()
+    frmBrysb = UploadOneFileForm()
+    frmTwitter = UploadTwitterExcelForm()
+    superuser = request.user.is_superuser
+
+    # Basic authentication
+    if not user_is_authenticated(request):
+        return nlogin(request)
+
+    qd = request.GET
+    clamdefine = False
+    if 'clamdefine' in qd:
+        v = qd.get('clamdefine')
+        clamdefine = (v == "true" or v == "1")
+
+    ## Get a list of already uploaded files too
+    #text_list = []
+    #for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created'):
+    #    if item.concr == None or item.concr == "":
+    #        obj = dict(id=item.id, show=False)
+    #        text_list.append(obj)
+    #    else:
+    #        obj = json.loads(item.concr)
+    #        obj['id'] = item.id
+    #        obj['show'] = True
+    #        obj['created'] = item.get_created()
+    #        text_list.append(obj)
+
+    tweetcount = TwitterMsg.objects.count()
+
+    context = {'title': 'Twitter process',
+               'frmTwitter': frmTwitter,
+               'clamdefine': clamdefine,
+               'superuser': superuser,
+               'tweetcount': tweetcount,
+               'message': 'Radboud University CESAR',
+               'intro_breadcrumb': 'Twitter',
+               'year': datetime.now().year}
+
+    if user_is_ingroup(request, TABLET_EDITOR) or  user_is_superuser(request):
+        # Adapt the app editor status
+        context['is_app_editor'] = True
+        context['is_tablet_editor'] = context['is_app_editor']
+
+    return render(request, template, context)
+
+
+
+
 # ================ NEXIS UNI ===========================
 def nexis_main(request):
     """The main page of working with Nexis Uni documents."""
@@ -1462,13 +1518,14 @@ def import_mwex(request):
     return JsonResponse(data)
 
 def import_twitter_excel(request):
-    """Import one Twitter Excel file"""
+    """Import one Twitter Excel file into TwitterMsg objects"""
 
     # Initialisations
     # NOTE: do ***not*** add a breakpoint until *AFTER* form.is_valid
     arErr = []
     error_list = []
     statuscode = ""
+    sDoFiles = "false"            # Whether to create server-side files for the Twitter messages
     data = {'status': 'ok', 'html': ''}
     template_name = 'doc/import_twitter.html'
     username = request.user.username
@@ -1480,14 +1537,19 @@ def import_twitter_excel(request):
         # Remove previous status object for this user
         Status.objects.filter(user=username).delete()
         # Create a status object
-        oStatus = Status(user=username, type="mwex", status="preparing", msg="please wait")
-        oStatus.save()
+        oStatus = Status.objects.create(user=username, type="twitter", status="preparing", msg="please wait")
         
         form = UploadTwitterExcelForm(request.POST, request.FILES)
         lResults = []
         if form.is_valid():
-            # NOTE: from here a breakpoint may be inserted!
+            # NOTE: ===================================================
+            # ====== starting *HERE* a breakpoint may be inserted! ====
             print('import_twitter: valid form')
+
+            # Check for server-side file creation
+            cleaned_data = form.cleaned_data
+            sDoFiles = cleaned_data.get("dofiles", sDoFiles)
+            dofiles = (sDoFiles.lower() == "true")
 
             # Get the contents of the imported file
             files = request.FILES.getlist('file_source')
@@ -1521,10 +1583,15 @@ def import_twitter_excel(request):
                             # We expect the data to be in the first worksheet
                             ws = wb.worksheets[0]
 
+                            oStatus.set("processing", msg="file={}".format(filename))
                             # Start reading the excel row-by-row
                             bFirstRow = True
+                            bHasChanged = False
                             text_columns = []
+                            row_no = 1
                             for row in ws.iter_rows():
+                                # Show where we are
+                                oStatus.set("processing", msg="row={}".format(row_no))
                                 # Check contents of the first cell in this row
                                 v = row[0].value
                                 if v is None or v == "":
@@ -1547,21 +1614,65 @@ def import_twitter_excel(request):
                                         cell = row[column-1]
                                         if not cell.value is None and cell.value != "":
                                             # Add this cell and its text value
-                                            lst_twitter.append(dict(coordinate=cell.coordinate, value=cell.value))
+                                            lst_twitter.append(dict(row=row_no, coordinate=cell.coordinate, message=cell.value))
 
                                             # Add this combination as a TwitterMsg object
-                                            obj = TwitterMsg.objects.filter(coordinate=cell.coordinate, message=cell.value).first()
+                                            obj = TwitterMsg.objects.filter(row=row_no, coordinate=cell.coordinate, message=cell.value).first()
                                             if obj is None:
-                                                obj = TwitterMsg.objects.create(coordinate=cell.coordinate, message=cell.value)
+                                                obj = TwitterMsg.objects.create(row=row_no, coordinate=cell.coordinate, message=cell.value)
+
                                             # Check and possibly save file
-                                            obj.check_files()
+                                            if dofiles:
+                                                # Check files and possibly update [obj] with information
+                                                obj.check_files()
+                                                # If any updates have been made
+                                                if not obj.postags is None and obj.postags != "":
+                                                    # Start creating a list of token + postag
+                                                    lst_postags = []
+                                                    # Read the postags string
+                                                    arPosTags = obj.postags.split("]\n[")
+                                                    for idx, sent in enumerate(arPosTags):
+                                                        if len(sent) > 0:
+                                                            # Build the actual sentence, based on the position in arPosTags
+                                                            if idx == 0:
+                                                                # This is the initial
+                                                                if idx + 1 == len(arPosTags):
+                                                                    # This is the final
+                                                                    pass
+                                                                else:
+                                                                    # Non-final: add ]
+                                                                    sSent = "{}]".format(sent)
+                                                            elif idx + 1 == len(arPosTags):
+                                                                # This is the final, but not the initial
+                                                                sSent = "[{}".format(sent)
+                                                            else:
+                                                                # Non-initial and Non-final
+                                                                sSent = "[{}]".format(sent)
+
+                                                            lst_sent = json.loads(sSent)
+                                                            for oItem in lst_sent:
+                                                                pos = oItem.get("pos")
+                                                                word = oItem.get("word")
+                                                                if not pos is None:
+                                                                    tag = pos.get("tag")
+                                                                    lst_postags.append("{}_{}".format(word, tag))
+                                                    # Replace the Excel cell
+                                                    cell.value = " ".join(lst_postags)
+                                                    bHasChanged = True
+                                # Go to the next row in counting
+                                row_no += 1
+
+                            # Possibly save file
+                            if bHasChanged:
+                                # Yes, save file
+                                outfile = os.path.abspath(os.path.join(WRITABLE_DIR, "folia", filename.replace(".xlsx", "-out.xlsx")))
+                                wb.save(outfile)
 
                             # Add results
                             oResult = {}
-                            oResult['added'] = lAdded
-                            oResult['skipped'] = lSkipped
-                            oResult['added_count'] = len(lAdded)
-                            oResult['skipped_count'] = len(lSkipped)
+                            oResult['tweets'] = lst_twitter
+                            oResult['count'] = len(lst_twitter)
+                            oResult['rows'] = row_no
                             # Show where we are
                             statuscode = "completed"
                         else:

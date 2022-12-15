@@ -64,6 +64,7 @@ class UploadTwitterExcelForm(forms.Form):
 
     file_source = forms.FileField(label="Specify which file should be imported",
                                   widget=forms.ClearableFileInput())
+    dofiles = forms.CharField(max_length=32, required=False)
 
 
 class FrogLinkForm(forms.ModelForm):

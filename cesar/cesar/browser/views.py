@@ -559,7 +559,6 @@ def sync_crpp_start(request):
                 # Completely ready
                 oStatus.set("done", oBack)
                 
-
     except:
         msg = oErr.get_error_message()
         oErr.DoError("sync_crpp_start error")

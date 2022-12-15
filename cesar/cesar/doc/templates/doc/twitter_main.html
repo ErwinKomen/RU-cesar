@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; {{intro_breadcrumb}}
+  </div>
+{% endblock %}
+{% block scripts %}
+  {% load staticfiles %}
+    <script src="{% static 'basic/scripts/basic.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Contents -->
+  <div class="container body-content">    
+    <h3>Twitter processing</h3>
+
+    <div id="research_err">
+      {% for item in error_list %}
+        {{item}}
+      {% endfor %}
+    </div>
+
+    <!-- Dashboard to select input file(s) and then allow downloading the results -->
+    <div id="import_docs" class="row" >
+      <div class="col-md-9 panel panel-default">
+
+        {% if superuser %}
+          <form action="{% url 'import_twitter' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-12">
+                <table style="width: 100%;">
+                  <tbody>
+                    <tr>
+                      <td>Excel file to be processed (Twitter):</td>
+                      <td>
+                        <span class="input-group-btn">
+                          <span class="btn btn-default btn-xs btn-file">Browse...{{frmTwitter.file_source}}</span>
+                          <!-- The file that have been selected-->
+                          <span></span>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Server files:</td>
+                      <td>
+                        <input id="dofiles" name="dofiles" type="text" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2">
+                        <div id="twitter-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
+                        <progress class="hidden" style="width:100%;" id="twitter-import_progress" value="0" min="0" max="100"></progress>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" align="right">
+                        <a class="btn btn-sm jumbo-1"
+                           targetid="twitter_data_import"
+                           targeturl="{% url 'import_twitter' %}"
+                           syncurl="{% url 'sync_progress' %}?synctype=twitter" 
+                           onclick="ru.cesar.seeker.import_post(this);"
+                           >Start import</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+
+            <!-- Progress -->
+            <div class="save-warning"></div>
+            <!-- Any error reporting -->
+            <div id="twitter-import_error"></div>
+          </form>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- Twitter uploading, if allowed -->
+    {% if superuser %}
+      <div id="twitter_data_import"></div>
+    {% endif %}
+
+    <!-- Twitter start POS-tagging button, if allowed -->
+    {% if superuser %}
+      <div id="twitter_postagging" class="row">
+        <div class="col-md-9 panel panel-default">
+
+          <!-- Form with button to start POS-tagging -->
+          <form method="POST" >
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-12">
+                <table style="width: 100%;">
+                  <tbody>
+                    <tr>
+                      <td>Currently read tweets:</td>
+                      <td>{{tweetcount}}</td>
+                    </tr>
+                    <tr>
+                      <td>POS-tagging:</td>
+                      <td>
+                        <a class="btn btn-xs jumbo-1"
+                           targetid="twitter_data_import"
+                           targeturl="{% url 'import_twitter' %}"
+                           >Start tagging</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Results section -->
+    <div id="twitter_results" class="row">
+    </div>
+
+  </div>
+
+<script>
+  ru.cesar.seeker.init_events();
+</script>
+
+{% endblock content %}
+
