@@ -78,6 +78,58 @@
             <!-- Any error reporting -->
             <div id="twitter-import_error"></div>
           </form>
+
+
+          <form action="{% url 'import_twitada' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-12">
+                <table style="width: 100%;">
+                  <tbody>
+                    <tr>
+                      <td>Excel file to be processed (TwitAda):</td>
+                      <td>
+                        <span class="input-group-btn">
+                          <span class="btn btn-default btn-xs btn-file">Browse...{{frmTwitter.file_source}}</span>
+                          <!-- The file that have been selected-->
+                          <span></span>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Server files:</td>
+                      <td>
+                        <input id="dofiles" name="dofiles" type="text" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2">
+                        <div id="twitada-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
+                        <progress class="hidden" style="width:100%;" id="twitada-import_progress" value="0" min="0" max="100"></progress>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" align="right">
+                        <a class="btn btn-sm jumbo-1"
+                           targetid="twitada_data_import"
+                           targeturl="{% url 'import_twitada' %}"
+                           syncurl="{% url 'sync_progress' %}?synctype=twitada" 
+                           onclick="ru.cesar.seeker.import_post(this);"
+                           >Start import</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+
+            <!-- Progress -->
+            <div class="save-warning"></div>
+            <!-- Any error reporting -->
+            <div id="twitada-import_error"></div>
+          </form>
+
         {% endif %}
 
       </div>

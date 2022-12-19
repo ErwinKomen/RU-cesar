@@ -1724,6 +1724,206 @@ def import_twitter_excel(request):
     return JsonResponse(data)
 
 
+def import_twitada_excel(request):
+    """Import one tagged Twitter Excel file and process it into another"""
+
+    # Initialisations
+    # NOTE: do ***not*** add a breakpoint until *AFTER* form.is_valid
+    arErr = []
+    error_list = []
+    statuscode = ""
+    sDoFiles = "false"            # Whether to create server-side files for the Twitter messages
+    data = {'status': 'ok', 'html': ''}
+    template_name = 'doc/import_twitter.html'
+    username = request.user.username
+    oErr = ErrHandle()
+
+    def iseven(number):
+        return "even" if number % 2 == 0 else "odd"
+
+    # Check if the user is authenticated and if it is POST
+    if request.user.is_authenticated and request.method == 'POST':
+
+        # Remove previous status object for this user
+        Status.objects.filter(user=username).delete()
+        # Create a status object
+        oStatus = Status.objects.create(user=username, type="twitada", status="preparing", msg="please wait")
+        
+        form = UploadTwitterExcelForm(request.POST, request.FILES)
+        lResults = []
+        if form.is_valid():
+            # NOTE: ===================================================
+            # ====== starting *HERE* a breakpoint may be inserted! ====
+            print('import_twitada: valid form')
+
+            # Check for server-side file creation
+            cleaned_data = form.cleaned_data
+
+            # Get the contents of the imported file
+            files = request.FILES.getlist('file_source')
+            if files != None:
+                if len(files) > 0:
+                    # Only read the first
+                    data_file = files[0]
+                    filename = data_file.name
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        arErr.append("No source file specified for the Twitter Excel")
+                        statuscode = "error"
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+                        sBare = arFile[0].strip()
+
+                        # Create room for all the Twitter cells to be read
+                        lst_twitter = []
+
+                        # Further processing depends on the extension
+                        oResult = None
+                        if extension == "xlsx":
+                            # Read the excel
+                            wb = openpyxl.load_workbook(data_file)
+                            # We expect the data to be in the first worksheet
+                            ws = wb.worksheets[0]
+
+                            oStatus.set("processing", msg="file={}".format(filename))
+                            # Start reading the excel row-by-row
+                            bFirstRow = True
+                            bHasChanged = False
+                            text_columns = []
+                            row_no = 1
+                            for row in ws.iter_rows():
+                                # Show where we are
+                                oStatus.set("processing", msg="row={}".format(row_no))
+                                # Check contents of the first cell in this row
+                                v = row[0].value
+                                if v is None or v == "":
+                                    # Break from the loop
+                                    break
+                                oStatus.set("Reading row={}".format(row_no))
+                                # Check for first forw
+                                if bFirstRow:
+                                    # Treat the columns in here
+                                    for cell in row:
+                                        value = cell.value
+                                        if not value is None and isinstance(value, str):
+                                            if "text_tweet_" in value.lower():
+                                                # Need to add this column
+                                                text_columns.append(cell.col_idx)
+                                    # We have treated the first row
+                                    bFirstRow = False
+                                else:
+                                    # Consider all other rows
+                                    for column in text_columns:
+                                        cell = row[column-1]
+                                        if not cell.value is None and cell.value != "":
+                                            # Add this cell and its text value
+                                            lst_twitter.append(dict(row=row_no, column=column, coordinate=cell.coordinate, message=cell.value))
+                                            bHasChanged = True
+
+                                # Go to the next row in counting
+                                row_no += 1
+
+                            # Close the worksheet and workbook
+                            wb.close()
+
+                            # Possibly save file
+                            if bHasChanged:
+                                # Yes, think of save file
+                                outfile = os.path.abspath(os.path.join(WRITABLE_DIR, "..", "folia", filename.replace(".xlsx", "-list.xlsx")))
+
+                                # Open workbook for this
+                                wb_out = openpyxl.Workbook()
+                                ws_out = wb_out.worksheets[0]
+
+                                # Create first row with headers
+                                row_no = 1
+                                headers = ["row", "column", "coordinate", "word", "coltype"]
+                                for idx, header in enumerate(headers):
+                                    ws_out.cell(row=row_no, column=idx+1).value = header
+
+                                # Process all other cells
+                                for oTwitter in lst_twitter:
+                                    row_this = oTwitter.get("row")
+                                    col_this = oTwitter.get("column")
+                                    coo_this = oTwitter.get("coordinate")
+                                    sentence = oTwitter.get("message")
+
+                                    oStatus.set("Converting", msg="main row={} word row={}".format(row_this, row_no))
+
+                                    if not sentence is None and sentence != "":
+                                        for word in sentence.split(" "):
+                                            row_no += 1
+                                            ws_out.cell(row=row_no, column=1).value = row_this
+                                            ws_out.cell(row=row_no, column=2).value = col_this
+                                            ws_out.cell(row=row_no, column=3).value = coo_this
+                                            ws_out.cell(row=row_no, column=4).value = word
+                                            ws_out.cell(row=row_no, column=5).value = iseven(col_this)
+
+                                # Save the new workbook
+                                wb_out.save(outfile)
+
+                            # Add results
+                            oResult = {}
+                            oResult['tweets'] = lst_twitter
+                            oResult['count'] = len(lst_twitter)
+                            oResult['rows'] = row_no
+                            # Show where we are
+                            statuscode = "completed"
+                        else:
+                            # Cannot process these
+                            oResult = {'status': 'error', 'msg': 'cannot process non Excel (xlsx) files'}
+                            statuscode = "error"
+
+                        if oResult == None:
+                            arErr.append("There was an error. No Excel file has been loaded")
+                        else:
+                            lResults.append(oResult)
+
+
+            if statuscode == "error":
+                data['status'] = "error"
+            else:
+                # Show we are ready
+                oStatus.set("ready", msg="Read all data")
+            # Get a list of errors
+            error_list = [str(item) for item in arErr if len(str(item)) > 0]
+
+            # Create the context
+            context = dict(
+                statuscode=statuscode,
+                filename=filename,
+                results=lResults,
+                error_list=error_list
+                )
+
+            if len(arErr) == 0 or len(arErr[0]) == 0:
+                # Get the HTML response
+                data['html'] = render_to_string(template_name, context, request)
+            else:
+                lHtml = []
+                lHtml.append("There are errors in importing this mwex")
+                for item in arErr:
+                    lHtml.append("<br />- {}".format(str(item)))
+                data['html'] = "\n".join(lHtml)
+
+        else:
+            data['html'] = 'invalid form: {}'.format(form.errors)
+            data['status'] = "error"
+
+    else:
+        data['html'] = 'Only use POST and make sure you are logged in'
+        data['status'] = "error"
+ 
+    # Return the information
+    return JsonResponse(data)
+
+
 class NexisBatchEdit(BasicDetails):
     """Details view for one batch"""
 
