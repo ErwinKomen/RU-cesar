@@ -153,6 +153,27 @@ class HomonymForm(forms.ModelForm):
         return None
 
 
+class WordlistForm(forms.ModelForm):
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Wordlist
+        fields = ['name', 'description']
+        widgets = {
+            'name':         forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Name for this wordlist'}),
+            'description':  forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;', 
+                                                  'placeholder': 'Description of this wordlist...'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(WordlistForm, self).__init__(*args, **kwargs)
+
+        # Make sure some are not obligatory
+        self.fields['name'].required = False
+        self.fields['description'].required = False
+
+
 # ================= NEXIS FORMS =======================================
 
 class NexisBatchForm(forms.ModelForm):

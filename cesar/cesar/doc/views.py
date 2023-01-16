@@ -28,9 +28,9 @@ from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
-    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg
+    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
-    LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm
+    WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -560,6 +560,9 @@ def import_concrete(request):
     return JsonResponse(data)
 
 
+# =============== CONCRETE ===============================
+
+
 class ConcreteDownload(DetailView):
     """Allow loading file that has been analyzed for concreteness"""
 
@@ -920,6 +923,9 @@ class ConcreteListView(BasicList):
         return context
 
 
+# =============== LOCTIME ===============================
+
+
 class LocTimeEdit(BasicDetails):
     """Edit a loctime information element"""
 
@@ -1008,6 +1014,9 @@ class LocTimeTable(LocTimeList):
     view_only = True
 
 
+# =============== EXPRESSION ===============================
+
+
 class ExpressionEdit(BasicDetails):
     """Edit a Expression information element"""
 
@@ -1076,6 +1085,9 @@ class ExpressionList(BasicList):
         return context
 
 
+# =============== HOMONYM ===============================
+
+
 class HomonymEdit(BasicDetails):
     """Edit a Homonym information element"""
 
@@ -1133,6 +1145,73 @@ class HomonymList(BasicList):
         {'section': '', 'filterlist': [
             {'filter': 'stimulus',   'dbfield': 'stimulus', 'keyS': 'stimulus'},
             {'filter': 'sense',      'dbfield': 'meaning',  'keyS': 'meaning'}
+            ]
+         } 
+        ] 
+
+    def add_to_context(self, context, initial):
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
+        return context
+
+
+# =============== WORDLIST ===============================
+
+
+class WordlistEdit(BasicDetails):
+    """Edit a Wordlist information element"""
+
+    model = Wordlist
+    mForm = WordlistForm
+    prefix = "wlst"
+    title = "Wordlist"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'plain', 'label': "Name:",         'value': instance.name,         'field_key': "name"},
+                {'type': 'plain', 'label': "Description:",  'value': instance.description,  'field_key': "description"},
+                ]       
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
+        # Return the context we have made
+        return context
+    
+
+class WordlistDetails(WordlistEdit):
+    """Viewing Wordlist information items"""
+    rtype = "html"
+
+
+class WordlistList(BasicList):
+    """List Wordlist elements"""
+
+    model = Wordlist
+    listform = WordlistForm
+    prefix = "wlst"
+    sg_name = "Wordlist"
+    plural_name = "Wordlists"
+    new_button = True      # Do show a new button
+    order_cols = ['name', '']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Name',    'order': 'o=1', 'type': 'str', 'field': 'name',  'linkdetails': True, 'main': True},
+        {'name': 'Saved',   'order': '',    'type': 'str', 'field': 'saved', 'linkdetails': True, 'align': "right"},
+        ]
+    filters = [ 
+        {"name": "Name", "id": "filter_name", "enabled": False},
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'name',   'dbfield': 'name', 'keyS': 'name'},
             ]
          } 
         ] 

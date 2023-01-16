@@ -126,6 +126,9 @@ urlpatterns = [
     url(r'^tablet/homonym/list/$', HomonymList.as_view(), name='homonym_list'),
     url(r'^tablet/homonym/details(?:/(?P<pk>\d+))?/$', HomonymDetails.as_view(), name='homonym_details'),
     url(r'^tablet/homonym/edit(?:/(?P<pk>\d+))?/$', HomonymEdit.as_view(), name='homonym_edit'),
+    url(r'^tablet/wordlist/list/$', WordlistList.as_view(), name='wordlist_list'),
+    url(r'^tablet/wordlist/details(?:/(?P<pk>\d+))?/$', WordlistDetails.as_view(), name='wordlist_details'),
+    url(r'^tablet/wordlist/edit(?:/(?P<pk>\d+))?/$', WordlistEdit.as_view(), name='wordlist_edit'),
 
     url(r'^twitter/$', cesar.doc.views.twitter_main, name='twitter_main'),
 

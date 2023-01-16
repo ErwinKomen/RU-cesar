@@ -1240,6 +1240,98 @@ class Neologism(models.Model):
         return self.m
 
 
+class Wordlist(models.Model):
+    """A wordlist has a name and provides a container for a number of [Worddef] items"""
+
+    # [1] A wordlist must have a name
+    name = models.CharField("Name", max_length=MAXPARAMLEN)
+
+    # [0-1] Optional description
+    description = models.TextField("Description", blank=True, null=True)
+
+    # [1] Each Froglink has been created at one point in time
+    created = models.DateTimeField(default=timezone.now)
+    # [0-1] Time this module was last updated
+    saved = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        # Adapt the save date
+        self.saved = timezone.now()
+        # Now do the saving
+        response = super(Wordlist, self).save(force_insert, force_update, using, update_fields)
+        # Return the response
+        return response
+
+    def get_created(self):
+        sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
+        return sBack
+
+    def get_saved(self):
+        sBack = "-"
+        if self.saved != None:
+            sBack = self.saved.strftime("%d/%B/%Y (%H:%M)")
+        return sBack
+
+
+class Worddef(models.Model):
+    """Generic word definition with concreteness score"""
+
+    # [1] A generic word definition belongs to a particular wordlist
+    wordlist = models.ForeignKey(Wordlist, on_delete=models.CASCADE, related_name="wordlist_worddefs")
+    # [1] The lemma 
+    stimulus = models.CharField("Lemma of word", max_length=MAXPARAMLEN)
+    # [1] Metric 1: concrete_m
+    m = models.FloatField("Concrete m", default=0.0)
+    # [0-1] Possibly the POS tag
+    postag = models.CharField("POS tag", blank=True, null=True, max_length=MAXPARAMLEN)
+
+    def __str__(self):
+        sBack = "{}: {}".format(self.wordlist.name, self.stimulus)
+        return sBack
+
+    def clear(name):
+        bResult = False
+        oErr = ErrHandle()
+        try:
+            # Remove all the word definitions from the wordlist that is indicated
+            if not name is None:
+                wordlist = Wordlist.objects.filter(name__iexact=name).first()
+                if not wordlist is None:
+                    # Remove all the word definitions associated with this wordlist
+                    wordlist.wordlist_worddefs.all().delete()
+                    bResult = True
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Worddef/clear")
+        return bResult
+
+    def find_or_create(name, stimulus, m, postag=None):
+        """Find existing or create new item"""
+        
+        obj = None
+        sMsg = ""
+        oErr = ErrHandle()
+        try:
+            # Find the right wordlist
+            if not name is None:
+                wordlist = Wordlist.objects.filter(name__iexact=name).first()
+                if not wordlist is None:
+                    obj = Worddef.objects.filter(wordlist=wordlist, stimulus=stimulus).first()
+                    if obj == None:
+                        obj = Worddef.objects.create(wordlist=wordlist, stimulus=stimulus, m=m, postag=postag)
+        except:
+            sMsg = oErr.get_error_message()
+            oErr.DoError("find_or_create")
+        # Return the result
+        return obj, sMsg
+
+    def get_concreteness(self):
+        return self.m
+
+
 class Brysbaert(models.Model):
     """Information from the Brysbaert list of concreteness
 
