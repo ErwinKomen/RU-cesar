@@ -3,6 +3,7 @@ Definition of forms for the SEEKER app.
 """
 
 from django import forms
+from django.core import validators
 #from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import ModelForm, formset_factory, modelformset_factory, BaseFormSet, ModelMultipleChoiceField, ModelChoiceField
@@ -490,9 +491,20 @@ class SeekerResearchForm(ModelForm):
         super(SeekerResearchForm, self).__init__(*args, **kwargs)
         
     def is_valid(self):
-        #if not self.gateway_form.is_valid():
-        #    return False
-        return super(SeekerResearchForm, self).is_valid()
+        # Do default is valid
+        valid = super(SeekerResearchForm, self).is_valid()
+
+        # If it's False, return
+        if not valid: return valid
+
+        # Otherwise: try myself.
+        cd = self.cleaned_data
+        name = cd['name']
+        purpose = cd['purpose']
+        if "<script" in name or "<script" in purpose:
+            valid = False
+        
+        return valid
 
 
 class SeekerResGroupForm(ModelForm):
