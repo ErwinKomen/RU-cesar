@@ -10,6 +10,8 @@ from django.forms import ModelForm, formset_factory, modelformset_factory, BaseF
 from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
 from django_select2.forms import Select2MultipleWidget, ModelSelect2MultipleWidget, ModelSelect2TagWidget, ModelSelect2Widget, HeavySelect2Widget
+
+from cesar.basic.forms import BasicForm
 from cesar.seeker.widgets import SeekerTextarea
 from cesar.seeker.models import *
 from cesar.browser.models import build_choice_list, get_help
@@ -54,13 +56,13 @@ class UserWidget(ModelSelect2MultipleWidget):
 # ================= FORMS =======================================
 
 
-class VariableForm(ModelForm):
+class VariableForm(BasicForm):
     class Meta:
         model = Variable
         fields = ['name', 'description']
 
 
-class GatewayForm(ModelForm):
+class GatewayForm(BasicForm):
     class Meta:
         model = Gateway
         fields = ['name', 'description']
@@ -81,7 +83,7 @@ class GatewayForm(ModelForm):
             return True
 
 
-class KwicFilterForm(ModelForm):
+class KwicFilterForm(BasicForm):
     string_fields = ['Cat', 'TextId', 'Author', 'Title', 'Date']
     number_fields = ['Size']
     operator = forms.ChoiceField(choices=SEARCH_FILTEROPERATOR, required=True)
@@ -108,7 +110,7 @@ class KwicFilterForm(ModelForm):
 
 
 
-class ConstructionWrdForm(ModelForm):
+class ConstructionWrdForm(BasicForm):
     # function_sc = forms.ChoiceField(choices=SEARCHMAIN_WRD_FUNCTIONS, required = True)
     value = forms.CharField(required=True, widget=SeekerTextarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 30px;'}))
     class Meta:
@@ -139,7 +141,7 @@ class ConstructionWrdForm(ModelForm):
         return valid
             
 
-class ConstructionCnsForm(ModelForm):
+class ConstructionCnsForm(BasicForm):
     # WE USE A FIXED FUNCTION
     # OLD: function_sc = forms.ChoiceField(choices=SEARCHMAIN_CNS_FUNCTIONS, required = True)
     # Grammatical category to look for
@@ -171,7 +173,7 @@ class ConstructionCnsForm(ModelForm):
         return valid
 
 
-class GvarForm(ModelForm):
+class GvarForm(BasicForm):
     """The definition and value of global variables"""
 
     class Meta:
@@ -188,13 +190,13 @@ class GvarForm(ModelForm):
         return valid
 
 
-class KwicForm(ModelForm):
+class KwicForm(BasicForm):
     class Meta:
         model = Kwic
         fields = ['qc']
 
 
-class VarDefForm(ModelForm):
+class VarDefForm(BasicForm):
     """The DEFINITION of construction variables (not their values)"""
 
     class Meta:
@@ -227,7 +229,7 @@ class VarDefForm(ModelForm):
         return obj.check_order(cd['ORDER'])
 
 
-class CvarForm(ModelForm):
+class CvarForm(BasicForm):
     """The VALUES of construction variables"""
 
     file_source = forms.FileField(label="Specify which file should be loaded")
@@ -281,7 +283,7 @@ class CvarForm(ModelForm):
         self.url_new = reverse(self.targetid)
 
 
-class FunctionForm(ModelForm):
+class FunctionForm(BasicForm):
     """Specify the function the user wants to choose"""
     copyto = forms.ChoiceField(choices=(), required=False)
 
@@ -299,7 +301,7 @@ class FunctionForm(ModelForm):
         self.fields['copyto'].required = False
 
 
-class ArgumentDefForm(ModelForm):
+class ArgumentDefForm(BasicForm):
     """The specification of an argument to a function"""
 
     argtype = forms.ChoiceField(choices=SEARCH_ARGTYPE, required=True)
@@ -317,7 +319,7 @@ class ArgumentDefForm(ModelForm):
         init_choices(self, 'argtype', SEARCH_ARGTYPE, bUseAbbr=True)
 
 
-class FunctionCodeForm(ModelForm):
+class FunctionCodeForm(BasicForm):
     """The specification of the Xquery output of a function"""
 
     format = forms.ChoiceField(choices=build_abbr_list(CORPUS_FORMAT), required=True)
@@ -334,7 +336,7 @@ class FunctionCodeForm(ModelForm):
         init_choices(self, 'format', CORPUS_FORMAT, bUseAbbr=True)
 
 
-class ArgumentForm(ModelForm):
+class ArgumentForm(BasicForm):
     """The argument to a function"""
 
     argtype = forms.ChoiceField(choices=SEARCH_ARGTYPE, required=True)
@@ -371,7 +373,7 @@ class ArgumentForm(ModelForm):
         self.fields['rconst'].queryset=Relation.get_subset('const')
 
 
-class ConditionForm(ModelForm):
+class ConditionForm(BasicForm):
     """The argument to a function"""
 
     file_source = forms.FileField(label="Specify which file should be loaded")
@@ -416,7 +418,7 @@ class ConditionForm(ModelForm):
         self.url_new = reverse(self.targetid)
 
 
-class FeatureForm(ModelForm):
+class FeatureForm(BasicForm):
     """The argument to a function"""
 
     file_source = forms.FileField(label="Specify which file should be loaded")
@@ -473,7 +475,7 @@ class FeatureForm(ModelForm):
         return sName
 
 
-class SeekerResearchForm(ModelForm):
+class SeekerResearchForm(BasicForm):
     # A research form should also have the Word/Constituent choice
     targetType = forms.ChoiceField(choices=TARGET_TYPE_CHOICES, required=True)
 
@@ -494,20 +496,10 @@ class SeekerResearchForm(ModelForm):
         # Do default is valid
         valid = super(SeekerResearchForm, self).is_valid()
 
-        # If it's False, return
-        if not valid: return valid
-
-        # Otherwise: try myself.
-        cd = self.cleaned_data
-        name = cd['name']
-        purpose = cd['purpose']
-        if "<script" in name or "<script" in purpose:
-            valid = False
-        
         return valid
 
 
-class SeekerResGroupForm(ModelForm):
+class SeekerResGroupForm(BasicForm):
     class Meta:
         model = ResGroup
         fields = ['name', 'description', 'parent']
@@ -516,7 +508,7 @@ class SeekerResGroupForm(ModelForm):
           }
 
 
-class SharegForm(ModelForm):
+class SharegForm(BasicForm):
     # A research form should also have the Word/Constituent choice
     permission = forms.ChoiceField(choices=SEARCH_PERMISSION, required=True)
 
@@ -529,7 +521,7 @@ class SharegForm(ModelForm):
         init_choices(self, 'permission', SEARCH_PERMISSION, bUseAbbr=True)
 
 
-class QuantorSearchForm(ModelForm):
+class QuantorSearchForm(BasicForm):
 
     # Additional fields
     textname = forms.CharField(label=_("Text name"))
@@ -563,7 +555,7 @@ class SimpleSearchForm(forms.Form):
     searchfval = forms.CharField(label=_("Feature value(s)"), required = False)
 
 
-class SimpleListForm(ModelForm):
+class SimpleListForm(BasicForm):
     """Form used for displaying and searching through simple searches"""
 
     ownlist = ModelMultipleChoiceField(queryset=None, required=False, 

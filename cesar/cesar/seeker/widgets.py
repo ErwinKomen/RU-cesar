@@ -2,7 +2,7 @@ from django.forms.widgets import Textarea
 from django.utils.safestring import mark_safe
 import os
 
-class SeekerTextarea(Textarea):
+class OriginalSeekerTextarea(Textarea):
     def render(self, name, value, attrs = None, renderer = None):
       output = []
       # Check for none-type
@@ -25,3 +25,5 @@ class SeekerTextarea(Textarea):
       # Combine and return
       return mark_safe('\n'.join(output))
 
+class SeekerTextarea(Textarea):
+    pass

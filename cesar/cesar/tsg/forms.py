@@ -10,9 +10,10 @@ from django.utils.translation import ugettext_lazy as _
 
 # Application specific
 from cesar.tsg.models import *
+from cesar.basic.forms import BasicForm
 from cesar.browser.models import build_choice_list, get_help
 
-class TsgHandleForm(ModelForm):
+class TsgHandleForm(BasicForm):
     class Meta:
         model = TsgHandle
         fields = ['url', 'notes']

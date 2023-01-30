@@ -2161,6 +2161,7 @@ var ru = (function ($, ru) {
           // Make sure all <input> elements in a <form> are treated uniformly
           $("form:not(.noblurring) input[type='text']").each(function () {
             var $this = $(this),
+                has_js = false,
                 $span = $this.prev("span");
             // Create span if not existing
             if ($span === undefined || $span === null || $span.length === 0) {
@@ -2168,36 +2169,48 @@ var ru = (function ($, ru) {
               // Still need to go to the correct function
               $span = $this.prev("span");
             }
+
             // Set the value of the span
-            $span.html($this.val());
-            // Now specify the action on clicking the span
-            $span.on("click", function () {
-              var $this = $(this);
-              $this.hide().siblings("input").show().focus().select();
-            });
-            // Specify what to do on blurring the input
-            $this.on("blur", function () {
-              var $this = $(this);
-              if ($this.val().trim() !== "") {
-                // Show the value of the input in the span
-                $this.hide().siblings("span").text($this.val()).show();
-              }
-            }).on("keydown", function (e) {
-              // SPecify what to do if the tab is pressed
-              if (e.which === 9) {
-                e.preventDefault();
-                if (e.shiftKey) {
-                  // Need to go backwards
-                  $(this).blur().closest("tr").prev("tr").find("input[type='text']").not(".hidden").first().prev("span").click();
-                } else {
-                  // Move forwards
-                  $(this).blur().closest("tr").next("tr").find("input[type='text']").not(".hidden").first().prev("span").click();
+            if ($this.html().indexOf("<script") < 0 && $this.val().indexOf("<script") < 0) {
+              $span.html($this.val());
+            } else {
+              $span.html("Remove_your_JS");
+              has_js = true;
+              $this.addClass("noblurring");
+            }
+
+            if (!has_js) {
+              // Now specify the action on clicking the span
+              $span.on("click", function () {
+                var $this = $(this);
+                $this.hide().siblings("input").show().focus().select();
+              });
+              // Specify what to do on blurring the input
+              $this.on("blur", function () {
+                var $this = $(this);
+                if ($this.val().trim() !== "" && $this.val().indexOf("<script") < 0) {
+                  // Show the value of the input in the span
+                  $this.hide().siblings("span").text($this.val()).show();
                 }
+              })
+              // Specify what to do on clicking in it
+              $this.on("keydown", function (e) {
+                // SPecify what to do if the tab is pressed
+                if (e.which === 9) {
+                  e.preventDefault();
+                  if (e.shiftKey) {
+                    // Need to go backwards
+                    $(this).blur().closest("tr").prev("tr").find("input[type='text']").not(".hidden").first().prev("span").click();
+                  } else {
+                    // Move forwards
+                    $(this).blur().closest("tr").next("tr").find("input[type='text']").not(".hidden").first().prev("span").click();
+                  }
+                }
+              });
+              // Make sure the <input> is hidden, unless it is empty
+              if ($this.val().trim() !== "" && $this.html().trim() !== "") {
+                $this.hide();
               }
-            });
-            // Make sure the <input> is hidden, unless it is empty
-            if ($this.val().trim() !== "") {
-              $this.hide();
             }
           });
 

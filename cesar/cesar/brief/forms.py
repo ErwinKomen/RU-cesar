@@ -8,11 +8,12 @@ from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
 
 # Application specific
+from cesar.basic.forms import BasicForm
 from cesar.brief.models import *
 
 YES_NO_CHOICE = [('','(make a choice)'), ('yes', 'Yes'), ('no', 'No')]
 
-class ProjectForm(ModelForm):
+class ProjectForm(BasicForm):
 
     class Meta:
         model = Project
@@ -36,7 +37,7 @@ class ProjectForm(ModelForm):
         self.fields['ptype'].choices = build_abbr_list(PROJECT_PROGRESS)
 
 
-class QuestionsForm(ModelForm):
+class QuestionsForm(BasicForm):
 
     class Meta:
         model = Project
@@ -83,7 +84,7 @@ class QuestionsForm(ModelForm):
                 self.fields[field_name].initial = answer
             
             
-class AnswerEntryForm(ModelForm):
+class AnswerEntryForm(BasicForm):
     """The answer to one entry"""
 
     class Meta:
@@ -103,7 +104,7 @@ class AnswerEntryForm(ModelForm):
             instance = kwargs['instance']
 
 
-class ProductForm(ModelForm):
+class ProductForm(BasicForm):
     """One Scripture product"""
     new_name = forms.CharField(label=_("Name"), required=False, widget=forms.TextInput(attrs={'style': 'width: 100%;', 
                 'placeholder':'The name of this product...'}))

@@ -7,9 +7,10 @@ from django.forms import ModelForm, formset_factory, modelformset_factory, BaseF
 from django.forms.widgets import Textarea
 
 # Application specific
+from cesar.basic.forms import BasicForm
 from cesar.lingo.models import *
 
-class ExperimentForm(ModelForm):
+class ExperimentForm(BasicForm):
     meta_fields = ['ptcpid', 'age', 'gender', 'engfirst', 'lngfirst', 'lngother', 'eduother', 'edu', 'teaches', 'email']
     meta_initial = [
         "Wat is uw participant ID?",
@@ -72,7 +73,7 @@ class ExperimentForm(ModelForm):
                 self.fields[fld_text].initial = self.meta_initial[idx]
 
 
-class ParticipantForm(ModelForm):
+class ParticipantForm(BasicForm):
 
     class Meta:
         model = Participant
