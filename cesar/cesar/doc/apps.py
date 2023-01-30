@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class docConfig(AppConfig):
-    name = 'doc'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'cesar.doc'

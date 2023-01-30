@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class lingoConfig(AppConfig):
-    name = 'lingo'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'cesar.lingo'

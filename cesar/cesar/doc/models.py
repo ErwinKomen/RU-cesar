@@ -46,13 +46,6 @@ MAXPARAMLEN = 100
 MAXPATH = 256
 FROGPORT = 8020
 
-#def get_crpp_date(dtThis):
-#    """Convert datetime to string"""
-
-#    # Model: yyyy-MM-dd'T'HH:mm:ss
-#    sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
-#    return sDate
-
 def get_crpp_date(dtThis, readable=False):
     """Convert datetime to string"""
 
@@ -86,6 +79,8 @@ class Expression(models.Model):
     full = models.TextField("Multi-word expression")
     # [0-1] The lemma parts of the expression in a stringified JSON
     lemmas = models.TextField("The lemma parts", blank=True, null=True)
+    # [0-1] The lemma's as determined via FROG
+    frogged = models.TextField("Lemma parts by FROG", blank=True, null=True)
     # [1] Concreteness score
     score = models.CharField("Concreteness score", default="0.0", max_length=MAXPARAMLEN)
 
@@ -99,7 +94,14 @@ class Expression(models.Model):
             sFull = json.dumps( dict(score=self.score,lemmas= re.split("\s+", self.full)))
             oErr.Status("Expression: {}".format(sFull))
             if self.lemmas != sFull:
-                self.lemmas = sFull
+                # Check if there is a [frogged] value
+                if self.frogged is None:
+                    self.lemmas = sFull
+                else:
+                    # The frogged value and the lemmas should coincide
+                    sFull = json.dumps( dict(score=self.score,lemmas= json.loads(self.frogged)))
+                    if self.lemmas != sFull:
+                        self.lemmas = sFull
             # Perform the actual saving
             response = super(Expression, self).save(force_insert, force_update, using, update_fields)
         except:
@@ -131,12 +133,13 @@ class Expression(models.Model):
         oErr = ErrHandle()
         lBack = []
         try:
-            lAll = Expression.objects.all().values('score', 'lemmas')
+            lAll = Expression.objects.all().values('score', 'lemmas', 'full')
             for oItem in lAll:
                 score = oItem['score']
                 oFull = json.loads(oItem['lemmas'])
                 lemmas = oFull['lemmas']
-                lBack.append(dict(score=score, lemmas=lemmas))
+                full = oItem['full']
+                lBack.append(dict(score=score, lemmas=lemmas, full=full))
         except:
             msg = oErr.get_error_message()
             oErr.DoError("doc/Expression/get_mwe_list")
@@ -269,7 +272,7 @@ class FrogLink(models.Model):
                 fd = FoliaDocs(owner=owner)
                 fd.save()
 
-            obj = FrogLink.objects.filter(name=name).first()
+            obj = FrogLink.objects.filter(name=name, fdocs=fd).first()
             if obj == None:
                 # Create it
                 obj = FrogLink(name=name, fdocs=fd)
@@ -283,6 +286,61 @@ class FrogLink(models.Model):
     def get_created(self):
         sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
         return sBack
+
+    def get_lemmas(username, sText):
+        """Use frog to get a list of lemma-lines"""
+
+        bBack = False
+        lst_line = []
+        sName = "_froglink_lemmas.txt"
+        sDir = os.path.abspath(os.path.join(WRITABLE_DIR, "../folia"))
+        sFile = os.path.abspath(os.path.join(WRITABLE_DIR, "../folia", sName ))
+        oErr = ErrHandle()
+        arErr = []
+        try:
+            # Check the directory
+            if not os.path.exists(sDir):
+                os.mkdir(sDir)
+            
+            # Get the right Froglink
+            fl, msg = FrogLink.create(sName, username)
+
+            if not fl is None:
+                # Put the text into a file
+                with open(sFile, "w", encoding="utf-8") as f:
+                    f.write(sText)
+
+                lines = sText.split("\n")
+
+                # Convert the text to Folia XML
+                oFolia = fl.read_doc(username, lines, sFile, None, None, arErr)
+
+                if not oFolia is None and oFolia.get("status", "") == "ok":
+                    # Read the file into a doc
+                    doc = folia.Document(file=fl.fullname)
+                    # Read through paragraphs
+                    for para in doc.paragraphs():
+                        # Read sentences
+                        for sent in para.sentences():
+                            lst_linelemma = []
+                            # Read the words in a sentence
+                            for oWord in sent.words():
+                                # word = oWord['word']
+                                word_text = str(oWord)
+                                # Get to the POS and the lemma of this word
+                                pos = oWord.annotation(folia.PosAnnotation)
+                                postag = pos.cls.split("(")[0]
+                                lemma = oWord.annotation(folia.LemmaAnnotation)                     
+                                lemmatag = lemma.cls
+                                # Add to line
+                                lst_linelemma.append(lemmatag)
+                            lst_line.append(lst_linelemma)
+                    bBack = True
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Froglink/get_lemmas")
+
+        return bBack, lst_line
 
     def get_name(self):
         """Either get the defined name or a unique name"""
@@ -515,14 +573,14 @@ class FrogLink(models.Model):
         str_parts = ""
         oErr = ErrHandle()
         method = "hidde"        # Alternatives: 'erwin', 'alpino', 'simple', 'hidde'
-        mwe_method = "full"     # Alternatives: 'lemmas'
+        mwe_method = "anyorder" # Alternatives: 'lemmas', 'full', 'anyorder'
 
 
         # Make sure we have a list of MWEs available for process_mwe()
         lst_mwe = None
         if mwe_method == "full":
            lst_mwe = Expression.get_fullmwe_list()
-        elif mwe_method == "lemmas":
+        elif mwe_method in ["lemmas", "anyorder"]:
            lst_mwe = Expression.get_mwe_list()
 
         re_diminuative = re.compile(r'.*(m|n|l|ng|p|b|t|d|k|f|v|s|z|ch|g)je(s)?$')
@@ -595,6 +653,29 @@ class FrogLink(models.Model):
                 oErr.DoError("strip_diminuative")
             return sBack
 
+        def is_anyorder(sublemmas, lst, skiplist):
+            lFound = []
+            bResult = False
+            oErr = ErrHandle()
+            try:
+                sub = copy.copy(sublemmas)
+                ln = len(sub)
+                for idx, word in enumerate(lst):
+                    if not idx in skiplist and word in sub:
+                        lFound.append(idx)
+                        sub.remove(word)
+                if len(lFound) == ln:
+                    bResult = True
+                else:
+                    bResult = False
+                    lFound = []
+            except:
+                msg = oErr.get_error_message()
+                oErr.DoError("is_anyorder")
+                lFound = []
+                bResult = False
+            return bResult, lFound
+
         def is_sub(sub, lst):
             ln = len(sub)
             for i in range(len(lst) - ln + 1):
@@ -622,7 +703,6 @@ class FrogLink(models.Model):
                     # Look at the full MWE expressions
                     idx_full = 0
                     while idx_full < len(lst_word):
-                        # for idx_full in range(len(lst_word)):
                         # Check if there is a fit for an MWE starting at this point
                         oResult = Expression.get_fullmwe_fit(lst_word[idx_full:])
                         if oResult['status'] == "ok":
@@ -671,6 +751,41 @@ class FrogLink(models.Model):
                             lst_back.append(lst_sent[idx])
                             # Continue with next one
                             idx += 1
+                elif mwe_method == "anyorder":
+                    # Look at a list of lemma's
+
+                    # Create this list of lemma's
+                    lst_lemma = []
+                    for word in lst_sent:
+                        lemma = word.annotation(folia.LemmaAnnotation)
+                        lst_lemma.append(lemma.cls)
+                    # Check all available MWEs
+                    oFound = {}
+                    lst_skip = []
+                    for mwe in lst_mwe:
+                        lemmas = mwe['lemmas']
+                        score = mwe['score']
+                        full = mwe['full']
+                        # Beware of empty lemma lists!!
+                        if len(lemmas) > 0:
+                            bFound, lst_index = is_anyorder(lemmas, lst_lemma, lst_skip)
+                            if bFound:
+                                # This MWE is found inside our sentence [lst_lemma]
+                                mwe['size'] = len(lemmas)
+                                mwe['idx'] = lst_index[0]
+                                lst_found_mwe.append(mwe)
+                                for idx in lst_index:
+                                    lst_skip.append(idx)
+
+                    idx = 0
+                    count = len(lst_sent)
+                    while idx < count:
+                        if not idx in lst_skip:
+                            # Return the Folia Word object
+                            oBack = dict(idx=idx, word=copy.copy(lst_sent[idx]))
+                            lst_back.append(oBack)
+                        # Continue with next one
+                        idx += 1
             except:
                 msg = oErr.get_error_message()
                 oErr.DoError("process_mwe")
@@ -864,8 +979,9 @@ class FrogLink(models.Model):
                             oScore['concr'] = str(score)
                             oScore['idx'] = oMWE['idx']
                             word_id += oMWE['size']
-                        elif mwe_method == "lemmas":
-                            sText = " ".join(oMWE['lemmas'])
+                        elif mwe_method in [ "lemmas", "anyorder"]:
+                            # sText = " ".join(oMWE['lemmas'])
+                            sText = oMWE['full']
                             score = oMWE['score']
                             oScore['word'] = sText
                             oScore['word_id'] = word_id
@@ -873,6 +989,7 @@ class FrogLink(models.Model):
                             oScore['pos_full'] = "MWE"
                             oScore['lemma'] = sText
                             oScore['concr'] = str(score)
+                            oScore['idx'] = oMWE['idx']
                             word_id += 1
                         # Add it in all lists
                         word_scores.append(oScore)
@@ -1092,7 +1209,10 @@ class FoliaProcessor():
             lines = []
             bFirst = True
             for line in data_contents:
-                sLine = line.decode("utf-8").strip()
+                if isinstance(line, str):
+                    sLine = line.strip()
+                else:
+                    sLine = line.decode("utf-8").strip()
                 if bFirst:
                     sLine = sLine.replace(u'\ufeff', '')
                     bFirst = False

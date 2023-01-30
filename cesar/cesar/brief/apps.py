@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class briefConfig(AppConfig):
-    name = 'brief'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'cesar.brief'

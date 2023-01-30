@@ -31,6 +31,7 @@ from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLin
     LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm
+from cesar.doc.adaptations import listview_adaptations
 from cesar.utils import ErrHandle
 
 # Global debugging 
@@ -93,17 +94,24 @@ def concrete_main(request):
 
     # Get a list of already uploaded files too
     text_list = []
-    for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created'):
-        if item.concr == None or item.concr == "":
-            obj = dict(id=item.id, show=False)
+    for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created').values(
+        'id', 'created', 'concr'):
+
+        sConcr = item.get('concr')
+        id = item.get('id')
+        if sConcr is None:
+            obj = dict(id=id, show=False)
             text_list.append(obj)
         else:
-            obj = json.loads(item.concr)
-            obj['id'] = item.id
+            sCreated = item.get("created")
+            if not sCreated is None:
+                sCreated = sCreated.strftime("%d/%B/%Y (%H:%M)")
+            obj = json.loads(sConcr)
+            obj['id'] = id
             obj['show'] = True
-            obj['created'] = item.get_created()
-            # obj['download'] = reverse('concrete_download', kwargs={'pk': item.id})
+            obj['created'] = sCreated
             text_list.append(obj)
+
     context = {'title': 'Tablet process',
                'frmUpload': frmUpload,
                'frmBrysb': frmBrysb,
@@ -1075,6 +1083,14 @@ class ExpressionList(BasicList):
          "url": "import_mwex", 
          "msg": "Upload MWE Excel file", 
          "type": "single"}]
+
+    def initializations(self):
+        # ======== One-time adaptations ==============
+        kwargs = {'username': self.request.user.username}
+        # username = self.request.user.username
+        listview_adaptations("doc_list", **kwargs)
+
+        return None
 
     def add_to_context(self, context, initial):
         # Only moderators are to be allowed

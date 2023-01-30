@@ -76,51 +76,7 @@
           <div id="docs-import_error"></div>
         </form>
 
-        {% if superuser %}
-          <form action="{% url 'import_twitter' %}" method="POST" enctype="multipart/form-data" class="noblurring">
-            {% csrf_token %}
-            <div class="row">
-              <div class="col-md-12">
-                <table style="width: 100%;">
-                  <tbody>
-                    <tr>
-                      <td>File to be processed (Twitter):</td>
-                      <td>
-                        <span class="input-group-btn">
-                          <span class="btn btn-default btn-xs btn-file">Browse...{{frmTwitter.file_source}}</span>
-                          <!-- The file that have been selected-->
-                          <span></span>
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan="2">
-                        <div id="twitter-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
-                        <progress class="hidden" style="width:100%;" id="twitter-import_progress" value="0" min="0" max="100"></progress>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan="2" align="right">
-                        <a class="btn btn-sm jumbo-1"
-                           targetid="twitter_data_import"
-                           targeturl="{% url 'import_twitter' %}"
-                           syncurl="{% url 'sync_progress' %}?synctype=twitter" 
-                           onclick="ru.cesar.seeker.import_post(this);"
-                           >Start</a>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
-
-            <!-- Progress -->
-            <div class="save-warning"></div>
-            <!-- Any error reporting -->
-            <div id="twitter-import_error"></div>
-          </form>
-        {% endif %}
 
       </div>
     </div>
