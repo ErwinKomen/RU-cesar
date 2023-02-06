@@ -1570,7 +1570,8 @@ class BasicDetails(DetailView):
                 bResult, msg = self.before_save(form=frm, instance=obj)
                 if bResult:
                     # Now save it for real
-                    obj.save()
+                    kwargs={'username': self.request.user.username}
+                    obj.save(**kwargs)
                     # Log the SAVE action
                     details = {'id': obj.id}
                     details["savetype"] = "new" if bNew else "change"

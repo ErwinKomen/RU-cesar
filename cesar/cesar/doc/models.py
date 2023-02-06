@@ -87,16 +87,24 @@ class Expression(models.Model):
     def __str__(self):
         return self.full
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None, *args, **kwargs):
         oErr = ErrHandle()
         try:
+            username = kwargs.get("username")
             # Check if 'lemmas' is okay with 'full'
             sFull = json.dumps( dict(score=self.score,lemmas= re.split("\s+", self.full)))
             oErr.Status("Expression: {}".format(sFull))
             if self.lemmas != sFull:
                 # Check if there is a [frogged] value
                 if self.frogged is None:
+                    # Initial - not the final code
                     self.lemmas = sFull
+
+                    # We should do better, per issue #184
+                    bFound, lst_lemmas = FrogLink.get_lemmas(username, self.full)
+                    if bFound:
+                        if not lst_lemmas is None and len(lst_lemmas) > 0:
+                            obj.frogged = json.dumps(lst_line)
                 else:
                     # The frogged value and the lemmas should coincide
                     sFull = json.dumps( dict(score=self.score,lemmas= json.loads(self.frogged)))
