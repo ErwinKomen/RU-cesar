@@ -1164,6 +1164,12 @@ class ConvertPsdxHtree(ConvertBasic):
     tag_endnode = "eLeaf"
 
 
+class ConvertPsdHtree(ConvertBasic):
+    """Convert from bracketed labelling format"""
+
+    pass
+
+
 class ConvertHtreeSurface(ConvertBasic):
     src_ext = ".json"
     dst_ext = ".json"
