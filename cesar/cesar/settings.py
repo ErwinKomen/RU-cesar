@@ -105,6 +105,7 @@ INSTALLED_APPS = [
 # MIDDLEWARE_CLASSES = [
 MIDDLEWARE = [
     # Doesn't work on the server: 'corsheaders.middleware.CorsMiddleware',
+    'cesar.utils.BlockedIpMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

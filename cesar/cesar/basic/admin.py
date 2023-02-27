@@ -14,6 +14,17 @@ class InformationAdmin(admin.ModelAdmin):
     fields = ['name', 'kvalue']
 
 
+class AddressAdmin(admin.ModelAdmin):
+    """IP addresses"""
+
+    list_display = ['ip', 'reason', 'created']
+    fields = ['ip', 'reason', 'path', 'body']
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'class': 'mytextarea'})},
+        }
+
+
 # Models that serve others
 admin.site.register(Information, InformationAdmin)
+admin.site.register(Address, AddressAdmin)
 
