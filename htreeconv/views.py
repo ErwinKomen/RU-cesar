@@ -2,9 +2,9 @@
 import os, sys
 import csv, json
 import jinja2
+import re
 # XML processing
-from xml.dom import minidom
-# import xml.etree.ElementTree as ET
+# from xml.dom import minidom
 from lxml import etree as ET
 
 # Application specific
@@ -41,7 +41,7 @@ def get_book_abbr(file):
             sName = sName.replace(".json", "").lower()
             if sName in book_ot:
                 abbr = book_ot[sName]
-        else:
+        elif re.match(r'^\d+$', arName[0]):
             # THis is the NT
             bkno = int(arName[0])-1
             abbr = book[bkno]
@@ -168,6 +168,65 @@ class XmlProcessor():
             ndx_this.set(k, v)
 
 
+class PsdProcessor():
+    """Basic PSD operations"""
+
+    psddocument = None
+    trees = None
+
+    def loadfile(self, sFile, encoding=None):
+        """Load a file into memory"""
+
+        sData = ""
+        lData = []
+        try:
+            # Load the UTF8 file into memory - AS STRING
+            if encoding is None:
+                with open(sFile, "r") as fp:
+                    sData = fp.read()
+            else:
+                with open(sFile, "r", encoding=encoding) as fp:
+                    sData = fp.read()
+
+            # Transform the large String into a list of sentences
+            if "\r\n" in sData or "\n\r" in sData:
+                sData = sData.replace("\r", "")
+            elif "\r" in sData:
+                sData = sData.replace("\r", "\n")
+            lLine = sData.split("\n")
+
+            # Read through all lines
+            lOnePsd = []
+            bHavePsd = False
+            lPsds = []
+            intBracket = 0
+            for sLine in lLine:
+                # Check for empty line
+                sLine = sLine.strip()
+                if sLine != "":
+                    # Add this line to the one psd
+                    lOnePsd.append(sLine)
+                    # Process this line
+                    intBracket += len(re.findall(r'\(', sLine)) - len(re.findall(r'\)', sLine))
+                    # Check if we must output it
+                    if intBracket == 0:
+                        # We must output what we have
+                        sOnePsd = " ".join(lOnePsd)
+
+                        # Add this to the list of PSD elements
+                        lPsds.append(sOnePsd)
+
+                        # Reset the OnePsd list
+                        lOnePsd = []
+
+            # Make sure that the trees end up at the right place
+            self.trees = lPsds
+            return self.trees
+        except:
+            errHandle.DoError("PsdProcessor/loadfile")
+            return None
+
+
 class ConvertBasic():
     src_ext = ""
     dst_ext = ""
@@ -183,6 +242,7 @@ class ConvertBasic():
     dst_template = None
     cmdi_template = "target_cmdi.xml"
     pdx = None
+    psd = None
     div = None
     par = None
     sent = None
@@ -276,7 +336,7 @@ class ConvertBasic():
             errHandle.DoError("views/do_htree_xml")
             return None
 
-    def do_xml_htree(self, output_dir, force=False, sBook=None, debug=None):
+    def do_xml_htree(self, output_dir, force=False, sBook=None, psd=False, debug=None):
         """Convert files from XML source to Htree destination"""
 
         try:
@@ -298,11 +358,6 @@ class ConvertBasic():
                         # Show where we are
                         errHandle.Status("Working on file {}".format(file))
 
-                        # Load the XML file into memory
-                        self.pdx = XmlProcessor()
-                        xmldoc = self.pdx.loadfile(file)
-                        ndSent = self.pdx.select_nodes(xmldoc, "./descendant-or-self::{}".format(self.tag_sent))
-                    
                         # Get the text id
                         text_id = os.path.basename(file).replace(self.src_ext, "")
                         meta = None
@@ -311,15 +366,70 @@ class ConvertBasic():
                         self.id_word = 1
                         self.id_node = 1
 
-                        #oJsonFile = dict(name=text_id, meta=meta)
+                        # How we work depends on the [psd] boolean
+                        if psd:
+                            # Create an object
+                            self.psd = PsdProcessor()
+                            # Load the file
+                            trees = self.psd.loadfile(file)
 
-                        # Create an XML from the information we have
-                        sXml = self.create_json(text_id, meta, ndSent)
+                            # Process trees into htree
+                            sXml = self.psd_load(trees)
+
+                            # Load this as XML into memory
+                            self.pdx = XmlProcessor()
+                            self.pdx.loadstring(sXml)
+                            xmldoc = self.pdx.xmldocument
+
+                            # Get all the <node> items with attribute endnode
+                            ndxEndList = self.pdx.select_nodes(xmldoc, "./descendant-or-self::node[@endnode]")
+                            for ndThis in ndxEndList:
+                                ndThis.tag = self.tag_endnode
+
+                            # Walk all the sentences
+                            for sentence in self.pdx.select_nodes(xmldoc, "./descendant-or-self::{}".format(self.tag_sent)):
+                                # Each sentence must have a root node
+                                rootnode = sentence[0]
+                                # The root node may have two children
+                                # count = len(rootnode.getchildren())
+                                count = len(rootnode)
+                                pos = rootnode.attrib.get('pos')
+                                if count > 1 and not pos is None and pos == "ROOT":
+                                    # There should be two children
+                                    firstchild = rootnode[0]
+                                    idchild = rootnode[1]
+                                    # Get the ID
+                                    idchildpos = idchild.attrib.get("pos")
+                                    if not idchildpos is None and idchildpos == "ID":
+                                        idtext = idchild.text
+                                        # Set the label of sentence
+                                        sentence.attrib['label'] = idtext
+                                        # Move the firstchild to sentence
+                                        sentence.append(firstchild)
+                                        sentence.remove(rootnode)
+
+                            ndSent = self.pdx.select_nodes(xmldoc, "./descendant-or-self::{}".format(self.tag_sent))
+
+                            # --------- DEBUGGING ------------
+                            # x = ET.tostring(xmldoc, pretty_print=True, encoding="utf-8").decode("utf-8")
+
+                            # Create a Htree STRING from the information we have
+                            sData = self.create_json(text_id, meta, ndSent)
+                        else:
+                            # This is an XML file that we are processing
+
+                            # Load the XML file into memory
+                            self.pdx = XmlProcessor()
+                            xmldoc = self.pdx.loadfile(file)
+                            ndSent = self.pdx.select_nodes(xmldoc, "./descendant-or-self::{}".format(self.tag_sent))
+                    
+                            # Create an XML from the information we have
+                            sData = self.create_json(text_id, meta, ndSent)
 
                         # Write the object to the file
                         with open(outfile, "w", encoding="utf-8") as f:
                             errHandle.Status("Saving text {}".format(text_id))
-                            f.write(sXml)
+                            f.write(sData)
                     else:
                         errHandle.Status("Skipping file {}".format(outfile))
 
@@ -538,6 +648,73 @@ class ConvertBasic():
     def words_in_clause(self, clause):
         return 0
 
+    def psd_load(self, trees):
+        """Load a PSD and turn it into a Htree"""
+
+        oHtree = None
+        sXml = ""
+        lTree = []
+        oErr = util.ErrHandle()
+        xmlEscape = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}
+
+        mcLeftLabel = re.compile(r'\([^\s\(\)]+(\s|$)')
+        mcLeft = re.compile(r'\(')
+        mcRight = re.compile(r'\)')
+
+        try:
+            # Walk all the tree strings
+            for sTree in trees:
+                # (1) Replace by named xml
+                for k,v in xmlEscape.items():
+                    sTree = sTree.replace(k, v)
+
+                # (2) look for left brackets with a label
+                #     Label characters: \w, hyphen, underscore, plus, equal, dollar
+                lLabel = []
+                for hit in mcLeftLabel.finditer(sTree):
+                    first, last = hit.span()
+                    sFound = hit.group()
+                    lLabel.append(dict(first=first, last=last, tag=sFound[1:].strip()))
+                # Walk all found labels in reverse
+                for oLabel in reversed(lLabel):
+                    first = oLabel.get("first")
+                    last = oLabel.get("last")
+                    tag = oLabel.get("tag")
+
+                    # Action depends on whether the tag might contain ' or "
+                    if "'" in tag:
+                        tag = tag.replace("'", "&amp;")
+                    # Construct the correct item
+                    sEndnode = ""
+                    sLast = sTree[last:]
+                    if sLast[0:5] != "<node":
+                        sEndnode = ' endnode="true"'
+                    sTree = '{}<node pos="{}"{}>{}'.format(
+                        sTree[0:first], tag, sEndnode, sTree[last:])
+
+                # (3) Look for other left-brackets
+                sTree = sTree.replace("(", '<node pos="ROOT">')
+
+                # (4) Replace all right brackets
+                sTree = sTree.replace(")", "</node>")
+
+                # (5) Turn into properly formed XML
+                sTree = "<sent>\n{}\n</sent>".format(sTree)
+
+
+
+                # (5) Add the tree to the list
+                lTree.append(sTree)
+
+
+            # Combine
+            sXml = "<doc>\n{}\n</doc>".format("\n".join(lTree))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("psd_load")
+
+        return sXml
+
     def create_json(self, text_id, meta, ndList):
         """Create a HTREE json"""
 
@@ -612,7 +789,10 @@ class ConvertBasic():
 
         try:
             # Create a SentenceObj instance
-            label = "{} {}:{}".format(text_id, self.div, self.par)
+            if 'label' in ndSent.attrib:
+                label = ndSent.attrib.get("label")
+            else:
+                label = "{} {}:{}".format(text_id, self.div, self.par)
             txt = self.get_xml_sent_text(ndSent)
             oSentence = SentenceObj(label, self.sent, textid=text_id, txt=txt, div=self.div, divpar=self.par)
 
@@ -806,7 +986,9 @@ class ConvertHtreePsdx(ConvertBasic):
     def adapt_main_clause(self, obj):
         """Main clauses must be IP-MAT"""
 
-        obj['pos'] = "IP-MAT-" + obj['pos']
+        postag = obj.get("pos", "")
+        if not "ip" in postag.lower():
+            obj['pos'] = "IP-MAT-" + postag
         return True
 
     def words_in_clause(self, obj):
@@ -824,7 +1006,6 @@ class ConvertHtreePsdx(ConvertBasic):
 
         # Return the size of this list
         return len(words)
-
 
     def adapt_main_xml(self, ndx_this):
         """This is the equivalent of [eTreeSentence] in Cesax
@@ -1165,9 +1346,46 @@ class ConvertPsdxHtree(ConvertBasic):
 
 
 class ConvertPsdHtree(ConvertBasic):
-    """Convert from bracketed labelling format"""
+    """Convert from bracketed labelling format to the Hierarchical Tree"""
 
-    pass
+    src_ext = ".psd"
+    dst_ext = ".json"
+    tag_sent = "sent"
+    tag_node = "node"
+    tag_doc = "doc"
+    tag_endnode = "w"
+    dst_template = "target_htree.txt"
+
+    def get_xml_const_txt(self, ndConst):
+        """Return the txt of constituent [ndConst]"""
+
+        try:
+            lText = []
+            # ndWords = self.pdx.select_nodes(ndConst, "./self-or-descendant::w")
+            ndWords = self.pdx.select_selfordescendant(ndConst, "w")
+            for ndWord in ndWords:
+                sText = ndWord.text
+                if not sText is None and sText != "":
+                    lText.append(sText)
+            return " ".join(lText)
+        except:
+            errHandle.DoError("get_xml_const_txt")
+            return None
+
+    def get_xml_pos(self, ndConst):
+        """Return the part-of-speech tag of [ndConst]"""
+
+        postag = ""
+        if ndConst is not None:
+            postag = ndConst.get("pos")
+            if postag == None:
+                # See if the constituent has feature "role"
+                role = ndConst.get("role")
+                postag = "none" if role == None else role
+        return postag
+
+    def get_xml_sent_text(self, ndSent):
+        return self.get_xml_const_txt(ndSent)
 
 
 class ConvertHtreeSurface(ConvertBasic):

@@ -13,7 +13,7 @@ import util                 # This allows using ErrHandle
 from models import *        # This imports HierObj
 from views import ConvertHtreePsdx, ConvertHtreeFolia, ConvertHtreeLowfat,\
                   ConvertLowfatHtree, ConvertFoliaHtree, ConvertPsdxHtree,\
-                  ConvertHtreeSurface, ConvertSurfaceHtree
+                  ConvertHtreeSurface, ConvertSurfaceHtree, ConvertPsdHtree
 from hebviews import etcbc_2017_convert
                   
 
@@ -39,10 +39,11 @@ def main(prgName, argv):
     oConv = None    # Conversion object
     debug = None    # Debugging
     conv_type = [
+        {'type': 'lowfat-htree', 'src': '.xml', 'dst': '.json'},
+        {'type': 'psd-htree', 'src': '.psd', 'dst': '.json'},
         {'type': 'htree-psdx', 'src': '.json', 'dst': '.psdx'},
         {'type': 'htree-folia', 'src': '.json', 'dst': '.folia.xml'},
         {'type': 'htree-lowfat', 'src': '.json', 'dst': '.xml'},
-        {'type': 'lowfat-htree', 'src': '.xml', 'dst': '.json'},
         {'type': 'htree-surface', 'src': '.json', 'dst': '.json'}
         ]
 
@@ -142,6 +143,7 @@ def htree_convert(oArgs):
 
     oToHtree = {'lowfat': ConvertLowfatHtree, 
                 'folia': ConvertFoliaHtree,
+                'psd': ConvertPsdHtree,
                 'psdx': ConvertPsdxHtree}
     oFromHtree = {'lowfat': ConvertHtreeLowfat,
                   'folia': ConvertHtreeFolia,
@@ -159,25 +161,30 @@ def htree_convert(oArgs):
         if arConvType[0] == "surface":
             # Convert 'surfaced' Htree into 'plain' Htree (not taking word order in account)
             oConvert = ConvertSurfaceHtree(oArgs['input'])
-            oConvert.do_htree_htree(oArgs['output'], bForce, sBook, debug)
+            oConvert.do_htree_htree(oArgs['output'], bForce, sBook=sBook, debug=debug)
         elif arConvType[1] == "surface":
             # Convert un-ordered Htree into 'surfaced' Htree
             oConvert = ConvertHtreeSurface(oArgs['input'])
-            oConvert.do_htree_htree(oArgs['output'], bForce, sBook, debug)
+            oConvert.do_htree_htree(oArgs['output'], bForce, sBook=sBook, debug=debug)
         elif arConvType[0] == "htree":
             # Create XML from htree
             cls = oFromHtree[arConvType[1]]
             oConvert = cls(oArgs['input'])
-            oConvert.do_htree_xml(oArgs['output'], bForce, sBook, bCmdi, debug)
+            oConvert.do_htree_xml(oArgs['output'], bForce, sBook=sBook, cmdi=bCmdi, debug=debug)
         elif arConvType[1] == "htree":
             if arConvType[0] == "etcbc":
                 # Convert from Hebrew ETCBC2017 to Htree
                 response = etcbc_2017_convert(oArgs)
+            elif arConvType[0] == "psd":
+                # Convert from bracketed labelling to Htree
+                cls = oToHtree[arConvType[0]]
+                oConvert = cls(oArgs['input'])
+                oConvert.do_xml_htree(oArgs['output'], bForce, sBook=sBook, psd=True, debug=debug)
             else:
                 # Create htree from XML
                 cls = oToHtree[arConvType[0]]
                 oConvert = cls(oArgs['input'])
-                oConvert.do_xml_htree(oArgs['output'], bForce, sBook, debug)
+                oConvert.do_xml_htree(oArgs['output'], bForce, sBook=sBook, debug=debug)
         else:
             # Stage 1: convert to htree
             arHtreeFile = do_convert_to_htree(arSourceFile, arConvType[0], oConv['src'])
