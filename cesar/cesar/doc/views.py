@@ -1043,12 +1043,47 @@ class ExpressionEdit(BasicDetails):
                 {'type': 'plain', 'label': "Expression:", 'value': instance.full,   'field_key': "full"},
                 {'type': 'plain', 'label': "Score:",      'value': instance.score,  'field_key': "score"},
                 {'type': 'plain', 'label': "Lemma's:",    'value': instance.get_lemmas()                },
+                {'type': 'plain', 'label': "Frogged:",    'value': instance.get_frogged()               },
                 ]       
             # Adapt the app editor status
             context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
             context['is_tablet_editor'] = context['is_app_editor']
         # Return the context we have made
         return context
+
+    def before_save(self, form, instance):
+        """Before a new or changed expression is saved, its [frogged] attribute may need to be re-calculated"""
+
+        bResult = True
+        msg = ""
+        bRecalculate = False
+        oErr = ErrHandle()
+        try:
+            # Is this a new expression?
+            if instance is None:
+                pass
+            elif instance.id is None:
+                if not instance.full is None and len(instance.full) > 0:
+                    bRecalculate = True
+            else:
+                # Get the previous instance
+                previous = Expression.objects.filter(id=instance.id).first()
+                # Check if the previous list differs
+                if previous.full != instance.full:
+                    bRecalculate = True
+
+            # Do we need to recalculate?
+            if bRecalculate:
+                # Get a possible new frogged line
+                sFrogged = instance.make_frogged(self.request.user.username, instance.full)
+                if sFrogged != "":
+                    # It will get saved with the form
+                    form.instance.frogged = sFrogged
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ExpressionEdit/before_save")
+        return bResult, msg
     
 
 class ExpressionDetails(ExpressionEdit):

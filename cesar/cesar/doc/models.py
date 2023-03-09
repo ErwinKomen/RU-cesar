@@ -94,22 +94,11 @@ class Expression(models.Model):
             # Check if 'lemmas' is okay with 'full'
             sFull = json.dumps( dict(score=self.score,lemmas= re.split("\s+", self.full)))
             oErr.Status("Expression: {}".format(sFull))
-            if self.lemmas != sFull:
-                # Check if there is a [frogged] value
-                if self.frogged is None:
-                    # Initial - not the final code
+            if self.lemmas != sFull and self.frogged != None and self.frogged != "":
+                # The frogged value and the lemmas should coincide
+                sFull = json.dumps( dict(score=self.score,lemmas= json.loads(self.frogged)))
+                if self.lemmas != sFull:
                     self.lemmas = sFull
-
-                    # We should do better, per issue #184
-                    bFound, lst_lemmas = FrogLink.get_lemmas(username, self.full)
-                    if bFound:
-                        if not lst_lemmas is None and len(lst_lemmas) > 0:
-                            obj.frogged = json.dumps(lst_line)
-                else:
-                    # The frogged value and the lemmas should coincide
-                    sFull = json.dumps( dict(score=self.score,lemmas= json.loads(self.frogged)))
-                    if self.lemmas != sFull:
-                        self.lemmas = sFull
             # Perform the actual saving
             response = super(Expression, self).save(force_insert, force_update, using, update_fields)
         except:
@@ -117,6 +106,42 @@ class Expression(models.Model):
             oErr.DoError("Expression/save")
         # Return the appropriate response
         return response
+
+    def make_frogged(self, username, sFull):
+        """Compare the existing .full with the new sFull, and adapt .frogged if needed"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            if not sFull is None and sFull != "":
+                # Frogging is needed
+                bFound, lst_lemmas = FrogLink.get_lemmas(username, self.full)
+                if bFound:
+                    if not lst_lemmas is None and len(lst_lemmas) > 0:
+                        lst_line = lst_lemmas[0]
+                        if not lst_line is None and len(lst_line) > 0:
+                            sBack = json.dumps(lst_line)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Expression/check_frogged")
+
+        return sBack
+
+    def get_frogged(self):
+        """Show the frogged lemma's of this MWE"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            if not self.frogged is None:
+                lst_frogged = json.loads(self.frogged)
+                if not lst_frogged is None:
+                    sBack = ", ".join(lst_frogged)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Expression/get_frogged")
+
+        return sBack
 
     def get_lemmas(self):
         """Show the lemma's of this MWE"""
@@ -662,6 +687,8 @@ class FrogLink(models.Model):
             return sBack
 
         def is_anyorder(sublemmas, lst, skiplist):
+            """are the lemma's specified in a MWE available in the sentencein *ANY* order?"""
+
             lFound = []
             bResult = False
             oErr = ErrHandle()
@@ -761,6 +788,7 @@ class FrogLink(models.Model):
                             idx += 1
                 elif mwe_method == "anyorder":
                     # Look at a list of lemma's
+                    # Goal: are the lemma's specified in a MWE available in the sentencein *ANY* order?
 
                     # Create this list of lemma's
                     lst_lemma = []
@@ -776,18 +804,23 @@ class FrogLink(models.Model):
                         full = mwe['full']
                         # Beware of empty lemma lists!!
                         if len(lemmas) > 0:
+                            # Find a list of indexes of the words in [lemmas] belonging to the MWE
                             bFound, lst_index = is_anyorder(lemmas, lst_lemma, lst_skip)
                             if bFound:
                                 # This MWE is found inside our sentence [lst_lemma]
                                 mwe['size'] = len(lemmas)
                                 mwe['idx'] = lst_index[0]
                                 lst_found_mwe.append(mwe)
+                                # The [lst_index] contains the indices of the words in [lemmas] that are
+                                #    part of the MWE, and may therefore be skipped from further processing
                                 for idx in lst_index:
+                                    # The list [lst_skip] will contain the indices of the words that may be skipped
                                     lst_skip.append(idx)
 
                     idx = 0
                     count = len(lst_sent)
                     while idx < count:
+                        # Just make sure that we do not return words from the skippables [lst_skip]
                         if not idx in lst_skip:
                             # Return the Folia Word object
                             oBack = dict(idx=idx, word=copy.copy(lst_sent[idx]))

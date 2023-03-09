@@ -116,7 +116,7 @@ class ExpressionForm(forms.ModelForm):
         model = Expression
         fields = ['full', 'score']
         widgets = {
-            'full':     forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Use * as wildcard when searching'}),
+            'full':     forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Enter the expression as plain text'}),
             'score':    forms.TextInput(attrs={'style': 'width: 100%;'})
             }
 

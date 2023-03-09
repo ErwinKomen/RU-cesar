@@ -76,6 +76,7 @@ if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
 APPEND_SLASH = True
 
 ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl']
+BLOCKED_IPS = []
 
 # Application definition
 
