@@ -1566,37 +1566,53 @@ def import_mwex(request):
                         if extension == "xlsx":
                             # Read the excel
                             wb = openpyxl.load_workbook(data_file)
-                            # We expect the data to be in the first worksheet
-                            ws = wb.worksheets[0]
-                            # Expectations: first  column is *WOORD*
-                            #               second column is *SCORE* (concreetheid)
-                            row_no = 2
-                            lAdded = []
-                            lSkipped = []
-                            while ws.cell(row=row_no, column=1).value != None:
-                                # Get the woord and the score
-                                woord = ws.cell(row=row_no, column=1).value
-                                score = ws.cell(row=row_no, column=2).value
-                                if isinstance(score,float):
-                                    # Turn it into a string with a period decimal separator
-                                    score = str(score).replace(",", ".")
-                                oItem = dict(woord=woord, score=score)
-                                # Check if these are already processed in the Epression table
-                                obj = Expression.objects.filter(full=woord, score=score).first()
-                                if obj is None:
-                                    # Add this expression
-                                    obj = Expression.objects.create(full=woord, score=score)
-                                    lAdded.append(oItem)
-                                else:
-                                    lSkipped.append(oItem)
-                                # Go to the next row
-                                row_no += 1
-                            # Add results
-                            oResult = {}
-                            oResult['added'] = lAdded
-                            oResult['skipped'] = lSkipped
-                            oResult['added_count'] = len(lAdded)
-                            oResult['skipped_count'] = len(lSkipped)
+                            ws = None
+                            sheetnames = wb.sheetnames
+                            # Check the number of worksheets
+                            if len(sheetnames) > 0:
+                                # walk through the worksheets and check their name
+                                for sname in sheetnames:
+                                    if "mwe" in sname.lower():
+                                        ws = wb[sname]
+                                        break
+                            else:
+                                # We expect the data to be in the first worksheet
+                                ws = wb.active
+                            # Did we find it?
+                            if not ws is None:
+                                # Expectations: first  column is *WOORD*
+                                #               second column is *SCORE* (concreetheid)
+                                row_no = 2
+                                lAdded = []
+                                lSkipped = []
+                                while ws.cell(row=row_no, column=1).value != None:
+                                    # Get the woord and the score
+                                    woord = ws.cell(row=row_no, column=1).value
+                                    score = ws.cell(row=row_no, column=2).value
+                                    if isinstance(score,float):
+                                        # Turn it into a string with a period decimal separator
+                                        score = str(score).replace(",", ".")
+                                    oItem = dict(woord=woord, score=score)
+                                    # Check if these are already processed in the Epression table
+                                    obj = Expression.objects.filter(full=woord).first()
+                                    if obj is None:
+                                        # Add this expression
+                                        obj = Expression.objects.create(full=woord, score=score)
+                                        lAdded.append(oItem)
+                                    else:
+                                        lSkipped.append(oItem)
+                                        # Double check the score value
+                                        if score != obj.score:
+                                            obj.score = score
+                                            obj.save()
+                                    # Go to the next row
+                                    row_no += 1
+                                # Add results
+                                oResult = {}
+                                oResult['added'] = lAdded
+                                oResult['skipped'] = lSkipped
+                                oResult['added_count'] = len(lAdded)
+                                oResult['skipped_count'] = len(lSkipped)
                             # Show where we are
                             statuscode = "completed"
                         else:
