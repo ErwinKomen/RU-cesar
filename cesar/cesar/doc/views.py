@@ -1223,16 +1223,25 @@ class WordlistEdit(BasicDetails):
 
     def add_to_context(self, context, instance):
         """Add to the existing context"""
-        # Only moderators are to be allowed
-        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
-            # Define the main items to show and edit
-            context['mainitems'] = [
-                {'type': 'plain', 'label': "Name:",         'value': instance.name,         'field_key': "name"},
-                {'type': 'plain', 'label': "Description:",  'value': instance.description,  'field_key': "description"},
-                ]       
-            # Adapt the app editor status
-            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
-            context['is_tablet_editor'] = context['is_app_editor']
+
+        oErr = ErrHandle()
+        try:
+            # Only tablet editors or superusers are to be allowed
+            if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+                # Define the main items to show and edit
+                context['mainitems'] = [
+                    {'type': 'plain', 'label': "Name:",         'value': instance.name,         'field_key': "name"},
+                    {'type': 'plain', 'label': "Description:",  'value': instance.description,  'field_key': "description"},
+                    {'type': 'plain', 'label': "Excel file:",   'value': instance.get_upload(), 'field_key': "upload"},
+                    {'type': 'plain', 'label': "Worksheet",     'value': instance.sheet,        'field_key': "sheet"},
+                    ]       
+                # Adapt the app editor status
+                context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+                context['is_tablet_editor'] = context['is_app_editor']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("WordlistEdit/add_to_context")
+
         # Return the context we have made
         return context
     

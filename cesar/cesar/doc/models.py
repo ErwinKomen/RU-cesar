@@ -1,3 +1,10 @@
+# Django imports
+from django.db import models
+from django.utils import timezone
+from django.contrib.auth.models import User
+from django.db import models, transaction
+
+# Non-django imports
 import os
 import sys
 import time
@@ -6,15 +13,7 @@ import re
 import copy
 import pytz
 from io import StringIO 
-from django.db import models
-from django.utils import timezone
-from django.contrib.auth.models import User
-from django.db import models, transaction
-
-from cesar.utils import ErrHandle
-from cesar.seeker.models import import_data_file
-from cesar.settings import WRITABLE_DIR, TIME_ZONE
-from cesar.tsg.models import TsgInfo
+import openpyxl
 
 # XML processing
 from xml.dom import minidom
@@ -25,6 +24,13 @@ from pynlpl.textprocessors import tokenize      # , split_sentences
 
 # New folia: FOliaPy
 import folia.main as folia
+
+# ================== OWN procedures ==========================================
+
+from cesar.utils import ErrHandle
+from cesar.seeker.models import import_data_file
+from cesar.settings import WRITABLE_DIR, TIME_ZONE
+from cesar.tsg.models import TsgInfo
 
 
 ## Attempt to input FROG
@@ -46,6 +52,8 @@ MAXPARAMLEN = 100
 MAXPATH = 256
 FROGPORT = 8020
 
+# ==================================== Auxiliary ===============================================
+
 def get_crpp_date(dtThis, readable=False):
     """Convert datetime to string"""
 
@@ -59,6 +67,34 @@ def get_crpp_date(dtThis, readable=False):
         sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
     return sDate
 
+def wordlist_path(instance, filename):
+    """Upload file to the right place,and remove old file if existing
+    
+    This function is used within the model Wordlist
+    """
+
+    oErr = ErrHandle()
+    sBack = ""
+    sSubdir = "wordlist"
+    try:
+        sBack = os.path.join(sSubdir, filename)
+        mediadir = os.path.abspath(os.path.join(WRITABLE_DIR, "../media/"))
+        if not os.path.exists(mediadir):
+            os.mkdir(mediadir)
+        fullsubdir = os.path.abspath(os.path.join(mediadir, sSubdir))
+        if not os.path.exists(fullsubdir):
+            os.mkdir(fullsubdir)
+        sAbsPath = os.path.abspath(os.path.join(fullsubdir, filename))
+        if os.path.exists(sAbsPath):
+            # Remove it
+            os.remove(sAbsPath)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("wordlist_path")
+    return sBack
+
+
+# ==================================== MODELS =================================================
 
 class LocTimeInfo(models.Model):
     """Information about a particular location or time"""
@@ -1410,6 +1446,11 @@ class Wordlist(models.Model):
     # [0-1] Optional description
     description = models.TextField("Description", blank=True, null=True)
 
+    # [0-1] File for uploading
+    upload = models.FileField("Excel file", null=True, blank=True, upload_to=wordlist_path)
+    # [0-1] Name of the worksheet from which info must be loaded
+    sheet = models.CharField("Worksheet", blank=True, null=True, max_length=MAXPARAMLEN)
+
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
     # [0-1] Time this module was last updated
@@ -1418,7 +1459,7 @@ class Wordlist(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None, *args, **kwargs):
         # Adapt the save date
         self.saved = timezone.now()
         # Now do the saving
@@ -1435,6 +1476,127 @@ class Wordlist(models.Model):
         if self.saved != None:
             sBack = self.saved.strftime("%d/%B/%Y (%H:%M)")
         return sBack
+
+    def get_upload(self):
+        """If file has been filled in, get the file name"""
+
+        sBack = "-"
+        if not self.upload is None:
+            sBack = self.upload
+        return sBack
+
+    def get_worddef(self, oItem):
+        """Get (and possibly create) a worddef"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            woord = oItem.get("woord")
+            score = oItem.get("score")
+            postag = oItem.get("postag")
+
+            if postag is None:
+                obj = Worddef.objects.filter(wordlist=self, stimulus__iexact=woord).first()
+            else:
+                obj = Worddef.objects.filter(wordlist=self, stimulus__iexact=woord, postag__iexact=postag).first()
+            if obj is None:
+                # It is not yet there, so create it
+                obj = Worddef.objects.create(wordlist=self, stimulus=woord, m=score)
+                if not postag is None and postag != "":
+                    obj.postag = postag
+                    obj.save()
+            else:
+                # Double check the score
+                if obj.m != score:
+                    obj.m = score
+                    obj.save()
+        except:
+
+            msg = oErr.get_error_message()
+            oErr.DoError("Wordlist/get_worddef")
+        return obj
+
+    def read_upload(self):
+        """Import or re-import the XLSX file's worksheet"""
+
+        def get_postag(rCatch, woord, postag):
+            """Either copy a postag or derive it from the word"""
+
+            oErr = ErrHandle()
+            try:
+                # Just make sure we have no leading of trailing blanks
+                woord = woord.strip()
+
+                if postag is None or postag == "":
+                    # Try to get the postag out of [woord]
+                    if "(" in woord and ")" in woord:
+                        # There should be a postag inside [woord]
+                        result = rCatch.match(woord)
+                        if result:
+                            woord = result.group(1)
+                            postag = result.group(2)
+                pass
+            except:
+                msg = oErr.get_error_message()
+                oErr.DoError("Wordlist/get_postag")
+            return woord, postag
+
+        oErr = ErrHandle()
+        sContent = ""
+        rCatch = re.compile( r'(.*)\s\(([A-Z]+)\)')
+        try:
+            # Get the file and read it
+            data_file = self.file
+            sheet = self.sheet
+
+            # Check if it exists
+            if not data_file is None and data_file != "":
+
+                # Use openpyxl to read the correct worksheet
+                wb = openpyxl.load_workbook(data_file, read_only=True)
+                # Try to find the correct worksheet
+                worksheets = wb.worksheets
+                ws = None
+                if sheet is None:
+                    ws = wb.active
+                else:
+                    for sheetname in worksheets:
+                        if sheetname.lower() == sheet.lower():
+                            ws = wb[sheetname]
+                            break
+                # Found it?
+                if not ws is None:
+                    # Expectations: first  column is *WOORD*
+                    #               second column is *SCORE* (concreetheid)
+                    #  (optional)   third  column is *POS* (part of speech)
+                    row_no = 2
+                    while ws.cell(row=row_no, column=1).value != None:
+                        # Get the woord and the score
+                        woord = ws.cell(row=row_no, column=1).value
+                        score = ws.cell(row=row_no, column=2).value
+                        postag = ws.cell(row=row_no, column=3).value
+                        if isinstance(score,float):
+                            # Turn it into a string with a period decimal separator
+                            score = str(score).replace(",", ".")
+                        woord, postag = get_postag(rCatch, woord, postag)
+                        oItem = dict(woord=woord, score=score, postag=postag)
+
+                        # Add the item to the list of [Worddef] for this [Wordlist]
+                        obj = self.get_worddef(oItem) 
+
+                        # Go to the next row
+                        row_no += 1
+
+
+                sContent = self.repair_xml(data_file)
+                # Store the contents into the VloItem 
+                self.xmlcontent = sContent
+                # And save it
+                self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Wordlist/read_upload")
+        return sContent
 
 
 class Worddef(models.Model):

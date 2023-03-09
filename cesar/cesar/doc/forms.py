@@ -158,11 +158,13 @@ class WordlistForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Wordlist
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'upload', 'sheet']
         widgets = {
             'name':         forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Name for this wordlist'}),
             'description':  forms.Textarea(attrs={'rows': 2, 'cols': 40, 'style': 'height: 80px; width: 100%;', 
-                                                  'placeholder': 'Description of this wordlist...'})
+                                                  'placeholder': 'Description of this wordlist...'}),
+            'upload':       forms.FileInput(attrs={'style': 'width: 100%;', 'placeholder': 'Excel file'}),
+            'sheet':        forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Name of worksheet within Excel file'}),
             }
 
     def __init__(self, *args, **kwargs):
@@ -172,6 +174,8 @@ class WordlistForm(forms.ModelForm):
         # Make sure some are not obligatory
         self.fields['name'].required = False
         self.fields['description'].required = False
+        self.fields['upload'].required = False
+        self.fields['sheet'].required = False
 
 
 # ================= NEXIS FORMS =======================================

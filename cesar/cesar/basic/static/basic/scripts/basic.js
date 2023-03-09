@@ -1205,88 +1205,96 @@ var ru = (function ($, ru) {
               // Either POST the request
               if (bOkay) {
                 // Get the data into a list of k-v pairs
-                data = $(frm).serializeArray();
+                // data = $(frm).serializeArray();
+                // NOTE: only this will provide the correct stuff
+                data = new FormData($(frm)[0]);
                 // Adapt the value for the [library] based on the [id] 
                 // Try to save the form data: send a POST
-                $.post(targeturl, data, function (response) {
-                  // Action depends on the response
-                  if (response === undefined || response === null || response.status === undefined) {
-                    private_methods.errMsg("No status returned");
-                  } else {
-                    switch (response.status) {
-                      case "error":
-                        // Indicate there is an error
-                        bOkay = false;
-                        // Show the error in an appropriate place
-                        if (response.msg !== undefined) {
-                          if (typeof response['msg'] === "object") {
+                //$.post(targeturl, data, function (response) {
+                $.ajax({
+                  url: targeturl, type: 'post', data: data, async: true,
+                  contentType: false, processData: false,
+                  success: function (response) {
+                    // Action depends on the response
+                    if (response === undefined || response === null || response.status === undefined) {
+                      private_methods.errMsg("No status returned");
+                    } else {
+                      switch (response.status) {
+                        case "error":
+                          // Indicate there is an error
+                          bOkay = false;
+                          // Show the error in an appropriate place
+                          if (response.msg !== undefined) {
+                            if (typeof response['msg'] === "object") {
+                              lHtml = [];
+                              lHtml.push("Errors:");
+                              $.each(response['msg'], function (key, value) { lHtml.push(key + ": " + value); });
+                              $(err).html(lHtml.join("<br />"));
+                            } else {
+                              $(err).html("Error: " + response['msg']);
+                            }
+                          } else if (response.errors !== undefined) {
+                            lHtml = [];
+                            lHtml.push("<h4>Errors</h4>");
+                            for (i = 0; i < response['errors'].length; i++) {
+                              $.each(response['errors'][i], function (key, value) {
+                                lHtml.push("<b>" + key + "</b>: </i>" + value + "</i>");
+                              });
+                            }
+                            $(err).html(lHtml.join("<br />"));
+                          } else if (response.error_list !== undefined) {
                             lHtml = [];
                             lHtml.push("Errors:");
-                            $.each(response['msg'], function (key, value) { lHtml.push(key + ": " + value); });
+                            $.each(response['error_list'], function (key, value) { lHtml.push(key + ": " + value); });
                             $(err).html(lHtml.join("<br />"));
                           } else {
-                            $(err).html("Error: " + response['msg']);
+                            $(err).html("<code>There is an error</code>");
                           }
-                        } else if (response.errors !== undefined) {
-                          lHtml = [];
-                          lHtml.push("<h4>Errors</h4>");
-                          for (i = 0; i < response['errors'].length; i++) {
-                            $.each(response['errors'][i], function (key, value) {
-                              lHtml.push("<b>" + key + "</b>: </i>" + value + "</i>");
-                            });
+                          break;
+                        case "ready":
+                        case "ok":
+                          // First check for afterurl
+                          if (afterurl !== undefined && afterurl !== "") {
+                            // Make sure we go to the afterurl
+                            window.location = afterurl;
                           }
-                          $(err).html(lHtml.join("<br />"));
-                        } else if (response.error_list !== undefined) {
-                          lHtml = [];
-                          lHtml.push("Errors:");
-                          $.each(response['error_list'], function (key, value) { lHtml.push(key + ": " + value); });
-                          $(err).html(lHtml.join("<br />"));
-                        } else {
-                          $(err).html("<code>There is an error</code>");
-                        }
-                        break;
-                      case "ready":
-                      case "ok":
-                        // First check for afterurl
-                        if (afterurl !== undefined && afterurl !== "") {
-                          // Make sure we go to the afterurl
-                          window.location = afterurl;
-                        }
-                        if ("html" in response) {
-                          // Show the HTML in the targetid
-                          $(targetid).html(response['html']);
-                          // Signal globally that something has been saved
-                          loc_bManuSaved = true;
-                          // If an 'afternewurl' is specified, go there
-                          if ('afternewurl' in response && response['afternewurl'] !== "") {
-                            window.location = response['afternewurl'];
-                            bReloading = true;
+                          if ("html" in response) {
+                            // Show the HTML in the targetid
+                            $(targetid).html(response['html']);
+                            // Signal globally that something has been saved
+                            loc_bManuSaved = true;
+                            // If an 'afternewurl' is specified, go there
+                            if ('afternewurl' in response && response['afternewurl'] !== "") {
+                              window.location = response['afternewurl'];
+                              bReloading = true;
+                            } else {
+                              // nothing else yet
+                            }
                           } else {
-                            // nothing else yet
+                            // Send a message
+                            $(err).html("<i>There is no <code>html</code> in the response from the server</i>");
                           }
-                        } else {
-                          // Send a message
-                          $(err).html("<i>There is no <code>html</code> in the response from the server</i>");
-                        }
-                        break;
-                      default:
-                        // Something went wrong -- show the page or not?
-                        $(err).html("The status returned is unknown: " + response.status);
-                        break;
+                          break;
+                        default:
+                          // Something went wrong -- show the page or not?
+                          $(err).html("The status returned is unknown: " + response.status);
+                          break;
+                      }
+                    }
+                    if (!bReloading && bOkay) {
+                      // Return to view mode
+                      $(elTr).find(".view-mode").removeClass("hidden");
+                      $(elTr).find(".edit-mode").addClass("hidden");
+                      // Hide waiting symbol
+                      $(elTr).find(".waiting").addClass("hidden");
+                      // If we get here, switch on afterdetails again
+                      $(elUserDetails).removeClass("hidden");
+                      // Perform init again
+                      ru.basic.init_events();
+                    }
                     }
                   }
-                  if (!bReloading && bOkay) {
-                    // Return to view mode
-                    $(elTr).find(".view-mode").removeClass("hidden");
-                    $(elTr).find(".edit-mode").addClass("hidden");
-                    // Hide waiting symbol
-                    $(elTr).find(".waiting").addClass("hidden");
-                    // If we get here, switch on afterdetails again
-                    $(elUserDetails).removeClass("hidden");
-                    // Perform init again
-                    ru.basic.init_events();
-                  }
-                });
+                );
               } else {
                 // Or else stop waiting - with error message above
                 $(elTr).find(".waiting").addClass("hidden");

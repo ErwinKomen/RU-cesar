@@ -1559,9 +1559,9 @@ class BasicDetails(DetailView):
             else:
                 # Editing an existing one
                 if self.use_team_group:
-                    frm = mForm(initial, prefix=prefix, instance=instance, username=username, team_group=team_group, userplus=userplus)
+                    frm = mForm(initial, self.request.FILES, prefix=prefix, instance=instance, username=username, team_group=team_group, userplus=userplus)
                 else:
-                    frm = mForm(initial, prefix=prefix, instance=instance)
+                    frm = mForm(initial, self.request.FILES, prefix=prefix, instance=instance)
             # Both cases: validation and saving
             if frm.is_valid():
                 # The form is valid - do a preliminary saving
