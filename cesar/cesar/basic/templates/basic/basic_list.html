@@ -351,7 +351,7 @@
                       <tr>
                         <th class="hidden">id</th>
                         {% for hd in order_heads %}
-                          <th class="sortable" scope="col" {% if hd.title %}title="{{hd.title}}"{% endif %}>
+                          <th class="sortable tdnowrap" scope="col" {% if hd.title %}title="{{hd.title}}"{% endif %}>
                             <div class="text">
                               {% if hd.order == "" %}{{hd.name}}
                               {% else %}

@@ -93,6 +93,9 @@ def concrete_main(request):
         v = qd.get('clamdefine')
         clamdefine = (v == "true" or v == "1")
 
+    # Make sure the MWE list is okay
+    Expression.get_mwe_list()
+
     # Get a list of already uploaded files too
     text_list = []
     for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created').values(
@@ -1425,6 +1428,7 @@ class WorddefEdit(BasicDetails):
             if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
                 # Define the main items to show and edit
                 context['mainitems'] = [
+                    {'type': 'plain', 'label': "Wordlist:", 'value': instance.get_wordlist() },
                     {'type': 'plain', 'label': "Stimulus:", 'value': instance.stimulus,             'field_key': "stimulus"},
                     {'type': 'plain', 'label': "POS tag:",  'value': instance.get_postag(),         'field_key': "postag"},
                     {'type': 'plain', 'label': "Score:",    'value': instance.get_concreteness(),   'field_key': "m"},
@@ -1432,6 +1436,17 @@ class WorddefEdit(BasicDetails):
                 # Adapt the app editor status
                 context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
                 context['is_tablet_editor'] = context['is_app_editor']
+
+            # Add a button back to the Wordlist
+            topleftlist = []
+            if not instance.wordlist is None:
+                wl = instance.wordlist
+                buttonspecs = {'label': "W", 
+                     'title': "Go to wordlist {}".format(wl.name), 
+                     'url': reverse('wordlist_details', kwargs={'pk': wl.id})}
+                topleftlist.append(buttonspecs)
+            context['topleftbuttons'] = topleftlist
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("WorddefEdit/add_to_context")
@@ -1453,13 +1468,14 @@ class WorddefList(BasicList):
     prefix = "wdef"
     sg_name = "Word definition"
     plural_name = "Word definitions"
-    new_button = True      # Do show a new button
-    order_cols = ['name', 'postag', 'm']
+    new_button = False      # Do *NOT* show a new button
+    order_cols = ['wordlist__name', 'stimulus', 'postag', 'm']
     order_default = order_cols
     order_heads = [
-        {'name': 'Stimulus','order': 'o=1', 'type': 'str', 'field': 'stimulus', 'linkdetails': True, 'main': True},
-        {'name': 'POS tag', 'order': 'o=2', 'type': 'str', 'field': 'postag',   'linkdetails': True},
-        {'name': 'Score',   'order': 'o=3', 'type': 'int', 'field': 'm',        'linkdetails': True, 'align': "right"},
+        {'name': 'Word list', 'order': 'o=1', 'type': 'str', 'custom': 'wordlist','linkdetails': True},
+        {'name': 'Stimulus',  'order': 'o=2', 'type': 'str', 'field': 'stimulus', 'linkdetails': True, 'main': True},
+        {'name': 'POS tag',   'order': 'o=3', 'type': 'str', 'field': 'postag',   'linkdetails': True},
+        {'name': 'Score',     'order': 'o=4', 'type': 'int', 'field': 'm',        'linkdetails': True, 'align': "right"},
         ]
     filters = [ 
         {"name": "Stimulus", "id": "filter_stimulus", "enabled": False},
@@ -1480,6 +1496,20 @@ class WorddefList(BasicList):
             context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
             context['is_tablet_editor'] = context['is_app_editor']
         return context
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        # Figure out what to show
+        if custom == "wordlist":
+            # Figure out the name of the wordlist
+            sBack = instance.get_wordlist()
+
+        # Retourneer wat kan
+        return sBack, sTitle
+
 
 
 # ================ TWITTER =============================

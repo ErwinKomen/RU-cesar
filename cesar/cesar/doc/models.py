@@ -205,13 +205,32 @@ class Expression(models.Model):
 
         oErr = ErrHandle()
         lBack = []
+        oFull = None
         try:
-            lAll = Expression.objects.all().values('score', 'lemmas', 'full')
+            lAll = Expression.objects.all().values('id', 'score', 'lemmas', 'full')
             for oItem in lAll:
+                id = oItem['id']
                 score = oItem['score']
-                oFull = json.loads(oItem['lemmas'])
-                lemmas = oFull['lemmas']
                 full = oItem['full']
+                sLemmas = oItem.get('lemmas')
+                if sLemmas is None:
+                    # The lemma object must be calculated
+                    bFound, lst_lemmas = FrogLink.get_lemmas("erwin", full)
+                    if bFound and not lst_lemmas is None and len(lst_lemmas) > 0:
+                        lst_line = lst_lemmas[0]
+                        if not lst_line is None and len(lst_line) > 0:
+                            sLemmas = json.dumps(lst_line)
+                            oItem['lemmas'] = sLemmas
+                            oFull = dict(score=score, lemmas=lst_line)
+                            obj = Expression.objects.filter(id=id).first()
+                            if not obj is None:
+                                obj.frogged = sLemmas
+                                obj.lemmas = json.dumps(oFull)
+                                obj.save()
+                else:
+                    oFull = json.loads(sLemmas)
+                # oFull = json.loads(oItem['lemmas'])
+                lemmas = oFull['lemmas']
                 lBack.append(dict(score=score, lemmas=lemmas, full=full))
         except:
             msg = oErr.get_error_message()
@@ -948,7 +967,21 @@ class FrogLink(models.Model):
                                     obj_fixed = homonyms.first()
                                     score = obj_fixed.get_concreteness()
 
-                            # (4) Brysbaert: check if a word is in the brysbaertlist
+                            # (4) Look in other lists supplied by Wordlist
+                            if obj_fixed is None:
+                                if postag == "":
+                                    worddefs = Worddef.objects.filter(stimulus__iexact=lemmatag)
+                                else:
+                                    worddefs = Worddef.objects.filter(stimulus__iexact=lemmatag, postag__iexact=postag)
+                                    if worddefs.count() == 0:
+                                        worddefs = Worddef.objects.filter(stimulus__iexact=lemmatag)
+                                o_found = worddefs.count()
+                                if o_found > 0:
+                                    # There are one or more responses: take the first
+                                    obj_fixed = worddefs.first()
+                                    score = obj_fixed.get_concreteness()
+
+                            # (5) Brysbaert: check if a word is in the brysbaertlist
                             if obj_fixed is None:
                                 obj_fixed = Brysbaert.objects.filter(stimulus=word_text).first()
                                 if not obj_fixed is None:
@@ -1539,10 +1572,9 @@ class Wordlist(models.Model):
                         if result:
                             woord = result.group(1)
                             postag = result.group(2)
-                            # Possibly change POSTAG
-                            if postag in postag_dict:
-                                postag = postag_dict[postag]
-                pass
+                # Possibly change POSTAG
+                if not postag is None and postag in postag_dict:
+                    postag = postag_dict[postag]
             except:
                 msg = oErr.get_error_message()
                 oErr.DoError("Wordlist/get_postag")
@@ -1618,6 +1650,12 @@ class Worddef(models.Model):
         sBack = "{}: {}".format(self.wordlist.name, self.stimulus)
         return sBack
 
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None, *args, **kwargs):
+        # Now do the saving
+        response = super(Worddef, self).save(force_insert, force_update, using, update_fields)
+        # Return the response
+        return response
+
     def clear(name):
         bResult = False
         oErr = ErrHandle()
@@ -1663,6 +1701,23 @@ class Worddef(models.Model):
         sBack = "-"
         if not self.postag is None:
             sBack = self.postag
+        return sBack
+
+    def get_wordlist(self, html=False):
+        """Get the name of the wordlist"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            if not self.wordlist is None:
+                sBack = self.wordlist.name
+                if html:
+                    url = reverse("wordlist_details", kwargs={'pk': self.wordlist.id})
+                    sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(
+                        url, sBack)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Worddef/get_wordlist")
         return sBack
 
 
