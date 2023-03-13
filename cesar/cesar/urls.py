@@ -129,6 +129,10 @@ urlpatterns = [
     url(r'^tablet/wordlist/list/$', WordlistList.as_view(), name='wordlist_list'),
     url(r'^tablet/wordlist/details(?:/(?P<pk>\d+))?/$', WordlistDetails.as_view(), name='wordlist_details'),
     url(r'^tablet/wordlist/edit(?:/(?P<pk>\d+))?/$', WordlistEdit.as_view(), name='wordlist_edit'),
+    url(r'^tablet/wordlist/upload(?:/(?P<pk>\d+))?/$', WordlistUpload.as_view(), name='wordlist_upload'),
+    url(r'^tablet/worddef/list/$', WorddefList.as_view(), name='worddef_list'),
+    url(r'^tablet/worddef/details(?:/(?P<pk>\d+))?/$', WorddefDetails.as_view(), name='worddef_details'),
+    url(r'^tablet/worddef/edit(?:/(?P<pk>\d+))?/$', WorddefEdit.as_view(), name='worddef_edit'),
 
     url(r'^twitter/$', cesar.doc.views.twitter_main, name='twitter_main'),
 

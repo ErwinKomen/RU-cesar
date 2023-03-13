@@ -26,7 +26,19 @@
         <!-- List of related items -->
         <table class="func-view compact-simple" style="width: 100%;">
           <thead>
-            <tr>{% for col in related.columns %}<th>{{col}}</th>{% endfor %}</tr>
+            <tr>
+              {% for col in related.columns %}
+                <th class="tdnowrap">
+                  {% if col.sortable %}
+                    <span class="sortable">
+                      <span class="glyphicon glyphicon-sort"></span>
+                    </span>
+                  {% else %}
+                  {% endif %}
+                  {{col|safe}}
+                </th>
+              {% endfor %}            
+            </tr>
           </thead>
           <tbody>
             {% for relrow in related.rel_list %}

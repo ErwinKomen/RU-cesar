@@ -25,6 +25,11 @@ if "RU-cesar\\writable" in WRITABLE_DIR:
     # Need another string
     WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../../writable/database/"))
 
+# Set the MEDIA_URL, which depends on the writable
+MEDIA_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../media/"))
+# The MEDIA_ROOT is important for upload_to
+MEDIA_ROOT = MEDIA_DIR
+
 # Surfsara VM:
 CRPP_HOME = 'http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/crpp'
 PROJECT_DIR = '/etc/project'
@@ -54,6 +59,7 @@ elif "/var/www" in WRITABLE_DIR:
 else:
     # admin.site.site_url = '/dd'
     ADMIN_SITE_URL = "/dd"
+
 
 # FORCE_SCRIPT_NAME = admin.site.site_url
 

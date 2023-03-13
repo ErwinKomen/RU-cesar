@@ -23,14 +23,15 @@ from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 
 from cesar.settings import APP_PREFIX, WRITABLE_DIR
-from cesar.basic.views import BasicList, BasicDetails, BasicPart, user_is_authenticated
+from cesar.basic.views import BasicList, BasicDetails, BasicPart, user_is_authenticated, add_rel_item
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
     LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
-    WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm
+    WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm, \
+    WorddefForm
 from cesar.doc.adaptations import listview_adaptations
 from cesar.utils import ErrHandle
 
@@ -1234,6 +1235,7 @@ class WordlistEdit(BasicDetails):
                     {'type': 'plain', 'label': "Description:",  'value': instance.description,  'field_key': "description"},
                     {'type': 'plain', 'label': "Excel file:",   'value': instance.get_upload(), 'field_key': "upload"},
                     {'type': 'plain', 'label': "Worksheet",     'value': instance.sheet,        'field_key': "sheet"},
+                    {'type': 'safe',  'label': "",              'value': self.get_button(instance)                  }
                     ]       
                 # Adapt the app editor status
                 context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
@@ -1244,11 +1246,128 @@ class WordlistEdit(BasicDetails):
 
         # Return the context we have made
         return context
+
+    def get_button(self, instance):
+        """Get a HTML button to process the Excel file with the wordlist"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            html = []
+            url = reverse('wordlist_upload', kwargs={'pk': instance.id})
+            html.append("<a role='button' class='btn btn-xs jumbo-3' href='{}' ".format(url))
+            html.append("title='Upload the file into the system'>{}<a>".format("Upload..."))
+
+            sBack = "\n".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("WordlistEdit/get_button")
+
+        return sBack
     
 
 class WordlistDetails(WordlistEdit):
     """Viewing Wordlist information items"""
     rtype = "html"
+
+    def add_to_context(self, context, instance):
+        # First get the 'standard' context from AuworkEdit
+        context = super(WordlistDetails, self).add_to_context(context, instance)
+
+        context['sections'] = []
+
+        oErr = ErrHandle()
+        try:
+
+            # Lists of related objects
+            related_objects = []
+            resizable = True
+            index = 1
+            sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_end = '</span>'
+
+            # List of Worddefs part of the Wordlist
+            worddefs = dict(title="Word definitions with this wordlist", prefix="wdef")
+            if resizable: worddefs['gridclass'] = "resizable"
+
+            rel_list =[]
+            qs = Worddef.objects.filter(wordlist=instance).order_by('stimulus')
+            for item in qs:
+                # Fields: stimulus, postag, score (=m)
+
+                url = reverse('worddef_details', kwargs={'pk': item.id})
+                rel_item = []
+
+                # Order number for this worddef
+                add_rel_item(rel_item, index, False, align="right")
+                index += 1
+
+                # Stimulus
+                stimulus_txt = item.stimulus
+                add_rel_item(rel_item, stimulus_txt, False, main=True, link=url)
+
+                # POS tag (if any)
+                postag_txt = item.get_postag()
+                add_rel_item(rel_item, postag_txt, False, main=False, link=url)
+
+                # Score
+                score_txt = "{}".format(item.get_concreteness())
+                add_rel_item(rel_item, score_txt, False, main=False, align="right", link=url, nowrap=False)
+
+
+                # Add this line to the list
+                rel_list.append(dict(id=item.id, cols=rel_item))
+
+            worddefs['rel_list'] = rel_list
+
+            worddefs['columns'] = [
+                '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
+                '{}<span>Stimulus</span>{}'.format(sort_start, sort_end), 
+                '{}<span>POS tag</span>{}'.format(sort_start_mix, sort_end), 
+                '{}<span>Score</span>{}'.format(sort_start_int, sort_end)
+                ]
+            related_objects.append(worddefs)
+
+            # Add all related objects to the context
+            context['related_objects'] = related_objects
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("WordlistDetails/add_to_context")
+
+        # Return the context we have made
+        return context
+
+
+class WordlistUpload(WordlistDetails):
+
+    initRedirect = True
+
+    def initializations(self, request, pk):
+        # Perform the original initialization
+        super(WordlistUpload, self).initializations(request, pk)
+
+        oErr = ErrHandle()
+        try:
+            # Get the parameters
+            self.qd = request.POST
+
+            # Get the instance
+            instance = self.object
+
+            if not instance is None:
+                # Actually try to read this Excel file
+                instance.read_upload()
+
+            # The default redirectpage is just this manuscript
+            self.redirectpage = reverse("wordlist_details", kwargs = {'pk': instance.id})
+
+            # Getting here means all went well
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TemplateImport/initializations")
+        return None
 
 
 class WordlistList(BasicList):
@@ -1272,6 +1391,84 @@ class WordlistList(BasicList):
     searches = [
         {'section': '', 'filterlist': [
             {'filter': 'name',   'dbfield': 'name', 'keyS': 'name'},
+            ]
+         } 
+        ] 
+
+    def add_to_context(self, context, initial):
+        # Only moderators are to be allowed
+        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+            # Adapt the app editor status
+            context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+            context['is_tablet_editor'] = context['is_app_editor']
+        return context
+
+
+# =============== WORDLIST ===============================
+
+
+class WorddefEdit(BasicDetails):
+    """Edit a Worddef information element"""
+
+    model = Worddef
+    mForm = WorddefForm
+    prefix = "wdef"
+    title = "Worddef"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        oErr = ErrHandle()
+        try:
+            # Only tablet editors or superusers are to be allowed
+            if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request): 
+                # Define the main items to show and edit
+                context['mainitems'] = [
+                    {'type': 'plain', 'label': "Stimulus:", 'value': instance.stimulus,             'field_key': "stimulus"},
+                    {'type': 'plain', 'label': "POS tag:",  'value': instance.get_postag(),         'field_key': "postag"},
+                    {'type': 'plain', 'label': "Score:",    'value': instance.get_concreteness(),   'field_key': "m"},
+                    ]       
+                # Adapt the app editor status
+                context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
+                context['is_tablet_editor'] = context['is_app_editor']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("WorddefEdit/add_to_context")
+
+        # Return the context we have made
+        return context
+    
+
+class WorddefDetails(WorddefEdit):
+    """Viewing Worddef information items"""
+    rtype = "html"
+
+
+class WorddefList(BasicList):
+    """List Worddef elements"""
+
+    model = Worddef
+    listform = WorddefForm
+    prefix = "wdef"
+    sg_name = "Word definition"
+    plural_name = "Word definitions"
+    new_button = True      # Do show a new button
+    order_cols = ['name', 'postag', 'm']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Stimulus','order': 'o=1', 'type': 'str', 'field': 'stimulus', 'linkdetails': True, 'main': True},
+        {'name': 'POS tag', 'order': 'o=2', 'type': 'str', 'field': 'postag',   'linkdetails': True},
+        {'name': 'Score',   'order': 'o=3', 'type': 'int', 'field': 'm',        'linkdetails': True, 'align': "right"},
+        ]
+    filters = [ 
+        {"name": "Stimulus", "id": "filter_stimulus", "enabled": False},
+        {"name": "POS tag",  "id": "filter_postag", "enabled": False},
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'stimulus',   'dbfield': 'stimulus', 'keyS': 'stimulus'},
+            {'filter': 'postag',     'dbfield': 'postag',   'keyS': 'postag'},
             ]
          } 
         ] 

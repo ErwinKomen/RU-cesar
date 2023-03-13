@@ -29,7 +29,7 @@ import folia.main as folia
 
 from cesar.utils import ErrHandle
 from cesar.seeker.models import import_data_file
-from cesar.settings import WRITABLE_DIR, TIME_ZONE
+from cesar.settings import WRITABLE_DIR, TIME_ZONE, MEDIA_ROOT
 from cesar.tsg.models import TsgInfo
 
 
@@ -71,23 +71,27 @@ def wordlist_path(instance, filename):
     """Upload file to the right place,and remove old file if existing
     
     This function is used within the model Wordlist
+    NOTE: this must be the relative path w.r.t. MEDIA_ROOT
     """
 
     oErr = ErrHandle()
     sBack = ""
     sSubdir = "wordlist"
     try:
+        # The stuff that we return
         sBack = os.path.join(sSubdir, filename)
-        mediadir = os.path.abspath(os.path.join(WRITABLE_DIR, "../media/"))
-        if not os.path.exists(mediadir):
-            os.mkdir(mediadir)
-        fullsubdir = os.path.abspath(os.path.join(mediadir, sSubdir))
+
+        # Add the subdir [wordlist]
+        fullsubdir = os.path.abspath(os.path.join(MEDIA_ROOT, sSubdir))
         if not os.path.exists(fullsubdir):
             os.mkdir(fullsubdir)
+
+        # Add the actual filename to form an absolute path
         sAbsPath = os.path.abspath(os.path.join(fullsubdir, filename))
         if os.path.exists(sAbsPath):
             # Remove it
             os.remove(sAbsPath)
+
     except:
         msg = oErr.get_error_message()
         oErr.DoError("wordlist_path")
@@ -1519,7 +1523,7 @@ class Wordlist(models.Model):
     def read_upload(self):
         """Import or re-import the XLSX file's worksheet"""
 
-        def get_postag(rCatch, woord, postag):
+        def get_postag(rCatch, postag_dict, woord, postag):
             """Either copy a postag or derive it from the word"""
 
             oErr = ErrHandle()
@@ -1535,6 +1539,9 @@ class Wordlist(models.Model):
                         if result:
                             woord = result.group(1)
                             postag = result.group(2)
+                            # Possibly change POSTAG
+                            if postag in postag_dict:
+                                postag = postag_dict[postag]
                 pass
             except:
                 msg = oErr.get_error_message()
@@ -1544,9 +1551,10 @@ class Wordlist(models.Model):
         oErr = ErrHandle()
         sContent = ""
         rCatch = re.compile( r'(.*)\s\(([A-Z]+)\)')
+        postag_dict = dict(ZN="N", BNW="ADJ", WW="WW", TUSSENWERPSEL="BW")
         try:
             # Get the file and read it
-            data_file = self.file
+            data_file = self.upload
             sheet = self.sheet
 
             # Check if it exists
@@ -1555,14 +1563,14 @@ class Wordlist(models.Model):
                 # Use openpyxl to read the correct worksheet
                 wb = openpyxl.load_workbook(data_file, read_only=True)
                 # Try to find the correct worksheet
-                worksheets = wb.worksheets
+                # worksheets = wb.worksheets
                 ws = None
                 if sheet is None:
                     ws = wb.active
                 else:
-                    for sheetname in worksheets:
-                        if sheetname.lower() == sheet.lower():
-                            ws = wb[sheetname]
+                    for ws_this in wb:
+                        if ws_this.title.lower() == sheet.lower():
+                            ws = ws_this 
                             break
                 # Found it?
                 if not ws is None:
@@ -1578,7 +1586,7 @@ class Wordlist(models.Model):
                         if isinstance(score,float):
                             # Turn it into a string with a period decimal separator
                             score = str(score).replace(",", ".")
-                        woord, postag = get_postag(rCatch, woord, postag)
+                        woord, postag = get_postag(rCatch, postag_dict, woord, postag)
                         oItem = dict(woord=woord, score=score, postag=postag)
 
                         # Add the item to the list of [Worddef] for this [Wordlist]
@@ -1588,11 +1596,6 @@ class Wordlist(models.Model):
                         row_no += 1
 
 
-                sContent = self.repair_xml(data_file)
-                # Store the contents into the VloItem 
-                self.xmlcontent = sContent
-                # And save it
-                self.save()
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Wordlist/read_upload")
@@ -1653,6 +1656,14 @@ class Worddef(models.Model):
 
     def get_concreteness(self):
         return self.m
+
+    def get_postag(self):
+        """Get the POS tag, if that is specified"""
+
+        sBack = "-"
+        if not self.postag is None:
+            sBack = self.postag
+        return sBack
 
 
 class Brysbaert(models.Model):

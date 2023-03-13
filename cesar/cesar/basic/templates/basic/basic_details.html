@@ -4,6 +4,7 @@
 {% block scripts %}
     {% load staticfiles %}
     <link rel="stylesheet" type="text/css" href="{% static 'basic/content/basic.css' %}" />
+    <link rel="stylesheet" href="{% static 'basic/content/font-awesome.min.css' %}" />
     <script src="{% static 'basic/scripts/basic.js' %}"></script>
 {% endblock %}
 
@@ -135,93 +136,154 @@
 
             <!-- Lists of related items -->
             {% for related in related_objects %}
-              <div class="row" id="basic_{{related.prefix}}_set">
-                <div class="col-md-12">
-                  <h4>{{related.title}}</h4>
+              <div class="row related-root {{related.classes}}" id="basic_{{related.prefix}}_set" >
 
-                  <!-- Check if there is any contents -->
-                  {% if related.rel_list|length == 0 %}
-                    <div><i>(the list of {{related.title}} for this {{titlesg}} is empty)</i></div>
-                  {% else %}
-                    <!-- List of related items -->
-                    <table class="func-view compact-simple" style="width: 100%;">
-                      <thead>
-                        <tr>
-                          {% if related.use_counter %}
-                            <th colspan="{% if related.editable %}2{% else %}1{% endif %}" class="tdnowrap">#</th>
-                          {% endif %}
-                          {% for col in related.columns %}<th class="tdnowrap">{{col}}</th>{% endfor %}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for relrow in related.rel_list %}
-                        <tr class="form-row">
-                          <!-- Counter-->
-                          {% if related.use_counter %}<td>{{forloop.counter}}</td>{% endif %}
-
-                          <!-- Remaining cells -->
-                          {% for relcol in relrow %}
-                            <td {% if relcol.title %}title="{{relcol.title}}"{% endif %}
-                                class="tdnowrap {% if relcol.link %}clickable{% endif %}"
-                                {% if relcol.align %}align="{{relcol.align}}"{% endif %}
-                                {% if relcol.main %}style="width: 100%;"{% endif %}
-                                >
-                              {% if relcol.value %}
-                                {% if relcol.link %}
-                                  <a href="{{relcol.link}}" class="nostyle">{{relcol.value|safe}}</a>
-                                {% else %}
-                                  {{relcol.value|safe}}
-                                {% endif %}
-                              {% endif %}
-                            </td>
-                          {% endfor %}
-
-                          <!-- Possible delete cell -->
-
-                        </tr>
-                        {% endfor %}
-
-                        {% if related.editable and is_app_editor %}
-                          <!-- Provide an empty row that can be added -->
-                          <tr class="form-row empty-form">
-                            <!-- A 1-based counter for the forms in this set-->
-                            {% if related.use_counter %}<td style="min-width: 20px;"><span>__counter__</span></td>{% endif %}
-
-                            <!-- A button to edit or save this item -->
-                            <td valign="top" class="clickable hightlighted"  style="min-width: 20px;">
-                              <div class="view-mode hidden">
-                                <a onclick="ru.passim.seeker.gold_row_edit(this, 'edit');" title="Edit this item">
-                                  <span class="glyphicon glyphicon-pencil"></span>
-                                </a>
-                              </div>
-                              <div class="edit-mode">
-                                <a title="Save changes to this item"
-                                    onclick="ru.basic.formset_update(this);"
-                                    targetid="sermongold_eqset"
-                                    targeturl="">
-                                  <span class="glyphicon glyphicon-ok"></span>
-                                </a>
-                              </div>
-                            </td>
-
-                          </tr>
-
-                          <!-- Add row -->
-                          <tr class="basic-add-row">
-                            <td colspan="5">
-                              <span id="add_one_{{related.prefix}}">
-                                <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add an item</a>
-                              </span>
-                            </td>
-                          </tr>
-                        {% endif %}
-
-                      </tbody>
-                    </table>
-                  {% endif %}
+                <!-- Hidden related hierarchy submit form -->
+                <div class="hidden">
+                  <form id="save_related_{{related.prefix}}" method="post" 
+                        action="{% if basic_form.instance.id %}{{detailsview}}{% endif %}">
+                    {% csrf_token %}
+                    <input type="text" id="id_{{related.prefix}}-hlist" name="{{related.prefix}}-hlist" value="" />
+                    <input type="text" id="id_{{related.prefix}}-savenew" name="{{related.prefix}}-savenew" value="false" />
+                  </form>
                 </div>
 
+                <div class="related-original">
+                  <div class="col-md-12">
+                    <h4>
+                      <span>{{related.title}}</span>
+                      {% if related.custombutton %}
+                        <span class="pull-right">
+                          {{related.custombutton|safe}}
+                        </span>
+                      {% endif %}
+                      {% if related.savebuttons %}
+                        <span class="hidden related-save pull-right">
+                          <span style="font-size: x-small;">
+                            <i>(Changes are not yet saved, and not reflected above)</i>
+                            <span class="hidden waiting">
+                              <span>Processing changes...</span><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                            </span>
+                          </span>
+                          <a class="btn btn-xs jumbo-1" title="Cancel changes" 
+                             onclick="ru.basic.related_cancel(this);">Cancel</a>
+                          <a class="btn btn-xs jumbo-4" title="Save changes" 
+                             onclick="ru.basic.related_save(this, '{{related.prefix}}', 'save');">Save</a>
+                          {% if related.saveasbutton %}
+                          <a class="btn btn-xs jumbo-4" title="Save changes to a new {{titlesg}}" 
+                             onclick="ru.basic.related_save(this, '{{related.prefix}}', 'savenew');">Save as...</a>
+                          {% endif %}
+                        </span>
+                      {% endif %}
+                    </h4>
+
+                    <!-- Check if there is any contents -->
+                    {% if related.rel_list|length == 0 %}
+                      <div><i>(the list of {{related.title}} for this {{titlesg}} is empty)</i></div>
+                    {% else %}
+                      <!-- List of related items -->
+                      <table class="func-view compact-simple {{related.gridclass}}" 
+                             style="width: 100%;">
+                        <thead>
+                          <tr>
+                            {% if related.use_counter %}
+                              <th colspan="{% if related.editable %}2{% else %}1{% endif %}" class="tdnowrap">#</th>
+                            {% endif %}
+                            {% for col in related.columns %}
+                              <th class="tdnowrap">
+                                {% if col.sortable %}
+                                  <span class="sortable">
+                                    <span class="glyphicon glyphicon-sort"></span>
+                                  </span>
+                                {% else %}
+                                {% endif %}
+                                {{col|safe}}
+                              </th>
+                            {% endfor %}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for relrow in related.rel_list %}
+
+                            <tr class="form-row" rowid="{{relrow.id}}">
+                              <!-- Counter-->
+                              {% if related.use_counter %}<td>{{forloop.counter}}</td>{% endif %}
+
+                              <!-- Remaining cells -->
+                              {% for relcol in relrow.cols %}
+                                <td {% if relcol.title %}title="{{relcol.title}}"{% endif %}
+                                    class="{% if relcol.nowrap %}tdnowrap{% endif %} {% if relcol.link %}clickable{% endif %} 
+                                           {% if relcol.draggable %}draggable{% endif %}"
+                                    {% if relcol.align %}align="{{relcol.align}}"{% endif %}
+                                    {% if relcol.draggable %}draggable="true"{% endif %}
+                                    {% if relcol.draggable %}
+                                      ondragstart="ru.basic.related_drag(event);" 
+                                      ondragover="ru.basic.related_dragenter(event);" 
+                                    {% endif %}
+                                    style="{% if relcol.main %}width: 100%;{% elif relcol.initial == 'small' %}min-width: 10px; max-width: 10px;{% endif %}"
+                                    >
+                                  {% if relcol.value %}
+                                    {% if relcol.link %}
+                                      <a href="{{relcol.link}}" class="nostyle">{{relcol.value|safe}}</a>
+                                    {% else %}
+                                      {{relcol.value|safe}}
+                                    {% endif %}
+                                  {% endif %}
+                                </td>
+                              {% endfor %}
+
+                              <!-- Possible delete cell -->
+
+                            </tr>
+                          {% endfor %}
+
+                          {% if related.editable and is_app_editor %}
+                            <!-- Provide an empty row that can be added -->
+                            <tr class="form-row empty-form">
+                              <!-- A 1-based counter for the forms in this set-->
+                              {% if related.use_counter %}<td style="min-width: 20px;"><span>__counter__</span></td>{% endif %}
+
+                              <!-- A button to edit or save this item -->
+                              <td valign="top" class="clickable hightlighted"  style="min-width: 20px;">
+                                <div class="view-mode hidden">
+                                  <a onclick="ru.lila.seeker.gold_row_edit(this, 'edit');" title="Edit this item">
+                                    <span class="glyphicon glyphicon-pencil"></span>
+                                  </a>
+                                </div>
+                                <div class="edit-mode">
+                                  <a title="Save changes to this item"
+                                      onclick="ru.basic.formset_update(this);"
+                                      targetid="sermongold_eqset"
+                                      targeturl="">
+                                    <span class="glyphicon glyphicon-ok"></span>
+                                  </a>
+                                </div>
+                              </td>
+
+                            </tr>
+
+                            <!-- Add row -->
+                            <tr class="basic-add-row">
+                              <td colspan="5">
+                                <span id="add_one_{{related.prefix}}">
+                                  <a href="#"><span class="glyphicon glyphicon-plus">&nbsp;</span>Add an item</a>
+                                </span>
+                              </td>
+                            </tr>
+                          {% endif %}
+
+                        </tbody>
+                      </table>
+                    {% endif %}
+                  </div>
+
+                </div>
+
+                <div class="hidden related-copy">
+                  <!-- THis is where a hidden copy is stored for a fast 'cancel' feature -->
+                </div>
               </div>
+
             {% endfor %}
 
             {% if add_to_details %}

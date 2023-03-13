@@ -1393,6 +1393,11 @@ class ExperimentDetails(LingoDetails):
             # The related objects are the list of question belonging to this experiment
             related_objects = []
 
+            sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_end = '</span>'
+
             # This tag in: sermon.notes
             questions = dict(title='Questions that are part of this experiment',
                              addbutton='Add question data',
@@ -1412,7 +1417,14 @@ class ExperimentDetails(LingoDetails):
                     rel_item.append({'value': item.get_include_display()})
                     rel_list.append(rel_item)
                 questions['rel_list'] = rel_list
-                questions['columns'] = ['Meta', 'Topic', 'Suggestion', 'Text', 'Include']
+                # questions['columns'] = ['Meta', 'Topic', 'Suggestion', 'Text', 'Include']
+                questions['columns'] = [
+                    '{}<span>Meta</span>{}'.format(sort_start, sort_end), 
+                    '{}<span>Topic</span>{}'.format(sort_start, sort_end), 
+                    '{}<span>Suggestion</span>{}'.format(sort_start, sort_end), 
+                    '{}<span>Text</span>{}'.format(sort_start, sort_end),
+                    '{}<span>Include</span>{}'.format(sort_start, sort_end)
+                    ]
             # Add the questions - no matter how many there are
             related_objects.append(questions)
 

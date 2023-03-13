@@ -15,3 +15,56 @@
   border: 0 !important;
   box-shadow: none;
 }
+
+.sortshow:hover {
+    opacity: 1.0;
+    color: red;
+}
+
+table thead th.sortable .sortoptions {
+    color: dimgray;
+    font-size: small;
+}
+
+table thead th.sortable .sortoptions .sortmulti.fa-sort {
+    opacity: 0.0;
+}
+table thead th.sortable .sortoptions .sortmulti:hover {
+    opacity: 1.0;
+    color: orangered;
+}
+
+table thead th.sortable .sortoptions a.sortremove {
+    /* background-position: 0 0; */
+    color: darkgray;
+    opacity: 0.0;
+}
+
+table thead th.sortable .sortoptions a.sortremove:after {
+    content: '\\';
+    position: fixed;/* */
+    margin-left: -10px;
+    margin-top: -2px;
+    font-weight: 200;
+    font-size: 18px;
+    color: darkgray;
+    opacity: 0.0;
+    /* top: -6px;
+    left: 3px;
+    font-weight: 200;
+    font-size: 18px;
+    color: #999;*/
+}
+
+table thead th.sortable .sortoptions a.sortremove:focus:after,
+table thead th.sortable .sortoptions a.sortremove:hover:after {
+    color: #447e9b;
+    opacity: 1.0;
+}
+
+table thead th.sortable .sortoptions a.sortremove:focus,
+table thead th.sortable .sortoptions a.sortremove:hover {
+    /* background-position: 0 -14px; */
+    opacity: 1.0;
+}
+

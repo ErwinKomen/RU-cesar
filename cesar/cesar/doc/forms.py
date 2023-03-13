@@ -178,6 +178,28 @@ class WordlistForm(forms.ModelForm):
         self.fields['sheet'].required = False
 
 
+class WorddefForm(forms.ModelForm):
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Worddef
+        fields = ['stimulus', 'postag', 'm']
+        widgets = {
+            'stimulus':     forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Stimulus (word)'}),
+            'postag':       forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'POS tag'}),
+            'm':            forms.NumberInput(),
+            }
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(WorddefForm, self).__init__(*args, **kwargs)
+
+        # Make sure some are not obligatory
+        self.fields['stimulus'].required = False
+        self.fields['postag'].required = False
+        self.fields['m'].required = False
+
+
 # ================= NEXIS FORMS =======================================
 
 class NexisBatchForm(forms.ModelForm):

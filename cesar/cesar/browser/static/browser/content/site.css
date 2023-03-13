@@ -759,6 +759,7 @@ table.func-view th {
   margin-left:20px;
   vertical-align: top;
   padding: 2px;
+  background-clip: padding-box;
 }
 table.func-view th.selected {
   background-color: darkorange;
