@@ -546,7 +546,14 @@ class FrogLink(models.Model):
                     basicf = folProc.basicf
                     result = clamclient.addinputfile(project, it, basicf, language='nl')
                     # Opstarten
-                    result = clamclient.start(project)
+                    #   See explanation at https://webservices.cls.ru.nl/frog/info/
+                    #   we are skipping some modules  
+                    #	  t - Tokeniser
+                    #	  m - Multi-Word Detector
+                    #	  p - Parser
+                    #	  c - Chunker / Shallow parser
+                    #	  n - Named Entity Recognition
+                    result = clamclient.start(project, skip= ['m', 'p', 'c', 'n'])
                     if result.errors:
                         oBack['status'] = "error"
                         # Handle errors
