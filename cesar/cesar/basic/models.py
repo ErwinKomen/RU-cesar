@@ -49,8 +49,8 @@ class Information(models.Model):
         info.save()
         return True
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        return super(Information, self).save(force_insert, force_update, using, update_fields)
+    #def save(self, force_insert = False, force_update = False, using = None, update_fields = None, *args, **kwargs):
+    #    return super(Information, self).save(force_insert, force_update, using, update_fields, *args, **kwargs)
 
 
 class Address(models.Model):

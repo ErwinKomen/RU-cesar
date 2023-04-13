@@ -1495,166 +1495,174 @@ class BasicDetails(DetailView):
         bNew = False
         mForm = self.mForm
         frm = None
+        method = "plain"    # "username" would be the other
         oErr = ErrHandle()
         username=self.request.user.username
         team_group=app_editor
         userplus = app_userplus
 
-        # If there is no mForm, leave
-        if mForm is None:
-            return None
-
-        # Determine the prefix
-        if self.prefix_type == "":
-            id = "n" if instance == None else instance.id
-            prefix = "{}-{}".format(self.prefix, id)
-        else:
-            prefix = self.prefix
-
-        # Check if this is a POST or a GET request
-        if self.request.method == "POST" and not self.do_not_save:
-            # Determine what the action is (if specified)
-            action = ""
-            if 'action' in initial: action = initial['action']
-            if action == "delete":
-                # The user wants to delete this item
-                try:
-                    bResult, msg = self.before_delete(instance)
-                    if bResult:
-                        # Log the DELETE action
-                        details = {'id': instance.id}
-                        self.action_add(instance, details, "delete")
-                        
-                        # Remove this sermongold instance
-                        instance.delete()
-                    else:
-                        # Removing is not possible
-                        context['errors'] = {'delete': msg }
-                except:
-                    msg = oErr.get_error_message()
-                    # Create an errors object
-                    context['errors'] = {'delete':  msg }
-
-                if 'afterdelurl' not in context or context['afterdelurl'] == "":
-                    context['afterdelurl'] = get_previous_page(self.request, True)
-
-                # Make sure we are returning JSON
-                self.rtype = "json"
-
-                # Possibly add to context by the calling function
-                if instance.id:
-                    context = self.add_to_context(context, instance)
-
-                # No need to retern a form anymore - we have been deleting
+        try:
+            # If there is no mForm, leave
+            if mForm is None:
                 return None
+
+            # Determine the prefix
+            if self.prefix_type == "":
+                id = "n" if instance == None else instance.id
+                prefix = "{}-{}".format(self.prefix, id)
+            else:
+                prefix = self.prefix
+
+            # Check if this is a POST or a GET request
+            if self.request.method == "POST" and not self.do_not_save:
+                # Determine what the action is (if specified)
+                action = ""
+                if 'action' in initial: action = initial['action']
+                if action == "delete":
+                    # The user wants to delete this item
+                    try:
+                        bResult, msg = self.before_delete(instance)
+                        if bResult:
+                            # Log the DELETE action
+                            details = {'id': instance.id}
+                            self.action_add(instance, details, "delete")
+                        
+                            # Remove this sermongold instance
+                            instance.delete()
+                        else:
+                            # Removing is not possible
+                            context['errors'] = {'delete': msg }
+                    except:
+                        msg = oErr.get_error_message()
+                        # Create an errors object
+                        context['errors'] = {'delete':  msg }
+
+                    if 'afterdelurl' not in context or context['afterdelurl'] == "":
+                        context['afterdelurl'] = get_previous_page(self.request, True)
+
+                    # Make sure we are returning JSON
+                    self.rtype = "json"
+
+                    # Possibly add to context by the calling function
+                    if instance.id:
+                        context = self.add_to_context(context, instance)
+
+                    # No need to retern a form anymore - we have been deleting
+                    return None
             
-            # All other actions just mean: edit or new and send back
-            # Make instance available
-            context['object'] = instance
-            self.object = instance
+                # All other actions just mean: edit or new and send back
+                # Make instance available
+                context['object'] = instance
+                self.object = instance
 
-            # Do we have an existing object or are we creating?
-            if instance == None:
-                # Saving a new item
-                if self.use_team_group:
-                    frm = mForm(initial, prefix=prefix, username=username, team_group=team_group, userplus=userplus)
+                # Do we have an existing object or are we creating?
+                if instance == None:
+                    # Saving a new item
+                    if self.use_team_group:
+                        frm = mForm(initial, prefix=prefix, username=username, team_group=team_group, userplus=userplus)
+                    else:
+                        frm = mForm(initial, prefix=prefix)
+                    bNew = True
+                    self.add = True
+                elif len(initial) == 0:
+                    # Create a completely new form, on the basis of the [instance] only
+                    if self.use_team_group:
+                        frm = mForm(prefix=prefix, instance=instance, username=username, team_group=team_group, userplus=userplus)
+                    else:
+                        frm = mForm(prefix=prefix, instance=instance)
                 else:
-                    frm = mForm(initial, prefix=prefix)
-                bNew = True
-                self.add = True
-            elif len(initial) == 0:
-                # Create a completely new form, on the basis of the [instance] only
-                if self.use_team_group:
-                    frm = mForm(prefix=prefix, instance=instance, username=username, team_group=team_group, userplus=userplus)
-                else:
-                    frm = mForm(prefix=prefix, instance=instance)
-            else:
-                # Editing an existing one
-                if self.use_team_group:
-                    frm = mForm(initial, self.request.FILES, prefix=prefix, instance=instance, username=username, team_group=team_group, userplus=userplus)
-                else:
-                    frm = mForm(initial, self.request.FILES, prefix=prefix, instance=instance)
-            # Both cases: validation and saving
-            if frm.is_valid():
-                # The form is valid - do a preliminary saving
-                obj = frm.save(commit=False)
-                # Any checks go here...
-                bResult, msg = self.before_save(form=frm, instance=obj)
-                if bResult:
-                    # Now save it for real
-                    kwargs={'username': self.request.user.username}
-                    obj.save(**kwargs)
-                    # Log the SAVE action
-                    details = {'id': obj.id}
-                    details["savetype"] = "new" if bNew else "change"
-                    if frm.changed_data != None and len(frm.changed_data) > 0:
-                        details['changes'] = action_model_changes(frm, obj)
-                    self.action_add(obj, details, "save")
+                    # Editing an existing one
+                    if self.use_team_group:
+                        frm = mForm(initial, self.request.FILES, prefix=prefix, instance=instance, username=username, team_group=team_group, userplus=userplus)
+                    else:
+                        frm = mForm(initial, self.request.FILES, prefix=prefix, instance=instance)
+                # Both cases: validation and saving
+                if frm.is_valid():
+                    # The form is valid - do a preliminary saving
+                    obj = frm.save(commit=False)
+                    # Any checks go here...
+                    bResult, msg = self.before_save(form=frm, instance=obj)
+                    if bResult:
+                        # Now save it for real
+                        if method == "username":
+                            kwargs={'username': self.request.user.username}
+                            obj.save(**kwargs)
+                        else:
+                            obj.save()
+                        # Log the SAVE action
+                        details = {'id': obj.id}
+                        details["savetype"] = "new" if bNew else "change"
+                        if frm.changed_data != None and len(frm.changed_data) > 0:
+                            details['changes'] = action_model_changes(frm, obj)
+                        self.action_add(obj, details, "save")
 
-                    # Make sure the form is actually saved completely
-                    frm.save()
-                    instance = obj
+                        # Make sure the form is actually saved completely
+                        frm.save()
+                        instance = obj
                     
-                    # Any action(s) after saving
-                    bResult, msg = self.after_save(frm, obj)
+                        # Any action(s) after saving
+                        bResult, msg = self.after_save(frm, obj)
+                    else:
+                        context['errors'] = {'save': msg }
                 else:
-                    context['errors'] = {'save': msg }
-            else:
-                # We need to pass on to the user that there are errors
-                context['errors'] = frm.errors
+                    # We need to pass on to the user that there are errors
+                    context['errors'] = frm.errors
 
-            # Check if this is a new one
-            if bNew:
-                if self.is_basic:
-                    self.afternewurl = context['listview']
-                    if self.rtype == "html":
-                        # Make sure we do a page redirect
-                        self.newRedirect = True
-                        self.redirectpage = reverse("{}_details".format(self.basic_name), kwargs={'pk': instance.id})
-                # Any code that should be added when creating a new [SermonGold] instance
-                bResult, msg = self.after_new(frm, instance)
-                if not bResult:
-                    # Removing is not possible
-                    context['errors'] = {'new': msg }
-                # Check if an 'afternewurl' is specified
-                if self.afternewurl != "":
-                    context['afternewurl'] = self.afternewurl
+                # Check if this is a new one
+                if bNew:
+                    if self.is_basic:
+                        self.afternewurl = context['listview']
+                        if self.rtype == "html":
+                            # Make sure we do a page redirect
+                            self.newRedirect = True
+                            self.redirectpage = reverse("{}_details".format(self.basic_name), kwargs={'pk': instance.id})
+                    # Any code that should be added when creating a new [SermonGold] instance
+                    bResult, msg = self.after_new(frm, instance)
+                    if not bResult:
+                        # Removing is not possible
+                        context['errors'] = {'new': msg }
+                    # Check if an 'afternewurl' is specified
+                    if self.afternewurl != "":
+                        context['afternewurl'] = self.afternewurl
                 
-        else:
-            # Check if this is asking for a new form
-            if instance == None:
-                # Get the form for the sermon
-                if self.use_team_group:
-                    frm = mForm(prefix=prefix, username=username, team_group=team_group, userplus=userplus)
-                else:
-                    frm = mForm(prefix=prefix)
             else:
-                # Get the form for the sermon
-                if self.use_team_group:
-                    frm = mForm(instance=instance, prefix=prefix, username=username, team_group=team_group, userplus=userplus)
+                # Check if this is asking for a new form
+                if instance == None:
+                    # Get the form for the sermon
+                    if self.use_team_group:
+                        frm = mForm(prefix=prefix, username=username, team_group=team_group, userplus=userplus)
+                    else:
+                        frm = mForm(prefix=prefix)
                 else:
-                    frm = mForm(instance=instance, prefix=prefix)
-            if frm.is_valid():
-                iOkay = 1
-            # Walk all the form objects
-            for formObj in self.form_objects:
-                formClass = formObj['form']
-                prefix = formObj['prefix']
-                # This is only for *NEW* forms (right now)
-                form = formClass(prefix=prefix)
-                context[prefix + "Form"] = form
-                # Get any possible typeahead parameters
-                lst_form_ta = getattr(formObj['forminstance'], "typeaheads", None)
+                    # Get the form for the sermon
+                    if self.use_team_group:
+                        frm = mForm(instance=instance, prefix=prefix, username=username, team_group=team_group, userplus=userplus)
+                    else:
+                        frm = mForm(instance=instance, prefix=prefix)
+                if frm.is_valid():
+                    iOkay = 1
+                # Walk all the form objects
+                for formObj in self.form_objects:
+                    formClass = formObj['form']
+                    prefix = formObj['prefix']
+                    # This is only for *NEW* forms (right now)
+                    form = formClass(prefix=prefix)
+                    context[prefix + "Form"] = form
+                    # Get any possible typeahead parameters
+                    lst_form_ta = getattr(formObj['forminstance'], "typeaheads", None)
+                    if lst_form_ta != None:
+                        for item in lst_form_ta:
+                            self.lst_typeahead.append(item)
+
+            # Get any possible typeahead parameters
+            if frm != None:
+                lst_form_ta = getattr(frm, "typeaheads", None)
                 if lst_form_ta != None:
                     for item in lst_form_ta:
                         self.lst_typeahead.append(item)
-
-        # Get any possible typeahead parameters
-        if frm != None:
-            lst_form_ta = getattr(frm, "typeaheads", None)
-            if lst_form_ta != None:
-                for item in lst_form_ta:
-                    self.lst_typeahead.append(item)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("BasicDetails/prepare_form")
         # Return the form we made
         return frm
 

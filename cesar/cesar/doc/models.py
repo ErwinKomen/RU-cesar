@@ -127,10 +127,10 @@ class Expression(models.Model):
     def __str__(self):
         return self.full
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None, *args, **kwargs):
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None): #, *args, **kwargs):
         oErr = ErrHandle()
         try:
-            username = kwargs.get("username")
+            # username = kwargs.get("username")
             # Check if 'lemmas' is okay with 'full'
             sFull = json.dumps( dict(score=self.score,lemmas= re.split("\s+", self.full)))
             oErr.Status("Expression: {}".format(sFull))
@@ -1503,7 +1503,7 @@ class Wordlist(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None, *args, **kwargs):
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None): #, *args, **kwargs):
         # Adapt the save date
         self.saved = timezone.now()
         # Now do the saving
@@ -1657,7 +1657,7 @@ class Worddef(models.Model):
         sBack = "{}: {}".format(self.wordlist.name, self.stimulus)
         return sBack
 
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None, *args, **kwargs):
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None): # , *args, **kwargs):
         # Now do the saving
         response = super(Worddef, self).save(force_insert, force_update, using, update_fields)
         # Return the response
