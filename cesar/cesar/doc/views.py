@@ -19,6 +19,7 @@ from datetime import datetime
 import os.path, io, shutil
 import tarfile
 import openpyxl
+import docx
 from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 
@@ -68,6 +69,20 @@ def user_is_superuser(request):
         if user != None:
             bFound = user.is_superuser
     return bFound
+
+def getText(data_file):
+    oErr = ErrHandle()
+    sBack = "-"
+    try:
+        doc = docx.Document(data_file)
+        fullText = []
+        for para in doc.paragraphs:
+            fullText.append(para.text)
+        sBack = '\n'.join(fullText)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("getText")
+    return sBack
 
 # Views belonging to the Cesar Document Processing app.
 
@@ -423,6 +438,7 @@ def import_concrete(request):
     error_list = []
     transactions = []
     data = {'status': 'ok', 'html': ''}
+    impossible_extensions = ['doc', 'xml']
     template_name = 'doc/import_docs.html'
     obj = None
     data_file = ""
@@ -487,9 +503,19 @@ def import_concrete(request):
                             oResult = {'status': 'error', 'msg': msg}
                         else:
 
+                            # Adaptation if this is a docx
+                            if extension == "docx":
+                                # Assuming this is a docx file
+                                data_text = getText(data_file)
+                                # The text should be split into lines
+                                data_file = data_text.split("\n")
+                                extension = "txt"
+
                             # Further processing depends on the extension
                             oResult = None
-                            if extension == "doc" or extension == "docx" or extension == "xml":
+                            
+                            if extension in impossible_extensions:  
+                                # extension == "doc" or extension == "docx" or extension == "xml":
                                 # Cannot process these
                                 oResult = {'status': 'error', 'msg': 'cannot process non-text files'}
                             else:

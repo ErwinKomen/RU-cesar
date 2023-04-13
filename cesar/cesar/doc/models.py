@@ -502,7 +502,7 @@ class FrogLink(models.Model):
 
             # Directory: one directory for each user
             dir = folProc.dir
-
+            
             # Read and create basis-folia
             bResult, sMsg = folProc.basis_folia(filename, data_file)
             if not bResult:
