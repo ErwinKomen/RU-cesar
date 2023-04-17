@@ -1592,6 +1592,69 @@ def twitter_main(request):
     return render(request, template, context)
 
 
+# ======================= DUTCH SPEECH ===================
+
+
+def transcribe_dutch(request):
+    """Transcribe Dutch MP3 speech
+    
+    """
+
+    oErr = ErrHandle()
+    try:
+        assert isinstance(request, HttpRequest)
+        template = 'doc/twitter_main.html'
+        frmUpload = UploadFilesForm()
+
+        superuser = request.user.is_superuser
+
+        # Basic authentication
+        if not user_is_authenticated(request):
+            return nlogin(request)
+
+        qd = request.GET
+        context = {'title': 'Dutch transcription',
+                   'frmSoundFile': frmUpload,
+                   'superuser': superuser,
+                   'message': 'Radboud University CESAR',
+                   'intro_breadcrumb': 'Transcribe',
+                   'year': datetime.now().year}
+
+        if user_is_superuser(request):
+            # Adapt the app editor status
+            context['is_app_editor'] = True
+            context['is_tablet_editor'] = context['is_app_editor']
+
+            # 
+            # Think of a project name
+            project = "transcribe_dutch"
+            basicauth = True
+            # Get access to the webservice
+            clamclient = CLAMClient(frogurl, clamuser, clampw, basicauth = basicauth)
+            # First delete any previous project, if it exists
+            try:
+                result = clamclient.delete(project)
+                errHandle.Status("Removed previous project {} = {}".format(project, result))
+            except:
+                # No problem: no project has been removed
+                pass
+            # Only now start creating it
+            result = clamclient.create(project)
+            errHandle.Status("Created new project {} = {}".format(project, result))
+            data = clamclient.get(project)
+
+            # Create the appropriate response
+            response = render(request, template, context)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("transcribe_dutch")
+        response = "<html><body><h3>Error</h3><div>{}</div></body></html>".format(msg)
+
+    return response
+
+
+
+
 
 
 # ================ NEXIS UNI ===========================
