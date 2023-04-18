@@ -135,6 +135,7 @@ urlpatterns = [
     url(r'^tablet/worddef/edit(?:/(?P<pk>\d+))?/$', WorddefEdit.as_view(), name='worddef_edit'),
 
     url(r'^twitter/$', cesar.doc.views.twitter_main, name='twitter_main'),
+    url(r'^asrnl/$', cesar.doc.views.transcribe_dutch, name='transcribe_dutch'),
 
     url(r'^doc/nexis/$', cesar.doc.views.nexis_main, name='nexis_main'),
     url(r'^doc/nexis/list/$', NexisListView.as_view(), name='nexisbatch_list'),
