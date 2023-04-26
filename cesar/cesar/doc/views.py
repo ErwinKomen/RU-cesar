@@ -23,12 +23,19 @@ import docx
 from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
 
+import clam.common.client
+import clam.common.data
+import clam.common.status
+import time
+
 from cesar.settings import APP_PREFIX, WRITABLE_DIR
 from cesar.basic.views import BasicList, BasicDetails, BasicPart, user_is_authenticated, add_rel_item
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
-from cesar.doc.models import FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
+from cesar.basic.models import Information
+from cesar.tsg.models import TsgInfo
+from cesar.doc.models import CLAMClient, FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
     LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm, \
@@ -1590,6 +1597,125 @@ def twitter_main(request):
         context['is_tablet_editor'] = context['is_app_editor']
 
     return render(request, template, context)
+
+
+# ======================= DUTCH SPEECH ===================
+
+
+def transcribe_dutch(request):
+    """Transcribe Dutch MP3 speech
+    
+    """
+
+    asr_url = "https://webservices.cls.ru.nl/asr_nl"
+    inputtemplate = "InputMP3File"
+    localfilename = None
+    oErr = ErrHandle()
+    try:
+        assert isinstance(request, HttpRequest)
+        template = 'doc/twitter_main.html'
+        frmUpload = UploadFilesForm()
+
+        superuser = request.user.is_superuser
+
+        # Basic authentication
+        if not user_is_authenticated(request):
+            return nlogin(request)
+
+        qd = request.GET
+        context = {'title': 'Dutch transcription',
+                   'frmSoundFile': frmUpload,
+                   'superuser': superuser,
+                   'message': 'Radboud University CESAR',
+                   'intro_breadcrumb': 'Transcribe',
+                   'year': datetime.now().year}
+
+        if user_is_superuser(request):
+            # Adapt the app editor status
+            context['is_app_editor'] = True
+            context['is_tablet_editor'] = context['is_app_editor']
+
+            # Get the file location
+            inputfile = Information.get_kvalue("asrnl_file")
+
+            # Regular CLAM stuff
+            clamuser = TsgInfo.get_value("clam_user")
+            clampw = TsgInfo.get_value("clam_pw")
+            # Think of a project name
+            project = "asrnl"
+            basicauth = True
+            # Get access to the webservice
+            clamclient = CLAMClient(asr_url, clamuser, clampw, basicauth = basicauth)
+            # First delete any previous project, if it exists
+            try:
+                result = clamclient.delete(project)
+                oErr.Status("Removed previous project {} = {}".format(project, result))
+            except:
+                # No problem: no project has been removed
+                pass
+            # Only now start creating it
+            result = clamclient.create(project)
+            oErr.Status("Created new project {} = {}".format(project, result))
+            data = clamclient.get(project)
+
+            # Set the input file
+            clamclient.addinputfile(project, data.inputtemplate(inputtemplate), inputfile)
+
+            # Start the project
+            data = clamclient.start(project)
+
+            # Check for possible error(s)
+            if data.errors:
+                print("An error occured: " + data.errormsg, file=sys.stderr)
+                for parametergroup, paramlist in data.parameters:
+                    for parameter in paramlist:
+                        if parameter.error:
+                            print("Error in parameter " + parameter.id + ": " + parameter.error, file=sys.stderr)
+                # Remove the project, since an error ha occured
+                clamclient.delete(project) 
+                sys.exit(1)
+
+            #If everything went well, the system is now running, we simply wait until it is done and retrieve the status in the meantime
+            while data.status != clam.common.status.DONE:
+                time.sleep(5)                       # wait 5 seconds before polling status
+                data = clamclient.get(project)      # get status again
+                statusmsg = data.statusmessage
+                completion = data.completion
+                msg = "Running. Status={}: {}% completed".format(statusmsg, completion)
+                oErr.Status(msg)
+                # x = data.status
+                # print("\tRunning: " + str(data.completion) + '% -- ' + data.statusmessage, file=sys.stderr)
+
+            #Iterate over output files
+            for outputfile in data.output:
+                try:    
+                    # Metadata contains information on output template
+                    outputfile.loadmetadata() 
+                except:
+                    continue
+
+                # Get the output template
+                outputtemplate = outputfile.metadata.provenance.outputtemplate_id
+
+                # Think of a local filename
+                localfilename = os.path.basename(str(outputfile))
+                outputfile.copy(localfilename)
+
+                # Or: iterate ove rthe textual contents
+                for line in outputfile.readlines():
+                    print(line)
+
+            # Create the appropriate response
+            # response = render(request, template, context)
+            response = "READY"
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("transcribe_dutch")
+        response = "<html><body><h3>Error</h3><div>{}</div></body></html>".format(msg)
+
+    return response
+
+
 
 
 
