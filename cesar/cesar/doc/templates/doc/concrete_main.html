@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% load i18n %}
+{% load staticfiles %}
 
 {% block breadcrumbs %}
   <div class="breadcrumbs">
@@ -26,7 +27,7 @@
 
     <!-- Dashboard to select input file(s) and then allow downloading the results -->
     <div id="import_docs" class="row" >
-      <div class="col-md-9 panel panel-default">
+      <div class="col-md-9 panel panel-default" style="height: 100px;">
         <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
           {% csrf_token %}
           <!-- Need username and password for the CLAM client webservice -->
@@ -78,6 +79,12 @@
 
 
 
+      </div>
+
+      <div class="col-md-offset-1 col-md-2 panel panel-default" style="height: 100px;">
+        <div>List the processed texts:</div>
+        <div>&nbsp;</div>
+        <a class="btn btn-sm jumbo-1" href="{% url 'froglink_list' %}">Processed texts</a>
       </div>
     </div>
 
@@ -163,100 +170,38 @@
       <div id="brysb_data_import"></div>
     {% endif %}
 
-    <!-- Results section -->
-    <div id="concrete_results" class="row">
-      {% for otext in textlist %}
-        <div class="panel panel-default">
-          <div class="panel-heading collapsed" data-toggle="collapse" data-target="#text-number-{{forloop.counter}}">
-            {% if otext.text %}{{otext.text}}{% else %}text # {{forloop.counter}}{% endif %}
-            <span class="pull-right" style="font-size: smaller; color: darkblue;">{{otext.created}}</span>
-          </div>
-          <div id="text-number-{{forloop.counter}}" class="collapse">
-            <div class="delete-confirm hidden">
-              <form>
-                {% csrf_token %}
-                <span class="hidden">
-                  <input name='afterurl' id='afterurl' class='form-control' value='{% url 'concrete_main' %}' >
-                </span>
-                <span>Are you sure you would like to delete this Concreteness file?</span>
-                <span class="ms editable">
-                  <!-- The button to cancel deletion -->
-                  <a title="Cancel deletion" class="btn btn-xs jumbo-1" onclick="ru.basic.delete_cancel(this);">Cancel</a>
-                  <!-- The actual delete button-->
-                  <a mode="delete" title="Delete this Concreteness file" class="btn btn-xs jumbo-3" 
-                     afterurl="{% url 'concrete_main' %}" targetid="froglink_edit" 
-                     targeturl="{% url 'froglink_edit' otext.id %}">
-                    Delete
-                  </a>
-                </span>
-              </form>
-            </div>
-            <div class="row">
-              <div class="col-md-9">Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
-                (n={{otext.n}}, total={{otext.total|floatformat:3}})</div>
-              <div class="col-md-3 dropdown">
-                {% if otext.show %}
-                  <form>
-                    {% csrf_token %}
-                    <span id="downloadcenter" class="hidden">
-                      <input name='downloadtype' id='downloadtype' class='form-control' value='' >
-                      <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
-                    </span>
-                    <button class="btn btn-default btn-sm dropdown-toggle"
-                            type="button" id="downloadmenu"
-                            data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="true">download&nbsp;<span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="downloadmenu">
-                      <li class="fdos_host">
-                        <a href="#" id="fdocs_download_tree"
-                           title="JS object notation"
-                            downloadtype="json"
-                            ajaxurl="{% url 'concrete_download' pk=otext.id %}"
-                            onclick="ru.cesar.seeker.post_download(this);" >json</a>
-                      </li>
-                      <li class="fdos_host">
-                        <a href="#" id="fdocs_download_tree"
-                           title="Tab-separated values"
-                            downloadtype="tsv"
-                            ajaxurl="{% url 'concrete_download' pk=otext.id %}"
-                            onclick="ru.cesar.seeker.post_download(this);" >tsv</a>
-                      </li>
-                      <!-- <li role="separator" class="divider"></li>-->
-                      <li class="fdos_host">
-                        <a href="#" id="fdocs_download_htable"
-                           title="Microsoft Excel / Open Office "
-                            downloadtype="excel"
-                            ajaxurl="{% url 'concrete_download' pk=otext.id %}"
-                            onclick="ru.cesar.seeker.post_download(this);" >Excel</a>
-                      </li>
-                    </ul>
-                    <a class="btn btn-default btn-xs" title="Edit item" role="button" href="{% url 'froglink_details' otext.id %}">
-                      <span class="glyphicon glyphicon-pencil"></span>
-                    </a>
-                    <!-- Put the delete button completely to the right-->
-                    <a mode="skip" class="view-mode btn btn-xs jumbo-1 pull-right" onclick="ru.basic.delete_confirm(this);">
-                      <span class="glyphicon glyphicon-remove" title="Delete this Concreteness file"></span>
-                    </a>
-                  </form>
-                {% else %}
-                  <span><i>(no download for this item)</i></span>
-                  <a class="btn btn-default btn-xs" title="Edit item" role="button" href="{% url 'froglink_details' otext.id %}">
-                    <span class="glyphicon glyphicon-pencil"></span>
-                  </a>
-                  <!-- Put the delete button completely to the right-->
-                  <a mode="skip" class="view-mode btn btn-xs jumbo-1 pull-right" onclick="ru.basic.delete_confirm(this);">
-                    <span class="glyphicon glyphicon-remove" title="Delete this Concreteness file"></span>
-                  </a>
-                {% endif %}
-              </div>
-
-            </div>
-            {% include 'doc/text_scores.html' with otext=otext mode='view' %}
-          </div>
+    <!-- Help for the users -->
+    <div id="concrete_help" class="row panel panel-default">
+      <div class="">
+        <!-- PDF guides -->
+        <div class="col-md-6">
+          <h3>Help guides</h3>
+          <p>The following Dutch documents are available to help users of Tablet:</p>
+          <ul>
+            <li><b>Quick start</b>: <a href="{% static 'doc/content/TabletHandleiding.pdf' %}">pdf</a></li>
+            <li><b>User's manual</b>: <a href="{% static 'doc/content/TabletKort.pdf' %}">pdf</a></li>
+          </ul>
         </div>
-      {% endfor %}
+
+        <!-- MP4 help -->
+        <div class="col-md-6">
+          <h3>Instruction video's</h3>
+          <p>Here are a number of instruction video's that might be helpful to the Tablet user:</p>
+          <ul>
+            <li><b>1.</b> Determining the concreteness score of a text <a href="{% static 'doc/content/TabletInstructie01.mp4' %}">video</a></li>
+            <li><b>2.</b> Manually adapting concreteness scores <a href="{% static 'doc/content/TabletInstructie02.mp4' %}">video</a></li>
+            <li><b>3.</b> Homonym selection <a href="{% static 'doc/content/TabletInstructie03.mp4' %}">video</a></li>
+            <li><b>4.</b> Downloading and removing output <a href="{% static 'doc/content/TabletInstructie04.mp4' %}">video</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
+
+    <!-- Results section -->
+    {% if load_results == "true" %}
+      {% include 'doc/concrete_results.html' %}
+    {% endif %}
+
 
   </div>
 
