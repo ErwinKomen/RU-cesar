@@ -77,7 +77,8 @@
                   <div>
                     {% if que.formfield %}
                       <div {% if is_app_editor %}class="view-mode"{% endif %} style="color: darkblue;">
-                        {% if que.formfield.value %}{{que.formfield.value|safe}}
+                        {% if que.formfield.value %}
+                          {% if que.markdown %}{{que.markdown|safe}}{% else %}{{que.formfield.value|safe}}{% endif %}
                         {% else %}
                           {% if que.question.ntype == "alw" %}**
                           {% elif que.question.ntype == "fir" %}*

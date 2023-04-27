@@ -21,23 +21,34 @@
 
           <!-- General information row -->
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
               <h2>Project: <span style="color: darkblue;">{{pname}}</span></h2>
 
             </div>
-            <div class="col-md-6">
+            <div class="col-md-8">
               <div class="pull-right">
+                {% if is_app_editor %}
+                  <!-- Message with last save date/time -->
+                  <span id="form_save_notice" class="" style="font-size: small;"></span>
+                {% endif %}
+
                 <!-- Any overall todo message -->
                 <span title="Overal status of this brief's responses versus the number that is required">{{instance.get_todo_html|safe}}</span>
 
                 {% if mode == "edit" and is_app_editor %}
-                  <!-- Message with last save date/time -->
-                  <span id="form_save_notice" class="edit-mode hidden" style="font-size: small;"></span>
 
                   <!-- Save button -->
                   <a role="button" class="edit-mode btn btn-lg btn-success hidden" title="Save last changes"
                      targeturl="{% url 'brief_edit' queForm.instance.id  %}"
                      onclick="sil.pbrief.process_brief(this, '#form_save_notice');">Save</a>
+
+                  <!-- Save + stop editing button -->
+                  <a role="button" class="edit-mode btn btn-lg btn-success hidden" 
+                     title="Save last changes and stop editing"
+                     targeturl="{% url 'brief_edit' queForm.instance.id  %}"
+                     onclick="sil.pbrief.process_brief(this, '#form_save_notice', 'close');">
+                    <span class="glyphicon glyphicon-ok"></span>
+                  </a>
 
                   <!-- Download button -->
                   <a class="view-mode btn btn-lg jumbo-3" 
@@ -164,7 +175,9 @@
                                       </div>
                                     {% endif %}
                                     <div {% if is_app_editor %}class="view-mode"{% endif %} style="color: darkblue;">
-                                      {% if que.formfield.value %}{{que.formfield.value}}{% else %}-{% endif %}
+                                      {% if que.markdown %}{{que.markdown|safe}}{% else %}
+                                        {% if que.formfield.value %}{{que.formfield.value}}{% else %}-{% endif %}
+                                      {% endif %}
                                     </div>
                                   {% elif que.entries %}
                                     <div class="pull-right">

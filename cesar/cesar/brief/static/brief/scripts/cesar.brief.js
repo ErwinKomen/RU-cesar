@@ -433,7 +433,7 @@ var sil = (function ($, sil) {
         }
       },
 
-      process_brief: function (elStart, divNotice) {
+      process_brief: function (elStart, divNotice, action) {
         var targeturl = "",
             frm = null,
             data = [],
@@ -472,6 +472,19 @@ var sil = (function ($, sil) {
                       $("#" + todo_id).html(todo_html);
                     }
                   }
+                  // Any action afterwards?
+                  if (action !== undefined && action === "close") {
+                    // Show view mode
+                    $(".view-mode").removeClass("hidden");
+                    // Hide edit mode
+                    $(".edit-mode").addClass("hidden");
+                  }
+
+                  // Make sure the notice goes away after 5 seconds
+                  window.setTimeout(function () {
+                    $(divNotice).html("");
+                  }, 2000);
+
                   break;
                 case "error":
                   if ("html" in response) {

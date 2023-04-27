@@ -28,7 +28,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.browser.views import nlogin
 from cesar.seeker.views import csv_to_excel
 from cesar.brief.models import AnswerEntry, AnswerQuestion, BriefEntry, BriefModule, BriefQuestion, BriefSection, Project, qids, \
-                            BriefProduct, History
+                            BriefProduct, History, adapt_markdown
 from cesar.brief.forms import ProjectForm, QuestionsForm, AnswerEntryForm, ProductForm
 from cesar.utils import ErrHandle
 
@@ -534,6 +534,8 @@ class BriefMaster(BriefEdit):
                         else:
                             # The formfield is the normal form field
                             oQuestion['formfield'] = qform[formfieldname]
+                            if question.rtype == "mline":
+                                oQuestion['markdown'] = adapt_markdown(qform[formfieldname].value(), lowercase=False)
 
                         # Add question to list
                         lst_question.append(oQuestion)
