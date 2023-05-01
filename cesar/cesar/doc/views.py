@@ -1029,7 +1029,12 @@ class LocTimeList(BasicList):
     def initializations(self):
         oErr = ErrHandle()
         try:
-            if self.view_only:
+            # Check if this is view_only or editable
+            is_superuser = user_is_superuser(self.request)
+            is_tablet_editor = user_is_ingroup(request, "tablet_editor")
+
+            if not is_superuser and not is_tablet_editor:
+                #if self.view_only:
                 for oItem in self.order_heads:
                     if 'linkdetails' in oItem:
                         oItem.pop("linkdetails")
@@ -1055,10 +1060,10 @@ class LocTimeList(BasicList):
         return context
 
 
-class LocTimeTable(LocTimeList):
-    """Just provide a table (listview) of loctime elements"""
+#class LocTimeTable(LocTimeList):
+#    """Just provide a table (listview) of loctime elements"""
 
-    view_only = True
+#    view_only = True
 
 
 # =============== EXPRESSION ===============================

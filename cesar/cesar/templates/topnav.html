@@ -171,11 +171,9 @@
                           {% endif %}
                           <li><a href="{% url 'concrete_main' %}">Tablet Process</a></li>
                           <li><a href="{% url 'froglink_list' %}">Tablet List</a></li>
-                          <li><a href="{% url 'loctimeinfo_table' %}" 
+                          <li><a href="{% url 'loctimeinfo_list' %}" 
                                  title="Table that shows scores for different kinds of location or time">Tablet Location/Time</a></li>
                           {% if is_superuser or is_tablet_editor %}
-                            <li><a href="{% url 'loctimeinfo_list' %}" 
-                                   title="Location or time score Listview (editable)">Tablet LocTime List</a></li>
                             <li><a href="{% url 'expression_list' %}" title="multi-word expressions">Tablet MWE</a></li>
                             <li><a href="{% url 'homonym_list' %}" title="homonyms">Tablet Homonym</a></li>
                             <li><a href="{% url 'wordlist_list' %}" title="wordlists">Tablet Wordlist</a></li>
