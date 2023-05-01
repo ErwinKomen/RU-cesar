@@ -1000,7 +1000,15 @@ class FrogLink(models.Model):
 
                             if obj_fixed is None:
                                 # Check if there are multiple morph parts
-                                morph_parts = [m.text() for m in word.morphemes()]
+                                # morph_parts = [m.text() for m in word.morphemes()]
+                                morph_parts = []
+                                for m in word.morphemes():
+                                    try:
+                                        m_text = m.text()
+                                        morph_parts.append(m_text)
+                                    except:
+                                        ging_niet = 1
+                                        pass
                                 score = -1
                                 if len(morph_parts)>0:
                                     # There are multiple morphemes
@@ -1342,6 +1350,11 @@ class FoliaProcessor():
                 sLine = self.re_double.sub('"', sLine)
                 # Insert a space before ".." or "..."
                 sLine = sLine.replace("..", " ..")
+                # Remove some bad symbols
+                sLine = sLine.replace(">", "")
+                sLine = sLine.replace("<", "")
+                # Put a space before a comma
+                sLine = sLine.replace(",", " ,")
                 lines.append(sLine)
 
             # Check and/or create the appropriate directory for the user
