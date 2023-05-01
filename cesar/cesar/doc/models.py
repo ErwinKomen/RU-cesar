@@ -1349,6 +1349,9 @@ class FoliaProcessor():
 
             # create a folia document with a numbered id
             docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
+            # Make sure it starts with a letter
+            if not re.match(r'^[a-zA-Z_]', docstr):
+                docstr = "t_" + docstr
             # Make sure we remember the docstr
             self.docstr = docstr
 

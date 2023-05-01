@@ -78,6 +78,8 @@ def user_is_superuser(request):
     return bFound
 
 def getText(data_file):
+    """Given a Word .dox document, extract its text data"""
+
     oErr = ErrHandle()
     sBack = "-"
     try:
