@@ -1005,7 +1005,9 @@ class FrogLink(models.Model):
                                 for m in word.morphemes():
                                     try:
                                         m_text = m.text()
-                                        morph_parts.append(m_text)
+                                        # Do *NOT* include morpheme parts that are the same as the whole word
+                                        if m_text != word_text.lower():
+                                            morph_parts.append(m_text)
                                     except:
                                         ging_niet = 1
                                         pass

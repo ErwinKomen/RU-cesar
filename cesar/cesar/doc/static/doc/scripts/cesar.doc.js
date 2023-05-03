@@ -337,6 +337,37 @@ var ru = (function ($, ru) {
         }
       },
 
+      /**
+       * score_remove
+       *   Remove this line of score
+       *
+       */
+      score_remove: function (elStart) {
+        var elTr = null,
+            elWord = null,
+            word_id = "";
+
+        try {
+          // Find the current <tr>
+          elTr = $(elStart).closest("tr");
+          // Get the word
+          elWord = $(elTr).find("[wordid]").first();
+          if ($(elWord).length > 0) {
+            // Get the word id
+            word_id = parseInt($(elWord)[0].attributes['wordid'].value, 10);
+            // Add a -1 to the dictionary to indicate its removal
+            loc_concrete[word_id] = -1;
+            // Remove this row visually
+            $(elTr).remove();
+            // Make sure the save button shows
+            $("#concrete_process").removeClass("hidden");
+
+          }
+        } catch (ex) {
+          private_methods.errMsg("score_remove", ex);
+        }
+      },
+
     };
   }($, ru.config));
 

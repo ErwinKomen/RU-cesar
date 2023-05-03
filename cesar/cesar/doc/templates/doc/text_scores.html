@@ -25,9 +25,11 @@
                 {{sent.sentence}}
               </span>
               {% if mode == "editable" %}
-                <!-- Experimental: recipient of loc/time phrases -->
-                <span class="pull-right" ondragover="ru.cesar.doc.loctime_allowdrop(event);" ondrop="ru.cesar.doc.loctime_drop(event);">
-                  &nbsp;&nbsp;<span class="glyphicon glyphicon-inbox jumbo-3" style="font-size: 120%;"></span>
+                <span class="pull-right">
+                  <!-- Experimental: recipient of loc/time phrases -->
+                  <span ondragover="ru.cesar.doc.loctime_allowdrop(event);" ondrop="ru.cesar.doc.loctime_drop(event);">
+                    &nbsp;&nbsp;<span class="glyphicon glyphicon-inbox jumbo-3" style="font-size: 120%;"></span>
+                  </span>
                 </span>
               {% endif %}
             </div>
@@ -71,6 +73,15 @@
                     {% endif %}
                   {% endfor %}
                 {% endif %}
+              {% endif %}
+              {% if mode == "editable" %}
+                <span class="pull-right tablet-remove">
+                  <!-- Experimental: allow removing this line-->
+                  <a class="btn btn-default btn-xs" role="button" title="Remove this word and score from the list"
+                     onclick="ru.cesar.doc.score_remove(this);">
+                    <span class="glyphicon glyphicon-trash" ></span>
+                  </a>
+                </span>
               {% endif %}
             </td>
             <td valign="top" align="right" {% if mode == "editable" %}class="editable"{% endif %}>

@@ -27,7 +27,7 @@
 
     <!-- Dashboard to select input file(s) and then allow downloading the results -->
     <div id="import_docs" class="row" >
-      <div class="col-md-9 panel panel-default" style="height: 100px;">
+      <div class="col-md-9 panel panel-default" style="min-height: 100px;">
         <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
           {% csrf_token %}
           <!-- Need username and password for the CLAM client webservice -->
@@ -81,7 +81,7 @@
 
       </div>
 
-      <div class="col-md-offset-1 col-md-2 panel panel-default" style="height: 100px;">
+      <div class="col-md-offset-1 col-md-2 panel panel-default" style="min-height: 100px;">
         <div>List the processed texts:</div>
         <div>&nbsp;</div>
         <a class="btn btn-sm jumbo-1" href="{% url 'froglink_list' %}">Processed texts</a>

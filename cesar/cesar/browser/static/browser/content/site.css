@@ -1078,3 +1078,21 @@ table.no-view td {
 select.homonym {
     font-size: 11px;    
 }
+
+
+
+/* Specific to TABLET */
+.tablet-remove, .tablet-remove .btn, .tablet-remove .glyphicon {
+  /* display: none; */
+  background-color: lightgray ;
+  color: lightgray ;
+  fill: lightgray;
+}
+.tablet-remove:hover, .tablet-remove:hover .btn, .tablet-remove:hover .glyphicon {
+  /* display: block; */
+  background-color: inherit;
+  color: red;
+  fill: inherit;
+}
+
+

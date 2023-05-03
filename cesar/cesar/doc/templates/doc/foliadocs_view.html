@@ -110,7 +110,11 @@
       </div>
 
     </div>
-    {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
+    {% if is_tablet_editor %}
+      {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
+    {% else %}
+      {% include 'doc/text_scores.html' with otext=otext mode='view' %}
+    {% endif %}
   </div>
 </div>
 

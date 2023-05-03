@@ -714,17 +714,35 @@ class ConcreteEdit(BasicDetails):
     def add_to_context(self, context, instance):
         """Add to the existing context"""
 
-        # Define the main items to show and edit
-        context['mainitems'] = [
-            {'type': 'plain', 'label': "Owner:",    'value': instance.get_owner()       },
-            {'type': 'plain', 'label': "Date:",     'value': instance.get_created()     },
-            {'type': 'plain', 'label': "Name:",     'value': instance.name,     'field_key': 'name'}
-            ]
-        context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
-        context['is_app_uploader'] = context['is_app_editor']
-        if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request):
-            # Adapt the app editor status
-            context['is_tablet_editor'] = True
+        oErr = ErrHandle()
+        try:
+
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'plain', 'label': "Owner:",    'value': instance.get_owner()       },
+                {'type': 'plain', 'label': "Date:",     'value': instance.get_created()     },
+                {'type': 'plain', 'label': "Name:",     'value': instance.name              }
+                ]
+            context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
+            context['is_tablet_editor'] = False
+            # Double check: only the owner may edit his/her own tablet texts
+            current_user = self.request.user.username
+            if current_user == instance.get_owner():
+                context['is_app_uploader'] = context['is_app_editor']
+                if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request):
+                    # Adapt the app editor status
+                    context['is_tablet_editor'] = True
+                # Allow the 'field_key' for name
+                for oItem in context['mainitems']:
+                    if oItem['label'] == "Name:":
+                        oItem['field_key'] = "name"
+                        break
+            else:
+                context['is_app_editor'] = False
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteEdit/add_to_context")
 
         # Return the context we have made
         return context
@@ -739,10 +757,10 @@ class ConcreteDetails(ConcreteEdit):
         context = super(ConcreteDetails, self).add_to_context(context, instance)
 
         # Do we have a JSON response in self.concr?
-        if instance.concr != None and instance.concr != "":
+        if not instance.concr is None and instance.concr != "":
             # Make sure to add [otext] and[tnumber]
             context['tnumber'] = 1
-            if instance.concr == None or instance.concr == "":
+            if instance.concr is None or instance.concr == "":
                 obj = dict(id=instance.id, show=False)
             else:
                 obj = json.loads(instance.concr)
@@ -753,12 +771,24 @@ class ConcreteDetails(ConcreteEdit):
                 word_id = 1
                 for oPara in obj['list']:
                     for oSent in oPara['list']:
+                        lst_sent = []
                         for oWord in oSent['list']:
+                            concr = str(oWord.get("concr", ""))
                             id = oWord.get('word_id')
                             if id is None:
                                 oWord['word_id'] = word_id
                                 word_id += 1
                                 bNeedSaving = True
+                                lst_sent.append(oWord)
+                            elif concr == "-1":
+                                # This word should be removed
+                                bNeedSaving = True
+                            else:
+                                # Add to sentence
+                                lst_sent.append(oWord)
+                        # Replace the current list
+                        if bNeedSaving:
+                            oSent['list'] = lst_sent
 
                 # Do we need to save the (recalculated) results?
                 if bNeedSaving:
