@@ -1313,6 +1313,9 @@ class WordlistEdit(BasicDetails):
                 # Adapt the app editor status
                 context['is_app_editor'] = user_is_superuser(self.request) or user_is_ingroup(self.request, TABLET_EDITOR)
                 context['is_tablet_editor'] = context['is_app_editor']
+
+                # context['after_details'] = self.get_button(instance)
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("WordlistEdit/add_to_context")
@@ -1326,12 +1329,14 @@ class WordlistEdit(BasicDetails):
         sBack = ""
         oErr = ErrHandle()
         try:
-            html = []
-            url = reverse('wordlist_upload', kwargs={'pk': instance.id})
-            html.append("<a role='button' class='btn btn-xs jumbo-3' href='{}' ".format(url))
-            html.append("title='Upload the file into the system'>{}<a>".format("Upload..."))
+            # Only provide a button, if all the necessary details have been provided
+            if not instance is None and not instance.upload is None and instance.upload != "" and not instance.sheet is None:
+                html = []
+                url = reverse('wordlist_upload', kwargs={'pk': instance.id})
+                html.append("<a role='button' class='btn btn-xs jumbo-3' href='{}' ".format(url))
+                html.append("title='Upload the file into the system'>{}<a>".format("Upload..."))
 
-            sBack = "\n".join(html)
+                sBack = "\n".join(html)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("WordlistEdit/get_button")

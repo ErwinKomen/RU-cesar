@@ -1552,6 +1552,7 @@ class Wordlist(models.Model):
 
         oErr = ErrHandle()
         obj = None
+        msg = ""
         try:
             woord = oItem.get("woord")
             score = oItem.get("score")
@@ -1576,7 +1577,7 @@ class Wordlist(models.Model):
 
             msg = oErr.get_error_message()
             oErr.DoError("Wordlist/get_worddef")
-        return obj
+        return obj, msg
 
     def read_upload(self):
         """Import or re-import the XLSX file's worksheet"""
@@ -1647,7 +1648,11 @@ class Wordlist(models.Model):
                         oItem = dict(woord=woord, score=score, postag=postag)
 
                         # Add the item to the list of [Worddef] for this [Wordlist]
-                        obj = self.get_worddef(oItem) 
+                        obj, msg = self.get_worddef(oItem) 
+                        # Check if all went well
+                        if obj is None and msg != "":
+                            # this word was not accepted
+                            return sContent
 
                         # Go to the next row
                         row_no += 1
