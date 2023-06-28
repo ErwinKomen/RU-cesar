@@ -732,6 +732,9 @@ class ConcreteEdit(BasicDetails):
                 if user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request):
                     # Adapt the app editor status
                     context['is_tablet_editor'] = True
+                else:
+                    # In fact: any legitimate USER may edit here!
+                    context['is_tablet_editor'] = True
                 # Allow the 'field_key' for name
                 for oItem in context['mainitems']:
                     if oItem['label'] == "Name:":
