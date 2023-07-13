@@ -8,9 +8,12 @@
 
 <div class="panel panel-default" style="padding: 0px;">
   <div class="panel-heading" >
-    <!-- Button to open/close Loc/Time table -->
-    <span class="badge jumbo-1 collapsed pull-right" data-toggle="collapse" data-target="#loctime-table">
-      Location/Time
+    <!-- Buttons to open/close Loc/Time tables -->
+    <span class="badge jumbo-1 collapsed pull-right" data-toggle="collapse" data-target="#loctime-loc-table">
+      Location
+    </span>
+    <span class="badge jumbo-1 collapsed pull-right" data-toggle="collapse" data-target="#loctime-time-table">
+      Time
     </span>
     <!-- The button to open/close the text details -->
     <span class="badge jumbo-1 collapsed" data-toggle="collapse" data-target="#text-number-{{tnumber}}">
@@ -18,20 +21,46 @@
     </span>
   </div>
 
-  <!-- Actually showing the table of Loc/Time -->
-  <div id="loctime-table" class="collapse container-small">
+  <!-- Actually showing the table of Loc/Time: loc -->
+  <div id="loctime-loc-table" class="collapse container-small">
     <div class="row">
       <div class="col-md-offset-4 col-md-8">
         {% if loctimes|length == 0 %}
-          (There are no location/time objects defined yet)
+          (There are no location objects defined yet)
         {% else %}
           <table class="func-view" style="width: 100%;">
             <tbody>
               {% for loctime in loctimes %}
-                <tr>
-                  <td style="width: 100%;">{{loctime.example}}</td>
-                  <td class="tdnowrap">{{loctime.score}}</td>
-                </tr>
+                {% if loctime.infotype == "loc" %}
+                  <tr>
+                    <td style="width: 100%;">{{loctime.example}}</td>
+                    <td class="tdnowrap">{{loctime.score}}</td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Actually showing the table of Loc/Time: time -->
+  <div id="loctime-time-table" class="collapse container-small">
+    <div class="row">
+      <div class="col-md-offset-4 col-md-8">
+        {% if loctimes|length == 0 %}
+          (There are no time objects defined yet)
+        {% else %}
+          <table class="func-view" style="width: 100%;">
+            <tbody>
+              {% for loctime in loctimes %}
+                {% if loctime.infotype == "time" %}
+                  <tr>
+                    <td style="width: 100%;">{{loctime.example}}</td>
+                    <td class="tdnowrap">{{loctime.score}}</td>
+                  </tr>
+                {% endif %}
               {% endfor %}
             </tbody>
           </table>

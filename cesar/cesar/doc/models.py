@@ -107,6 +107,8 @@ class LocTimeInfo(models.Model):
     example = models.TextField("Example text")
     # [1] Concreteness score
     score = models.CharField("Concreteness score", default="0.0", max_length=MAXPARAMLEN)
+    # [1] Type of information: 'loc' vs 'time'
+    infotype = models.CharField("Information type", default="time", max_length=MAXPARAMLEN)
 
     def __str__(self):
         return self.example
