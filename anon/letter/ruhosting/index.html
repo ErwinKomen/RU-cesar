@@ -1,31 +1,29 @@
 ﻿<html>
 
 <head>
-
+  
 </head>
 
 <body lang=NL link=blue vlink=purple>
 
-  <h3>Notice</h3>
-  <p>The ELPASH page has moved.</p>
-  <p>We will try to automatically re-direct to the new page <span id="seconds">...</span></p>
-  <div>&nbsp;</div>
-  <div>&nbsp;</div>
-  <p>
-    If you have not been redirected <span id="plain">in time</span>, click
-    <a href="https://cls.ru.nl/staff/ekomen">Radboud University CLS staff/ekomen</a>
-  </p>
+<h3>Notice</h3>
+<p>My homepage has moved.</p>
+<p>We will try to automatically re-direct to the new page <span id="seconds">...</span></p>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<p>If you have not been redirected <span id="plain">in time</span>, click
+<a href="https://cls.ru.nl/staff/ekomen">Radboud University CLS staff/ekomen</a></p>
 
 
-  <script type="text/javascript">
+<script type="text/javascript">
   var lst_seconds = ["one", "two", "three", "four", "five", "six", "seven"],
-      seconds = 3,
-      new_url = "https://cls.ru.nl/staff/ekomen/elpash",
+      seconds = 5,
+      new_url = "https://cls.ru.nl/staff/ekomen",
       foo;
-
+  
   function updateSecs() {
     var sText = "";
-
+    
     // Calculate the new seconds
     seconds--;
     if (seconds < 0) {
@@ -41,7 +39,7 @@
       document.getElementById("plain").innerHTML = sText;
     }
   }
-
+  
   function countdownTimer() {
     foo = setInterval(function () {
         updateSecs()
@@ -49,7 +47,7 @@
   }
 
 countdownTimer();
-  </script>
+</script>
 </body>
 
 </html>

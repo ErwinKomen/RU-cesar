@@ -55,6 +55,10 @@ table tbody tr:hover {
   background-color: lightgoldenrodyellow !important;
 }
 
+.table thead tr td {
+    font-weight: bold;
+}
+
 /*
 div.inline-group a.add-related {
     visibility: hidden;
