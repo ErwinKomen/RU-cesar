@@ -308,15 +308,23 @@ var ru = (function ($, ru) {
        */
       loctime_filter: function (elStart) {
         var sQuery = "",
+            iCount = 0,
+            elItems = null,
             elTable = null;
 
         try {
+          // Get the table
+          elTable = $(elStart).closest(".loctime-list").first();
+          // Get the .loctime-items 
+          elItems = $(elTable).find(".loctime-items").first();
           // Get the search string
           sQuery = $(elStart).val();
           if (sQuery !== undefined && sQuery !== "") {
             sQuery = sQuery.toLowerCase();
-            // Get the table
-            elTable = $(elStart).closest(".loctime-list").first();
+            if (sQuery !== "") {
+              sQuery = sQuery.trim();
+            }
+            // iCount = 0;
             // Walk all rows of the table
             $(elTable).find("tr").each(function (idx, el) {
               var sItem = "",
@@ -330,10 +338,15 @@ var ru = (function ($, ru) {
                 $(el).addClass("hidden");
               } else {
                 $(el).removeClass("hidden");
+                // iCount += 1;
               }
             });
-
+          } else {
+            $(elTable).find("tr").removeClass("hidden");
           }
+          // Show the total amount of rows
+          iCount = $(elTable).find("tr").not(".hidden").length;
+          $(elItems).html(iCount + " found");
         } catch (ex) {
           private_methods.errMsg("loctime_filter", ex);
         }
