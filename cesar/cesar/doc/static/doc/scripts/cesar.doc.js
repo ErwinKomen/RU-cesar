@@ -302,6 +302,44 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * loctime_filter
+       *   Filter table
+       *
+       */
+      loctime_filter: function (elStart) {
+        var sQuery = "",
+            elTable = null;
+
+        try {
+          // Get the search string
+          sQuery = $(elStart).val();
+          if (sQuery !== undefined && sQuery !== "") {
+            sQuery = sQuery.toLowerCase();
+            // Get the table
+            elTable = $(elStart).closest(".loctime-list").first();
+            // Walk all rows of the table
+            $(elTable).find("tr").each(function (idx, el) {
+              var sItem = "",
+                  pos = -1;
+
+              // Match with contents of this row
+              sItem = $(el).find("td").first().text().trim().toLowerCase();
+              pos = sItem.indexOf(sQuery);
+              if (pos < 0) {
+                // no match
+                $(el).addClass("hidden");
+              } else {
+                $(el).removeClass("hidden");
+              }
+            });
+
+          }
+        } catch (ex) {
+          private_methods.errMsg("loctime_filter", ex);
+        }
+      },
+
+      /**
        * loctime_drop
        *   Allow dropping
        *

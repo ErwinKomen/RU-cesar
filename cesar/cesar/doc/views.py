@@ -1093,11 +1093,6 @@ class LocTimeList(BasicList):
         return context
 
 
-#class LocTimeTable(LocTimeList):
-#    """Just provide a table (listview) of loctime elements"""
-
-#    view_only = True
-
 
 # =============== EXPRESSION ===============================
 
@@ -1759,8 +1754,6 @@ def transcribe_dutch(request):
         response = "<html><body><h3>Error</h3><div>{}</div></body></html>".format(msg)
 
     return response
-
-
 
 
 

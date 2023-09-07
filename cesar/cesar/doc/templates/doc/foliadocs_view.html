@@ -24,10 +24,20 @@
   <!-- Actually showing the table of Loc/Time: loc -->
   <div id="loctime-loc-table" class="collapse container-small">
     <div class="row">
-      <div class="col-md-offset-4 col-md-8">
+      <div class="col-md-offset-4 col-md-8 loctime-list">
         {% if loctimes|length == 0 %}
           (There are no location objects defined yet)
         {% else %}
+          <!-- Provide a place to filter the list in the table -->
+          <div>
+            <span>Filter (location):</span>
+            <span>
+              <input type="text" name="loctime-loc-filter" style="width: 50%;"
+                     onkeyup="ru.cesar.doc.loctime_filter(this);" />
+            </span>
+          </div>
+
+          <!-- Show the actual (filtered) table -->
           <table class="func-view" style="width: 100%;">
             <tbody>
               {% for loctime in loctimes %}
@@ -48,10 +58,20 @@
   <!-- Actually showing the table of Loc/Time: time -->
   <div id="loctime-time-table" class="collapse container-small">
     <div class="row">
-      <div class="col-md-offset-4 col-md-8">
+      <div class="col-md-offset-4 col-md-8 loctime-list">
         {% if loctimes|length == 0 %}
           (There are no time objects defined yet)
         {% else %}
+          <!-- Provide a place to filter the list in the table -->
+          <div>
+            <span>Filter (time):</span>
+            <span>
+              <input type="text" name="loctime-time-filter" style="width: 50%;"
+                     onkeyup="ru.cesar.doc.loctime_filter(this);"  />
+            </span>
+          </div>
+
+          <!-- Show the actual (filtered) table -->
           <table class="func-view" style="width: 100%;">
             <tbody>
               {% for loctime in loctimes %}
