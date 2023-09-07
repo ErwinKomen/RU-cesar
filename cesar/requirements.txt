@@ -1,2 +1,36 @@
-django >=1.10
-django-select2==6.3.1
+# ===========================================================
+# Requirements for CESAR
+# Date: 7/sep/2023
+# 
+# Python version this works for: 3.8.10 / Ubuntu 20.04.6
+#
+# For a better overview of dependencies: install pipdeptree
+# ===========================================================
+
+# Gathering stuff for CLAM
+lxml==4.6.1
+pycrypto==2.6.1
+PyYAML==5.1.2
+requests==2.22.0
+requests-oauthlib==1.2.0
+requests-toolbelt==0.9.1
+CLAM==3.0.7
+
+# And FoLiA, which takes along pyparsing
+pyparsing==2.4.2
+FoLiA==2.2.1
+
+# Django and related stuff
+django==2.2.24
+  django-select2==6.3.1
+  
+# Document processing  
+docx==0.2.4
+beautifulsoup4==4.9.3
+python-docx==0.8.11
+htmldocx==0.0.4
+
+# Other stuff
+Markdown==3.3.4
+openpyxl==2.6.2
+PyNLPl==1.2.9
