@@ -22,6 +22,7 @@ import openpyxl
 import docx
 from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
+from pypdf import PdfReader
 
 import clam.common.client
 import clam.common.data
@@ -91,6 +92,22 @@ def getText(data_file):
     except:
         msg = oErr.get_error_message()
         oErr.DoError("getText")
+    return sBack
+
+def getPdfText(data_file):
+    """Given a PDF document, extract its text data"""
+    oErr = ErrHandle()
+    sBack = "-"
+    try:
+        reader = PdfReader(data_file)
+        lst_text = []
+        for page in reader.pages:
+            sText = page.extract_text()
+            lst_text.append(sText)
+        sBack = '\n'.join(lst_text)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("getPdfText")
     return sBack
 
 # Views belonging to the Cesar Document Processing app.
@@ -516,6 +533,12 @@ def import_concrete(request):
                             if extension == "docx":
                                 # Assuming this is a docx file
                                 data_text = getText(data_file)
+                                # The text should be split into lines
+                                data_file = data_text.split("\n")
+                                extension = "txt"
+
+                            elif extension == "pdf":
+                                data_text = getPdfText(data_file)
                                 # The text should be split into lines
                                 data_file = data_text.split("\n")
                                 extension = "txt"
