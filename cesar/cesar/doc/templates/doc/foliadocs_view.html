@@ -92,7 +92,7 @@
   </div>
 
   <!-- Actually showing text details -->
-  <div id="text-number-{{tnumber}}" class="collapse container-small">
+  <div id="text-number-{{tnumber}}" class="collapse container-small scrolltop-allow">
     <div class="row">
       <div class="col-md-8">
         <span>
@@ -166,6 +166,12 @@
     {% else %}
       {% include 'doc/text_scores.html' with otext=otext mode='view' %}
     {% endif %}
+
+   <div class="scrolltop-container">
+      <a class="" href="#top" title="Scroll back to top">
+        <span class="glyphicon glyphicon-arrow-up"></span>
+      </a>
+    </div>
   </div>
 </div>
 
