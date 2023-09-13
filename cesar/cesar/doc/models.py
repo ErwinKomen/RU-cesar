@@ -345,6 +345,8 @@ class FrogLink(models.Model):
     fullname = models.CharField("Full path of this file", max_length=MAXPATH, null=True, blank=True)
     # [0-1] Concreteness as stringified JSON object
     concr = models.TextField("Concreteness scores", null=True, blank=True)
+    # [0-1] Separate field for the score
+    score = models.FloatField("Overall score", null=True, blank=True)
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
 
@@ -621,7 +623,7 @@ class FrogLink(models.Model):
 
 
             # Make sure the requester knows how many have been added
-            oBack['count'] = iCount   # The number of sermans added
+            oBack['count'] = iCount   # The number of sermons added
             oBack['filename'] = filename
             oBack['concreteness'] = 0
 
@@ -1174,6 +1176,9 @@ class FrogLink(models.Model):
 
             # Add the concreteness as string
             self.concr = json.dumps(oText)
+            fScore = oText.get("score")
+            if not fScore is None and isinstance(fScore, float):
+                self.score = fScore
             self.save()
             bResult = True
             return bResult, sMsg
@@ -1295,6 +1300,15 @@ class FrogLink(models.Model):
             sMsg = oErr.get_error_message()
             oErr.DoError("FrogLink get_csv")
             return ""
+
+    def get_score(self):
+        fBack = 0.0
+        if not self.score is None:
+            fBack = self.score
+        #if not self.concr is None and self.concr != "" and "{" in self.concr:
+        #    obj = json.loads(self.concr)
+        #    fBack = obj.get("score", 0.0)
+        return fBack
 
 
 class FoliaProcessor():

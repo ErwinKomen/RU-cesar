@@ -518,7 +518,7 @@ def import_concrete(request):
                         # Check the extension
                         arFile = filename.split(".")
                         extension = arFile[len(arFile)-1]
-                        sBare = arFile[0].strip().replace(" ", "_")
+                        sBare = arFile[0].strip().replace(" ", "_").replace("-", "_")
 
                         # Check the bare file name
                         if re_number.match(sBare):
@@ -913,6 +913,8 @@ class ConcreteUpdate(BasicDetails):
             # Do we need to save the (recalculated) results?
             if bNeedSaving:
                 instance.concr = json.dumps(obj)
+                if isinstance(obj['score'], float):
+                    instance.score = obj['score']
                 instance.save()
         return None
 
@@ -930,11 +932,13 @@ class ConcreteListView(BasicList):
     delete_line = True      # Allow deleting a line
     bUseFilter = True
     superuser = False
-    order_cols = ['created', 'name', '']
-    order_default = ['-created', 'name']
-    order_heads = [{'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
-                   {'name': 'Name',  'order': 'o=2', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
-                   {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
+    order_cols = ['created', 'score', 'name', '']
+    order_default = ['-created', 'score', 'name']
+    order_heads = [
+        {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
+        {'name': 'Score', 'order': 'o=2', 'type': 'str', 'custom': 'score',      'linkdetails': True},
+        {'name': 'Name',  'order': 'o=3', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+        {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
     filters = [
         {'name': 'Name',  'id': 'filter_name',  'enabled': False}
         ]
@@ -953,12 +957,13 @@ class ConcreteListView(BasicList):
             # Check if I am superuser or not
             self.superuser = self.request.user.is_superuser
             if self.superuser:
-                self.order_cols = ['created', 'fdocs__owner__username', 'name', '']
-                self.order_default = ['-created', 'fdocs__owner__username', 'name']
+                self.order_cols = ['created', 'fdocs__owner__username', 'score', 'name', '']
+                self.order_default = ['-created', 'fdocs__owner__username', 'score', 'name']
                 self.order_heads = [
                     {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
                     {'name': 'Owner', 'order': 'o=2', 'type': 'str', 'custom': 'owner',      'linkdetails': True},
-                    {'name': 'Name',  'order': 'o=3', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+                    {'name': 'Score', 'order': 'o=3', 'type': 'str', 'custom': 'score',      'linkdetails': True},
+                    {'name': 'Name',  'order': 'o=4', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
                     {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
                 self.filters = [
                     {'name': 'Name',  'id': 'filter_name',  'enabled': False},
@@ -977,6 +982,16 @@ class ConcreteListView(BasicList):
                         ]
                      }
                     ]
+                sValue = Information.get_kvalue("doc_score")
+                if not sValue in ['ok', 'done']:
+                    # Walk all the FrogLink items
+                    for obj in FrogLink.objects.all():
+                        if obj.score is None:
+                            score = obj.get_score()
+                            obj.score = score
+                            obj.save()
+
+                    Information.set_kvalue("doc_score", "done")
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ConcreteListView/initializations")
@@ -995,6 +1010,10 @@ class ConcreteListView(BasicList):
                 sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
             elif custom == "owner":
                 sBack = instance.fdocs.owner.username
+            elif custom == "score":
+                # Get the score
+                score = instance.get_score()
+                sBack = "{0:.3f}".format(score)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ConcreteListView/get_field_value")
