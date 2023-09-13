@@ -1,4 +1,4 @@
-﻿var django = {
+var django = {
   "jQuery": jQuery.noConflict(true)
 };
 var jQuery = django.jQuery;
@@ -261,6 +261,45 @@ var ru = (function ($, ru) {
 
         } catch (ex) {
           private_methods.errMsg("concrete_changes", ex);
+        }
+      },
+
+      /**
+       * doc_level
+       *   Change the document view level
+       *
+       */
+      doc_level: function (elThis) {
+        var sLevel = "",
+            elTable = null;
+
+        try {
+          // Get the overall table
+          elTable = $(elThis).closest(".container-small").find("table").first();
+          // Get the currently selected level
+          sLevel = $(elThis).val();
+          switch (sLevel) {
+            case "all":
+              // Remove 'hidden' from particular classes
+              $(elTable).find(".doc-para, .doc-sent, .docword").removeClass("hidden");
+              break;
+            case "sent":
+              // Hide words
+              $(elTable).find(".doc-para, .doc-sent").removeClass("hidden");
+              $(elTable).find(".docword").addClass("hidden");
+              break;
+            case "para":
+              // Hide words, sent
+              $(elTable).find(".doc-para").removeClass("hidden");
+              $(elTable).find(".docword, .doc-sent").addClass("hidden");
+              break;
+            case "text":
+              // Hide words, sent, para
+              $(elTable).find(".docword, .doc-para, .doc-sent").addClass("hidden");
+              break;
+          }
+        } catch (ex) {
+          private_methods.errMsg("doc_level", ex);
         }
       },
 

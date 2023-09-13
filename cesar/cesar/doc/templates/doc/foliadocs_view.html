@@ -95,8 +95,15 @@
   <div id="text-number-{{tnumber}}" class="collapse container-small scrolltop-allow">
     <div class="row">
       <div class="col-md-8">
+        <!-- Room to select the level -->
+        <select class="" id="doc-hlevel" onchange="ru.cesar.doc.doc_level(this);">
+          <option value="all" selected>All</option>
+          <option value="sent">Sentences</option>
+          <option value="para">Paragraphs</option>
+          <option value="text">Text</option>
+        </select>
         <span>
-          Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %} 
+          Overall score: {{otext.score|floatformat:3}} {% if otext.total %}Sum score: {{otext.total|floatformat:3}} {% endif %}
           (n={{otext.n}}, total={{otext.total|floatformat:3}})
         </span>
       </div>
