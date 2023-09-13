@@ -1301,13 +1301,15 @@ class FrogLink(models.Model):
             oErr.DoError("FrogLink get_csv")
             return ""
 
-    def get_score(self):
+    def get_score(self, calculate=False):
         fBack = 0.0
-        if not self.score is None:
-            fBack = self.score
-        #if not self.concr is None and self.concr != "" and "{" in self.concr:
-        #    obj = json.loads(self.concr)
-        #    fBack = obj.get("score", 0.0)
+        if calculate:
+            if not self.concr is None and self.concr != "" and "{" in self.concr:
+                obj = json.loads(self.concr)
+                fBack = obj.get("score", 0.0)
+        else:
+            if not self.score is None:
+                fBack = self.score
         return fBack
 
 

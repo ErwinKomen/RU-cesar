@@ -986,8 +986,8 @@ class ConcreteListView(BasicList):
                 if not sValue in ['ok', 'done']:
                     # Walk all the FrogLink items
                     for obj in FrogLink.objects.all():
-                        if obj.score is None:
-                            score = obj.get_score()
+                        if obj.score is None or obj.score == 0.0:
+                            score = obj.get_score(True)
                             obj.score = score
                             obj.save()
 
