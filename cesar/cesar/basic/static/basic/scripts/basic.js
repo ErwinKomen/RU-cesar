@@ -2210,6 +2210,11 @@ var ru = (function ($, ru) {
             if ("onstart" in options) { call_onstart = options.onstart; }
           }
 
+          // look for the correct downloadstatus
+          if ($(dstatus).length === 0) {
+            dstatus = "#exceldownloadstatus";
+          }
+
           // Gather the information
           frm = $(elStart).closest(".container-small").find("form");
           if (frm.length === 0) {

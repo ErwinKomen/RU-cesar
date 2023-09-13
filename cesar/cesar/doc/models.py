@@ -98,6 +98,52 @@ def wordlist_path(instance, filename):
     return sBack
 
 
+# =================== HELPER classes ==================================
+
+class Custom():
+    """Just adding some functions"""
+
+    def custom_getkv(self, item, **kwargs):
+        """Get key and value from the manuitem entry"""
+
+        oErr = ErrHandle()
+        key = ""
+        value = ""
+        try:
+            keyfield = kwargs.get("keyfield", "name")
+            if keyfield == "path" and item['type'] == "fk_id":
+                key = "{}_id".format(key)
+            key = item[keyfield]
+            if self != None:
+                if item['type'] == 'field':
+                    value = getattr(self, item['path'])
+                elif item['type'] == "fk":
+                    fk_obj = getattr(self, item['path'])
+                    if fk_obj != None:
+                        value = getattr( fk_obj, item['fkfield'])
+                elif item['type'] == "fk_id":
+                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
+                    pass
+                    #fk_obj = getattr(self, item['path'])
+                    #if fk_obj != None:
+                    #    value = getattr( fk_obj, "id")
+                elif item['type'] == 'func':
+                    value = self.custom_get(item['path'], kwargs=kwargs)
+                    # return either as string or as object
+                    if keyfield == "name":
+                        # Adaptation for empty lists
+                        if value == "[]": value = ""
+                    else:
+                        if value == "": 
+                            value = None
+                        elif value[0] == '[':
+                            value = json.loads(value)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Custom/custom_getkv")
+        return key, value
+
+
 # ==================================== MODELS =================================================
 
 class LocTimeInfo(models.Model):
@@ -331,7 +377,7 @@ class FoliaDocs(models.Model):
         return self.owner.username
 
 
-class FrogLink(models.Model):
+class FrogLink(models.Model, Custom):
     """This provides the basic link with FROG
 
     Can be either frog local or frog remote, through the CLAM service
@@ -349,6 +395,14 @@ class FrogLink(models.Model):
     score = models.FloatField("Overall score", null=True, blank=True)
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
+
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Text file name',  'type': 'field',    'path': 'name' },
+        {'name': 'Score',           'type': 'field',    'path': 'score'},
+
+        {'name': 'Created',         'type': 'func',     'path': 'created'},
+        ]
 
     def __str__(self):
         return self.name
@@ -378,6 +432,23 @@ class FrogLink(models.Model):
         except:
             errHandle.DoError("FrogLink/create")
             return None, errHandle.get_error_message()
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "created":
+                sBack = self.get_created()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("FrogLink/custom_get")
+        return sBack
 
     def get_created(self):
         sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
