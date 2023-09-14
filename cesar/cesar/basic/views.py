@@ -533,6 +533,7 @@ class BasicList(ListView):
     none_on_empty = False
     use_team_group = False
     redirectpage = ""
+    downloadname = None
     lst_typeaheads = []
     sort_order = ""
     param_list = []
@@ -775,9 +776,10 @@ class BasicList(ListView):
             # Need to know who this user (profile) is
             user = self.request.user
             username = user.username
-            profile = user.user_profiles.first()
+            #profile = user.user_profiles.first()
             team_group = app_editor
-            kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+            # kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+            kwargs = {'username': username, 'team_group': team_group}
 
             # Get the queryset, which is based on the listview parameters
             qs = self.get_queryset()
@@ -829,6 +831,8 @@ class BasicList(ListView):
 
             # Make a download name
             downloadname = self.model.__name__
+            if not self.downloadname is None and self.downloadname != "":
+                downloadname = self.downloadname
             appl_name = APPLICATION_NAME
             sDbName = "{}_{}.xlsx".format(appl_name, downloadname)
 
@@ -1061,12 +1065,19 @@ class BasicList(ListView):
             #    get = UserSearch.load_parameters(usersearch_id, get)
             self.qd = get
 
-            # Then check if we have a redirect or not
-            if self.redirectpage == "":
-                # We can continue with the normal 'get()'
-                response = super(BasicList, self).get(request, *args, **kwargs)
+            # Check for downloading
+            if request.method == "POST" and self.qd.get("action") == "download":
+                dtype = self.qd.get("dtype", "")
+                if dtype != "":
+                    # This is not the regular listview, but just a downloading action
+                    response = self.download_excel(dtype)
             else:
-                response = redirect(self.redirectpage)
+                # Then check if we have a redirect or not
+                if self.redirectpage == "":
+                    # We can continue with the normal 'get()'
+                    response = super(BasicList, self).get(request, *args, **kwargs)
+                else:
+                    response = redirect(self.redirectpage)
         # REturn the appropriate response
         return response
 

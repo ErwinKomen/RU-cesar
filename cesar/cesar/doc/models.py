@@ -437,7 +437,7 @@ class FrogLink(models.Model, Custom):
         sBack = ""
         oErr = ErrHandle()
         try:
-            profile = kwargs.get("profile")
+            # profile = kwargs.get("profile")
             username = kwargs.get("username")
             team_group = kwargs.get("team_group")
 

@@ -14,6 +14,7 @@ from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpRe
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic.detail import DetailView
 from datetime import datetime
 import os.path, io, shutil
@@ -928,6 +929,7 @@ class ConcreteListView(BasicList):
     new_button = False      # Don't show a new button, because new items can only be added by downloading
     plural_name = "Concreteness text files"
     sg_name = "Concreteness file"
+    downloadname = "ConcreteList"
     has_select2 = True      # We are using Select2 in the FrogLinkForm
     delete_line = True      # Allow deleting a line
     bUseFilter = True
@@ -992,6 +994,8 @@ class ConcreteListView(BasicList):
                             obj.save()
 
                     Information.set_kvalue("doc_score", "done")
+
+            self.downloadname = "ConcreteList_{}".format(timezone.now().strftime("%Y%m%d"))
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ConcreteListView/initializations")

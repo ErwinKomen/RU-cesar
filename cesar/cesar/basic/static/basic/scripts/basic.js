@@ -2193,7 +2193,9 @@ var ru = (function ($, ru) {
             svgText = "",
             request = null,
             waitclass = null,
+            dstatus = "#downloadstatus",
             method = "xhtp",  // Options: 'normal', 'erwin', 'xhtp'
+            attempt = "xhr",
             data = [];
 
         try {
@@ -2369,6 +2371,9 @@ var ru = (function ($, ru) {
                     }
                     // Now send it with proper data
                     data = $(frm).serialize();
+                    // Add the 'download' action
+                    data = data + "&action=download&dtype=" + dtype
+                    // Send the data
                     request.send(data);
 
                     // Note: the 'onreadystate' function picks up the onready callback
