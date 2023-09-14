@@ -1,4 +1,4 @@
-﻿body
+body
 {
 }
 
@@ -75,7 +75,7 @@ table thead th.sortable .sortoptions a.sortremove:hover {
 .scrolltop-container {
     position: absolute;
     top: 0;
-    right: 25px;
+    right: -80px;
     height: 100%;
 }
 .scrolltop-container:before {

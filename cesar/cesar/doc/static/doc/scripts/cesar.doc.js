@@ -205,6 +205,8 @@ var ru = (function ($, ru) {
           $("[contenteditable=true]").on('change', function (e) {
             $("#concrete_process").removeClass("hidden");
             $(".scrolltop-container").addClass("scrolltop-save");
+            $(".scrolltop-container a").removeClass("hidden");
+            $(".scrolltop-container .arrow").addClass("hidden");
           });
 
           // clipboard copying
@@ -453,6 +455,8 @@ var ru = (function ($, ru) {
             // Make sure the save button shows
             $("#concrete_process").removeClass("hidden");
             $(".scrolltop-container").addClass("scrolltop-save");
+            $(".scrolltop-container a").removeClass("hidden");
+            $(".scrolltop-container .arrow").addClass("hidden");
 
           }
         } catch (ex) {

@@ -6,7 +6,7 @@
 {% endblock %}
 
 
-<div class="panel panel-default" style="padding: 0px;">
+<div class="panel panel-default scrolltop-allow" style="padding: 0px;">
   <div class="panel-heading" >
     <!-- Buttons to open/close Loc/Time tables -->
     <span class="badge jumbo-1 collapsed pull-right" data-toggle="collapse" data-target="#loctime-loc-table">
@@ -92,7 +92,7 @@
   </div>
 
   <!-- Actually showing text details -->
-  <div id="text-number-{{tnumber}}" class="collapse container-small scrolltop-allow">
+  <div id="text-number-{{tnumber}}" class="collapse container-small">
     <div class="row">
       <div class="col-md-8">
         <!-- Room to select the level -->
@@ -174,11 +174,15 @@
       {% include 'doc/text_scores.html' with otext=otext mode='view' %}
     {% endif %}
 
-   <div class="scrolltop-container">
-      <a class="" href="#top" title="Scroll back to top">
-        <span class="glyphicon glyphicon-arrow-up"></span>
-      </a>
-    </div>
   </div>
+
+  <div class="scrolltop-container">
+    <a class="arrow" href="#top" title="Scroll back to top">
+      <span class="glyphicon glyphicon-arrow-up"></span>
+    </a>
+    <a title="Scroll to the save button" href="#top" style="font-size: 12px; color: lavender;"
+        class="btn btn-sm jumbo-4 hidden">Save ^</a>
+  </div>
+
 </div>
 
