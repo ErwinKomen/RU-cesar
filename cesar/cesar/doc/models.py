@@ -393,6 +393,8 @@ class FrogLink(models.Model, Custom):
     concr = models.TextField("Concreteness scores", null=True, blank=True)
     # [0-1] Separate field for the score
     score = models.FloatField("Overall score", null=True, blank=True)
+    # [0-1] Separate field for the size (='n')
+    size = models.IntegerField("Size of text (words)", null=True, blank=True)
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
 
@@ -1250,6 +1252,8 @@ class FrogLink(models.Model, Custom):
             fScore = oText.get("score")
             if not fScore is None and isinstance(fScore, float):
                 self.score = fScore
+            # Also add the size
+            self.size = n
             self.save()
             bResult = True
             return bResult, sMsg
@@ -1373,6 +1377,8 @@ class FrogLink(models.Model, Custom):
             return ""
 
     def get_score(self, calculate=False):
+        """Get and possibly calculate the [score] of this text"""
+
         fBack = 0.0
         if calculate:
             if not self.concr is None and self.concr != "" and "{" in self.concr:
@@ -1382,6 +1388,20 @@ class FrogLink(models.Model, Custom):
             if not self.score is None:
                 fBack = self.score
         return fBack
+
+    def get_size(self, calculate=False):
+        """Get the size in number of words for this particular text"""
+
+        iBack = -1
+        if calculate:
+            if not self.concr is None and self.concr != "" and "{" in self.concr:
+                obj = json.loads(self.concr)
+                iBack = obj.get("n", 0)
+        else:
+            if not self.size is None:
+                iBack = self.size
+
+        return iBack
 
 
 class FoliaProcessor():
