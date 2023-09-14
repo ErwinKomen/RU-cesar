@@ -1110,6 +1110,7 @@ class BasicDetails(DetailView):
     permission = "write"    # Permission can be: (nothing), "read" and "write"
     new_button = False
     do_not_save = False
+    has_select2 = False
     newRedirect = False     # Redirect the page name to a correct one after creating
     use_team_group = False
     redirectpage = ""       # Where to redirect to
@@ -1373,6 +1374,9 @@ class BasicDetails(DetailView):
                 self.permission = "write"
         context['permission'] = self.permission
         context['extend_template'] = self.extend_template
+
+        if self.has_select2:
+            context['has_select2'] = True
 
         # Possibly define where a listview is
         classname = self.model._meta.model_name

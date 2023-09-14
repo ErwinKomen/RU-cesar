@@ -38,10 +38,10 @@ from cesar.seeker.views import csv_to_excel
 from cesar.basic.models import Information
 from cesar.tsg.models import TsgInfo
 from cesar.doc.models import CLAMClient, FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
-    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist
+    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist, Comparison
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm, \
-    WorddefForm
+    WorddefForm, ConcreteForm
 from cesar.doc.adaptations import listview_adaptations
 from cesar.utils import ErrHandle
 
@@ -78,6 +78,63 @@ def user_is_superuser(request):
         if user != None:
             bFound = user.is_superuser
     return bFound
+
+def adapt_m2m(cls, instance, field1, qs, field2, extra = [], extrargs = {}, qfilter = {}, 
+              related_is_through = False, userplus = None, added=None, deleted=None):
+    """Adapt the 'field' of 'instance' to contain only the items in 'qs'
+    
+    The lists [added] and [deleted] (if specified) will contain links to the elements that have been added and deleted
+    If [deleted] is specified, then the items will not be deleted by adapt_m2m(). Caller needs to do this.
+    """
+
+    errHandle = ErrHandle()
+    try:
+        # Get current associations
+        lstQ = [Q(**{field1: instance})]
+        for k,v in qfilter.items(): lstQ.append(Q(**{k: v}))
+        through_qs = cls.objects.filter(*lstQ)
+        if related_is_through:
+            related_qs = through_qs
+        else:
+            related_qs = [getattr(x, field2) for x in through_qs]
+        # make sure all items in [qs] are associated
+        if userplus == None or userplus:
+            for obj in qs:
+                if obj not in related_qs:
+                    # Add the association
+                    args = {field1: instance}
+                    if related_is_through:
+                        args[field2] = getattr(obj, field2)
+                    else:
+                        args[field2] = obj
+                    for item in extra:
+                        # Copy the field with this name from [obj] to 
+                        args[item] = getattr(obj, item)
+                    for k,v in extrargs.items():
+                        args[k] = v
+                    # cls.objects.create(**{field1: instance, field2: obj})
+                    new = cls.objects.create(**args)
+                    if added != None:
+                        added.append(new)
+
+        # Remove from [cls] all associations that are not in [qs]
+        # NOTE: do not allow userplus to delete
+        for item in through_qs:
+            if related_is_through:
+                obj = item
+            else:
+                obj = getattr(item, field2)
+            if obj not in qs:
+                if deleted == None:
+                    # Remove this item
+                    item.delete()
+                else:
+                    deleted.append(item)
+        # Return okay
+        return True
+    except:
+        msg = errHandle.get_error_message()
+        return False
 
 def getText(data_file):
     """Given a Word .dox document, extract its text data"""
@@ -724,6 +781,7 @@ class ConcreteEdit(BasicDetails):
     mForm = FrogLinkForm
     prefix = "concr"
     title= "ConcreteEdit"
+    has_select2 = True      # We are using Select2 in the FrogLinkForm
     mainitems = []
 
     def get_context_data(self, **kwargs):
@@ -745,7 +803,8 @@ class ConcreteEdit(BasicDetails):
             context['mainitems'] = [
                 {'type': 'plain', 'label': "Owner:",    'value': instance.get_owner()       },
                 {'type': 'plain', 'label': "Date:",     'value': instance.get_created()     },
-                {'type': 'plain', 'label': "Name:",     'value': instance.name              }
+                {'type': 'plain', 'label': "Name:",     'value': instance.name              },
+                {'type': 'plain', 'label': "Comparison:",'value': instance.get_compare()     }
                 ]
             context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
             context['is_tablet_editor'] = False
@@ -759,11 +818,14 @@ class ConcreteEdit(BasicDetails):
                 else:
                     # In fact: any legitimate USER may edit here!
                     context['is_tablet_editor'] = True
-                # Allow the 'field_key' for name
+
+                # Allow the 'field_key' for: 'name', 'comparison'
                 for oItem in context['mainitems']:
                     if oItem['label'] == "Name:":
                         oItem['field_key'] = "name"
-                        break
+                    elif oItem['label'] == "Comparison:":
+                        oItem['field_list'] = "concrlist"
+
             else:
                 context['is_app_editor'] = False
 
@@ -773,6 +835,22 @@ class ConcreteEdit(BasicDetails):
 
         # Return the context we have made
         return context
+
+    def after_save(self, form, instance):
+        msg = ""
+        bResult = True
+        oErr = ErrHandle()
+        
+        try:
+            # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
+            # (1) 'collections'
+            concrlist = form.cleaned_data['concrlist']
+            adapt_m2m(Comparison, instance, "base", concrlist, "target")
+
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+        return bResult, msg
 
 
 class ConcreteDetails(ConcreteEdit):
@@ -829,6 +907,10 @@ class ConcreteDetails(ConcreteEdit):
             # Also provide the loctime info
             qs = LocTimeInfo.objects.all().order_by('example')
             context['loctimes'] = qs
+
+            # Provide a <form> with a field that allows selecting multiple (other) texts (from this user)
+            concForm = ConcreteForm(instance=instance)
+            context['concForm'] = concForm
 
             sAfter = render_to_string('doc/foliadocs_view.html', context, self.request)
             context['after_details'] = sAfter

@@ -2,12 +2,12 @@
 
 {% block scripts %}
     {% load staticfiles %}
-    <script src="{% static 'doc/scripts/cesar.doc.js' %}"></script>
+<script src="{% static 'doc/scripts/cesar.doc.js' %}"></script>
 {% endblock %}
 
 
 <div class="panel panel-default scrolltop-allow" style="padding: 0px;">
-  <div class="panel-heading" >
+  <div class="panel-heading">
     <!-- Buttons to open/close Loc/Time tables -->
     <span class="badge jumbo-1 collapsed pull-right" data-toggle="collapse" data-target="#loctime-loc-table">
       Location
@@ -26,31 +26,31 @@
     <div class="row">
       <div class="col-md-offset-4 col-md-8 loctime-list">
         {% if loctimes|length == 0 %}
-          (There are no location objects defined yet)
+        (There are no location objects defined yet)
         {% else %}
-          <!-- Provide a place to filter the list in the table -->
-          <div>
-            <span>Filter (location):</span>
-            <span>
-              <input type="text" name="loctime-loc-filter" style="width: 50%;"
-                     onkeyup="ru.cesar.doc.loctime_filter(this);" />
-            </span>
-            <span class="loctime-items"></span>
-          </div>
+        <!-- Provide a place to filter the list in the table -->
+        <div>
+          <span>Filter (location):</span>
+          <span>
+            <input type="text" name="loctime-loc-filter" style="width: 50%;"
+                   onkeyup="ru.cesar.doc.loctime_filter(this);" />
+          </span>
+          <span class="loctime-items"></span>
+        </div>
 
-          <!-- Show the actual (filtered) table -->
-          <table class="func-view" style="width: 100%;">
-            <tbody>
-              {% for loctime in loctimes %}
-                {% if loctime.infotype == "loc" %}
-                  <tr>
-                    <td style="width: 100%;">{{loctime.example}}</td>
-                    <td class="tdnowrap">{{loctime.score}}</td>
-                  </tr>
-                {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
+        <!-- Show the actual (filtered) table -->
+        <table class="func-view" style="width: 100%;">
+          <tbody>
+            {% for loctime in loctimes %}
+            {% if loctime.infotype == "loc" %}
+            <tr>
+              <td style="width: 100%;">{{loctime.example}}</td>
+              <td class="tdnowrap">{{loctime.score}}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
         {% endif %}
       </div>
     </div>
@@ -61,31 +61,31 @@
     <div class="row">
       <div class="col-md-offset-4 col-md-8 loctime-list">
         {% if loctimes|length == 0 %}
-          (There are no time objects defined yet)
+        (There are no time objects defined yet)
         {% else %}
-          <!-- Provide a place to filter the list in the table -->
-          <div>
-            <span>Filter (time):</span>
-            <span>
-              <input type="text" name="loctime-time-filter" style="width: 50%;"
-                     onkeyup="ru.cesar.doc.loctime_filter(this);"  />
-            </span>
-            <span class="loctime-items"></span>
-          </div>
+        <!-- Provide a place to filter the list in the table -->
+        <div>
+          <span>Filter (time):</span>
+          <span>
+            <input type="text" name="loctime-time-filter" style="width: 50%;"
+                   onkeyup="ru.cesar.doc.loctime_filter(this);" />
+          </span>
+          <span class="loctime-items"></span>
+        </div>
 
-          <!-- Show the actual (filtered) table -->
-          <table class="func-view" style="width: 100%;">
-            <tbody>
-              {% for loctime in loctimes %}
-                {% if loctime.infotype == "time" %}
-                  <tr>
-                    <td style="width: 100%;">{{loctime.example}}</td>
-                    <td class="tdnowrap">{{loctime.score}}</td>
-                  </tr>
-                {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
+        <!-- Show the actual (filtered) table -->
+        <table class="func-view" style="width: 100%;">
+          <tbody>
+            {% for loctime in loctimes %}
+            {% if loctime.infotype == "time" %}
+            <tr>
+              <td style="width: 100%;">{{loctime.example}}</td>
+              <td class="tdnowrap">{{loctime.score}}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
         {% endif %}
       </div>
     </div>
@@ -109,69 +109,70 @@
       </div>
       <div class="col-md-2 dropdown container-small">
         {% if otext.show %}
-          <form>
-            {% csrf_token %}
-            <div id="downloadcenter" class="hidden">
-              <input name='downloadtype' id='downloadtype' class='form-control' value='' >
-              <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
-            </div>
-            <button class="btn btn-default btn-sm dropdown-toggle"
-                    type="button" id="downloadmenu"
-                    data-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="true">download&nbsp;<span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="downloadmenu">
-              <li class="fdos_host">
-                <a href="#" id="fdocs_download_tree"
-                    title="JS object notation"
-                    downloadtype="json"
-                    ajaxurl="{% url 'concrete_download' pk=otext.id %}"
-                    onclick="ru.cesar.seeker.post_download(this);" >json</a>
-              </li>
-              <li class="fdos_host">
-                <a href="#" id="fdocs_download_tree"
-                    title="Tab-separated values"
-                    downloadtype="tsv"
-                    ajaxurl="{% url 'concrete_download' pk=otext.id %}"
-                    onclick="ru.cesar.seeker.post_download(this);" >tsv</a>
-              </li>
-              <!-- <li role="separator" class="divider"></li>-->
-              <li class="fdos_host">
-                <a href="#" id="fdocs_download_htable"
-                    title="Microsoft Excel / Open Office "
-                    downloadtype="excel"
-                    ajaxurl="{% url 'concrete_download' pk=otext.id %}"
-                    onclick="ru.cesar.seeker.post_download(this);" >Excel</a>
-              </li>
-            </ul>
-          </form>
+        <form>
+          {% csrf_token %}
+          <div id="downloadcenter" class="hidden">
+            <input name='downloadtype' id='downloadtype' class='form-control' value=''>
+            <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+          </div>
+          <button class="btn btn-default btn-sm dropdown-toggle"
+                  type="button" id="downloadmenu"
+                  data-toggle="dropdown" aria-haspopup="true"
+                  aria-expanded="true">
+            download&nbsp;<span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+            <li class="fdos_host">
+              <a href="#" id="fdocs_download_tree"
+                 title="JS object notation"
+                 downloadtype="json"
+                 ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                 onclick="ru.cesar.seeker.post_download(this);">json</a>
+            </li>
+            <li class="fdos_host">
+              <a href="#" id="fdocs_download_tree"
+                 title="Tab-separated values"
+                 downloadtype="tsv"
+                 ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                 onclick="ru.cesar.seeker.post_download(this);">tsv</a>
+            </li>
+            <!-- <li role="separator" class="divider"></li>-->
+            <li class="fdos_host">
+              <a href="#" id="fdocs_download_htable"
+                 title="Microsoft Excel / Open Office "
+                 downloadtype="excel"
+                 ajaxurl="{% url 'concrete_download' pk=otext.id %}"
+                 onclick="ru.cesar.seeker.post_download(this);">Excel</a>
+            </li>
+          </ul>
+        </form>
         {% else %}
-          <div><i>(no download for this item)</i></div>
+        <div><i>(no download for this item)</i></div>
         {% endif %}
 
       </div>
       <div class="col-md-2">
         {% if is_tablet_editor %}
-          <div id="concrete_process" class="hidden container-small">
-            <form action="{% url 'concrete_update' pk=otext.id %}" method="post">
-              {% csrf_token %}
-              <div class="hidden">
-                <input name="concretedata" id="concretedata" class="form-control" value="" />
-              </div>
-              <a id="process_changes" title="Process editing changes in the Concreteness data"
-                 class="btn btn-sm jumbo-4"
-                 targeturl="{% url 'froglink_details' pk=otext.id %}"
-                 onclick="ru.cesar.doc.concrete_changes(this);">Save changes</a>
-            </form>
-          </div>
+        <div id="concrete_process" class="hidden container-small">
+          <form action="{% url 'concrete_update' pk=otext.id %}" method="post">
+            {% csrf_token %}
+            <div class="hidden">
+              <input name="concretedata" id="concretedata" class="form-control" value="" />
+            </div>
+            <a id="process_changes" title="Process editing changes in the Concreteness data"
+               class="btn btn-sm jumbo-4"
+               targeturl="{% url 'froglink_details' pk=otext.id %}"
+               onclick="ru.cesar.doc.concrete_changes(this);">Save changes</a>
+          </form>
+        </div>
         {% endif %}
       </div>
 
     </div>
     {% if is_tablet_editor %}
-      {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
+    {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
     {% else %}
-      {% include 'doc/text_scores.html' with otext=otext mode='view' %}
+    {% include 'doc/text_scores.html' with otext=otext mode='view' %}
     {% endif %}
 
   </div>
@@ -181,8 +182,21 @@
       <span class="glyphicon glyphicon-arrow-up"></span>
     </a>
     <a title="Scroll to the save button" href="#top" style="font-size: 12px; color: lavender;"
-        class="btn btn-sm jumbo-4 hidden">Save ^</a>
+       class="btn btn-sm jumbo-4 hidden">Goto Save</a>
   </div>
 
+</div>
+
+
+<!-- Comparison of texts -->
+<div class="row">
+  <div  d="doc_comparison"  class="col-md-12">
+  </div>
+</div>
+
+<!-- Visualization of text comparison -->
+<div class="row">
+  <div id="doc_visualization" class="col-md-12">
+  </div>
 </div>
 

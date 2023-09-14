@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db import models, transaction
+from django.urls import reverse
 
 # Non-django imports
 import os
@@ -398,6 +399,9 @@ class FrogLink(models.Model, Custom):
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
 
+    # =============== Many to many links =======================================
+    comparisons = models.ManyToManyField("self", through="Comparison", symmetrical=False)
+
     # Definitions for download/upload
     specification = [
         {'name': 'Text file name',  'type': 'field',    'path': 'name' },
@@ -450,6 +454,26 @@ class FrogLink(models.Model, Custom):
         except:
             msg = oErr.get_error_message()
             oErr.DoError("FrogLink/custom_get")
+        return sBack
+
+    def get_compare(self):
+        """List all texts with which a comparison will be made""" 
+
+        sBack = ""
+        oErr = ErrHandle()
+        lst_compare = []
+        try:
+            for obj in self.comparisons.all():
+                sName = obj.name
+                url = reverse("froglink_details", kwargs={'pk': obj.id})
+                lst_compare.append("<span class='badge signature gr'><a href='{}'>{}</a></span>".format(
+                    url, sName))
+            # Combine
+            sBack = "\n".join(lst_compare)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Froglink/get_compare")
+
         return sBack
 
     def get_created(self):
@@ -1402,6 +1426,19 @@ class FrogLink(models.Model, Custom):
                 iBack = self.size
 
         return iBack
+
+
+class Comparison(models.Model):
+    """Comparison between two [FrogLink] instances"""
+
+    # [1] The main one
+    base = models.ForeignKey(FrogLink, on_delete=models.CASCADE, related_name="base_comparisons")
+    # [1] The one to compare with
+    target = models.ForeignKey(FrogLink, on_delete=models.CASCADE, related_name="target_comparisons")
+
+    def __str__(self) -> str:
+        sBack = "{}: {}".format(self.base.name, self.target.name)
+        return sBack
 
 
 class FoliaProcessor():

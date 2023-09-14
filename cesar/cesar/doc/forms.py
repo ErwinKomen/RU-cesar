@@ -12,6 +12,7 @@ from django_select2.forms import Select2MultipleWidget, ModelSelect2MultipleWidg
 
 
 from cesar.doc.models import *
+from cesar.basic.forms import BasicForm
 
 # ========================================= WIDGETS ====================================================
 
@@ -25,6 +26,21 @@ class UserWidget(ModelSelect2MultipleWidget):
 
     def get_queryset(self):
         return User.objects.all().order_by('username').distinct()
+
+
+class ConcrWidget(ModelSelect2MultipleWidget):
+    model = FrogLink
+    search_fields = [ 'name__icontains' ]
+    qs = None
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        qs_this = FrogLink.objects.none()
+        if not self.qs is None:
+            qs_this = self.qs
+        return qs_this
 
 
 # ================= FORMS =======================================
@@ -67,9 +83,35 @@ class UploadTwitterExcelForm(forms.Form):
     dofiles = forms.CharField(max_length=32, required=False)
 
 
+class ConcreteForm(BasicForm):
+    concrlist = ModelMultipleChoiceField(queryset=None, required=False, 
+        widget=ConcrWidget(attrs={'data-placeholder': 'Select multiple texts...', 'style': 'width: 100%;', 'class': 'searching'}))
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = FrogLink
+        fields = []
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(ConcreteForm, self).__init__(*args, **kwargs)
+
+        # Check if this is a specific instance
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+            # It is, and we need to be sure to select the right queryset
+            owner = instance.fdocs.owner
+            qs = FrogLink.objects.filter(fdocs__owner=owner).exclude(id=instance.id).distinct()
+            self.fields['concrlist'].queryset = qs
+            self.fields['concrlist'].widget.qs = qs
+
+
 class FrogLinkForm(forms.ModelForm):
     ownlist = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=UserWidget(attrs={'data-placeholder': 'Select multiple users...', 'style': 'width: 100%;', 'class': 'searching'}))
+    concrlist = ModelMultipleChoiceField(queryset=None, required=False, 
+        widget=ConcrWidget(attrs={'data-placeholder': 'Select multiple texts...', 'style': 'width: 100%;', 'class': 'searching'}))
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -88,6 +130,15 @@ class FrogLinkForm(forms.ModelForm):
         self.fields['created'].required = False
         self.fields['name'].required = False
         self.fields['ownlist'].queryset = User.objects.all()
+
+        # Check if this is a specific instance
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+            # It is, and we need to be sure to select the right queryset
+            owner = instance.fdocs.owner
+            qs = FrogLink.objects.filter(fdocs__owner=owner).exclude(id=instance.id).distinct()
+            self.fields['concrlist'].queryset = qs
+            self.fields['concrlist'].widget.qs = qs
 
 
 class LocTimeForm(forms.ModelForm):
