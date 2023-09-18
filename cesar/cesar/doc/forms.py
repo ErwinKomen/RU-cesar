@@ -97,14 +97,25 @@ class ConcreteForm(BasicForm):
         # First perform the default thing
         super(ConcreteForm, self).__init__(*args, **kwargs)
 
-        # Check if this is a specific instance
-        if 'instance' in kwargs:
-            instance = kwargs['instance']
-            # It is, and we need to be sure to select the right queryset
-            owner = instance.fdocs.owner
-            qs = FrogLink.objects.filter(fdocs__owner=owner).exclude(id=instance.id).distinct()
+        oErr = ErrHandle()
+        try:
+            # Initially allow all FrogLink objects
+            qs = FrogLink.objects.all()
             self.fields['concrlist'].queryset = qs
-            self.fields['concrlist'].widget.qs = qs
+
+            # Check if this is a specific instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+                # It is, and we need to be sure to select the right queryset
+                owner = instance.fdocs.owner
+                qs = FrogLink.objects.filter(fdocs__owner=owner).exclude(id=instance.id).distinct()
+                self.fields['concrlist'].queryset = qs
+                self.fields['concrlist'].widget.qs = qs
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteForm")
+        return None
 
 
 class FrogLinkForm(forms.ModelForm):
@@ -126,20 +137,33 @@ class FrogLinkForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # First perform the default thing
         super(FrogLinkForm, self).__init__(*args, **kwargs)
-        # Make sure some are not obligatory
-        self.fields['created'].required = False
-        self.fields['name'].required = False
-        self.fields['ownlist'].queryset = User.objects.all()
 
-        # Check if this is a specific instance
-        if 'instance' in kwargs:
-            instance = kwargs['instance']
-            # It is, and we need to be sure to select the right queryset
-            owner = instance.fdocs.owner
-            qs = FrogLink.objects.filter(fdocs__owner=owner).exclude(id=instance.id).distinct()
+        oErr = ErrHandle()
+        try:
+            # Make sure some are not obligatory
+            self.fields['created'].required = False
+            self.fields['name'].required = False
+            self.fields['ownlist'].queryset = User.objects.all()
+
+            # Initially allow all FrogLink objects
+            qs = FrogLink.objects.all()
             self.fields['concrlist'].queryset = qs
-            self.fields['concrlist'].widget.qs = qs
 
+            # Check if this is a specific instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+                # It is, and we need to be sure to select the right queryset
+                owner = instance.fdocs.owner
+                qs = FrogLink.objects.filter(fdocs__owner=owner).exclude(id=instance.id).distinct()
+                self.fields['concrlist'].queryset = qs
+                self.fields['concrlist'].widget.qs = qs
+
+                # Make sure the initial values are filled in correctly
+                self.fields['concrlist'].initial = [x.id for x in instance.comparisons.all()]
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("FrogLinkForm")
+        return None
 
 class LocTimeForm(forms.ModelForm):
     class Meta:

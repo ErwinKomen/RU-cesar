@@ -1996,6 +1996,9 @@ var ru = (function ($, ru) {
                           if (afterurl !== undefined && afterurl !== "") {
                             // Make sure we go to the afterurl
                             window.location = afterurl;
+                          } else if (response.afterurl !== undefined && response.afterurl !== "") {
+                            // Make sure we go to the afterurl
+                            window.location = response.afterurl;
                           }
                           if ("html" in response) {
                             // Show the HTML in the targetid

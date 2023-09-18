@@ -1114,6 +1114,7 @@ class BasicDetails(DetailView):
     newRedirect = False     # Redirect the page name to a correct one after creating
     use_team_group = False
     redirectpage = ""       # Where to redirect to
+    afterurl = None
     add = False             # Are we adding a new record or editing an existing one?
     is_basic = True         # Is this a basic details/edit view?
     history_button = False  # Show history button for this view
@@ -1210,6 +1211,9 @@ class BasicDetails(DetailView):
                 data['html'] = response
                 # Set any possible typeaheads
                 data['typeaheads'] = self.lst_typeahead
+                if not self.afterurl is None:
+                    data['afterurl'] = self.afterurl
+                    self.afterurl = None
                 response = JsonResponse(data)
             elif self.rtype == "download":
                 if self.template_post == "": self.template_post = self.template_name

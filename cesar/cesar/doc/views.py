@@ -801,10 +801,10 @@ class ConcreteEdit(BasicDetails):
 
             # Define the main items to show and edit
             context['mainitems'] = [
-                {'type': 'plain', 'label': "Owner:",    'value': instance.get_owner()       },
-                {'type': 'plain', 'label': "Date:",     'value': instance.get_created()     },
-                {'type': 'plain', 'label': "Name:",     'value': instance.name              },
-                {'type': 'plain', 'label': "Comparison:",'value': instance.get_compare()     }
+                {'type': 'plain', 'label': "Owner:",        'value': instance.get_owner()       },
+                {'type': 'plain', 'label': "Date:",         'value': instance.get_created()     },
+                {'type': 'plain', 'label': "Name:",         'value': instance.name              },
+                {'type': 'plain', 'label': "Compare with:", 'value': instance.get_compare()     }
                 ]
             context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
             context['is_tablet_editor'] = False
@@ -823,7 +823,7 @@ class ConcreteEdit(BasicDetails):
                 for oItem in context['mainitems']:
                     if oItem['label'] == "Name:":
                         oItem['field_key'] = "name"
-                    elif oItem['label'] == "Comparison:":
+                    elif oItem['label'] == "Compare with:":
                         oItem['field_list'] = "concrlist"
 
             else:
@@ -845,7 +845,13 @@ class ConcreteEdit(BasicDetails):
             # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
             # (1) 'collections'
             concrlist = form.cleaned_data['concrlist']
-            adapt_m2m(Comparison, instance, "base", concrlist, "target")
+            current = [x.id for x in instance.comparisons.all().order_by('id')]
+            after = [x.id for x in concrlist.order_by('id')]
+            if current != after:
+                # Perform adaptation
+                adapt_m2m(Comparison, instance, "base", concrlist, "target")
+                # Also make sure that details are re-loaded
+                self.afterurl = reverse('froglink_details', kwargs={'pk': instance.id})
 
         except:
             msg = oErr.get_error_message()
@@ -861,59 +867,120 @@ class ConcreteDetails(ConcreteEdit):
         # Call the base implementation first to get a context
         context = super(ConcreteDetails, self).add_to_context(context, instance)
 
-        # Do we have a JSON response in self.concr?
-        if not instance.concr is None and instance.concr != "":
-            # Make sure to add [otext] and[tnumber]
-            context['tnumber'] = 1
-            if instance.concr is None or instance.concr == "":
-                obj = dict(id=instance.id, show=False)
-            else:
-                obj = json.loads(instance.concr)
+        oErr = ErrHandle()
+        try:
+            # Do we have a JSON response in self.concr?
+            if not instance.concr is None and instance.concr != "":
+                # Make sure to add [otext] and[tnumber]
+                context['tnumber'] = 1
+                if instance.concr is None or instance.concr == "":
+                    obj = dict(id=instance.id, show=False)
+                else:
+                    obj = json.loads(instance.concr)
 
-                # Double check if changes are needed in the object
-                bNeedSaving = False
-                bRecalculate = False
-                word_id = 1
-                for oPara in obj['list']:
-                    for oSent in oPara['list']:
-                        lst_sent = []
-                        for oWord in oSent['list']:
-                            concr = str(oWord.get("concr", ""))
-                            id = oWord.get('word_id')
-                            if id is None:
-                                oWord['word_id'] = word_id
-                                word_id += 1
-                                bNeedSaving = True
-                                lst_sent.append(oWord)
-                            elif concr == "-1":
-                                # This word should be removed
-                                bNeedSaving = True
-                            else:
-                                # Add to sentence
-                                lst_sent.append(oWord)
-                        # Replace the current list
-                        if bNeedSaving:
-                            oSent['list'] = lst_sent
+                    # Double check if changes are needed in the object
+                    bNeedSaving = False
+                    bRecalculate = False
+                    word_id = 1
+                    for oPara in obj['list']:
+                        for oSent in oPara['list']:
+                            lst_sent = []
+                            for oWord in oSent['list']:
+                                concr = str(oWord.get("concr", ""))
+                                id = oWord.get('word_id')
+                                if id is None:
+                                    oWord['word_id'] = word_id
+                                    word_id += 1
+                                    bNeedSaving = True
+                                    lst_sent.append(oWord)
+                                elif concr == "-1":
+                                    # This word should be removed
+                                    bNeedSaving = True
+                                else:
+                                    # Add to sentence
+                                    lst_sent.append(oWord)
+                            # Replace the current list
+                            if bNeedSaving:
+                                oSent['list'] = lst_sent
 
-                # Do we need to save the (recalculated) results?
-                if bNeedSaving:
-                    instance.concr = json.dumps(obj)
-                    instance.save()
+                    # Do we need to save the (recalculated) results?
+                    if bNeedSaving:
+                        instance.concr = json.dumps(obj)
+                        instance.save()
 
-                obj['id'] = instance.id
-                obj['show'] = True
-            context['otext'] = obj
+                    obj['id'] = instance.id
+                    obj['show'] = True
+                context['otext'] = obj
 
-            # Also provide the loctime info
-            qs = LocTimeInfo.objects.all().order_by('example')
-            context['loctimes'] = qs
+                # Also provide the loctime info
+                qs = LocTimeInfo.objects.all().order_by('example')
+                context['loctimes'] = qs
 
-            # Provide a <form> with a field that allows selecting multiple (other) texts (from this user)
-            concForm = ConcreteForm(instance=instance)
-            context['concForm'] = concForm
+                # Provide a <form> with a field that allows selecting multiple (other) texts (from this user)
+                concForm = ConcreteForm(instance=instance)
+                context['concForm'] = concForm
 
-            sAfter = render_to_string('doc/foliadocs_view.html', context, self.request)
-            context['after_details'] = sAfter
+                sAfter = render_to_string('doc/foliadocs_view.html', context, self.request)
+                context['after_details'] = sAfter
+
+
+                # Lists of related objects
+                related_objects = []
+                resizable = True
+                index = 1
+                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_end = '</span>'
+
+                # List of Worddefs part of the Wordlist
+                compares = dict(title="Comparison with other texts", prefix="dcomp")
+                if resizable: compares['gridclass'] = "resizable"
+
+                rel_list =[]
+                qs = instance.comparisons.all().order_by('name')
+                # qs = Worddef.objects.filter(wordlist=instance).order_by('stimulus')
+                for item in qs:
+                    # Fields: name, size, score
+
+                    url = reverse('froglink_details', kwargs={'pk': item.id})
+                    rel_item = []
+
+                    # Order number for this FrogLink
+                    add_rel_item(rel_item, index, False, align="right")
+                    index += 1
+
+                    # Name
+                    name_txt = item.name
+                    add_rel_item(rel_item, name_txt, False, main=True, link=url)
+
+                    # Size
+                    size_txt = item.get_size()
+                    add_rel_item(rel_item, size_txt, False, main=False, align="right", link=url)
+
+                    # Score
+                    score_txt = "{0:.3f}".format(item.get_score())
+                    add_rel_item(rel_item, score_txt, False, main=False, align="right", link=url, nowrap=False)
+
+
+                    # Add this line to the list
+                    rel_list.append(dict(id=item.id, cols=rel_item))
+
+                compares['rel_list'] = rel_list
+
+                compares['columns'] = [
+                    '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
+                    '{}<span>Name</span>{}'.format(sort_start, sort_end), 
+                    '{}<span>Size</span>{}'.format(sort_start_mix, sort_end), 
+                    '{}<span>Score</span>{}'.format(sort_start_int, sort_end)
+                    ]
+                related_objects.append(compares)
+
+                # Add all related objects to the context
+                context['related_objects'] = related_objects
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteDetails/add_to_context")
 
         # Return the adapted context
         return context

@@ -170,9 +170,9 @@
 
     </div>
     {% if is_tablet_editor %}
-    {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
+      {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
     {% else %}
-    {% include 'doc/text_scores.html' with otext=otext mode='view' %}
+      {% include 'doc/text_scores.html' with otext=otext mode='view' %}
     {% endif %}
 
   </div>
@@ -187,16 +187,4 @@
 
 </div>
 
-
-<!-- Comparison of texts -->
-<div class="row">
-  <div  d="doc_comparison"  class="col-md-12">
-  </div>
-</div>
-
-<!-- Visualization of text comparison -->
-<div class="row">
-  <div id="doc_visualization" class="col-md-12">
-  </div>
-</div>
 
