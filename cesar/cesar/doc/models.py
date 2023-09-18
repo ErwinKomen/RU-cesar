@@ -1413,6 +1413,14 @@ class FrogLink(models.Model, Custom):
                 fBack = self.score
         return fBack
 
+    def get_score_string(self):
+        """Get the score as a proper string"""
+
+        sBack = "-"
+        if not self.score is None:
+            sBack = "{0:.3f}".format(self.score)
+        return sBack
+
     def get_size(self, calculate=False):
         """Get the size in number of words for this particular text"""
 

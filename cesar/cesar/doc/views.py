@@ -804,6 +804,8 @@ class ConcreteEdit(BasicDetails):
                 {'type': 'plain', 'label': "Owner:",        'value': instance.get_owner()       },
                 {'type': 'plain', 'label': "Date:",         'value': instance.get_created()     },
                 {'type': 'plain', 'label': "Name:",         'value': instance.name              },
+                {'type': 'plain', 'label': "Score:",        'value': instance.get_score_string()},
+                {'type': 'plain', 'label': "Size:",         'value': instance.get_size()        },
                 {'type': 'plain', 'label': "Compare with:", 'value': instance.get_compare()     }
                 ]
             context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
