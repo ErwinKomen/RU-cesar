@@ -38,10 +38,10 @@ from cesar.seeker.views import csv_to_excel
 from cesar.basic.models import Information
 from cesar.tsg.models import TsgInfo
 from cesar.doc.models import CLAMClient, FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
-    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist, Comparison
+    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist, Comparison, Genre
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm, \
-    WorddefForm, ConcreteForm
+    WorddefForm, ConcreteForm, GenreForm
 from cesar.doc.adaptations import listview_adaptations
 from cesar.utils import ErrHandle
 
@@ -1278,7 +1278,7 @@ class LocTimeList(BasicList):
         try:
             # Check if this is view_only or editable
             is_superuser = user_is_superuser(self.request)
-            is_tablet_editor = user_is_ingroup(request, "tablet_editor")
+            is_tablet_editor = user_is_ingroup(self.request, "tablet_editor")
 
             if not is_superuser and not is_tablet_editor:
                 #if self.view_only:
@@ -1306,6 +1306,125 @@ class LocTimeList(BasicList):
             context['is_tablet_editor'] = context['is_app_editor']
         return context
 
+
+
+# =============== GENRE ===============================
+
+
+class GenreEdit(BasicDetails):
+    """Edit a Genre element"""
+
+    model = Genre
+    mForm = GenreForm
+    prefix = "gnr"
+    title = "Genre Edit"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Check who we are
+        is_superuser = user_is_superuser(self.request)
+        is_tablet_editor = user_is_ingroup(self.request, "tablet_editor")
+        is_moderator = user_is_ingroup(self.request, "tablet_moderator")
+
+        edit_enabled = (is_superuser or is_moderator)
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Name:",     'value': instance.name                  },
+            {'type': 'plain', 'label': "Score:",    'value': instance.get_score_string()    },
+            {'type': 'plain', 'label': "Size:",     'value': instance.get_size()            },
+            {'type': 'plain', 'label': "Number:",   'value': instance.get_number()          },
+            ]       
+        # Only moderators are to be allowed
+        if edit_enabled: 
+            context['mainitems'][0]['field_key'] = 'name'
+        # Adapt the app editor status
+        context['is_app_editor'] = edit_enabled
+        context['is_tablet_editor'] = edit_enabled
+        # Return the context we have made
+        return context
+    
+
+class GenreDetails(GenreEdit):
+    """Viewing Genre information items"""
+    rtype = "html"
+
+
+class GenreList(BasicList):
+    """List loctime elements"""
+
+    model = Genre
+    listform = GenreForm
+    prefix = "gnr"
+    sg_name = "Genre item"
+    plural_name = "Genre items"
+    new_button = False      # Do show a new button
+    view_only = False
+    order_cols = ['name', 'score', 'size', '']
+    order_default = ['name', 'score', 'size']
+    order_heads = [
+        {'name': 'Name',    'order': 'o=1', 'type': 'str', 'field': 'name',     'linkdetails': True, 'main': True},
+        {'name': 'Score',   'order': 'o=2', 'type': 'str', 'custom': 'score',   'linkdetails': True},
+        {'name': 'Size',    'order': 'o=3', 'type': 'str', 'field':  'size',    'linkdetails': True},
+        {'name': 'Number',  'order': '',    'type': 'str', 'custom': 'number',  'linkdetails': True},
+        ]
+    filters = [ {"name": "Name", "id": "filter_name", "enabled": False}
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'name',   'dbfield': 'name', 'keyS': 'name'}]} 
+        ] 
+    
+    def initializations(self):
+        oErr = ErrHandle()
+        try:
+            # Check if this is view_only or editable
+            is_superuser = user_is_superuser(self.request)
+            is_tablet_editor = user_is_ingroup(self.request, "tablet_editor")
+            is_moderator = user_is_ingroup(self.request, "tablet_moderator")
+
+            if is_superuser or is_moderator:
+                # Allw the new button
+                self.new_button = True
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("GenreTable/init")
+        return None
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        # Figure out what to show
+        if custom == "score":
+            # Get the score as proper string
+            sBack = instance.get_score_string()
+        elif custom == "number":
+            # Get the score as proper string
+            sBack = "{}".format(instance.genre_docs.count())
+
+        # Retourneer wat kan
+        return sBack, sTitle
+
+    def add_to_context(self, context, initial):
+        # Only moderators are to be allowed
+        allow_editing = False
+        if not self.view_only:
+            allow_editing = user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request)
+
+        if allow_editing:
+            # Adapt the app editor status
+            context['is_app_editor'] = True
+            context['is_tablet_editor'] = context['is_app_editor']
+        else:
+            # View only
+            context['is_app_editor'] = False
+            context['is_tablet_editor'] = context['is_app_editor']
+        return context
 
 
 # =============== EXPRESSION ===============================

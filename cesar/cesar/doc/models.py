@@ -368,6 +368,106 @@ class Expression(models.Model):
         return bResult
 
 
+class Genre(models.Model):
+    """The genre of a text. This is only for *reference* texts"""
+
+    # [1] The name for this genre
+    name = models.TextField("Genre name")
+    # [0-1] Separate field for the score
+    score = models.FloatField("Overall score", null=True, blank=True)
+    # [0-1] Separate field for the size (='n')
+    size = models.IntegerField("Size of text (words)", null=True, blank=True)
+
+    # [1] Each Froglink has been created at one point in time
+    created = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        sBack = ""
+        if not self.name is None and self.name != "":
+            sBack = self.name
+        return sBack
+
+    def get_created(self):
+        sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
+        return sBack
+
+    def get_score(self, calculate=False):
+        """Get and possibly calculate the [score] of this text"""
+
+        fBack = 0.0
+        iNumber = 0
+        oErr = ErrHandle()
+        try:
+            if calculate:
+                # Walk all texts of this genre and get the average
+                for obj in self.genre_docs.all():
+                    score = obj.score
+                    if not score is None:
+                        fBack += score
+                        iNumber += 1
+                if iNumber > 0:
+                    # Get the average
+                    fBack = fBack / iNumber
+                    # And save it
+                    self.score = fBack
+                    self.save()
+            else:
+                if not self.score is None:
+                    fBack = self.score
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Genre/get_score")
+        return fBack
+
+    def get_number(self):
+        """Get the number of texts in this genre"""
+
+        sBack = ""
+        iCount = self.genre_docs.count()
+        sBack = "{}".format(iCount)
+        return sBack
+
+    def get_score_string(self):
+        """Get the score as a proper string"""
+
+        sBack = "-"
+        if not self.score is None:
+            sBack = "{0:.3f}".format(self.score)
+        return sBack
+
+    def get_size(self, calculate=False):
+        """Get the size in number of words for this particular text"""
+
+        iBack = -1
+        fTotal = 0.0
+        iNumber = 0
+        oErr = ErrHandle()
+        try:
+            if calculate:
+                # Walk all texts of this genre and get the average
+                for obj in self.genre_docs.all():
+                    size = obj.size
+                    if not size is None:
+                        fTotal += size
+                        iNumber += 1
+                if iNumber > 0:
+                    # Get the average
+                    fTotal = fTotal / iNumber
+                    # Turn this float into an integer
+                    iBack = int(fTotal)
+                    # And save it
+                    self.size = iBack
+                    self.save()
+            else:
+                if not self.size is None:
+                    iBack = self.size
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Genre/get_size")
+        return iBack
+
+
 class FoliaDocs(models.Model):
     """Set of folia-encoded documents"""
     
@@ -398,6 +498,9 @@ class FrogLink(models.Model, Custom):
     size = models.IntegerField("Size of text (words)", null=True, blank=True)
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
+
+    # [0-1] Optional link to a Genre
+    fgenre = models.ForeignKey(Genre, null=True, blank=True, related_name="genre_docs", on_delete=models.SET_NULL)
 
     # =============== Many to many links =======================================
     comparisons = models.ManyToManyField("self", through="Comparison", symmetrical=False)
@@ -1509,6 +1612,7 @@ class FoliaProcessor():
                 # Remove some bad symbols
                 sLine = sLine.replace(">", "")
                 sLine = sLine.replace("<", "")
+                sLine = sLine.replace("#", "")
                 # Put a space before a comma
                 sLine = sLine.replace(",", " ,")
                 lines.append(sLine)

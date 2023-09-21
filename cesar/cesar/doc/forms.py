@@ -184,6 +184,23 @@ class LocTimeForm(forms.ModelForm):
         self.fields['score'].required = False
 
 
+class GenreForm(forms.ModelForm):
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Genre
+        fields = ['name']
+        widgets = {
+            'name':     forms.TextInput(attrs={'style': 'width: 100%;', 'placeholder': 'Succinct name for this genre'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(GenreForm, self).__init__(*args, **kwargs)
+        # Make sure some are not obligatory
+        self.fields['name'].required = False
+
+
 class ExpressionForm(forms.ModelForm):
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
