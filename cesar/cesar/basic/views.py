@@ -14,6 +14,7 @@ from django.forms.models import model_to_dict
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.views.generic.detail import DetailView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
@@ -2120,11 +2121,13 @@ class BasicPart(View):
                 self.data['redirecturl'] = ''
             elif self.action == "delete":
                 self.data['html'] = "deleted" 
-            else:
+            elif self.template_name != None:
                 # In this case reset the errors - they should be shown within the template
                 sHtml = render_to_string(self.template_name, context, request)
                 sHtml = treat_bom(sHtml)
                 self.data['html'] = sHtml
+            else:
+                self.data['html'] = "no template_name specified" 
 
             # At any rate: empty the error basket
             self.arErr = []

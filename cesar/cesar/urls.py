@@ -116,6 +116,7 @@ urlpatterns = [
     url(r'^tablet/doc/edit(?:/(?P<pk>\d+))?/$', ConcreteEdit.as_view(), name='froglink_edit'),
     url(r'^tablet/doc/update(?:/(?P<pk>\d+))?/$', ConcreteUpdate.as_view(), name='concrete_update'),
     url(r'^tablet/doc/download/(?P<pk>\d+)/$', ConcreteDownload.as_view(), name='concrete_download'),
+    url(r'^tablet/doc/scatter/(?P<pk>\d+)/$', ConcreteScatter.as_view(), name='concrete_scatter'),
 
     url(r'^tablet/genre/list/$', GenreList.as_view(), name='genre_list'),
     url(r'^tablet/genre/details(?:/(?P<pk>\d+))?/$', GenreDetails.as_view(), name='genre_details'),

@@ -1,13 +1,18 @@
 {% load i18n %}
 
 {% block scripts %}
-    {% load staticfiles %}
-<script src="{% static 'doc/scripts/cesar.doc.js' %}"></script>
+  {% load staticfiles %}
+  <script src="{% static 'doc/scripts/chart.min.js' %}"></script>
+  <script src="{% static 'doc/scripts/cesar.doc.js' %}"></script>
 {% endblock %}
 
 
 <div class="panel panel-default scrolltop-allow" style="padding: 0px;">
   <div class="panel-heading">
+    <!-- Button to open visualization -->
+    <span class="badge jumbo-1 collapsed pull-right" onclick="ru.cesar.doc.make_scatterplot(this);">
+      Visualization
+    </span>
     <!-- Buttons to open/close Loc/Time tables -->
     <span class="badge jumbo-1 collapsed pull-right" data-toggle="collapse" data-target="#loctime-loc-table">
       Location
@@ -91,6 +96,27 @@
     </div>
   </div>
 
+  <!-- Actually showing the visualization: scatter plot -->
+  <div id="scatter_plot" class="hidden container-small">
+    <!-- This is where the plot would appear, if there is one -->
+    <form method="post" action="{% url 'concrete_scatter' otext.id %}">
+      {% csrf_token %}
+    </form>
+    <!-- Waiting time -->
+    <div id="scatter_plot_wait" class="hidden">
+      <span>Calculating scatter plot ...</span>
+      <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+    </div>
+
+    <!-- The actual visualisation -->
+    <div class="row">
+      <div class="col-md-12">
+        <canvas id="scatter_plot_view" width="400" height="200"></canvas>
+      </div>
+    </div>
+    
+  </div>
+
   <!-- Actually showing text details -->
   <div id="text-number-{{tnumber}}" class="collapse container-small">
     <div class="row">
@@ -170,9 +196,9 @@
 
     </div>
     {% if is_tablet_editor %}
-      {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
+    {% include 'doc/text_scores.html' with otext=otext mode='editable' %}
     {% else %}
-      {% include 'doc/text_scores.html' with otext=otext mode='view' %}
+    {% include 'doc/text_scores.html' with otext=otext mode='view' %}
     {% endif %}
 
   </div>

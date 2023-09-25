@@ -802,6 +802,74 @@ class ConcreteDownload(DetailView):
         return context
 
 
+class ConcreteScatter(BasicPart):
+    """Gather and send data for a scatter plot"""
+
+    MainModel = FrogLink
+
+    def add_to_context(self, context):
+
+        oErr = ErrHandle()
+        data = dict(status="ok")
+       
+        try:
+            # starting point is the froglink, the text
+            otext = self.obj
+
+            # Think of the correct options
+            options = {
+                "scales": { 
+                    "xAxes": [{"display": True}], 
+                    "yAxes": [{"ticks": {"beginAtZero": True}}],
+                    "x": { "type": "log", "position": "bottom"},
+                    "y": { "type": "linear", "position": "left"}
+                    }
+                }
+            options['responsive'] = True
+            options['plugins'] = {
+                "plugins": 
+                {"legend": {"position": "top"},
+                 "title": {
+                    "display": True, "text": "Concreate text comparison"
+                    }
+                 }
+                }
+
+            # Gather the data
+            plotdata = dict(labels=[], datasets=[])
+
+            labels = []
+            chartdata = []
+            for obj in Genre.objects.all().order_by("name"):
+                sName = obj.name
+                score = obj.score   # Y-axis, [0-5]
+                size = obj.size     # X-axis
+                labels.append(sName)
+                chartdata.append(dict(x=size, y=score))
+            # Then add the current text
+            labels.append(otext.name)
+            chartdata.append(dict(x=otext.size, y=otext.score))
+
+            datasets = []
+            for idx, item in enumerate(labels):
+                datasets.append(dict(label=item, data=[ chartdata[idx] ]))
+            plotdata = dict(labels=labels, datasets=datasets)
+
+            # We need to get data from all reference texts, which are stored in the genres
+            config = dict(type="scatter", data=plotdata, options=options)
+
+            # Add this to the data to be returned
+            data['config'] = config
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteScatter")
+            data['status'] = "error"
+
+        context['data'] = data
+        return context
+
+
 class ConcreteEdit(BasicDetails):
     """Details view for one concreteness-treated file"""
 

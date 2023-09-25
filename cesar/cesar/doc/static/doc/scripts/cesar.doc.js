@@ -9,6 +9,8 @@ var $ = jQuery;
     $(document).ready(function () {
       // Initialize event listeners
       ru.cesar.doc.init_event_listeners();
+      // Try load scatter plot chart
+      //ru.cesar.doc.init_scatterplot();
     });
   });
 })(django.jQuery);
@@ -216,6 +218,63 @@ var ru = (function ($, ru) {
 
         } catch (ex) {
           private_methods.errMsg("init_event_listeners", ex);
+        }
+      },
+
+      /**
+       * make_scatterplot
+       *   Create scatter plot
+       *
+       */
+      make_scatterplot: function (elStart) {
+        var frm = null,
+            config = null,
+            data = null,
+            chart = null,
+            targeturl = "",
+            elWait = "#scatter_plot_wait",
+            elView = "#scatter_plot_view",
+            targetid = "#scatter_plot";
+
+        try {
+          // Indicate we are waiting
+          $(elWait).removeClass("hidden");
+          $(targetid).removeClass("hidden");
+          // Get to the form 
+          frm = $(targetid).find("form").first();
+          data = frm.serializeArray();
+          // Get more specifics
+          targeturl = $(frm).attr("action");
+          // Go and call
+          $.post(targeturl, data, function (response) {
+            // Action depends on the response
+            if (response === undefined || response === null || typeof (response) === "string" || !("status" in response)) {
+              private_methods.errMsg("No status returned");
+            } else {
+              $(elWait).addClass("hidden");
+              switch (response.status) {
+                case "ready":
+                case "ok":
+                  // Get the data and the options
+                  config = response.config;
+                  // Create the chart
+                  chart = new Chart($(elView), config);
+                  chart.update();
+                  break;
+                case "error":
+                  // Show the error
+                  if ('msg' in response) {
+                    $(targetid).html(response.msg);
+                  } else {
+                    $(targetid).html("An error has occurred (cesar.doc.js: make_scatterplot)");
+                  }
+                  break;
+              }
+            }
+          });
+
+        } catch (ex) {
+          private_methods.errMsg("make_scatterplot", ex);
         }
       },
 
