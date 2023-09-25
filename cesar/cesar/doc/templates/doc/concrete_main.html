@@ -3,66 +3,152 @@
 {% load staticfiles %}
 
 {% block breadcrumbs %}
-  <div class="breadcrumbs">
-      <a href="{% url 'home' %}">Home</a>
-      &rsaquo; {{intro_breadcrumb}}
-  </div>
+<div class="breadcrumbs">
+  <a href="{% url 'home' %}">Home</a>
+  &rsaquo; {{intro_breadcrumb}}
+</div>
 {% endblock %}
+
 {% block scripts %}
   {% load staticfiles %}
-    <script src="{% static 'basic/scripts/basic.js' %}"></script>
+  <script src="{% static 'basic/scripts/basic.js' %}"></script>
+{{frmDocGenre.media.css}}
 {% endblock %}
 
 {% block content %}
 
-  <!-- Contents -->
-  <div class="container body-content">    
-    <h3>Tablet document processing</h3>
+<!-- Contents -->
+<div class="container body-content">
+  <h3>Tablet document processing</h3>
 
-    <div id="research_err">
-      {% for item in error_list %}
+  <div id="research_err">
+    {% for item in error_list %}
       {{item}}
-      {% endfor %}
+    {% endfor %}
+  </div>
+
+  <!-- Dashboard to select input file(s) and then allow downloading the results -->
+  <div id="import_docs" class="row">
+    <div class="col-md-9 panel panel-default" style="min-height: 100px;">
+      <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+        {% csrf_token %}
+        <!-- Need username and password for the CLAM client webservice -->
+        <div class="row">
+          <div class="col-md-12">
+            <table style="width: 100%;">
+              <tbody>
+                {% if clamdefine %}
+                <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
+                <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
+                {% endif %}
+                <tr>
+                  <td>File(s) to be processed for TABLET:</td>
+                  <td>
+                    <span class="input-group-btn">
+                      <span class="btn btn-default btn-xs btn-file">Browse...{{frmUpload.files_field}}</span>
+                      <!-- The files that have been selected-->
+                      <span></span>
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <div id="docs-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
+                    <progress class="hidden" style="width:100%;" id="docs-import_progress" value="0" min="0" max="100"></progress>
+                  </td>
+                </tr>
+                <tr>
+                  <td >
+                    {{frmDocGenre.genreone}}
+                  </td>
+                  <td colspan="1" align="right">
+                    <a class="btn btn-sm jumbo-1"
+                       targetid="docs_data_import"
+                       targeturl="{% url 'import_concrete' %}"
+                       syncurl="{% url 'sync_progress' %}?synctype=docs"
+                       onclick="ru.cesar.seeker.import_post(this);">Start</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <!-- Progress -->
+        <div class="save-warning"></div>
+        <!-- Any error reporting -->
+        <div id="docs-import_error"></div>
+      </form>
+
+
+
     </div>
 
-    <!-- Dashboard to select input file(s) and then allow downloading the results -->
-    <div id="import_docs" class="row" >
-      <div class="col-md-9 panel panel-default" style="min-height: 100px;">
-        <form action="{% url 'import_concrete' %}" method="POST" enctype="multipart/form-data" class="noblurring">
+    <div class="col-md-offset-1 col-md-2 panel panel-default" style="min-height: 100px;">
+      <div>List the processed texts:</div>
+      <div>&nbsp;</div>
+      <a class="btn btn-sm jumbo-1" href="{% url 'froglink_list' %}">Processed texts</a>
+    </div>
+  </div>
+
+  <!-- The normal progress reporting -->
+  <div id="docs_data_import"></div>
+
+  <!-- Twitter uploading, if allowed -->
+  {% if superuser %}
+    <div id="twitter_data_import"></div>
+  {% endif %}
+
+  <!-- Brysbaert uploading, if allowed -->
+  {% if superuser %}
+  <!-- Dashboard to select input file(s) and then allow downloading the results -->
+  <div id="import_wordlist" class="row">
+    <div class="col-md-9">
+      <div id="brysbaert-section" class="panel panel-default collapse">
+        <h4>Brysbaert scores</h4>
+        <p>Note: only needed if Brysbaert has not been read yet.</p>
+        <form action="{% url 'import_brysb' %}" method="POST" enctype="multipart/form-data" class="noblurring">
           {% csrf_token %}
-          <!-- Need username and password for the CLAM client webservice -->
+
           <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-9">
               <table style="width: 100%;">
                 <tbody>
-                  {% if clamdefine %}
-                    <tr><td>CLAM service user name:</td><td>{{frmUpload.clamuser}}</td></tr>
-                    <tr><td>Password:</td><td>{{frmUpload.clampw}}</td></tr>
-                  {% endif %}
                   <tr>
-                    <td>File(s) to be processed for TABLET:</td>
+                    <td>Tab-separated file to be processed:</td>
                     <td>
                       <span class="input-group-btn">
-                        <span class="btn btn-default btn-xs btn-file">Browse...{{frmUpload.files_field}}</span>
-                        <!-- The files that have been selected-->
+                        <span class="btn btn-default btn-xs btn-file">Browse...{{frmBrysb.file_field}}</span>
+                        <!-- The file that have been selected-->
                         <span></span>
                       </span>
                     </td>
                   </tr>
                   <tr>
+                    <td>Import type (choose)</td>
+                    <td>
+                      <input type="radio" id="bry" name="import_type" value="bry" />
+                      <label for="bry">Brysbaert</label>
+                      <input type="radio" id="neo" name="import_type" value="neo" />
+                      <label for="bry">Neologism</label>
+                      <input type="radio" id="hom" name="import_type" value="hom" />
+                      <label for="bry">Homonym</label>
+                    </td>
+                  </tr>
+                  <tr>
                     <td colspan="2">
-                      <div id="docs-import_status" class="kwcat" style="font-size: smaller;">&nbsp;</div>
-                      <progress class="hidden" style="width:100%;" id="docs-import_progress" value="0" min="0" max="100"></progress>
+                      <span id="brysb-import_status">&nbsp;</span>
+                      <progress class="hidden" style="width:100%;" id="brysb-import_progress" value="0" min="0" max="100"></progress>
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2" align="right">
                       <a class="btn btn-sm jumbo-1"
-                         targetid="docs_data_import"
-                         targeturl="{% url 'import_concrete' %}"
-                         syncurl="{% url 'sync_progress' %}?synctype=docs" 
-                         onclick="ru.cesar.seeker.import_post(this);"
-                         >Start</a>
+                         targetid="brysb_data_import"
+                         targeturl="{% url 'import_brysb' %}"
+                         syncurl="{% url 'sync_progress' %}?synctype=brysb"
+                         onclick="ru.cesar.seeker.import_post(this);">Start</a>
                     </td>
                   </tr>
                 </tbody>
@@ -74,140 +160,58 @@
           <!-- Progress -->
           <div class="save-warning"></div>
           <!-- Any error reporting -->
-          <div id="docs-import_error"></div>
+          <div id="brysb-import_error"></div>
         </form>
-
-
-
-      </div>
-
-      <div class="col-md-offset-1 col-md-2 panel panel-default" style="min-height: 100px;">
-        <div>List the processed texts:</div>
-        <div>&nbsp;</div>
-        <a class="btn btn-sm jumbo-1" href="{% url 'froglink_list' %}">Processed texts</a>
       </div>
     </div>
-
-    <!-- The normal progress reporting -->
-    <div id="docs_data_import"></div>
-
-    <!-- Twitter uploading, if allowed -->
-    {% if superuser %}
-      <div id="twitter_data_import"></div>
-    {% endif %}
-
-    <!-- Brysbaert uploading, if allowed -->
-    {% if superuser %}
-      <!-- Dashboard to select input file(s) and then allow downloading the results -->
-      <div id="import_wordlist" class="row" >
-        <div class="col-md-9">
-          <div id="brysbaert-section" class="panel panel-default collapse">
-            <h4>Brysbaert scores</h4>
-            <p>Note: only needed if Brysbaert has not been read yet.</p>
-            <form action="{% url 'import_brysb' %}" method="POST" enctype="multipart/form-data" class="noblurring">
-              {% csrf_token %}
-
-              <div class="row">
-                <div class="col-md-9">
-                  <table style="width: 100%;">
-                    <tbody>
-                      <tr>
-                        <td>Tab-separated file to be processed:</td>
-                        <td>
-                          <span class="input-group-btn">
-                            <span class="btn btn-default btn-xs btn-file">Browse...{{frmBrysb.file_field}}</span>
-                            <!-- The file that have been selected-->
-                            <span></span>
-                          </span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Import type (choose)</td>
-                        <td>
-                          <input type="radio" id="bry" name="import_type" value="bry" />
-                          <label for="bry">Brysbaert</label>
-                          <input type="radio" id="neo" name="import_type" value="neo" />
-                          <label for="bry">Neologism</label>
-                          <input type="radio" id="hom" name="import_type" value="hom" />
-                          <label for="bry">Homonym</label>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colspan="2">
-                          <span id="brysb-import_status">&nbsp;</span>
-                          <progress class="hidden" style="width:100%;" id="brysb-import_progress" value="0" min="0" max="100"></progress>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colspan="2" align="right">
-                          <a class="btn btn-sm jumbo-1"
-                             targetid="brysb_data_import"
-                             targeturl="{% url 'import_brysb' %}"
-                             syncurl="{% url 'sync_progress' %}?synctype=brysb" 
-                             onclick="ru.cesar.seeker.import_post(this);"
-                             >Start</a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-
-              <!-- Progress -->
-              <div class="save-warning"></div>
-              <!-- Any error reporting -->
-              <div id="brysb-import_error"></div>
-            </form>
-          </div>
-        </div>
-        <dic class="col-md-3">
-          <div class="btn btn-sm jumbo-1 collapsed" data-toggle="collapse" data-target="#brysbaert-section">Brysbaert</div>
-        </dic>
-      </div>
-
-      <!-- The normal progress reporting -->
-      <div id="brysb_data_import"></div>
-    {% endif %}
-
-    <!-- Help for the users -->
-    <div id="concrete_help" class="row panel panel-default">
-      <div class="">
-        <!-- PDF guides -->
-        <div class="col-md-6">
-          <h3>Help guides</h3>
-          <p>The following Dutch documents are available to help users of Tablet:</p>
-          <ul>
-            <li><b>Quick start</b>: <a href="{% static 'doc/content/TabletKort.pdf' %}">pdf</a></li>
-            <li><b>User's manual</b>: <a href="{% static 'doc/content/TabletHandleiding.pdf' %}">pdf</a></li>
-          </ul>
-        </div>
-
-        <!-- MP4 help -->
-        <div class="col-md-6">
-          <h3>Instruction video's</h3>
-          <p>Here are a number of instruction video's that might be helpful to the Tablet user:</p>
-          <ul>
-            <li><b>1.</b> Determining the concreteness score of a text <a href="{% static 'doc/content/TabletInstructie01.mp4' %}">video</a></li>
-            <li><b>2.</b> Manually adapting concreteness scores <a href="{% static 'doc/content/TabletInstructie02.mp4' %}">video</a></li>
-            <li><b>3.</b> Homonym selection <a href="{% static 'doc/content/TabletInstructie03.mp4' %}">video</a></li>
-            <li><b>4.</b> Downloading and removing output <a href="{% static 'doc/content/TabletInstructie04.mp4' %}">video</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Results section -->
-    {% if load_results == "true" %}
-      {% include 'doc/concrete_results.html' %}
-    {% endif %}
-
-
+    <dic class="col-md-3">
+      <div class="btn btn-sm jumbo-1 collapsed" data-toggle="collapse" data-target="#brysbaert-section">Brysbaert</div>
+    </dic>
   </div>
+
+  <!-- The normal progress reporting -->
+  <div id="brysb_data_import"></div>
+  {% endif %}
+
+  <!-- Help for the users -->
+  <div id="concrete_help" class="row panel panel-default">
+    <div class="">
+      <!-- PDF guides -->
+      <div class="col-md-6">
+        <h3>Help guides</h3>
+        <p>The following Dutch documents are available to help users of Tablet:</p>
+        <ul>
+          <li><b>Quick start</b>: <a href="{% static 'doc/content/TabletKort.pdf' %}">pdf</a></li>
+          <li><b>User's manual</b>: <a href="{% static 'doc/content/TabletHandleiding.pdf' %}">pdf</a></li>
+        </ul>
+      </div>
+
+      <!-- MP4 help -->
+      <div class="col-md-6">
+        <h3>Instruction video's</h3>
+        <p>Here are a number of instruction video's that might be helpful to the Tablet user:</p>
+        <ul>
+          <li><b>1.</b> Determining the concreteness score of a text <a href="{% static 'doc/content/TabletInstructie01.mp4' %}">video</a></li>
+          <li><b>2.</b> Manually adapting concreteness scores <a href="{% static 'doc/content/TabletInstructie02.mp4' %}">video</a></li>
+          <li><b>3.</b> Homonym selection <a href="{% static 'doc/content/TabletInstructie03.mp4' %}">video</a></li>
+          <li><b>4.</b> Downloading and removing output <a href="{% static 'doc/content/TabletInstructie04.mp4' %}">video</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results section -->
+  {% if load_results == "true" %}
+  {% include 'doc/concrete_results.html' %}
+  {% endif %}
+
+
+</div>
 
 <script>
   ru.cesar.seeker.init_events();
 </script>
+{{ frmDocGenre.media.js }}
 
 {% endblock content %}
 

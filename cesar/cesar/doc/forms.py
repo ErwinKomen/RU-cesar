@@ -5,7 +5,7 @@ Definition of forms for the SEEKER app.
 from django import forms
 #from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.forms import ModelForm, formset_factory, modelformset_factory, BaseFormSet, ModelMultipleChoiceField
+from django.forms import ModelForm, formset_factory, modelformset_factory, BaseFormSet, ModelMultipleChoiceField, ModelChoiceField
 from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
 from django_select2.forms import Select2MultipleWidget, ModelSelect2MultipleWidget, ModelSelect2TagWidget, ModelSelect2Widget, HeavySelect2Widget
@@ -40,6 +40,30 @@ class ConcrWidget(ModelSelect2MultipleWidget):
         qs_this = FrogLink.objects.none()
         if not self.qs is None:
             qs_this = self.qs
+        return qs_this
+
+
+class GenreWidget(ModelSelect2MultipleWidget):
+    model = Genre
+    search_fields = [ 'name__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        qs_this = Genre.objects.all().order_by('name')
+        return qs_this
+
+
+class GenreOneWidget(ModelSelect2Widget):
+    model = Genre
+    search_fields = [ 'name__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        qs_this = Genre.objects.all().order_by('name')
         return qs_this
 
 
@@ -123,6 +147,8 @@ class FrogLinkForm(forms.ModelForm):
                 widget=UserWidget(attrs={'data-placeholder': 'Select multiple users...', 'style': 'width: 100%;', 'class': 'searching'}))
     concrlist = ModelMultipleChoiceField(queryset=None, required=False, 
         widget=ConcrWidget(attrs={'data-placeholder': 'Select multiple texts...', 'style': 'width: 100%;', 'class': 'searching'}))
+    genrelist = ModelMultipleChoiceField(queryset=None, required=False, 
+        widget=GenreWidget(attrs={'data-placeholder': 'Select one or more genres...', 'style': 'width: 100%;', 'class': 'searching'}))
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -144,6 +170,7 @@ class FrogLinkForm(forms.ModelForm):
             self.fields['created'].required = False
             self.fields['name'].required = False
             self.fields['ownlist'].queryset = User.objects.all()
+            self.fields['genrelist'].queryset = Genre.objects.all()
 
             # Initially allow all FrogLink objects
             qs = FrogLink.objects.all()
@@ -164,6 +191,7 @@ class FrogLinkForm(forms.ModelForm):
             msg = oErr.get_error_message()
             oErr.DoError("FrogLinkForm")
         return None
+
 
 class LocTimeForm(forms.ModelForm):
     class Meta:
@@ -199,6 +227,20 @@ class GenreForm(forms.ModelForm):
         super(GenreForm, self).__init__(*args, **kwargs)
         # Make sure some are not obligatory
         self.fields['name'].required = False
+
+
+class DocGenreForm(forms.Form):
+    genreone = ModelChoiceField(queryset=None, required=False, 
+        widget=GenreOneWidget(attrs={'data-placeholder': 'OPTIONAL: select a reference-text genre...', 'style': 'width: 100%;', 'class': 'searching'}))
+
+    def __init__(self, *args, **kwargs):
+        # First perform the default thing
+        super(DocGenreForm, self).__init__(*args, **kwargs)
+
+        # Define which genres must be available to the user
+        qs = Genre.objects.all().order_by('name')
+        self.fields['genreone'].queryset = qs
+        self.fields['genreone'].widget.queryset = qs
 
 
 class ExpressionForm(forms.ModelForm):

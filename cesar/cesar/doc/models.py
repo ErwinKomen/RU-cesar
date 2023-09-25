@@ -436,7 +436,7 @@ class Genre(models.Model):
         return sBack
 
     def get_size(self, calculate=False):
-        """Get the size in number of words for this particular text"""
+        """Get the size in number of words for this particular genre"""
 
         iBack = -1
         fTotal = 0.0
@@ -466,6 +466,33 @@ class Genre(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Genre/get_size")
         return iBack
+
+    def recalculate(self):
+        """Recalculate the score and size for this genre"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            iSizes = 0
+            fScores = 0.0
+            iNumber = 0
+            lst_texts = self.genre_docs.all().values('score', 'size')
+            for oText in lst_texts:
+                size_this = oText.get("size", 0)
+                score_this = oText.get("score", 0.0)
+                if size_this > 0 and score_this > 0.0:
+                    iNumber += 1
+                    iSizes += size_this
+                    fScores += score_this
+            if iNumber > 0:
+                self.score = fScores / iNumber
+                self.size = iSizes / iNumber
+                self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Genre/recalculate")
+            bResult = False
+        return bResult
 
 
 class FoliaDocs(models.Model):
@@ -1382,6 +1409,11 @@ class FrogLink(models.Model, Custom):
             # Also add the size
             self.size = n
             self.save()
+
+            # If this is a reference text, then the score + size need to be re-calculated
+            if not self.fgenre is None:
+                self.fgenre.recalculate()
+
             bResult = True
             return bResult, sMsg
         except:

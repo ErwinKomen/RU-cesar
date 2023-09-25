@@ -41,7 +41,7 @@ from cesar.doc.models import CLAMClient, FrogLink, FoliaDocs, Brysbaert, NexisDo
     LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist, Comparison, Genre
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm, \
-    WorddefForm, ConcreteForm, GenreForm
+    WorddefForm, ConcreteForm, GenreForm, DocGenreForm
 from cesar.doc.adaptations import listview_adaptations
 from cesar.utils import ErrHandle
 
@@ -175,63 +175,80 @@ def getPdfText(data_file):
 def concrete_main(request):
     """The main page of working with documents for concreteness."""
 
-    assert isinstance(request, HttpRequest)
     template = 'doc/concrete_main.html'
     frmUpload = UploadFilesForm()
     frmBrysb = UploadOneFileForm()
     frmTwitter = UploadTwitterExcelForm()
-    superuser = request.user.is_superuser
+    frmDocGenre = DocGenreForm()
 
-    # Basic authentication
-    if not user_is_authenticated(request):
-        return nlogin(request)
+    oErr = ErrHandle()
+    response = "Nothing"
+    try:
+        assert isinstance(request, HttpRequest)
 
-    qd = request.GET
-    clamdefine = False
-    if 'clamdefine' in qd:
-        v = qd.get('clamdefine')
-        clamdefine = (v == "true" or v == "1")
+        superuser = request.user.is_superuser
 
-    # Make sure the MWE list is okay
-    Expression.get_mwe_list()
+        # Basic authentication
+        if not user_is_authenticated(request):
+            return nlogin(request)
 
-    # Get a list of already uploaded files too
-    text_list = []
-    for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created').values(
-        'id', 'created', 'concr'):
+        qd = request.GET
+        clamdefine = False
+        if 'clamdefine' in qd:
+            v = qd.get('clamdefine')
+            clamdefine = (v == "true" or v == "1")
 
-        sConcr = item.get('concr')
-        id = item.get('id')
-        if sConcr is None:
-            obj = dict(id=id, show=False)
-            text_list.append(obj)
-        else:
-            sCreated = item.get("created")
-            if not sCreated is None:
-                sCreated = sCreated.strftime("%d/%B/%Y (%H:%M)")
-            obj = json.loads(sConcr)
-            obj['id'] = id
-            obj['show'] = True
-            obj['created'] = sCreated
-            text_list.append(obj)
+        # Make sure the MWE list is okay
+        Expression.get_mwe_list()
 
-    context = {'title': 'Tablet process',
-               'frmUpload': frmUpload,
-               'frmBrysb': frmBrysb,
-               'frmTwitter': frmTwitter,
-               'clamdefine': clamdefine,
-               'superuser': superuser,
-               'message': 'Radboud University CESAR',
-               'textlist': text_list,
-               'intro_breadcrumb': 'Tablet',
-               'year': datetime.now().year}
+        # Get a list of already uploaded files too
+        text_list = []
+        for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created').values(
+            'id', 'created', 'concr'):
 
-    if user_is_ingroup(request, TABLET_EDITOR) or  user_is_superuser(request):
-        # Adapt the app editor status
-        context['is_app_editor'] = True
-        context['is_tablet_editor'] = context['is_app_editor']
+            sConcr = item.get('concr')
+            id = item.get('id')
+            if sConcr is None:
+                obj = dict(id=id, show=False)
+                text_list.append(obj)
+            else:
+                sCreated = item.get("created")
+                if not sCreated is None:
+                    sCreated = sCreated.strftime("%d/%B/%Y (%H:%M)")
+                obj = json.loads(sConcr)
+                obj['id'] = id
+                obj['show'] = True
+                obj['created'] = sCreated
+                text_list.append(obj)
 
-    return render(request, template, context)
+        # Check validity of some forms
+        if frmDocGenre.is_valid():
+            iOkay = 1
+
+        context = {'title': 'Tablet process',
+                   'frmUpload': frmUpload,
+                   'frmBrysb': frmBrysb,
+                   'frmTwitter': frmTwitter,
+                   'frmDocGenre': frmDocGenre,
+                   'clamdefine': clamdefine,
+                   'superuser': superuser,
+                   'message': 'Radboud University CESAR',
+                   'textlist': text_list,
+                   'intro_breadcrumb': 'Tablet',
+                   'year': datetime.now().year}
+
+        if user_is_ingroup(request, TABLET_EDITOR) or  user_is_superuser(request):
+            # Adapt the app editor status
+            context['is_app_editor'] = True
+            context['is_tablet_editor'] = context['is_app_editor']
+            context['is_tablet_moderator'] = user_is_superuser(request) or user_is_ingroup(request, "tablet_moderator")
+
+
+        response = render(request, template, context)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("concrete_main")
+    return response
 
 def import_brysbaert(request):
     """Ad-hoc procedure to allow importing Brysbaert tab-separated file into Model"""
@@ -557,6 +574,13 @@ def import_concrete(request):
                 clamuser = request.POST.get("clamuser")
                 clampw = request.POST.get("clampw")
 
+            # Get genre, if it is there
+            genreone = None
+            if 'genreone' in qd:
+                genreone = qd.get("genreone")
+                if not genreone is None:
+                    genreone = Genre.objects.filter(id=genreone).first()
+
             # Initialisations
             fd = None   # FoliaDocs
 
@@ -617,6 +641,10 @@ def import_concrete(request):
                                     oStatus.set("error", msg=msg)
                                     # Break out of the for-loop
                                     break
+                                # If a genre has been defined, take that over
+                                if not genreone is None:
+                                    fl.fgenre = genreone
+                                    fl.save()
                                 # Read and convert into folia.xml
                                 oResult = fl.read_doc(username, data_file, filename, clamuser, clampw, arErr, oStatus=oStatus)
                                 # Possibly get the link to the owner's FoliaDocs
@@ -1085,20 +1113,23 @@ class ConcreteListView(BasicList):
     delete_line = True      # Allow deleting a line
     bUseFilter = True
     superuser = False
-    order_cols = ['created', 'score', 'size', 'name', '']
-    order_default = ['-created', 'score', 'size', 'name']
+    order_cols = ['created', 'score', 'size', 'name', 'fgenre__name', '']
+    order_default = ['-created', 'score', 'size', 'name', 'fgenre__name']
     order_heads = [
         {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
         {'name': 'Score', 'order': 'o=2', 'type': 'str', 'custom': 'score',      'linkdetails': True},
         {'name': 'Size',  'order': 'o=3', 'type': 'int', 'custom': 'size',       'linkdetails': True, 'align': "right"},
         {'name': 'Name',  'order': 'o=4', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+        {'name': 'Type',  'order': 'o=5', 'type': 'str', 'custom': 'type',       'linkdetails': True},
         {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
     filters = [
-        {'name': 'Name',  'id': 'filter_name',  'enabled': False}
+        {'name': 'Name',  'id': 'filter_name',  'enabled': False},
+        {'name': 'Genre', 'id': 'filter_genre', 'enabled': False}
         ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'}
+            {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
+            {'filter': 'genre', 'fkfield':  'fgenre',   'keyList': 'genrelist', 'infield': 'id'}
             ]},
         {'section': 'other', 'filterlist': [
             {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'},
@@ -1111,23 +1142,26 @@ class ConcreteListView(BasicList):
             # Check if I am superuser or not
             self.superuser = self.request.user.is_superuser
             if self.superuser:
-                self.order_cols = ['created', 'fdocs__owner__username', 'score', 'size', 'name', '']
-                self.order_default = ['-created', 'fdocs__owner__username', 'score', 'size', 'name']
+                self.order_cols = ['created', 'fdocs__owner__username', 'score', 'size', 'name', 'fgenre__name', '']
+                self.order_default = ['-created', 'fdocs__owner__username', 'score', 'size', 'name', 'fgenre__name']
                 self.order_heads = [
                     {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
                     {'name': 'Owner', 'order': 'o=2', 'type': 'str', 'custom': 'owner',      'linkdetails': True},
                     {'name': 'Score', 'order': 'o=3', 'type': 'str', 'custom': 'score',      'linkdetails': True},
                     {'name': 'Size',  'order': 'o=4', 'type': 'int', 'custom': 'size',       'linkdetails': True, 'align': "right"},
                     {'name': 'Name',  'order': 'o=5', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+                    {'name': 'Type',  'order': 'o=6', 'type': 'str', 'custom': 'type',       'linkdetails': True},
                     {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
                 self.filters = [
                     {'name': 'Name',  'id': 'filter_name',  'enabled': False},
-                    {'name': 'Owner', 'id': 'filter_owner', 'enabled': False}
+                    {'name': 'Owner', 'id': 'filter_owner', 'enabled': False},
+                    {'name': 'Genre', 'id': 'filter_genre', 'enabled': False},
                     ]
                 self.searches = [
                     {'section': '', 
                      'filterlist': [
                         {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
+                        {'filter': 'genre', 'fkfield':  'fgenre',   'keyList': 'genrelist', 'infield': 'id'},
                         {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
                         ]
                      },
@@ -1186,6 +1220,11 @@ class ConcreteListView(BasicList):
                 # Get the score
                 size = instance.get_size()
                 sBack = "{}".format(size)
+            elif custom == "type":
+                # Is this a reference text or not?
+                if not instance.fgenre is None:
+                    sBack = instance.fgenre.name
+                    sTitle = "Reference text"
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ConcreteListView/get_field_value")
@@ -1214,6 +1253,7 @@ class ConcreteListView(BasicList):
         context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
         context['is_app_uploader'] = context['is_app_editor']
         context['is_tablet_editor'] = user_is_ingroup(self.request, "tablet_editor")
+        context['is_tablet_moderator'] = user_is_ingroup(self.request, "tablet_moderator")
         return context
 
 
@@ -1330,6 +1370,9 @@ class GenreEdit(BasicDetails):
 
         edit_enabled = (is_superuser or is_moderator)
 
+        # Re-calculate the score/size
+        instance.recalculate()
+
         # Define the main items to show and edit
         context['mainitems'] = [
             {'type': 'plain', 'label': "Name:",     'value': instance.name                  },
@@ -1343,6 +1386,7 @@ class GenreEdit(BasicDetails):
         # Adapt the app editor status
         context['is_app_editor'] = edit_enabled
         context['is_tablet_editor'] = edit_enabled
+        context['is_tablet_moderator'] = is_moderator
         # Return the context we have made
         return context
     
@@ -1386,8 +1430,12 @@ class GenreList(BasicList):
             is_moderator = user_is_ingroup(self.request, "tablet_moderator")
 
             if is_superuser or is_moderator:
-                # Allw the new button
+                # Allow the new button
                 self.new_button = True
+
+            # Re-calculate the size/score
+            for obj in Genre.objects.all():
+                obj.recalculate()
 
         except:
             msg = oErr.get_error_message()
@@ -2130,6 +2178,7 @@ def nexis_main(request):
     # Render the template as HTML
     return render(request, template, context)
 
+
 def import_nexis(request):
     """Import one or more TEXT (utf8) files that need to be transformed into FoLiA with FROG"""
 
@@ -2270,6 +2319,7 @@ def import_nexis(request):
  
     # Return the information
     return JsonResponse(data)
+
 
 def import_mwex(request):
     """Import one MWE Excel file"""
@@ -2421,6 +2471,7 @@ def import_mwex(request):
  
     # Return the information
     return JsonResponse(data)
+
 
 def import_twitter_excel(request):
     """Import one Twitter Excel file into TwitterMsg objects"""
