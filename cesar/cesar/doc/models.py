@@ -1645,6 +1645,9 @@ class FoliaProcessor():
                 sLine = sLine.replace(">", "")
                 sLine = sLine.replace("<", "")
                 sLine = sLine.replace("#", "")
+                # Make room for left and right bracket
+                sLine = sLine.replace("(", "( ")
+                sLine = sLine.replace(")", " )")
                 # Put a space before a comma
                 sLine = sLine.replace(",", " ,")
                 lines.append(sLine)
