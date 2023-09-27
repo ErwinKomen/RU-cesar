@@ -1039,7 +1039,8 @@ class BasicList(ListView):
             self.sort_order = colnum
 
             # Determine the length
-            self.entrycount = len(qs)
+            # self.entrycount = len(qs)
+            self.entrycount = qs.count()
 
             # Return the resulting filtered and sorted queryset
             self.qs = qs
