@@ -29,6 +29,7 @@ var ru = (function ($, ru) {
         loc_divErr = "doc_err",
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         loc_month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        loc_COLORS = ['#4dc9f6','#f67019','#f53794','#537bc4', '#acc236', '#166a8f', '#00a950', '#58595b', '#8549ba'],
         oSyncTimer = null;
 
 
@@ -40,6 +41,35 @@ var ru = (function ($, ru) {
        */
       methodNotVisibleFromOutside: function () {
         return "something";
+      },
+
+      color: function (index) {
+        return loc_COLORS[index % loc_COLORS.length];
+      },
+
+      numberWithCommas: function (x) {
+        var parts = x.toString().split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return parts.join(".");
+      },
+
+      log_axis: function (value, index, values) {
+        if (value == 1e+1 || value == 1e+2 || value == 1e+3 || value == 1e+4 || value == 1e+5 || value == 1e+6 || value == 1e+7 ||
+          value == 1e+8 || value == 1e+9 || value == 1e+10 || value == 1e+11 || value == 1e+12) {
+          return private_methods.numberWithCommas(value);
+        }
+      },
+
+      log_ticks: function (chartObj) {
+        chartObj.ticks = [];
+        chartObj.ticks.push(1);
+        chartObj.ticks.push(10);
+        chartObj.ticks.push(50);
+        chartObj.ticks.push(100);
+        chartObj.ticks.push(200);
+        chartObj.ticks.push(400);
+        chartObj.ticks.push(800);
+        chartObj.ticks.push(1000);
       },
 
       /**
@@ -232,6 +262,9 @@ var ru = (function ($, ru) {
             data = null,
             chart = null,
             targeturl = "",
+            idx = 0,
+            plotdata = null,
+            dataset = null,
             elWait = "#scatter_plot_wait",
             elView = "#scatter_plot_view",
             targetid = "#scatter_plot";
@@ -257,6 +290,14 @@ var ru = (function ($, ru) {
                 case "ok":
                   // Get the data and the options
                   config = response.config;
+                  // Set and check the colors
+                  for (idx = 0; idx < config.data.datasets.length; idx++) {
+                    config.data.datasets[idx].backgroundColor = private_methods.color(idx);
+                  }
+                  // Set the yAxis callback function
+                  config.options.scales.xAxes[0].ticks.callback = private_methods.log_axis;
+                  // config.options.scales.xAxes[0].afterBuildTicks = private_methods.log_ticks;
+
                   // Create the chart
                   chart = new Chart($(elView), config);
                   chart.update();

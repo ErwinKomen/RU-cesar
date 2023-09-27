@@ -821,11 +821,27 @@ class ConcreteScatter(BasicPart):
 
             # Think of the correct options
             options = {
+                "title": {
+                    "display": True, "text": "Concreteness comparison"
+                    },
                 "scales": { 
-                    "xAxes": [{"display": True}], 
-                    "yAxes": [{"ticks": {"beginAtZero": True}}],
-                    "x": { "type": "log", "position": "bottom"},
-                    "y": { "type": "linear", "position": "left"}
+                    "xAxes": [{"display": True, 
+                               "position": "bottom",
+                               "type": "logarithmic",
+                               "ticks": {},
+                               "scaleLabel": {"display": True, "labelString": "Size (log)"}}], 
+                    "yAxes": [{"ticks": {"beginAtZero": True}, 
+                               "type": "linear",
+                               "scaleLabel": {"display": True, "labelString": "Concreteness"}}],
+                    "x": { "type": "logarithmic",
+                          "display": True,
+                          "position": "left",
+                          "position": "bottom",
+                          "title": { "display": True, "text": "Size (log)"}, "color": "black"},
+                    "y": { "type": "linear", 
+                          "display": True,
+                          "position": "left",
+                          "title": { "display": True, "text": "Concreteness"}, "color": "black"}
                     }
                 }
             options['responsive'] = True
@@ -844,7 +860,7 @@ class ConcreteScatter(BasicPart):
             labels = []
             chartdata = []
             for obj in Genre.objects.all().order_by("name"):
-                sName = obj.name
+                sName = "R:{}".format(obj.name)
                 score = obj.score   # Y-axis, [0-5]
                 size = obj.size     # X-axis
                 labels.append(sName)
