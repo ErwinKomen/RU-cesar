@@ -52,7 +52,7 @@ elif "131.174" in hst:
     # Ponyland-internal:
     CRPP_HOME = 'http://localhost:8080/CrppS'
     PROJECT_DIR = '/var/www/tomcat8/live/tomcat8/crpp/project'
-    USE_REDIS = False
+    USE_REDIS = True
 elif "/var/www" in WRITABLE_DIR:
     # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/cesar
     APP_PREFIX = "cesar/"
@@ -151,13 +151,13 @@ TEMPLATES = [
 if USE_REDIS:
     CACHES = {"default": {
                 "BACKEND": "django_redis.cache.RedisCache",
-                "LOCATION": "redis://127.0.0.1:7780/1",
+                "LOCATION": "redis://127.0.0.1:7778/1",
                 "TIMEOUT": None,
                 "OPTIONS": { "CLIENT_CLASS": "django_redis.client.DefaultClient", }
                 },
                 "select2": {
                 "BACKEND": "django_redis.cache.RedisCache",
-                "LOCATION": "redis://127.0.0.1:7780/2",
+                "LOCATION": "redis://127.0.0.1:7778/2",
                 "TIMEOUT": None,
                 "OPTIONS": { "CLIENT_CLASS": "django_redis.client.DefaultClient", }
                 }

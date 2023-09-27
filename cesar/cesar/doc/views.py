@@ -578,7 +578,7 @@ def import_concrete(request):
             genreone = None
             if 'genreone' in qd:
                 genreone = qd.get("genreone")
-                if not genreone is None:
+                if not genreone is None and genreone != "":
                     genreone = Genre.objects.filter(id=genreone).first()
 
             # Initialisations
@@ -587,11 +587,13 @@ def import_concrete(request):
             # Get the contents of the imported file
             files = request.FILES.getlist('files_field')
             if files != None:
+                iCount = 0
                 for data_file in files:
                     filename = data_file.name
+                    iCount += 1
 
                     # Set the status
-                    oStatus.set("reading", msg="file={}".format(filename))
+                    oStatus.set("reading", msg="{}: file={}".format(iCount, filename))
 
                     # Get the source file
                     if data_file == None or data_file == "":
@@ -642,7 +644,7 @@ def import_concrete(request):
                                     # Break out of the for-loop
                                     break
                                 # If a genre has been defined, take that over
-                                if not genreone is None:
+                                if not genreone is None and genreone != "":
                                     fl.fgenre = genreone
                                     fl.save()
                                 # Read and convert into folia.xml
@@ -661,8 +663,9 @@ def import_concrete(request):
                                 break
                             else:
                                 # Indicate that the folia.xml has been created
-                                oStatus.set("working", msg="Created folia.xml file")
-                                oErr.Status("Created folia.xml file")
+                                msg = "{}: concreteness on {}".format(iCount, sBare)
+                                oStatus.set("working", msg=msg)
+                                oErr.Status(msg)
                                 # Next step: determine concreteness for this file
                                 bResult, msg = fl.do_concreteness()
                                 if bResult == False:

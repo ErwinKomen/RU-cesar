@@ -480,7 +480,7 @@ class Genre(models.Model):
             for oText in lst_texts:
                 size_this = oText.get("size", 0)
                 score_this = oText.get("score", 0.0)
-                if size_this > 0 and score_this > 0.0:
+                if not size_this is None and not score_this is None and size_this > 0 and score_this > 0.0:
                     iNumber += 1
                     iSizes += size_this
                     fScores += score_this
@@ -693,6 +693,7 @@ class FrogLink(models.Model, Custom):
         iCount = 0
         inputType = "folia"
         frogType = "remote"     # Fix to remote -- or put to None if automatically choosing
+        processType = "bare"    # Or could be: basis
 
         def get_error_log(result):
             """Try to get the error.log file contents"""
@@ -721,7 +722,6 @@ class FrogLink(models.Model, Custom):
             lhtml.append("</div>")
             return "\n".join(lhtml)
 
-
         folProc = FoliaProcessor(username)
         try:
             if clamuser is None:
@@ -735,7 +735,13 @@ class FrogLink(models.Model, Custom):
             dir = folProc.dir
             
             # Read and create basis-folia
-            bResult, sMsg = folProc.basis_folia(filename, data_file)
+            if processType == "basis":
+                bResult, sMsg = folProc.basis_folia(filename, data_file)
+            else:
+                bResult, sMsg = folProc.bare_folia(filename, data_file)
+                # Make sure the inputtype is text
+                inputType = "text"
+
             if not bResult:
                 # There was some kind of error
                 oBack['status'] = 'error'
@@ -769,12 +775,17 @@ class FrogLink(models.Model, Custom):
                             if param.id == 'author':
                                 param.value = "cesar"
                                 param.hasvalue = True
-                        it.filename = self.name
+                        # it.filename = self.name
                     else:
                         it = data.inputtemplate("foliainput")
 
-                    # Add the Basis-Folia XML file as input to the project
-                    basicf = folProc.basicf
+                    if processType == "basis":
+                        # Add the Basis-Folia XML file as input to the project
+                        basicf = folProc.basicf
+                    else:
+                        # Adding the TEXT file as input to the project
+                        basicf = folProc.basict
+
                     result = clamclient.addinputfile(project, it, basicf, language='nl')
                     # Opstarten
                     #   See explanation at https://webservices.cls.ru.nl/frog/info/
@@ -1591,6 +1602,7 @@ class FoliaProcessor():
     username = ""       # The owner of this document
     dir = ""            # Directory for the output
     basicf = ""         # If any: where the basis folis is
+    basict = ""         # Where the text file is
     frogClient = None   
     frog = None
     doc = None
@@ -1619,7 +1631,51 @@ class FoliaProcessor():
             sBack = "remote"
         return sBack
 
+    def bare_folia(self, filename, data_contents):
+        """Do not create a folia XML file, but do determine filename and basis.xml location"""
+
+        errHandle = ErrHandle()
+        bReturn = False
+        sMsg = ""
+        try:
+            # Check and/or create the appropriate directory for the user
+            dir = self.dir
+
+            # create a folia document with a numbered id
+            docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
+            # Make sure it starts with a letter
+            if not re.match(r'^[a-zA-Z_]', docstr):
+                docstr = "t_" + docstr
+            # Make sure we remember the docstr
+            self.docstr = docstr
+            # Make sure the file is at the right place with the correct name
+            f =  os.path.abspath(os.path.join(dir, docstr) + ".basis.txt")
+            self.basict = f
+            # Read the in-memory file as string
+            sContents = data_contents.file.getvalue().decode("utf-8")
+            # A few minor adaptations
+            sContenst = sContents.strip().replace(u'\ufeff', '')
+            # For correct paragraph recognition
+            sContents = sContents.replace("\r\n", "\n")
+
+            # Write it
+            with open(f, "w", encoding="utf-8") as fp:
+                fp.write(sContents)
+
+            # THink of a correct name for Basic folia
+            f =  os.path.abspath(os.path.join(dir, docstr) + ".basis.xml")
+            self.basicf = f
+            # Set positive return
+            bReturn = True
+        except:
+            sMsg = errHandle.get_error_message()
+            errHandle.DoError("bare_folia")
+            bReturn = False
+        # Return what has happened
+        return bReturn, sMsg
+
     def basis_folia(self, filename, data_contents):
+        """Create a Folia xml file according to basic specifications, on the basis of the [data_contents]"""
 
         errHandle = ErrHandle()
         bReturn = False
