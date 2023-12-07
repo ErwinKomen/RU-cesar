@@ -54,8 +54,18 @@ var ru = (function ($, ru) {
       },
 
       log_axis: function (value, index, values) {
-        if (value == 1e+1 || value == 1e+2 || value == 1e+3 || value == 1e+4 || value == 1e+5 || value == 1e+6 || value == 1e+7 ||
-          value == 1e+8 || value == 1e+9 || value == 1e+10 || value == 1e+11 || value == 1e+12) {
+        if (value == 1e+1 || value == 2e+1 || value == 5e+1 ||
+          value == 1e+2 || value == 2e+2 || value == 5e+2 ||
+          value == 1e+3 || value == 2e+3 || value == 5e+3 ||
+          value == 1e+4 || value == 2e+4 || value == 5e+4 ||
+          value == 1e+5 || value == 2e+5 || value == 5e+5 ||
+          value == 1e+6 || value == 2e+6 || value == 5e+6 ||
+          value == 1e+7 || value == 2e+7 || value == 5e+7 ||
+          value == 1e+8 || value == 2e+8 || value == 5e+8 ||
+          value == 1e+9 || value == 2e+9 || value == 5e+9 ||
+          value == 1e+10 || value == 2e+10 || value == 5e+10 ||
+          value == 1e+11 || value == 2e+11 || value == 5e+11 ||
+          value == 1e+12) {
           return private_methods.numberWithCommas(value);
         }
       },
