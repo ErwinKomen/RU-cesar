@@ -831,9 +831,14 @@ class ConcreteScatter(BasicPart):
                                "type": "logarithmic",
                                "ticks": {},
                                "scaleLabel": {"display": True, "labelString": "Size (log)"}}], 
-                    "yAxes": [{"ticks": {"beginAtZero": True, "min": 0.0, "max": 5.0,}, 
-                               "type": "linear",                               
-                               "scaleLabel": {"display": True, "labelString": "Concreteness"}}],
+                    "yAxes": [
+                        {"ticks": 
+                         { "beginAtZero": True, 
+                           "min": 1.0, "max": 5.0
+                         }, 
+                        "type": "linear",                               
+                        "scaleLabel": {"display": True, "labelString": "Concreteness"}}
+                        ],
                     # The following would be for Chartjs version 4.4.1 and upwards
                     #"x": { "type": "logarithmic",
                     #      "display": True,
