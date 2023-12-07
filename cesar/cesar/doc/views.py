@@ -825,23 +825,27 @@ class ConcreteScatter(BasicPart):
                     "display": True, "text": "Concreteness comparison"
                     },
                 "scales": { 
+                    # This is for chartjs version 2.8.0
                     "xAxes": [{"display": True, 
                                "position": "bottom",
                                "type": "logarithmic",
                                "ticks": {},
                                "scaleLabel": {"display": True, "labelString": "Size (log)"}}], 
-                    "yAxes": [{"ticks": {"beginAtZero": True}, 
-                               "type": "linear",
+                    "yAxes": [{"ticks": {"beginAtZero": True, "min": 0.0, "max": 5.0,}, 
+                               "type": "linear",                               
                                "scaleLabel": {"display": True, "labelString": "Concreteness"}}],
-                    "x": { "type": "logarithmic",
-                          "display": True,
-                          "position": "left",
-                          "position": "bottom",
-                          "title": { "display": True, "text": "Size (log)"}, "color": "black"},
-                    "y": { "type": "linear", 
-                          "display": True,
-                          "position": "left",
-                          "title": { "display": True, "text": "Concreteness"}, "color": "black"}
+                    # The following would be for Chartjs version 4.4.1 and upwards
+                    #"x": { "type": "logarithmic",
+                    #      "display": True,
+                    #      "position": "left",
+                    #      "position": "bottom",
+                    #      "title": { "display": True, "text": "Size (log)"}, "color": "black"},
+                    #"y": { "type": "linear", 
+                    #      "min": 0.0,
+                    #      "max": 5.0,
+                    #      "display": True,
+                    #      "position": "left",
+                    #      "title": { "display": True, "text": "Concreteness"}, "color": "black"}
                     }
                 }
             options['responsive'] = True

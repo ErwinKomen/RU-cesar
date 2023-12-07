@@ -298,7 +298,7 @@ var ru = (function ($, ru) {
                   config.options.scales.xAxes[0].ticks.callback = private_methods.log_axis;
                   // config.options.scales.xAxes[0].afterBuildTicks = private_methods.log_ticks;
 
-                  // Create the chart
+                  // Create the chart - this uses chartjs
                   chart = new Chart($(elView), config);
                   chart.update();
                   break;
