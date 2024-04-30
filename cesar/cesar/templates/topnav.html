@@ -179,6 +179,10 @@
                             <li><a href="{% url 'wordlist_list' %}" title="wordlists">Tablet Wordlist</a></li>
                             <li><a href="{% static 'doc/content/TabletHandleiding.pdf' %}" target="_blank">Tablet Manual (pdf)</a></li>
                           {% endif %}
+                          {% if is_superuser or is_tablet_moderator %}
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url 'genre_list' %}" title="genres">Tablet Genre</a></li>
+                          {% endif %}
                           <li role="separator" class="divider"></li>
                           <li><a href="{% url 'nexisbatch_list' %}">Nexis batches</a></li>
                           <li><a href="{% static 'doc/content/CesarNexisHelp.pdf' %}" target="_blank">Nexis Manual (pdf)</a></li>

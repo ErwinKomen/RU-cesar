@@ -1,4 +1,4 @@
-﻿var django = {
+var django = {
   "jQuery": jQuery.noConflict(true)
 };
 var jQuery = django.jQuery;
@@ -9,6 +9,8 @@ var $ = jQuery;
     $(document).ready(function () {
       // Initialize event listeners
       ru.cesar.doc.init_event_listeners();
+      // Try load scatter plot chart
+      //ru.cesar.doc.init_scatterplot();
     });
   });
 })(django.jQuery);
@@ -27,6 +29,7 @@ var ru = (function ($, ru) {
         loc_divErr = "doc_err",
         loc_sWaiting = " <span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span>",
         loc_month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        loc_COLORS = ['#4dc9f6','#f67019','#f53794','#537bc4', '#acc236', '#166a8f', '#00a950', '#58595b', '#8549ba'],
         oSyncTimer = null;
 
 
@@ -38,6 +41,45 @@ var ru = (function ($, ru) {
        */
       methodNotVisibleFromOutside: function () {
         return "something";
+      },
+
+      color: function (index) {
+        return loc_COLORS[index % loc_COLORS.length];
+      },
+
+      numberWithCommas: function (x) {
+        var parts = x.toString().split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return parts.join(".");
+      },
+
+      log_axis: function (value, index, values) {
+        if (value == 1e+1 || value == 2e+1 || value == 5e+1 ||
+          value == 1e+2 || value == 2e+2 || value == 5e+2 ||
+          value == 1e+3 || value == 2e+3 || value == 5e+3 ||
+          value == 1e+4 || value == 2e+4 || value == 5e+4 ||
+          value == 1e+5 || value == 2e+5 || value == 5e+5 ||
+          value == 1e+6 || value == 2e+6 || value == 5e+6 ||
+          value == 1e+7 || value == 2e+7 || value == 5e+7 ||
+          value == 1e+8 || value == 2e+8 || value == 5e+8 ||
+          value == 1e+9 || value == 2e+9 || value == 5e+9 ||
+          value == 1e+10 || value == 2e+10 || value == 5e+10 ||
+          value == 1e+11 || value == 2e+11 || value == 5e+11 ||
+          value == 1e+12) {
+          return private_methods.numberWithCommas(value);
+        }
+      },
+
+      log_ticks: function (chartObj) {
+        chartObj.ticks = [];
+        chartObj.ticks.push(1);
+        chartObj.ticks.push(10);
+        chartObj.ticks.push(50);
+        chartObj.ticks.push(100);
+        chartObj.ticks.push(200);
+        chartObj.ticks.push(400);
+        chartObj.ticks.push(800);
+        chartObj.ticks.push(1000);
       },
 
       /**
@@ -204,6 +246,9 @@ var ru = (function ($, ru) {
           });
           $("[contenteditable=true]").on('change', function (e) {
             $("#concrete_process").removeClass("hidden");
+            $(".scrolltop-container").addClass("scrolltop-save");
+            $(".scrolltop-container a").removeClass("hidden");
+            $(".scrolltop-container .arrow").addClass("hidden");
           });
 
           // clipboard copying
@@ -213,6 +258,74 @@ var ru = (function ($, ru) {
 
         } catch (ex) {
           private_methods.errMsg("init_event_listeners", ex);
+        }
+      },
+
+      /**
+       * make_scatterplot
+       *   Create scatter plot
+       *
+       */
+      make_scatterplot: function (elStart) {
+        var frm = null,
+            config = null,
+            data = null,
+            chart = null,
+            targeturl = "",
+            idx = 0,
+            plotdata = null,
+            dataset = null,
+            elWait = "#scatter_plot_wait",
+            elView = "#scatter_plot_view",
+            targetid = "#scatter_plot";
+
+        try {
+          // Indicate we are waiting
+          $(elWait).removeClass("hidden");
+          $(targetid).removeClass("hidden");
+          // Get to the form 
+          frm = $(targetid).find("form").first();
+          data = frm.serializeArray();
+          // Get more specifics
+          targeturl = $(frm).attr("action");
+          // Go and call
+          $.post(targeturl, data, function (response) {
+            // Action depends on the response
+            if (response === undefined || response === null || typeof (response) === "string" || !("status" in response)) {
+              private_methods.errMsg("No status returned");
+            } else {
+              $(elWait).addClass("hidden");
+              switch (response.status) {
+                case "ready":
+                case "ok":
+                  // Get the data and the options
+                  config = response.config;
+                  // Set and check the colors
+                  for (idx = 0; idx < config.data.datasets.length; idx++) {
+                    config.data.datasets[idx].backgroundColor = private_methods.color(idx);
+                  }
+                  // Set the yAxis callback function
+                  config.options.scales.xAxes[0].ticks.callback = private_methods.log_axis;
+                  // config.options.scales.xAxes[0].afterBuildTicks = private_methods.log_ticks;
+
+                  // Create the chart - this uses chartjs
+                  chart = new Chart($(elView), config);
+                  chart.update();
+                  break;
+                case "error":
+                  // Show the error
+                  if ('msg' in response) {
+                    $(targetid).html(response.msg);
+                  } else {
+                    $(targetid).html("An error has occurred (cesar.doc.js: make_scatterplot)");
+                  }
+                  break;
+              }
+            }
+          });
+
+        } catch (ex) {
+          private_methods.errMsg("make_scatterplot", ex);
         }
       },
 
@@ -264,6 +377,45 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * doc_level
+       *   Change the document view level
+       *
+       */
+      doc_level: function (elThis) {
+        var sLevel = "",
+            elTable = null;
+
+        try {
+          // Get the overall table
+          elTable = $(elThis).closest(".container-small").find("table").first();
+          // Get the currently selected level
+          sLevel = $(elThis).val();
+          switch (sLevel) {
+            case "all":
+              // Remove 'hidden' from particular classes
+              $(elTable).find(".doc-para, .doc-sent, .docword").removeClass("hidden");
+              break;
+            case "sent":
+              // Hide words
+              $(elTable).find(".doc-para, .doc-sent").removeClass("hidden");
+              $(elTable).find(".docword").addClass("hidden");
+              break;
+            case "para":
+              // Hide words, sent
+              $(elTable).find(".doc-para").removeClass("hidden");
+              $(elTable).find(".docword, .doc-sent").addClass("hidden");
+              break;
+            case "text":
+              // Hide words, sent, para
+              $(elTable).find(".docword, .doc-para, .doc-sent").addClass("hidden");
+              break;
+          }
+        } catch (ex) {
+          private_methods.errMsg("doc_level", ex);
+        }
+      },
+
+      /**
        * hnym_select
        *   Process change in homonym selection
        *
@@ -298,6 +450,57 @@ var ru = (function ($, ru) {
           ev.preventDefault();
         } catch (ex) {
           private_methods.errMsg("loctime_allowdrop", ex);
+        }
+      },
+
+      /**
+       * loctime_filter
+       *   Filter table
+       *
+       */
+      loctime_filter: function (elStart) {
+        var sQuery = "",
+            iCount = 0,
+            elItems = null,
+            elTable = null;
+
+        try {
+          // Get the table
+          elTable = $(elStart).closest(".loctime-list").first();
+          // Get the .loctime-items 
+          elItems = $(elTable).find(".loctime-items").first();
+          // Get the search string
+          sQuery = $(elStart).val();
+          if (sQuery !== undefined && sQuery !== "") {
+            sQuery = sQuery.toLowerCase();
+            if (sQuery !== "") {
+              sQuery = sQuery.trim();
+            }
+            // iCount = 0;
+            // Walk all rows of the table
+            $(elTable).find("tr").each(function (idx, el) {
+              var sItem = "",
+                  pos = -1;
+
+              // Match with contents of this row
+              sItem = $(el).find("td").first().text().trim().toLowerCase();
+              pos = sItem.indexOf(sQuery);
+              if (pos < 0) {
+                // no match
+                $(el).addClass("hidden");
+              } else {
+                $(el).removeClass("hidden");
+                // iCount += 1;
+              }
+            });
+          } else {
+            $(elTable).find("tr").removeClass("hidden");
+          }
+          // Show the total amount of rows
+          iCount = $(elTable).find("tr").not(".hidden").length;
+          $(elItems).html(iCount + " found");
+        } catch (ex) {
+          private_methods.errMsg("loctime_filter", ex);
         }
       },
 
@@ -361,6 +564,9 @@ var ru = (function ($, ru) {
             $(elTr).remove();
             // Make sure the save button shows
             $("#concrete_process").removeClass("hidden");
+            $(".scrolltop-container").addClass("scrolltop-save");
+            $(".scrolltop-container a").removeClass("hidden");
+            $(".scrolltop-container .arrow").addClass("hidden");
 
           }
         } catch (ex) {

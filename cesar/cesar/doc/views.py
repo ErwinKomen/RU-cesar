@@ -14,6 +14,7 @@ from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpRe
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic.detail import DetailView
 from datetime import datetime
 import os.path, io, shutil
@@ -22,6 +23,7 @@ import openpyxl
 import docx
 from openpyxl.utils.cell import get_column_letter
 from openpyxl import Workbook
+from pypdf import PdfReader
 
 import clam.common.client
 import clam.common.data
@@ -36,10 +38,10 @@ from cesar.seeker.views import csv_to_excel
 from cesar.basic.models import Information
 from cesar.tsg.models import TsgInfo
 from cesar.doc.models import CLAMClient, FrogLink, FoliaDocs, Brysbaert, NexisDocs, NexisLink, NexisBatch, NexisProcessor, get_crpp_date, \
-    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist
+    LocTimeInfo, Expression, Neologism, Homonym, TwitterMsg, Worddef, Wordlist, Comparison, Genre
 from cesar.doc.forms import UploadFilesForm, UploadNexisForm, UploadOneFileForm, NexisBatchForm, FrogLinkForm, \
     WordlistForm, LocTimeForm, ExpressionForm, UploadMwexForm, HomonymForm, UploadTwitterExcelForm, \
-    WorddefForm
+    WorddefForm, ConcreteForm, GenreForm, DocGenreForm
 from cesar.doc.adaptations import listview_adaptations
 from cesar.utils import ErrHandle
 
@@ -77,6 +79,63 @@ def user_is_superuser(request):
             bFound = user.is_superuser
     return bFound
 
+def adapt_m2m(cls, instance, field1, qs, field2, extra = [], extrargs = {}, qfilter = {}, 
+              related_is_through = False, userplus = None, added=None, deleted=None):
+    """Adapt the 'field' of 'instance' to contain only the items in 'qs'
+    
+    The lists [added] and [deleted] (if specified) will contain links to the elements that have been added and deleted
+    If [deleted] is specified, then the items will not be deleted by adapt_m2m(). Caller needs to do this.
+    """
+
+    errHandle = ErrHandle()
+    try:
+        # Get current associations
+        lstQ = [Q(**{field1: instance})]
+        for k,v in qfilter.items(): lstQ.append(Q(**{k: v}))
+        through_qs = cls.objects.filter(*lstQ)
+        if related_is_through:
+            related_qs = through_qs
+        else:
+            related_qs = [getattr(x, field2) for x in through_qs]
+        # make sure all items in [qs] are associated
+        if userplus == None or userplus:
+            for obj in qs:
+                if obj not in related_qs:
+                    # Add the association
+                    args = {field1: instance}
+                    if related_is_through:
+                        args[field2] = getattr(obj, field2)
+                    else:
+                        args[field2] = obj
+                    for item in extra:
+                        # Copy the field with this name from [obj] to 
+                        args[item] = getattr(obj, item)
+                    for k,v in extrargs.items():
+                        args[k] = v
+                    # cls.objects.create(**{field1: instance, field2: obj})
+                    new = cls.objects.create(**args)
+                    if added != None:
+                        added.append(new)
+
+        # Remove from [cls] all associations that are not in [qs]
+        # NOTE: do not allow userplus to delete
+        for item in through_qs:
+            if related_is_through:
+                obj = item
+            else:
+                obj = getattr(item, field2)
+            if obj not in qs:
+                if deleted == None:
+                    # Remove this item
+                    item.delete()
+                else:
+                    deleted.append(item)
+        # Return okay
+        return True
+    except:
+        msg = errHandle.get_error_message()
+        return False
+
 def getText(data_file):
     """Given a Word .dox document, extract its text data"""
 
@@ -93,6 +152,22 @@ def getText(data_file):
         oErr.DoError("getText")
     return sBack
 
+def getPdfText(data_file):
+    """Given a PDF document, extract its text data"""
+    oErr = ErrHandle()
+    sBack = "-"
+    try:
+        reader = PdfReader(data_file)
+        lst_text = []
+        for page in reader.pages:
+            sText = page.extract_text()
+            lst_text.append(sText)
+        sBack = '\n'.join(lst_text)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("getPdfText")
+    return sBack
+
 # Views belonging to the Cesar Document Processing app.
 
 # ========== CONCRETENESS ==============================
@@ -100,63 +175,80 @@ def getText(data_file):
 def concrete_main(request):
     """The main page of working with documents for concreteness."""
 
-    assert isinstance(request, HttpRequest)
     template = 'doc/concrete_main.html'
     frmUpload = UploadFilesForm()
     frmBrysb = UploadOneFileForm()
     frmTwitter = UploadTwitterExcelForm()
-    superuser = request.user.is_superuser
+    frmDocGenre = DocGenreForm()
 
-    # Basic authentication
-    if not user_is_authenticated(request):
-        return nlogin(request)
+    oErr = ErrHandle()
+    response = "Nothing"
+    try:
+        assert isinstance(request, HttpRequest)
 
-    qd = request.GET
-    clamdefine = False
-    if 'clamdefine' in qd:
-        v = qd.get('clamdefine')
-        clamdefine = (v == "true" or v == "1")
+        superuser = request.user.is_superuser
 
-    # Make sure the MWE list is okay
-    Expression.get_mwe_list()
+        # Basic authentication
+        if not user_is_authenticated(request):
+            return nlogin(request)
 
-    # Get a list of already uploaded files too
-    text_list = []
-    for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created').values(
-        'id', 'created', 'concr'):
+        qd = request.GET
+        clamdefine = False
+        if 'clamdefine' in qd:
+            v = qd.get('clamdefine')
+            clamdefine = (v == "true" or v == "1")
 
-        sConcr = item.get('concr')
-        id = item.get('id')
-        if sConcr is None:
-            obj = dict(id=id, show=False)
-            text_list.append(obj)
-        else:
-            sCreated = item.get("created")
-            if not sCreated is None:
-                sCreated = sCreated.strftime("%d/%B/%Y (%H:%M)")
-            obj = json.loads(sConcr)
-            obj['id'] = id
-            obj['show'] = True
-            obj['created'] = sCreated
-            text_list.append(obj)
+        # Make sure the MWE list is okay
+        Expression.get_mwe_list()
 
-    context = {'title': 'Tablet process',
-               'frmUpload': frmUpload,
-               'frmBrysb': frmBrysb,
-               'frmTwitter': frmTwitter,
-               'clamdefine': clamdefine,
-               'superuser': superuser,
-               'message': 'Radboud University CESAR',
-               'textlist': text_list,
-               'intro_breadcrumb': 'Tablet',
-               'year': datetime.now().year}
+        # Get a list of already uploaded files too
+        text_list = []
+        for item in FrogLink.objects.filter(Q(fdocs__owner__username=request.user)).order_by('-created').values(
+            'id', 'created', 'concr'):
 
-    if user_is_ingroup(request, TABLET_EDITOR) or  user_is_superuser(request):
-        # Adapt the app editor status
-        context['is_app_editor'] = True
-        context['is_tablet_editor'] = context['is_app_editor']
+            sConcr = item.get('concr')
+            id = item.get('id')
+            if sConcr is None:
+                obj = dict(id=id, show=False)
+                text_list.append(obj)
+            else:
+                sCreated = item.get("created")
+                if not sCreated is None:
+                    sCreated = sCreated.strftime("%d/%B/%Y (%H:%M)")
+                obj = json.loads(sConcr)
+                obj['id'] = id
+                obj['show'] = True
+                obj['created'] = sCreated
+                text_list.append(obj)
 
-    return render(request, template, context)
+        # Check validity of some forms
+        if frmDocGenre.is_valid():
+            iOkay = 1
+
+        context = {'title': 'Tablet process',
+                   'frmUpload': frmUpload,
+                   'frmBrysb': frmBrysb,
+                   'frmTwitter': frmTwitter,
+                   'frmDocGenre': frmDocGenre,
+                   'clamdefine': clamdefine,
+                   'superuser': superuser,
+                   'message': 'Radboud University CESAR',
+                   'textlist': text_list,
+                   'intro_breadcrumb': 'Tablet',
+                   'year': datetime.now().year}
+
+        if user_is_ingroup(request, TABLET_EDITOR) or  user_is_superuser(request):
+            # Adapt the app editor status
+            context['is_app_editor'] = True
+            context['is_tablet_editor'] = context['is_app_editor']
+            context['is_tablet_moderator'] = user_is_superuser(request) or user_is_ingroup(request, "tablet_moderator")
+
+
+        response = render(request, template, context)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("concrete_main")
+    return response
 
 def import_brysbaert(request):
     """Ad-hoc procedure to allow importing Brysbaert tab-separated file into Model"""
@@ -482,17 +574,26 @@ def import_concrete(request):
                 clamuser = request.POST.get("clamuser")
                 clampw = request.POST.get("clampw")
 
+            # Get genre, if it is there
+            genreone = None
+            if 'genreone' in qd:
+                genreone = qd.get("genreone")
+                if not genreone is None and genreone != "":
+                    genreone = Genre.objects.filter(id=genreone).first()
+
             # Initialisations
             fd = None   # FoliaDocs
 
             # Get the contents of the imported file
             files = request.FILES.getlist('files_field')
             if files != None:
+                iCount = 0
                 for data_file in files:
                     filename = data_file.name
+                    iCount += 1
 
                     # Set the status
-                    oStatus.set("reading", msg="file={}".format(filename))
+                    oStatus.set("reading", msg="{}: file={}".format(iCount, filename))
 
                     # Get the source file
                     if data_file == None or data_file == "":
@@ -501,7 +602,7 @@ def import_concrete(request):
                         # Check the extension
                         arFile = filename.split(".")
                         extension = arFile[len(arFile)-1]
-                        sBare = arFile[0].strip().replace(" ", "_")
+                        sBare = arFile[0].strip().replace(" ", "_").replace("-", "_")
 
                         # Check the bare file name
                         if re_number.match(sBare):
@@ -516,6 +617,12 @@ def import_concrete(request):
                             if extension == "docx":
                                 # Assuming this is a docx file
                                 data_text = getText(data_file)
+                                # The text should be split into lines
+                                data_file = data_text.split("\n")
+                                extension = "txt"
+
+                            elif extension == "pdf":
+                                data_text = getPdfText(data_file)
                                 # The text should be split into lines
                                 data_file = data_text.split("\n")
                                 extension = "txt"
@@ -536,6 +643,10 @@ def import_concrete(request):
                                     oStatus.set("error", msg=msg)
                                     # Break out of the for-loop
                                     break
+                                # If a genre has been defined, take that over
+                                if not genreone is None and genreone != "":
+                                    fl.fgenre = genreone
+                                    fl.save()
                                 # Read and convert into folia.xml
                                 oResult = fl.read_doc(username, data_file, filename, clamuser, clampw, arErr, oStatus=oStatus)
                                 # Possibly get the link to the owner's FoliaDocs
@@ -552,8 +663,9 @@ def import_concrete(request):
                                 break
                             else:
                                 # Indicate that the folia.xml has been created
-                                oStatus.set("working", msg="Created folia.xml file")
-                                oErr.Status("Created folia.xml file")
+                                msg = "{}: concreteness on {}".format(iCount, sBare)
+                                oStatus.set("working", msg=msg)
+                                oErr.Status(msg)
                                 # Next step: determine concreteness for this file
                                 bResult, msg = fl.do_concreteness()
                                 if bResult == False:
@@ -693,6 +805,99 @@ class ConcreteDownload(DetailView):
         return context
 
 
+class ConcreteScatter(BasicPart):
+    """Gather and send data for a scatter plot"""
+
+    MainModel = FrogLink
+
+    def add_to_context(self, context):
+
+        oErr = ErrHandle()
+        data = dict(status="ok")
+       
+        try:
+            # starting point is the froglink, the text
+            otext = self.obj
+
+            # Think of the correct options
+            options = {
+                "title": {
+                    "display": True, "text": "Concreteness comparison"
+                    },
+                "scales": { 
+                    # This is for chartjs version 2.8.0
+                    "xAxes": [{"display": True, 
+                               "position": "bottom",
+                               "type": "logarithmic",
+                               "ticks": {},
+                               "scaleLabel": {"display": True, "labelString": "Size (log)"}}], 
+                    "yAxes": [
+                        {"ticks": 
+                         { "beginAtZero": True, 
+                           "min": 1.0, "max": 5.0
+                         }, 
+                        "type": "linear",                               
+                        "scaleLabel": {"display": True, "labelString": "Concreteness"}}
+                        ],
+                    # The following would be for Chartjs version 4.4.1 and upwards
+                    #"x": { "type": "logarithmic",
+                    #      "display": True,
+                    #      "position": "left",
+                    #      "position": "bottom",
+                    #      "title": { "display": True, "text": "Size (log)"}, "color": "black"},
+                    #"y": { "type": "linear", 
+                    #      "min": 0.0,
+                    #      "max": 5.0,
+                    #      "display": True,
+                    #      "position": "left",
+                    #      "title": { "display": True, "text": "Concreteness"}, "color": "black"}
+                    }
+                }
+            options['responsive'] = True
+            options['plugins'] = {
+                "plugins": 
+                {"legend": {"position": "top"},
+                 "title": {
+                    "display": True, "text": "Concreate text comparison"
+                    }
+                 }
+                }
+
+            # Gather the data
+            plotdata = dict(labels=[], datasets=[])
+
+            labels = []
+            chartdata = []
+            for obj in Genre.objects.all().order_by("name"):
+                sName = "R:{}".format(obj.name)
+                score = obj.score   # Y-axis, [0-5]
+                size = obj.size     # X-axis
+                labels.append(sName)
+                chartdata.append(dict(x=size, y=score))
+            # Then add the current text
+            labels.append(otext.name)
+            chartdata.append(dict(x=otext.size, y=otext.score))
+
+            datasets = []
+            for idx, item in enumerate(labels):
+                datasets.append(dict(label=item, data=[ chartdata[idx] ]))
+            plotdata = dict(labels=labels, datasets=datasets)
+
+            # We need to get data from all reference texts, which are stored in the genres
+            config = dict(type="scatter", data=plotdata, options=options)
+
+            # Add this to the data to be returned
+            data['config'] = config
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteScatter")
+            data['status'] = "error"
+
+        context['data'] = data
+        return context
+
+
 class ConcreteEdit(BasicDetails):
     """Details view for one concreteness-treated file"""
 
@@ -700,6 +905,7 @@ class ConcreteEdit(BasicDetails):
     mForm = FrogLinkForm
     prefix = "concr"
     title= "ConcreteEdit"
+    has_select2 = True      # We are using Select2 in the FrogLinkForm
     mainitems = []
 
     def get_context_data(self, **kwargs):
@@ -719,9 +925,12 @@ class ConcreteEdit(BasicDetails):
 
             # Define the main items to show and edit
             context['mainitems'] = [
-                {'type': 'plain', 'label': "Owner:",    'value': instance.get_owner()       },
-                {'type': 'plain', 'label': "Date:",     'value': instance.get_created()     },
-                {'type': 'plain', 'label': "Name:",     'value': instance.name              }
+                {'type': 'plain', 'label': "Owner:",        'value': instance.get_owner()       },
+                {'type': 'plain', 'label': "Date:",         'value': instance.get_created()     },
+                {'type': 'plain', 'label': "Name:",         'value': instance.name              },
+                {'type': 'plain', 'label': "Score:",        'value': instance.get_score_string()},
+                {'type': 'plain', 'label': "Size:",         'value': instance.get_size()        },
+                {'type': 'plain', 'label': "Compare with:", 'value': instance.get_compare()     }
                 ]
             context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
             context['is_tablet_editor'] = False
@@ -735,11 +944,14 @@ class ConcreteEdit(BasicDetails):
                 else:
                     # In fact: any legitimate USER may edit here!
                     context['is_tablet_editor'] = True
-                # Allow the 'field_key' for name
+
+                # Allow the 'field_key' for: 'name', 'comparison'
                 for oItem in context['mainitems']:
                     if oItem['label'] == "Name:":
                         oItem['field_key'] = "name"
-                        break
+                    elif oItem['label'] == "Compare with:":
+                        oItem['field_list'] = "concrlist"
+
             else:
                 context['is_app_editor'] = False
 
@@ -750,6 +962,28 @@ class ConcreteEdit(BasicDetails):
         # Return the context we have made
         return context
 
+    def after_save(self, form, instance):
+        msg = ""
+        bResult = True
+        oErr = ErrHandle()
+        
+        try:
+            # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
+            # (1) 'collections'
+            concrlist = form.cleaned_data['concrlist']
+            current = [x.id for x in instance.comparisons.all().order_by('id')]
+            after = [x.id for x in concrlist.order_by('id')]
+            if current != after:
+                # Perform adaptation
+                adapt_m2m(Comparison, instance, "base", concrlist, "target")
+                # Also make sure that details are re-loaded
+                self.afterurl = reverse('froglink_details', kwargs={'pk': instance.id})
+
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+        return bResult, msg
+
 
 class ConcreteDetails(ConcreteEdit):
     """Viewing concreteness file as HTML, including the text layout"""
@@ -759,55 +993,120 @@ class ConcreteDetails(ConcreteEdit):
         # Call the base implementation first to get a context
         context = super(ConcreteDetails, self).add_to_context(context, instance)
 
-        # Do we have a JSON response in self.concr?
-        if not instance.concr is None and instance.concr != "":
-            # Make sure to add [otext] and[tnumber]
-            context['tnumber'] = 1
-            if instance.concr is None or instance.concr == "":
-                obj = dict(id=instance.id, show=False)
-            else:
-                obj = json.loads(instance.concr)
+        oErr = ErrHandle()
+        try:
+            # Do we have a JSON response in self.concr?
+            if not instance.concr is None and instance.concr != "":
+                # Make sure to add [otext] and[tnumber]
+                context['tnumber'] = 1
+                if instance.concr is None or instance.concr == "":
+                    obj = dict(id=instance.id, show=False)
+                else:
+                    obj = json.loads(instance.concr)
 
-                # Double check if changes are needed in the object
-                bNeedSaving = False
-                bRecalculate = False
-                word_id = 1
-                for oPara in obj['list']:
-                    for oSent in oPara['list']:
-                        lst_sent = []
-                        for oWord in oSent['list']:
-                            concr = str(oWord.get("concr", ""))
-                            id = oWord.get('word_id')
-                            if id is None:
-                                oWord['word_id'] = word_id
-                                word_id += 1
-                                bNeedSaving = True
-                                lst_sent.append(oWord)
-                            elif concr == "-1":
-                                # This word should be removed
-                                bNeedSaving = True
-                            else:
-                                # Add to sentence
-                                lst_sent.append(oWord)
-                        # Replace the current list
-                        if bNeedSaving:
-                            oSent['list'] = lst_sent
+                    # Double check if changes are needed in the object
+                    bNeedSaving = False
+                    bRecalculate = False
+                    word_id = 1
+                    for oPara in obj['list']:
+                        for oSent in oPara['list']:
+                            lst_sent = []
+                            for oWord in oSent['list']:
+                                concr = str(oWord.get("concr", ""))
+                                id = oWord.get('word_id')
+                                if id is None:
+                                    oWord['word_id'] = word_id
+                                    word_id += 1
+                                    bNeedSaving = True
+                                    lst_sent.append(oWord)
+                                elif concr == "-1":
+                                    # This word should be removed
+                                    bNeedSaving = True
+                                else:
+                                    # Add to sentence
+                                    lst_sent.append(oWord)
+                            # Replace the current list
+                            if bNeedSaving:
+                                oSent['list'] = lst_sent
 
-                # Do we need to save the (recalculated) results?
-                if bNeedSaving:
-                    instance.concr = json.dumps(obj)
-                    instance.save()
+                    # Do we need to save the (recalculated) results?
+                    if bNeedSaving:
+                        instance.concr = json.dumps(obj)
+                        instance.save()
 
-                obj['id'] = instance.id
-                obj['show'] = True
-            context['otext'] = obj
+                    obj['id'] = instance.id
+                    obj['show'] = True
+                context['otext'] = obj
 
-            # Also provide the loctime info
-            qs = LocTimeInfo.objects.all().order_by('example')
-            context['loctimes'] = qs
+                # Also provide the loctime info
+                qs = LocTimeInfo.objects.all().order_by('example')
+                context['loctimes'] = qs
 
-            sAfter = render_to_string('doc/foliadocs_view.html', context, self.request)
-            context['after_details'] = sAfter
+                # Provide a <form> with a field that allows selecting multiple (other) texts (from this user)
+                concForm = ConcreteForm(instance=instance)
+                context['concForm'] = concForm
+
+                sAfter = render_to_string('doc/foliadocs_view.html', context, self.request)
+                context['after_details'] = sAfter
+
+
+                # Lists of related objects
+                related_objects = []
+                resizable = True
+                index = 1
+                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_end = '</span>'
+
+                # List of Worddefs part of the Wordlist
+                compares = dict(title="Comparison with other texts", prefix="dcomp")
+                if resizable: compares['gridclass'] = "resizable"
+
+                rel_list =[]
+                qs = instance.comparisons.all().order_by('name')
+                # qs = Worddef.objects.filter(wordlist=instance).order_by('stimulus')
+                for item in qs:
+                    # Fields: name, size, score
+
+                    url = reverse('froglink_details', kwargs={'pk': item.id})
+                    rel_item = []
+
+                    # Order number for this FrogLink
+                    add_rel_item(rel_item, index, False, align="right")
+                    index += 1
+
+                    # Name
+                    name_txt = item.name
+                    add_rel_item(rel_item, name_txt, False, main=True, link=url)
+
+                    # Size
+                    size_txt = item.get_size()
+                    add_rel_item(rel_item, size_txt, False, main=False, align="right", link=url)
+
+                    # Score
+                    score_txt = "{0:.3f}".format(item.get_score())
+                    add_rel_item(rel_item, score_txt, False, main=False, align="right", link=url, nowrap=False)
+
+
+                    # Add this line to the list
+                    rel_list.append(dict(id=item.id, cols=rel_item))
+
+                compares['rel_list'] = rel_list
+
+                compares['columns'] = [
+                    '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
+                    '{}<span>Name</span>{}'.format(sort_start, sort_end), 
+                    '{}<span>Size</span>{}'.format(sort_start_mix, sort_end), 
+                    '{}<span>Score</span>{}'.format(sort_start_int, sort_end)
+                    ]
+                related_objects.append(compares)
+
+                # Add all related objects to the context
+                context['related_objects'] = related_objects
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ConcreteDetails/add_to_context")
 
         # Return the adapted context
         return context
@@ -890,6 +1189,8 @@ class ConcreteUpdate(BasicDetails):
             # Do we need to save the (recalculated) results?
             if bNeedSaving:
                 instance.concr = json.dumps(obj)
+                if isinstance(obj['score'], float):
+                    instance.score = obj['score']
                 instance.save()
         return None
 
@@ -903,21 +1204,28 @@ class ConcreteListView(BasicList):
     new_button = False      # Don't show a new button, because new items can only be added by downloading
     plural_name = "Concreteness text files"
     sg_name = "Concreteness file"
+    downloadname = "ConcreteList"
     has_select2 = True      # We are using Select2 in the FrogLinkForm
     delete_line = True      # Allow deleting a line
     bUseFilter = True
     superuser = False
-    order_cols = ['created', 'name', '']
-    order_default = ['-created', 'name']
-    order_heads = [{'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
-                   {'name': 'Name',  'order': 'o=2', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
-                   {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
+    order_cols = ['created', 'score', 'size', 'name', 'fgenre__name', '']
+    order_default = ['-created', 'score', 'size', 'name', 'fgenre__name']
+    order_heads = [
+        {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
+        {'name': 'Score', 'order': 'o=2', 'type': 'str', 'custom': 'score',      'linkdetails': True},
+        {'name': 'Size',  'order': 'o=3', 'type': 'int', 'custom': 'size',       'linkdetails': True, 'align': "right"},
+        {'name': 'Name',  'order': 'o=4', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+        {'name': 'Type',  'order': 'o=5', 'type': 'str', 'custom': 'type',       'linkdetails': True},
+        {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
     filters = [
-        {'name': 'Name',  'id': 'filter_name',  'enabled': False}
+        {'name': 'Name',  'id': 'filter_name',  'enabled': False},
+        {'name': 'Genre', 'id': 'filter_genre', 'enabled': False}
         ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'}
+            {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
+            {'filter': 'genre', 'fkfield':  'fgenre',   'keyList': 'genrelist', 'infield': 'id'}
             ]},
         {'section': 'other', 'filterlist': [
             {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'},
@@ -930,21 +1238,26 @@ class ConcreteListView(BasicList):
             # Check if I am superuser or not
             self.superuser = self.request.user.is_superuser
             if self.superuser:
-                self.order_cols = ['created', 'fdocs__owner__username', 'name', '']
-                self.order_default = ['-created', 'fdocs__owner__username', 'name']
+                self.order_cols = ['created', 'fdocs__owner__username', 'score', 'size', 'name', 'fgenre__name', '']
+                self.order_default = ['-created', 'fdocs__owner__username', 'score', 'size', 'name', 'fgenre__name']
                 self.order_heads = [
                     {'name': 'Date',  'order': 'o=1', 'type': 'str', 'custom': 'created',    'linkdetails': True},
                     {'name': 'Owner', 'order': 'o=2', 'type': 'str', 'custom': 'owner',      'linkdetails': True},
-                    {'name': 'Name',  'order': 'o=3', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+                    {'name': 'Score', 'order': 'o=3', 'type': 'str', 'custom': 'score',      'linkdetails': True},
+                    {'name': 'Size',  'order': 'o=4', 'type': 'int', 'custom': 'size',       'linkdetails': True, 'align': "right"},
+                    {'name': 'Name',  'order': 'o=5', 'type': 'str', 'field':  'name',       'linkdetails': True, 'main': True},
+                    {'name': 'Type',  'order': 'o=6', 'type': 'str', 'custom': 'type',       'linkdetails': True},
                     {'name': '',      'order': '',    'type': 'str', 'options': 'delete', 'classes': 'tdnowrap'}]
                 self.filters = [
                     {'name': 'Name',  'id': 'filter_name',  'enabled': False},
-                    {'name': 'Owner', 'id': 'filter_owner', 'enabled': False}
+                    {'name': 'Owner', 'id': 'filter_owner', 'enabled': False},
+                    {'name': 'Genre', 'id': 'filter_genre', 'enabled': False},
                     ]
                 self.searches = [
                     {'section': '', 
                      'filterlist': [
                         {'filter': 'name',  'dbfield':  'name',     'keyS': 'name'},
+                        {'filter': 'genre', 'fkfield':  'fgenre',   'keyList': 'genrelist', 'infield': 'id'},
                         {'filter': 'owner', 'fkfield':  'fdocs__owner', 'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id'}
                         ]
                      },
@@ -954,6 +1267,29 @@ class ConcreteListView(BasicList):
                         ]
                      }
                     ]
+                sValue = Information.get_kvalue("doc_score")
+                if not sValue in ['ok', 'done']:
+                    # Walk all the FrogLink items
+                    for obj in FrogLink.objects.all():
+                        if obj.score is None or obj.score == 0.0:
+                            score = obj.get_score(True)
+                            obj.score = score
+                            obj.save()
+
+                    Information.set_kvalue("doc_score", "done")
+
+                sValue = Information.get_kvalue("doc_size")
+                if not sValue in ['ok', 'done']:
+                    # Walk all the FrogLink items
+                    for obj in FrogLink.objects.all():
+                        if obj.size is None or obj.size <= 0:
+                            size = obj.get_size(True)
+                            obj.size = size
+                            obj.save()
+
+                    Information.set_kvalue("doc_size", "done")
+
+            self.downloadname = "ConcreteList_{}".format(timezone.now().strftime("%Y%m%d"))
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ConcreteListView/initializations")
@@ -972,6 +1308,19 @@ class ConcreteListView(BasicList):
                 sBack = instance.created.strftime("%d/%B/%Y (%H:%M)")
             elif custom == "owner":
                 sBack = instance.fdocs.owner.username
+            elif custom == "score":
+                # Get the score
+                score = instance.get_score()
+                sBack = "{0:.3f}".format(score)
+            elif custom == "size":
+                # Get the score
+                size = instance.get_size()
+                sBack = "{}".format(size)
+            elif custom == "type":
+                # Is this a reference text or not?
+                if not instance.fgenre is None:
+                    sBack = instance.fgenre.name
+                    sTitle = "Reference text"
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ConcreteListView/get_field_value")
@@ -1000,6 +1349,7 @@ class ConcreteListView(BasicList):
         context['is_app_editor'] = user_is_ingroup(self.request, "seeker_user")
         context['is_app_uploader'] = context['is_app_editor']
         context['is_tablet_editor'] = user_is_ingroup(self.request, "tablet_editor")
+        context['is_tablet_moderator'] = user_is_ingroup(self.request, "tablet_moderator")
         return context
 
 
@@ -1064,7 +1414,7 @@ class LocTimeList(BasicList):
         try:
             # Check if this is view_only or editable
             is_superuser = user_is_superuser(self.request)
-            is_tablet_editor = user_is_ingroup(request, "tablet_editor")
+            is_tablet_editor = user_is_ingroup(self.request, "tablet_editor")
 
             if not is_superuser and not is_tablet_editor:
                 #if self.view_only:
@@ -1093,10 +1443,132 @@ class LocTimeList(BasicList):
         return context
 
 
-#class LocTimeTable(LocTimeList):
-#    """Just provide a table (listview) of loctime elements"""
 
-#    view_only = True
+# =============== GENRE ===============================
+
+
+class GenreEdit(BasicDetails):
+    """Edit a Genre element"""
+
+    model = Genre
+    mForm = GenreForm
+    prefix = "gnr"
+    title = "Genre Edit"
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Check who we are
+        is_superuser = user_is_superuser(self.request)
+        is_tablet_editor = user_is_ingroup(self.request, "tablet_editor")
+        is_moderator = user_is_ingroup(self.request, "tablet_moderator")
+
+        edit_enabled = (is_superuser or is_moderator)
+
+        # Re-calculate the score/size
+        instance.recalculate()
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Name:",     'value': instance.name                  },
+            {'type': 'plain', 'label': "Score:",    'value': instance.get_score_string()    },
+            {'type': 'plain', 'label': "Size:",     'value': instance.get_size()            },
+            {'type': 'plain', 'label': "Number:",   'value': instance.get_number()          },
+            ]       
+        # Only moderators are to be allowed
+        if edit_enabled: 
+            context['mainitems'][0]['field_key'] = 'name'
+        # Adapt the app editor status
+        context['is_app_editor'] = edit_enabled
+        context['is_tablet_editor'] = edit_enabled
+        context['is_tablet_moderator'] = is_moderator
+        # Return the context we have made
+        return context
+    
+
+class GenreDetails(GenreEdit):
+    """Viewing Genre information items"""
+    rtype = "html"
+
+
+class GenreList(BasicList):
+    """List loctime elements"""
+
+    model = Genre
+    listform = GenreForm
+    prefix = "gnr"
+    sg_name = "Genre item"
+    plural_name = "Genre items"
+    new_button = False      # Do show a new button
+    view_only = False
+    order_cols = ['name', 'score', 'size', '']
+    order_default = ['name', 'score', 'size']
+    order_heads = [
+        {'name': 'Name',    'order': 'o=1', 'type': 'str', 'field': 'name',     'linkdetails': True, 'main': True},
+        {'name': 'Score',   'order': 'o=2', 'type': 'str', 'custom': 'score',   'linkdetails': True},
+        {'name': 'Size',    'order': 'o=3', 'type': 'str', 'field':  'size',    'linkdetails': True},
+        {'name': 'Number',  'order': '',    'type': 'str', 'custom': 'number',  'linkdetails': True},
+        ]
+    filters = [ {"name": "Name", "id": "filter_name", "enabled": False}
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'name',   'dbfield': 'name', 'keyS': 'name'}]} 
+        ] 
+    
+    def initializations(self):
+        oErr = ErrHandle()
+        try:
+            # Check if this is view_only or editable
+            is_superuser = user_is_superuser(self.request)
+            is_tablet_editor = user_is_ingroup(self.request, "tablet_editor")
+            is_moderator = user_is_ingroup(self.request, "tablet_moderator")
+
+            if is_superuser or is_moderator:
+                # Allow the new button
+                self.new_button = True
+
+            # Re-calculate the size/score
+            for obj in Genre.objects.all():
+                obj.recalculate()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("GenreTable/init")
+        return None
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+
+        # Figure out what to show
+        if custom == "score":
+            # Get the score as proper string
+            sBack = instance.get_score_string()
+        elif custom == "number":
+            # Get the score as proper string
+            sBack = "{}".format(instance.genre_docs.count())
+
+        # Retourneer wat kan
+        return sBack, sTitle
+
+    def add_to_context(self, context, initial):
+        # Only moderators are to be allowed
+        allow_editing = False
+        if not self.view_only:
+            allow_editing = user_is_ingroup(self.request, TABLET_EDITOR) or  user_is_superuser(self.request)
+
+        if allow_editing:
+            # Adapt the app editor status
+            context['is_app_editor'] = True
+            context['is_tablet_editor'] = context['is_app_editor']
+        else:
+            # View only
+            context['is_app_editor'] = False
+            context['is_tablet_editor'] = context['is_app_editor']
+        return context
 
 
 # =============== EXPRESSION ===============================
@@ -1763,8 +2235,6 @@ def transcribe_dutch(request):
 
 
 
-
-
 # ================ NEXIS UNI ===========================
 def nexis_main(request):
     """The main page of working with Nexis Uni documents."""
@@ -1803,6 +2273,7 @@ def nexis_main(request):
     
     # Render the template as HTML
     return render(request, template, context)
+
 
 def import_nexis(request):
     """Import one or more TEXT (utf8) files that need to be transformed into FoLiA with FROG"""
@@ -1944,6 +2415,7 @@ def import_nexis(request):
  
     # Return the information
     return JsonResponse(data)
+
 
 def import_mwex(request):
     """Import one MWE Excel file"""
@@ -2095,6 +2567,7 @@ def import_mwex(request):
  
     # Return the information
     return JsonResponse(data)
+
 
 def import_twitter_excel(request):
     """Import one Twitter Excel file into TwitterMsg objects"""

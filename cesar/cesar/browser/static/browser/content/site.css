@@ -1,4 +1,4 @@
-﻿body {
+body {
     padding-top: 50px;
     padding-bottom: 20px;
 }
@@ -1095,4 +1095,34 @@ select.homonym {
   fill: inherit;
 }
 
+.signature {
+    /* font-family: monospace; */
+    font-size: smaller;
+    color: darkblue;
+}
 
+span.badge.signature.gr {
+  background-color: lightblue;
+}
+span.badge.signature.cl {
+  background-color: lightgreen;
+}
+span.badge.signature.ot, span.badge.signature.eqset  {
+  background-color: lightgoldenrodyellow;
+}
+
+span.badge.signature {
+  background-color: lightgray;
+  color: darkblue !important;
+  font-size: 85%;
+  padding: 2px 5px;
+  font-weight: normal;
+  border-radius: 5px;
+  margin: 1px;
+}
+
+span.badge.signature:hover {
+    color: whitesmoke  !important;
+    background-color: darkblue;
+    cursor: pointer;
+}

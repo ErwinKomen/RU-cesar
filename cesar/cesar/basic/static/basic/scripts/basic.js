@@ -1996,6 +1996,9 @@ var ru = (function ($, ru) {
                           if (afterurl !== undefined && afterurl !== "") {
                             // Make sure we go to the afterurl
                             window.location = afterurl;
+                          } else if (response.afterurl !== undefined && response.afterurl !== "") {
+                            // Make sure we go to the afterurl
+                            window.location = response.afterurl;
                           }
                           if ("html" in response) {
                             // Show the HTML in the targetid
@@ -2193,7 +2196,9 @@ var ru = (function ($, ru) {
             svgText = "",
             request = null,
             waitclass = null,
+            dstatus = "#downloadstatus",
             method = "xhtp",  // Options: 'normal', 'erwin', 'xhtp'
+            attempt = "xhr",
             data = [];
 
         try {
@@ -2208,6 +2213,11 @@ var ru = (function ($, ru) {
             if ("waitclass" in options) { waitclass = "." + options.waitclass; }
             if ("onready" in options) { call_onready = options.onready; }
             if ("onstart" in options) { call_onstart = options.onstart; }
+          }
+
+          // look for the correct downloadstatus
+          if ($(dstatus).length === 0) {
+            dstatus = "#exceldownloadstatus";
           }
 
           // Gather the information
@@ -2364,6 +2374,9 @@ var ru = (function ($, ru) {
                     }
                     // Now send it with proper data
                     data = $(frm).serialize();
+                    // Add the 'download' action
+                    data = data + "&action=download&dtype=" + dtype
+                    // Send the data
                     request.send(data);
 
                     // Note: the 'onreadystate' function picks up the onready callback

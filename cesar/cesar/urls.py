@@ -116,20 +116,30 @@ urlpatterns = [
     url(r'^tablet/doc/edit(?:/(?P<pk>\d+))?/$', ConcreteEdit.as_view(), name='froglink_edit'),
     url(r'^tablet/doc/update(?:/(?P<pk>\d+))?/$', ConcreteUpdate.as_view(), name='concrete_update'),
     url(r'^tablet/doc/download/(?P<pk>\d+)/$', ConcreteDownload.as_view(), name='concrete_download'),
+    url(r'^tablet/doc/scatter/(?P<pk>\d+)/$', ConcreteScatter.as_view(), name='concrete_scatter'),
+
+    url(r'^tablet/genre/list/$', GenreList.as_view(), name='genre_list'),
+    url(r'^tablet/genre/details(?:/(?P<pk>\d+))?/$', GenreDetails.as_view(), name='genre_details'),
+    url(r'^tablet/genre/edit(?:/(?P<pk>\d+))?/$', GenreEdit.as_view(), name='genre_edit'),
+
     url(r'^tablet/loctime/list/$', LocTimeList.as_view(), name='loctimeinfo_list'),
     # url(r'^tablet/loctime/table/$', LocTimeTable.as_view(), name='loctimeinfo_table'),
     url(r'^tablet/loctime/details(?:/(?P<pk>\d+))?/$', LocTimeDetails.as_view(), name='loctimeinfo_details'),
     url(r'^tablet/loctime/edit(?:/(?P<pk>\d+))?/$', LocTimeEdit.as_view(), name='loctimeinfo_edit'),
+
     url(r'^tablet/expression/list/$', ExpressionList.as_view(), name='expression_list'),
     url(r'^tablet/expression/details(?:/(?P<pk>\d+))?/$', ExpressionDetails.as_view(), name='expression_details'),
     url(r'^tablet/expression/edit(?:/(?P<pk>\d+))?/$', ExpressionEdit.as_view(), name='expression_edit'),
+
     url(r'^tablet/homonym/list/$', HomonymList.as_view(), name='homonym_list'),
     url(r'^tablet/homonym/details(?:/(?P<pk>\d+))?/$', HomonymDetails.as_view(), name='homonym_details'),
     url(r'^tablet/homonym/edit(?:/(?P<pk>\d+))?/$', HomonymEdit.as_view(), name='homonym_edit'),
+
     url(r'^tablet/wordlist/list/$', WordlistList.as_view(), name='wordlist_list'),
     url(r'^tablet/wordlist/details(?:/(?P<pk>\d+))?/$', WordlistDetails.as_view(), name='wordlist_details'),
     url(r'^tablet/wordlist/edit(?:/(?P<pk>\d+))?/$', WordlistEdit.as_view(), name='wordlist_edit'),
     url(r'^tablet/wordlist/upload(?:/(?P<pk>\d+))?/$', WordlistUpload.as_view(), name='wordlist_upload'),
+
     url(r'^tablet/worddef/list/$', WorddefList.as_view(), name='worddef_list'),
     url(r'^tablet/worddef/details(?:/(?P<pk>\d+))?/$', WorddefDetails.as_view(), name='worddef_details'),
     url(r'^tablet/worddef/edit(?:/(?P<pk>\d+))?/$', WorddefEdit.as_view(), name='worddef_edit'),

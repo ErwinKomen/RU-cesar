@@ -207,6 +207,7 @@ def home(request):
     context['is_in_tsg'] = user_is_ingroup(request, "radboud-tsg")
     context['is_lingo_editor'] = user_is_ingroup(request, "lingo-editor")
     context['is_tablet_editor'] = user_is_ingroup(request, "tablet_editor")
+    context['is_tablet_moderator'] = user_is_ingroup(request, "tablet_moderator")
     context['is_brief_user'] = user_is_ingroup(request, "brief_user")
     context['is_superuser'] = user_is_superuser(request)
     # Render and return the page

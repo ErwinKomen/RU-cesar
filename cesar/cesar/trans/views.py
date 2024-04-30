@@ -68,6 +68,7 @@ def user_is_superuser(request):
             bFound = user.is_superuser
     return bFound
 
+# --------------------------------------------------------------------------
 
 def home(request):
     """Show the homepage of the converter"""

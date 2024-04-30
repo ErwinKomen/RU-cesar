@@ -36,6 +36,7 @@ PROJECT_DIR = '/etc/project'
 
 APP_PREFIX = "dd/"
 ADMIN_SITE_URL = "/dd"
+USE_REDIS = False
 if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     APP_PREFIX = ""
     # admin.site.site_url = '/'
@@ -51,6 +52,7 @@ elif "131.174" in hst:
     # Ponyland-internal:
     CRPP_HOME = 'http://localhost:8080/CrppS'
     PROJECT_DIR = '/var/www/tomcat8/live/tomcat8/crpp/project'
+    USE_REDIS = True
 elif "/var/www" in WRITABLE_DIR:
     # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/cesar
     APP_PREFIX = "cesar/"
@@ -145,13 +147,38 @@ TEMPLATES = [
     },
 ]
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'TIMEOUT': None,
+# Caching
+if USE_REDIS:
+    CACHES = {"default": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": "redis://127.0.0.1:7778/1",
+                "TIMEOUT": None,
+                "OPTIONS": { "CLIENT_CLASS": "django_redis.client.DefaultClient", }
+                },
+                "select2": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": "redis://127.0.0.1:7778/2",
+                "TIMEOUT": None,
+                "OPTIONS": { "CLIENT_CLASS": "django_redis.client.DefaultClient", }
+                }
+            }
+    # Set the cache backend to select2
+    SELECT2_CACHE_BACKEND = 'select2'
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'TIMEOUT': None,
+        },
+        'select2': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'TIMEOUT': None,
+        }
     }
-}
+    # Set the cache backend to select2
+    SELECT2_CACHE_BACKEND = 'select2'
 
 WSGI_APPLICATION = 'cesar.wsgi.application'
 
@@ -208,3 +235,4 @@ if ("/var/www" in WRITABLE_DIR):
     STATIC_URL = "/" + APP_PREFIX + "static/"
 
 STATIC_ROOT = os.path.abspath(os.path.join("/", posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))))
+

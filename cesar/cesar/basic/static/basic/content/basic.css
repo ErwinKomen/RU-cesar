@@ -1,4 +1,4 @@
-﻿body
+body
 {
 }
 
@@ -68,3 +68,30 @@ table thead th.sortable .sortoptions a.sortremove:hover {
     opacity: 1.0;
 }
 
+/* Scroll to top button facilitation */
+.scrolltop-allow {
+    position: relative;
+}
+.scrolltop-container {
+    position: absolute;
+    top: 0;
+    right: -80px;
+    height: 100%;
+}
+.scrolltop-container:before {
+    content: '';
+    display: block;
+    height: 100vh;
+    pointer-events: none;
+}
+.scrolltop-container a {
+    position: sticky;
+    top: 92vh;
+    cursor: pointer;
+    color: chocolate;
+    font-size: 40px;
+}
+
+.scrolltop-container.scrolltop-save a {
+    color: red;
+}

@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db import models, transaction
+from django.urls import reverse
 
 # Non-django imports
 import os
@@ -96,6 +97,52 @@ def wordlist_path(instance, filename):
         msg = oErr.get_error_message()
         oErr.DoError("wordlist_path")
     return sBack
+
+
+# =================== HELPER classes ==================================
+
+class Custom():
+    """Just adding some functions"""
+
+    def custom_getkv(self, item, **kwargs):
+        """Get key and value from the manuitem entry"""
+
+        oErr = ErrHandle()
+        key = ""
+        value = ""
+        try:
+            keyfield = kwargs.get("keyfield", "name")
+            if keyfield == "path" and item['type'] == "fk_id":
+                key = "{}_id".format(key)
+            key = item[keyfield]
+            if self != None:
+                if item['type'] == 'field':
+                    value = getattr(self, item['path'])
+                elif item['type'] == "fk":
+                    fk_obj = getattr(self, item['path'])
+                    if fk_obj != None:
+                        value = getattr( fk_obj, item['fkfield'])
+                elif item['type'] == "fk_id":
+                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
+                    pass
+                    #fk_obj = getattr(self, item['path'])
+                    #if fk_obj != None:
+                    #    value = getattr( fk_obj, "id")
+                elif item['type'] == 'func':
+                    value = self.custom_get(item['path'], kwargs=kwargs)
+                    # return either as string or as object
+                    if keyfield == "name":
+                        # Adaptation for empty lists
+                        if value == "[]": value = ""
+                    else:
+                        if value == "": 
+                            value = None
+                        elif value[0] == '[':
+                            value = json.loads(value)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Custom/custom_getkv")
+        return key, value
 
 
 # ==================================== MODELS =================================================
@@ -321,6 +368,133 @@ class Expression(models.Model):
         return bResult
 
 
+class Genre(models.Model):
+    """The genre of a text. This is only for *reference* texts"""
+
+    # [1] The name for this genre
+    name = models.TextField("Genre name")
+    # [0-1] Separate field for the score
+    score = models.FloatField("Overall score", null=True, blank=True)
+    # [0-1] Separate field for the size (='n')
+    size = models.IntegerField("Size of text (words)", null=True, blank=True)
+
+    # [1] Each Froglink has been created at one point in time
+    created = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        sBack = ""
+        if not self.name is None and self.name != "":
+            sBack = self.name
+        return sBack
+
+    def get_created(self):
+        sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
+        return sBack
+
+    def get_score(self, calculate=False):
+        """Get and possibly calculate the [score] of this text"""
+
+        fBack = 0.0
+        iNumber = 0
+        oErr = ErrHandle()
+        try:
+            if calculate:
+                # Walk all texts of this genre and get the average
+                for obj in self.genre_docs.all():
+                    score = obj.score
+                    if not score is None:
+                        fBack += score
+                        iNumber += 1
+                if iNumber > 0:
+                    # Get the average
+                    fBack = fBack / iNumber
+                    # And save it
+                    self.score = fBack
+                    self.save()
+            else:
+                if not self.score is None:
+                    fBack = self.score
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Genre/get_score")
+        return fBack
+
+    def get_number(self):
+        """Get the number of texts in this genre"""
+
+        sBack = ""
+        iCount = self.genre_docs.count()
+        sBack = "{}".format(iCount)
+        return sBack
+
+    def get_score_string(self):
+        """Get the score as a proper string"""
+
+        sBack = "-"
+        if not self.score is None:
+            sBack = "{0:.3f}".format(self.score)
+        return sBack
+
+    def get_size(self, calculate=False):
+        """Get the size in number of words for this particular genre"""
+
+        iBack = -1
+        fTotal = 0.0
+        iNumber = 0
+        oErr = ErrHandle()
+        try:
+            if calculate:
+                # Walk all texts of this genre and get the average
+                for obj in self.genre_docs.all():
+                    size = obj.size
+                    if not size is None:
+                        fTotal += size
+                        iNumber += 1
+                if iNumber > 0:
+                    # Get the average
+                    fTotal = fTotal / iNumber
+                    # Turn this float into an integer
+                    iBack = int(fTotal)
+                    # And save it
+                    self.size = iBack
+                    self.save()
+            else:
+                if not self.size is None:
+                    iBack = self.size
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Genre/get_size")
+        return iBack
+
+    def recalculate(self):
+        """Recalculate the score and size for this genre"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            iSizes = 0
+            fScores = 0.0
+            iNumber = 0
+            lst_texts = self.genre_docs.all().values('score', 'size')
+            for oText in lst_texts:
+                size_this = oText.get("size", 0)
+                score_this = oText.get("score", 0.0)
+                if not size_this is None and not score_this is None and size_this > 0 and score_this > 0.0:
+                    iNumber += 1
+                    iSizes += size_this
+                    fScores += score_this
+            if iNumber > 0:
+                self.score = fScores / iNumber
+                self.size = iSizes / iNumber
+                self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Genre/recalculate")
+            bResult = False
+        return bResult
+
+
 class FoliaDocs(models.Model):
     """Set of folia-encoded documents"""
     
@@ -331,7 +505,7 @@ class FoliaDocs(models.Model):
         return self.owner.username
 
 
-class FrogLink(models.Model):
+class FrogLink(models.Model, Custom):
     """This provides the basic link with FROG
 
     Can be either frog local or frog remote, through the CLAM service
@@ -345,8 +519,26 @@ class FrogLink(models.Model):
     fullname = models.CharField("Full path of this file", max_length=MAXPATH, null=True, blank=True)
     # [0-1] Concreteness as stringified JSON object
     concr = models.TextField("Concreteness scores", null=True, blank=True)
+    # [0-1] Separate field for the score
+    score = models.FloatField("Overall score", null=True, blank=True)
+    # [0-1] Separate field for the size (='n')
+    size = models.IntegerField("Size of text (words)", null=True, blank=True)
     # [1] Each Froglink has been created at one point in time
     created = models.DateTimeField(default=timezone.now)
+
+    # [0-1] Optional link to a Genre
+    fgenre = models.ForeignKey(Genre, null=True, blank=True, related_name="genre_docs", on_delete=models.SET_NULL)
+
+    # =============== Many to many links =======================================
+    comparisons = models.ManyToManyField("self", through="Comparison", symmetrical=False)
+
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Text file name',  'type': 'field',    'path': 'name' },
+        {'name': 'Score',           'type': 'field',    'path': 'score'},
+
+        {'name': 'Created',         'type': 'func',     'path': 'created'},
+        ]
 
     def __str__(self):
         return self.name
@@ -376,6 +568,43 @@ class FrogLink(models.Model):
         except:
             errHandle.DoError("FrogLink/create")
             return None, errHandle.get_error_message()
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "created":
+                sBack = self.get_created()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("FrogLink/custom_get")
+        return sBack
+
+    def get_compare(self):
+        """List all texts with which a comparison will be made""" 
+
+        sBack = ""
+        oErr = ErrHandle()
+        lst_compare = []
+        try:
+            for obj in self.comparisons.all():
+                sName = obj.name
+                url = reverse("froglink_details", kwargs={'pk': obj.id})
+                lst_compare.append("<span class='badge signature gr'><a href='{}'>{}</a></span>".format(
+                    url, sName))
+            # Combine
+            sBack = "\n".join(lst_compare)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Froglink/get_compare")
+
+        return sBack
 
     def get_created(self):
         sBack = self.created.strftime("%d/%B/%Y (%H:%M)")
@@ -464,6 +693,7 @@ class FrogLink(models.Model):
         iCount = 0
         inputType = "folia"
         frogType = "remote"     # Fix to remote -- or put to None if automatically choosing
+        processType = "bare"    # Or could be: basis
 
         def get_error_log(result):
             """Try to get the error.log file contents"""
@@ -492,7 +722,6 @@ class FrogLink(models.Model):
             lhtml.append("</div>")
             return "\n".join(lhtml)
 
-
         folProc = FoliaProcessor(username)
         try:
             if clamuser is None:
@@ -506,7 +735,13 @@ class FrogLink(models.Model):
             dir = folProc.dir
             
             # Read and create basis-folia
-            bResult, sMsg = folProc.basis_folia(filename, data_file)
+            if processType == "basis":
+                bResult, sMsg = folProc.basis_folia(filename, data_file)
+            else:
+                bResult, sMsg = folProc.bare_folia(filename, data_file)
+                # Make sure the inputtype is text
+                inputType = "text"
+
             if not bResult:
                 # There was some kind of error
                 oBack['status'] = 'error'
@@ -540,12 +775,17 @@ class FrogLink(models.Model):
                             if param.id == 'author':
                                 param.value = "cesar"
                                 param.hasvalue = True
-                        it.filename = self.name
+                        # it.filename = self.name
                     else:
                         it = data.inputtemplate("foliainput")
 
-                    # Add the Basis-Folia XML file as input to the project
-                    basicf = folProc.basicf
+                    if processType == "basis":
+                        # Add the Basis-Folia XML file as input to the project
+                        basicf = folProc.basicf
+                    else:
+                        # Adding the TEXT file as input to the project
+                        basicf = folProc.basict
+
                     result = clamclient.addinputfile(project, it, basicf, language='nl')
                     # Opstarten
                     #   See explanation at https://webservices.cls.ru.nl/frog/info/
@@ -621,7 +861,7 @@ class FrogLink(models.Model):
 
 
             # Make sure the requester knows how many have been added
-            oBack['count'] = iCount   # The number of sermans added
+            oBack['count'] = iCount   # The number of sermons added
             oBack['filename'] = filename
             oBack['concreteness'] = 0
 
@@ -1174,7 +1414,17 @@ class FrogLink(models.Model):
 
             # Add the concreteness as string
             self.concr = json.dumps(oText)
+            fScore = oText.get("score")
+            if not fScore is None and isinstance(fScore, float):
+                self.score = fScore
+            # Also add the size
+            self.size = n
             self.save()
+
+            # If this is a reference text, then the score + size need to be re-calculated
+            if not self.fgenre is None:
+                self.fgenre.recalculate()
+
             bResult = True
             return bResult, sMsg
         except:
@@ -1296,6 +1546,54 @@ class FrogLink(models.Model):
             oErr.DoError("FrogLink get_csv")
             return ""
 
+    def get_score(self, calculate=False):
+        """Get and possibly calculate the [score] of this text"""
+
+        fBack = 0.0
+        if calculate:
+            if not self.concr is None and self.concr != "" and "{" in self.concr:
+                obj = json.loads(self.concr)
+                fBack = obj.get("score", 0.0)
+        else:
+            if not self.score is None:
+                fBack = self.score
+        return fBack
+
+    def get_score_string(self):
+        """Get the score as a proper string"""
+
+        sBack = "-"
+        if not self.score is None:
+            sBack = "{0:.3f}".format(self.score)
+        return sBack
+
+    def get_size(self, calculate=False):
+        """Get the size in number of words for this particular text"""
+
+        iBack = -1
+        if calculate:
+            if not self.concr is None and self.concr != "" and "{" in self.concr:
+                obj = json.loads(self.concr)
+                iBack = obj.get("n", 0)
+        else:
+            if not self.size is None:
+                iBack = self.size
+
+        return iBack
+
+
+class Comparison(models.Model):
+    """Comparison between two [FrogLink] instances"""
+
+    # [1] The main one
+    base = models.ForeignKey(FrogLink, on_delete=models.CASCADE, related_name="base_comparisons")
+    # [1] The one to compare with
+    target = models.ForeignKey(FrogLink, on_delete=models.CASCADE, related_name="target_comparisons")
+
+    def __str__(self) -> str:
+        sBack = "{}: {}".format(self.base.name, self.target.name)
+        return sBack
+
 
 class FoliaProcessor():
     """Functions to help create or process a folia document"""
@@ -1304,6 +1602,7 @@ class FoliaProcessor():
     username = ""       # The owner of this document
     dir = ""            # Directory for the output
     basicf = ""         # If any: where the basis folis is
+    basict = ""         # Where the text file is
     frogClient = None   
     frog = None
     doc = None
@@ -1332,7 +1631,51 @@ class FoliaProcessor():
             sBack = "remote"
         return sBack
 
+    def bare_folia(self, filename, data_contents):
+        """Do not create a folia XML file, but do determine filename and basis.xml location"""
+
+        errHandle = ErrHandle()
+        bReturn = False
+        sMsg = ""
+        try:
+            # Check and/or create the appropriate directory for the user
+            dir = self.dir
+
+            # create a folia document with a numbered id
+            docstr = os.path.splitext( os.path.basename(filename))[0].replace(" ", "_").strip()
+            # Make sure it starts with a letter
+            if not re.match(r'^[a-zA-Z_]', docstr):
+                docstr = "t_" + docstr
+            # Make sure we remember the docstr
+            self.docstr = docstr
+            # Make sure the file is at the right place with the correct name
+            f =  os.path.abspath(os.path.join(dir, docstr) + ".basis.txt")
+            self.basict = f
+            # Read the in-memory file as string
+            sContents = data_contents.file.getvalue().decode("utf-8")
+            # A few minor adaptations
+            sContenst = sContents.strip().replace(u'\ufeff', '')
+            # For correct paragraph recognition
+            sContents = sContents.replace("\r\n", "\n")
+
+            # Write it
+            with open(f, "w", encoding="utf-8") as fp:
+                fp.write(sContents)
+
+            # THink of a correct name for Basic folia
+            f =  os.path.abspath(os.path.join(dir, docstr) + ".basis.xml")
+            self.basicf = f
+            # Set positive return
+            bReturn = True
+        except:
+            sMsg = errHandle.get_error_message()
+            errHandle.DoError("bare_folia")
+            bReturn = False
+        # Return what has happened
+        return bReturn, sMsg
+
     def basis_folia(self, filename, data_contents):
+        """Create a Folia xml file according to basic specifications, on the basis of the [data_contents]"""
 
         errHandle = ErrHandle()
         bReturn = False
@@ -1357,6 +1700,10 @@ class FoliaProcessor():
                 # Remove some bad symbols
                 sLine = sLine.replace(">", "")
                 sLine = sLine.replace("<", "")
+                sLine = sLine.replace("#", "")
+                # Make room for left and right bracket
+                sLine = sLine.replace("(", "( ")
+                sLine = sLine.replace(")", " )")
                 # Put a space before a comma
                 sLine = sLine.replace(",", " ,")
                 lines.append(sLine)

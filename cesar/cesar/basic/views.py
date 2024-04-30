@@ -14,6 +14,7 @@ from django.forms.models import model_to_dict
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.views.generic.detail import DetailView
 from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
@@ -57,6 +58,7 @@ def get_application_name():
     return "unknown"
 # Provide application-specific information
 PROJECT_NAME = get_application_name()
+APPLICATION_NAME = "Cesar"
 app_uploader = "{}_uploader".format(PROJECT_NAME.lower())
 app_editor = "{}_editor".format(PROJECT_NAME.lower())
 app_userplus = "{}_userplus".format(PROJECT_NAME.lower())
@@ -532,10 +534,12 @@ class BasicList(ListView):
     none_on_empty = False
     use_team_group = False
     redirectpage = ""
+    downloadname = None
     lst_typeaheads = []
     sort_order = ""
     param_list = []
     extend_template = "layout.html"
+    qs = None
     page_function = "ru.basic.search_paged_start"
 
     def initializations(self):
@@ -635,6 +639,14 @@ class BasicList(ListView):
         context['new_button'] = self.new_button
         context['add_text'] = self.add_text
         context['extend_template'] = self.extend_template
+
+        # Possible generic EXCEL download...
+        context['download_excel'] = None
+        if not self.qs is None and hasattr(self.model, 'specification'):
+            list_spec = self.model.specification
+            if isinstance(list_spec, list):
+                # There is a specification list: make Excel download available by providing the right URL for downloading
+                context['download_excel'] = context['basic_list']
 
         # Adapt possible downloads
         if len(self.downloads) > 0:
@@ -747,6 +759,97 @@ class BasicList(ListView):
     def add_to_context(self, context, initial):
         return context
 
+    def get_data(self, prefix, dtype, response=None):
+        """Gather the data as CSV, including a header line and comma-separated"""
+
+        # Initialize
+        lData = []
+        sData = ""
+        oErr = ErrHandle()
+        try:
+            # Sanity check - should have been done already
+            if not hasattr(self.model, 'specification'):
+                return sData
+
+            # Get the specification
+            specification = getattr(self.model, 'specification')
+
+            # Need to know who this user (profile) is
+            user = self.request.user
+            username = user.username
+            #profile = user.user_profiles.first()
+            team_group = app_editor
+            # kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+            kwargs = {'username': username, 'team_group': team_group}
+
+            # Get the queryset, which is based on the listview parameters
+            qs = self.get_queryset()
+
+            # Start workbook
+            wb = openpyxl.Workbook()
+            # Create worksheet with data
+            ws = wb.active
+            ws.title = "Data"
+
+            # Create header cells
+            headers = [x['name'] for x in specification if x['type'] != "" ]
+            headers.insert(0, "Id")
+            for col_num in range(len(headers)):
+                c = ws.cell(row=1, column=col_num+1)
+                c.value = headers[col_num]
+                c.font = openpyxl.styles.Font(bold=True)
+                # Set width to a fixed size
+                ws.column_dimensions[get_column_letter(col_num+1)].width = 5.0        
+
+            row_num = 1
+            # Walk the items in the queryset
+            for obj in qs:
+                row_num += 1
+                # Add the object id
+                ws.cell(row=row_num, column=1).value = obj.id
+                col_num = 2
+                # Walk the items
+                for item in specification:
+                    if item['type'] != "":
+                        key, value = obj.custom_getkv(item, kwargs=kwargs)
+                        ws.cell(row=row_num, column=col_num).value = value
+                        col_num += 1
+
+            # Save it
+            wb.save(response)
+            sData = response
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_data")
+        return sData
+
+    def download_excel(self, dtype):
+        """Create a generic Excel download based on [specification]"""
+
+        response = None
+        oErr = ErrHandle()
+        try:
+
+            # Make a download name
+            downloadname = self.model.__name__
+            if not self.downloadname is None and self.downloadname != "":
+                downloadname = self.downloadname
+            appl_name = APPLICATION_NAME
+            sDbName = "{}_{}.xlsx".format(appl_name, downloadname)
+
+            # Convert 'compressed_content' to an Excel worksheet
+            sContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            response = HttpResponse(content_type=sContentType)
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
+            # Get the Data
+            sData = self.get_data('', dtype, response)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("process_download")
+
+        return response
+
     def get_result_list(self, obj_list):
         result_list = []
         # Walk all items in the object list
@@ -820,123 +923,130 @@ class BasicList(ListView):
         return fields, None, None
   
     def get_queryset(self):
-        self.initializations()
+        oErr = ErrHandle()
+        try:
+            self.initializations()
 
-        # Get the parameters passed on with the GET or the POST request
-        get = self.request.GET if self.request.method == "GET" else self.request.POST
-        get = get.copy()
-        self.qd = get
+            # Get the parameters passed on with the GET or the POST request
+            get = self.request.GET if self.request.method == "GET" else self.request.POST
+            get = get.copy()
+            self.qd = get
 
-        username=self.request.user.username
-        team_group=app_editor
+            username=self.request.user.username
+            team_group=app_editor
 
-        self.bFilter = False
-        self.bHasParameters = (len(get) > 0)
-        bHasListFilters = False
-        if self.bHasParameters:
-            # y = [x for x in get ]
-            bHasListFilters = len([x for x in get if self.prefix in x and get[x] != ""]) > 0
-            if not bHasListFilters:
-                self.basketview = ("usebasket" in get and get['usebasket'] == "True")
-
-        # Initial setting of qs
-        qs = self.model.objects.none()
-
-        # Get the queryset and the filters
-        if self.basketview:
-            self.basketview = True
-            # We should show the contents of the basket
-            # (1) Reset the filters
-            for item in self.filters: item['enabled'] = False
-            # (2) Indicate we have no filters
             self.bFilter = False
-            # (3) Set the queryset -- this is listview-specific
-            qs = self.get_basketqueryset()
+            self.bHasParameters = (len(get) > 0)
+            bHasListFilters = False
+            if self.bHasParameters:
+                # y = [x for x in get ]
+                bHasListFilters = len([x for x in get if self.prefix in x and get[x] != ""]) > 0
+                if not bHasListFilters:
+                    self.basketview = ("usebasket" in get and get['usebasket'] == "True")
 
-            # Do the ordering of the results
-            order = self.order_default
-            qs, self.order_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
-        elif self.bHasParameters or self.bUseFilter:
-            self.basketview = False
-            lstQ = []
-            # Indicate we have no filters
-            self.bFilter = False
+            # Initial setting of qs
+            qs = self.model.objects.none()
 
-            # Read the form with the information
-            prefix = self.prefix
-            if prefix == "any": prefix = ""
-            if self.use_team_group:
-                thisForm = self.listform(self.qd, prefix=prefix, username=username, team_group=team_group)
-            else:
-                thisForm = self.listform(self.qd, prefix=prefix)
+            # Get the queryset and the filters
+            if self.basketview:
+                self.basketview = True
+                # We should show the contents of the basket
+                # (1) Reset the filters
+                for item in self.filters: item['enabled'] = False
+                # (2) Indicate we have no filters
+                self.bFilter = False
+                # (3) Set the queryset -- this is listview-specific
+                qs = self.get_basketqueryset()
 
-            if thisForm.is_valid():
-                # Process the criteria for this form
-                oFields = thisForm.cleaned_data
+                # Do the ordering of the results
+                order = self.order_default
+                qs, self.order_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
+            elif self.bHasParameters or self.bUseFilter:
+                self.basketview = False
+                lstQ = []
+                # Indicate we have no filters
+                self.bFilter = False
 
-                # Set the param_list variable
-                self.param_list = []
-                lookfor = "{}-".format(prefix)
-                for k,v in self.qd.items():
-                    if lookfor in k and not isempty(v):
-                        self.param_list.append("{}={}".format(k,v))
-
-                # Allow user to adapt the list of search fields
-                oFields, lstExclude, qAlternative = self.adapt_search(oFields)
-                
-                self.filters, lstQ, self.initial = make_search_list(self.filters, oFields, self.searches, self.qd)
-                
-                # Calculate the final qs
-                if len(lstQ) == 0 and not self.none_on_empty:
-                    if lstExclude:
-                        qs = self.model.exclude(*lstExclude)
-                    else:
-                        # Just show everything
-                        qs = self.model.objects.all()
+                # Read the form with the information
+                prefix = self.prefix
+                if prefix == "any": prefix = ""
+                if self.use_team_group:
+                    thisForm = self.listform(self.qd, prefix=prefix, username=username, team_group=team_group)
                 else:
-                    # There is a filter, so build it up
-                    filter = lstQ[0]
-                    for item in lstQ[1:]:
-                        filter = filter & item
-                    if qAlternative:
-                        filter = ( filter ) | ( ( qAlternative ) & filter )
+                    thisForm = self.listform(self.qd, prefix=prefix)
 
-                    # DEBUG
-                    #qs = self.model.objects.filter(Q(fdocs__owner_id=64))
+                if thisForm.is_valid():
+                    # Process the criteria for this form
+                    oFields = thisForm.cleaned_data
 
-                    # Check if excluding is needed
-                    if lstExclude:
-                        # qs = self.model.objects.filter(*lstQ).exclude(*lstExclude).distinct()
-                        qs = self.model.objects.filter(filter).exclude(*lstExclude).distinct()
+                    # Set the param_list variable
+                    self.param_list = []
+                    lookfor = "{}-".format(prefix)
+                    for k,v in self.qd.items():
+                        if lookfor in k and not isempty(v):
+                            self.param_list.append("{}={}".format(k,v))
+
+                    # Allow user to adapt the list of search fields
+                    oFields, lstExclude, qAlternative = self.adapt_search(oFields)
+                
+                    self.filters, lstQ, self.initial = make_search_list(self.filters, oFields, self.searches, self.qd)
+                
+                    # Calculate the final qs
+                    if len(lstQ) == 0 and not self.none_on_empty:
+                        if lstExclude:
+                            qs = self.model.exclude(*lstExclude)
+                        else:
+                            # Just show everything
+                            qs = self.model.objects.all()
                     else:
-                        # qs = self.model.objects.filter(*lstQ).distinct()
-                        qs = self.model.objects.filter(filter).distinct()
-                    # Only set the [bFilter] value if there is an overt specified filter
-                    for filter in self.filters:
-                        if filter['enabled'] and ('head_id' not in filter or filter['head_id'] != 'filter_other'):
-                            self.bFilter = True
-                            break
-                    # OLD self.bFilter = True
-            elif not self.none_on_empty:
-                # Just show everything
+                        # There is a filter, so build it up
+                        filter = lstQ[0]
+                        for item in lstQ[1:]:
+                            filter = filter & item
+                        if qAlternative:
+                            filter = ( filter ) | ( ( qAlternative ) & filter )
+
+                        # DEBUG
+                        #qs = self.model.objects.filter(Q(fdocs__owner_id=64))
+
+                        # Check if excluding is needed
+                        if lstExclude:
+                            # qs = self.model.objects.filter(*lstQ).exclude(*lstExclude).distinct()
+                            qs = self.model.objects.filter(filter).exclude(*lstExclude).distinct()
+                        else:
+                            # qs = self.model.objects.filter(*lstQ).distinct()
+                            qs = self.model.objects.filter(filter).distinct()
+                        # Only set the [bFilter] value if there is an overt specified filter
+                        for filter in self.filters:
+                            if filter['enabled'] and ('head_id' not in filter or filter['head_id'] != 'filter_other'):
+                                self.bFilter = True
+                                break
+                        # OLD self.bFilter = True
+                elif not self.none_on_empty:
+                    # Just show everything
+                    qs = self.model.objects.all().distinct()
+
+
+                # Do the ordering of the results
+                order = self.order_default
+                qs, self.order_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
+            else:
+                # No filter and no basked: show all
+                self.basketview = False
                 qs = self.model.objects.all().distinct()
+                order = self.order_default
+                qs, tmp_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
+            self.sort_order = colnum
 
+            # Determine the length
+            # self.entrycount = len(qs)
+            self.entrycount = qs.count()
 
-            # Do the ordering of the results
-            order = self.order_default
-            qs, self.order_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
-        else:
-            # No filter and no basked: show all
-            self.basketview = False
-            qs = self.model.objects.all().distinct()
-            order = self.order_default
-            qs, tmp_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
-        self.sort_order = colnum
-
-        # Determine the length
-        self.entrycount = len(qs)
-
-        # Return the resulting filtered and sorted queryset
+            # Return the resulting filtered and sorted queryset
+            self.qs = qs
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_queryset")
         return qs
 
     def get(self, request, *args, **kwargs):
@@ -957,12 +1067,19 @@ class BasicList(ListView):
             #    get = UserSearch.load_parameters(usersearch_id, get)
             self.qd = get
 
-            # Then check if we have a redirect or not
-            if self.redirectpage == "":
-                # We can continue with the normal 'get()'
-                response = super(BasicList, self).get(request, *args, **kwargs)
+            # Check for downloading
+            if request.method == "POST" and self.qd.get("action") == "download":
+                dtype = self.qd.get("dtype", "")
+                if dtype != "":
+                    # This is not the regular listview, but just a downloading action
+                    response = self.download_excel(dtype)
             else:
-                response = redirect(self.redirectpage)
+                # Then check if we have a redirect or not
+                if self.redirectpage == "":
+                    # We can continue with the normal 'get()'
+                    response = super(BasicList, self).get(request, *args, **kwargs)
+                else:
+                    response = redirect(self.redirectpage)
         # REturn the appropriate response
         return response
 
@@ -995,9 +1112,11 @@ class BasicDetails(DetailView):
     permission = "write"    # Permission can be: (nothing), "read" and "write"
     new_button = False
     do_not_save = False
+    has_select2 = False
     newRedirect = False     # Redirect the page name to a correct one after creating
     use_team_group = False
     redirectpage = ""       # Where to redirect to
+    afterurl = None
     add = False             # Are we adding a new record or editing an existing one?
     is_basic = True         # Is this a basic details/edit view?
     history_button = False  # Show history button for this view
@@ -1094,6 +1213,9 @@ class BasicDetails(DetailView):
                 data['html'] = response
                 # Set any possible typeaheads
                 data['typeaheads'] = self.lst_typeahead
+                if not self.afterurl is None:
+                    data['afterurl'] = self.afterurl
+                    self.afterurl = None
                 response = JsonResponse(data)
             elif self.rtype == "download":
                 if self.template_post == "": self.template_post = self.template_name
@@ -1258,6 +1380,9 @@ class BasicDetails(DetailView):
                 self.permission = "write"
         context['permission'] = self.permission
         context['extend_template'] = self.extend_template
+
+        if self.has_select2:
+            context['has_select2'] = True
 
         # Possibly define where a listview is
         classname = self.model._meta.model_name
@@ -1997,11 +2122,13 @@ class BasicPart(View):
                 self.data['redirecturl'] = ''
             elif self.action == "delete":
                 self.data['html'] = "deleted" 
-            else:
+            elif self.template_name != None:
                 # In this case reset the errors - they should be shown within the template
                 sHtml = render_to_string(self.template_name, context, request)
                 sHtml = treat_bom(sHtml)
                 self.data['html'] = sHtml
+            else:
+                self.data['html'] = "no template_name specified" 
 
             # At any rate: empty the error basket
             self.arErr = []

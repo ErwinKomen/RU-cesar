@@ -5,7 +5,7 @@
   </thead>
   <tbody>
     {% for para in otext.list %}
-      <tr>
+      <tr class="doc-para">
         <td valign="top">{{forloop.counter}}</td>
         <td valign="top">(para)</td>
         <td valign="top">(para)</td>
@@ -15,7 +15,7 @@
         <td valign="top" align="right">{{para.total|floatformat:3}}</td>
       </tr>
       {% for sent in para.list %}
-        <tr>
+        <tr class="doc-sent">
           <td valign="top">{{forloop.parentloop.counter}}</td>
           <td valign="top">{{forloop.counter}}</td>
           <td valign="top">(sent)</td>
