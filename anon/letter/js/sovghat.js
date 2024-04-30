@@ -8,7 +8,7 @@ var $ = jQuery;
   $(function () {
     $(document).ready(function () {
       // Initialize event listeners
-      ru.xaerzhina.init_event_listeners();
+      ru.sovghat.init_event_listeners();
     });
   });
 })(django.jQuery);
@@ -20,10 +20,10 @@ var $ = jQuery;
 var ru = (function ($, ru) {
   "use strict";
 
-  ru.xaerzhina = (function ($, config) {
+  ru.sovghat = (function ($, config) {
     // Define variables for ru.collbank here
     var loc_example = "",
-        loc_divErr = "xaerzhina_err",
+        loc_divErr = "sovghat_err",
         oSyncTimer = null;
 
 
@@ -51,13 +51,13 @@ var ru = (function ($, ru) {
       init_event_listeners: function () {
         var datasource = "",
             elTbody = null,
-            layout = "xaerzhina/layout.html",
+            layout = "sovghat/layout.html",
             tr_story = "",
             tr_collapse = "";
 
         try {
           // Initialize story events
-          ru.xaerzhina.init_story_events();
+          ru.sovghat.init_story_events();
 
           if ($(".hidden.one-story-sample").length === 0) {
             return;
@@ -68,11 +68,13 @@ var ru = (function ($, ru) {
 
 
 
-          // Read the xaerzhina.json file
+          // Read the sovghat.json file
           datasource = $("#data-source").attr("href");
           $.getJSON(datasource, function (data) {
             var i = 0,
+                pdfs_html = "",
                 tr_a = "",
+                comma = "",
                 tr_b = "",
                 id = "",
                 label = "",
@@ -110,6 +112,16 @@ var ru = (function ($, ru) {
                 }
               })
             });
+            
+            // Fill the PDFs that we have
+            pdfs_html = "";
+            for (i = 0; i < data.english.length; i++) {
+              label = data.english[i].ch;
+              name = "sovghat/" + data.english[i].pdf;
+              comma = (i >= data.english.length - 1) ? "" : ", ";
+              pdfs_html = pdfs_html + "<a href=\"" + name + "\">" + label + comma + "</a>";
+            }
+            $("#pdfs").html(pdfs_html);
 
           });
         } catch (ex) {
@@ -125,7 +137,7 @@ var ru = (function ($, ru) {
       init_story_events() {
         try {
           // Bind on the language choice changes radio buttons
-          $(".language-choice input[type=radio]").bind('change', ru.xaerzhina.lang_change);
+          $(".language-choice input[type=radio]").bind('change', ru.sovghat.lang_change);
           // Show the first language only
           $(".story").addClass("hidden");
           $(".story[language=che]").removeClass("hidden");
@@ -159,8 +171,8 @@ var ru = (function ($, ru) {
        *
        */
       load_story: function(sId) {
-        var sStory = "xaerzhina/diicar_{{id}}.html",
-            sLayout = "xaerzhina/container.html",
+        var sStory = "sovghat/diicar_{{id}}.html",
+            sLayout = "sovghat/container.html",
             elContainer = null;
         try {
           // Get the right link to the story
@@ -176,7 +188,7 @@ var ru = (function ($, ru) {
                 // Find the place where to load the story itself
                 $(".story-contents").load(sStory, function (a, b, c) {
                   // Make sure events are initialized again
-                  ru.xaerzhina.init_story_events();
+                  ru.sovghat.init_story_events();
                 });
                 break;
               default:
