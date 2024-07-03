@@ -6,24 +6,24 @@
   <link rel="stylesheet" type="text/css" href="css/site.css" />
   <script src="js/jquery-1.10.2.js"></script>
   <script src="js/bootstrap.js"></script>
-  <script src="js/xaerzhina.js"></script>
-  <title>Хаьржина</title>
+  <script src="js/sovghat.js"></script>
+  <title>Дахаран совгІат</title>
 </head>
 <body style="font-family: sans-serif">
   <section class="container">
     <div class="jumbotron">
       <h1>
-        <span>Йāха хаьржина хилар</span>
-        <span class="pull-right hidden"><a href="xaerzhina/info.html" class="btn btn-primary btn-sm">Кхин а &raquo;</a></span>
+        <span>Дāхаран совгІат</span>
+        <span class="pull-right hidden"><a href="sovghat/info.html" class="btn btn-primary btn-sm">Кхин а &raquo;</a></span>
       </h1>
       <p class="lead">Ингалс маттера нохчийн матте тептар гочдар
       </p>
     </div>
 
     <!-- Possibility to show errors -->
-    <div id="xaerzhina_err"></div>
+    <div id="sovghat_err"></div>
     <!-- Sample -->
-    <div class="hidden" id="data-source" href="xaerzhina/xaerzhina.json"></div>
+    <div class="hidden" id="data-source" href="sovghat/sovghat.json"></div>
 
     <section class="row">
       <!-- The stories -->
@@ -49,7 +49,7 @@
               <td>{{name}}</td>
               <td>
                 <a title="ДІаяздина дāкъа деша" 
-                   href="xaerzhina/diicar_{{id}}.html" 
+                   href="sovghat/diicar_{{id}}.html" 
                    class="btn btn-primary btn-sm">деша</a>
               </td>
             </tr>
@@ -88,6 +88,13 @@
         </p>
         <h3>Баркалла алар</h3>
         <p>Къаьстана баркалла ду суна мотт Іамо гІо диначу массо а нохчийн доттагІашна.</p>
+      </div>
+
+    </section>
+
+    <section class="row">
+      <!-- Background and other material -->
+      <div class="col-md-12 col-xs-12">
         <h3>Ингалс меттан тептар</h3>
         <p>
           Ас ма-аллара, тептар уггар хьалха ингалс маттахь дІаяздина хилла. 
@@ -111,9 +118,15 @@
         <p>
           ХІинцале а хІара тептар оьрсийн матте гочдаза лаьтта...
         </p>
-      </div>
 
+        <div>
+          ХІара ду хьуна ингалс-меттан кортош: 
+          <span id="pdfs"></span>
+        </div>
+      </div>
     </section>
+
+
   </section>
 
   <!-- Footer section -->
