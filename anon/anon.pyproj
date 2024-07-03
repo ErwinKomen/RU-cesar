@@ -17,6 +17,7 @@
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <CommandLineArguments>-l ce -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\09_gheenash.flextext" -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\09_gheenash.doc"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <InterpreterVersion>3.5</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -85,10 +86,14 @@
     <Folder Include="letter\js\" />
     <Folder Include="brief\" />
     <Folder Include="letter\gheenash\" />
+    <Folder Include="letter\staff\" />
     <Folder Include="letter\ruhosting\" />
     <Folder Include="letter\ruhosting\software\" />
     <Folder Include="letter\ruhosting\software\Cesax\" />
     <Folder Include="letter\ruhosting\software\CorpusStudio\" />
+    <Folder Include="letter\staff\software\" />
+    <Folder Include="letter\staff\software\Cesax\" />
+    <Folder Include="letter\staff\software\CorpusStudio\" />
     <Folder Include="letter\xaerzhina\" />
     <Folder Include="letter\tallam\" />
     <Folder Include="processor\" />
@@ -112,6 +117,10 @@
     <Content Include="letter\ruhosting\software\CorpusStudio\index.html" />
     <Content Include="letter\ruhosting\software\index.html" />
     <Content Include="letter\simplecesar.html" />
+    <Content Include="letter\staff\software\Cesax\index.html" />
+    <Content Include="letter\staff\software\Cesax\privacy_en.html" />
+    <Content Include="letter\staff\software\Cesax\publish.htm" />
+    <Content Include="letter\staff\software\CorpusStudio\index.html" />
     <Content Include="letter\xaerzhina\diicar_001.html" />
     <Content Include="letter\xaerzhina\diicar_010.html" />
     <Content Include="letter\xaerzhina\diicar_009.html" />
