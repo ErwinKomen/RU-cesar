@@ -139,6 +139,10 @@
     <Content Include="letter\gheenash\gheenash.json" />
     <Content Include="letter\gheenash\spare.html" />
     <Content Include="letter\js\tallam.js" />
+    <Content Include="letter\staff\software\Cesax\index.html" />
+    <Content Include="letter\staff\software\Cesax\privacy_en.html" />
+    <Content Include="letter\staff\software\Cesax\publish.htm" />
+    <Content Include="letter\staff\software\CorpusStudio\index.html" />
     <Content Include="letter\tallam.html" />
     <Content Include="letter\gheenash\diicar_02.html" />
     <Content Include="letter\gheenash\diicar_01.html" />
