@@ -80,6 +80,9 @@ class TsgHandle(models.Model):
     # [1] Status of this handle: ini, set, chg
     status = models.CharField("Status", max_length= MAXPARAMLEN, default="ini")
 
+    # Status dictionary
+    dic_status = {'ini': 'Initialized', 'set': 'Handle set', 'chg': 'URL changed', 'del': 'Deleted'}
+
     def __str__(self):
         return self.code
 
@@ -261,8 +264,7 @@ class TsgHandle(models.Model):
         sBack = ""
         status = self.status
         if not status is None and self.status != "":
-            oStatusDict = dict(ini="Initialized", set="Handle set", chg="URL changed")
-            sBack = oStatusDict.get(status, "???")
+            sBack = TsgHandle.dic_status.get(status, "???")
         return sBack
 
     def get_url(self, plain=True):

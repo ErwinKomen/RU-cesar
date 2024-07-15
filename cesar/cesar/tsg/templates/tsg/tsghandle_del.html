@@ -1,0 +1,31 @@
+<div class="row tsghandle-top">
+  <div class="col-md-offset-2">
+    {% if is_app_editor  and permission == "write" %}
+      <div class="tsghandle-delete-confirm collapse selected">
+        <span>Are you sure you would like to delete this <b>Handle</b>?</span>
+        <span>
+          <!-- The button to cancel deletion -->
+          <a title="Cancel handle deletion" class="btn btn-xs jumbo-1"
+              data-toggle="collapse" data-target=".tsghandle-delete-confirm">Cancel</a>
+          <!-- The actual delete button-->
+          <a mode="delete" title="Delete this handle entirely" class="btn btn-xs jumbo-4"
+             onclick="ru.tsg.handle_delete(this);"
+             afterurl="{% url 'tsg_details' instance.id %}"
+             targetid="sermon_edit"
+             targeturl="{% url 'tsg_delete' instance.id %}">
+            Delete Handle
+          </a>
+        </span>
+        <span class="waiting glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- The form the process the deletion -->
+  <div class="hidden">
+    <form>
+      {% csrf_token %}
+
+    </form>
+  </div>
+</div>

@@ -20,11 +20,13 @@ from django.views.generic import ListView, View
 from datetime import datetime
 import pytz
 from django.utils import timezone
-from cesar.basic.views import BasicDetails
+
+
 
 # Application-specific
 from cesar.settings import APP_PREFIX
 from cesar.utils import ErrHandle
+from cesar.basic.views import BasicDetails, BasicList, BasicPart
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin, user_is_authenticated, user_is_ingroup
 from cesar.seeker.views import csv_to_excel
@@ -361,6 +363,70 @@ def create_handle_info(request, target_url):
     # REturn what we have
     return oBack
 
+def handle_delete(request, handle_code):
+    """Delete the handle indicated"""
+
+    oBack = dict(status="error", msg="")
+    oErr = ErrHandle()
+    try:
+        # Check which groups this person belongs to
+        if user_is_ingroup(request, "radboud-tsg"):
+            # double check
+            if not handle_code is None and handle_code != "":
+                # Get Handle credentials
+                handle_user = TsgInfo.get_value("handle_user")
+                handle_pw = TsgInfo.get_value("handle_pw")
+                handle_url = TsgInfo.get_value("handle_url")
+
+                # Set the correct URL
+                if handle_code != "":
+                    url = handle_url
+                    if url[-1] != "/": url = url + "/"
+                    url = url + handle_code
+
+                    # Set up authorisation values
+                    auth_values = (handle_user, handle_pw)
+
+                    # We want to receive JSON
+                    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+
+                    # Get the data from the CRPP api
+                    try:
+                        r = requests.delete(url, auth=auth_values, headers=headers)
+                    except:
+                        # Getting an exception here probably means that the back-end is not reachable (down)
+                        oBack['status'] = 'error'
+                        oBack['code'] = "handle_delete(): The back-end server (crpp) cannot be reached. Is it running? {}".format(
+                            get_exc_message())
+                        return oBack
+                    # Action depends on what we receive
+                    if r.status_code == 200 or r.status_code == 201:
+                        # Convert to JSON
+                        reply = json.loads(r.text.replace("\t", " "))
+                        # Get the [contents] part
+                        oBack['contents'] = reply
+                        oBack['status'] = 'ok'
+                    elif r.status_code == 204:
+                        # This means: No-Content: The local name already exists , and instead of creating a new one you’ve just updated the values of an existing one.
+                        oBack['contents'] = "Successfully changed"
+                        oBack['status'] = 'ok'
+                    else:
+                        oBack['status'] = 'error'
+                        oBack['code'] = r.status_code
+
+                # Fill in the values
+                oBack['status'] = "ok"
+        else:
+            oBack['status'] = 'error'
+            oBack['msg'] = "Unauthorised"
+    except:
+        msg = oErr.get_error_message()
+        oBack['msg'] = msg
+        oBack['status'] = "error"
+        oErr.DoError("handle_delete")
+
+    return oBack
+
 
 # ============== Views belonging to the Cesar TSG handle processing app ======
 
@@ -369,6 +435,7 @@ def tsgsync(request):
     """Synchronize TSG handles."""
 
     oErr = ErrHandle()
+    handle_lst = []
     try:
         # Make sure this is a HttpRequest
         assert isinstance(request, HttpRequest)
@@ -459,6 +526,21 @@ def tsgsync(request):
                         else:
                             oErr.Status("tsgsync error handle: {}, {}".format(handle_code, oBack['code']))
                             msg_lst.append("Request returns code {} for handle {}".format(oBack['code'], handle_code))
+
+            # Is there a list of handles?
+            if len(handle_lst) > 0:
+                # Then we walk all the TsgHandle object to see if there are handles not in this list
+                for obj in TsgHandle.objects.all():
+                    code = obj.code
+                    if not code in handle_lst:
+                        oErr.Status("Removing code, since there is no PID for it anymore: [{}] tsghandle={}".format(code, obj.id))
+                        # There is a code that should be deleted from the TsgHandle
+                        lst_history = json.loads(obj.history)
+                        lst_history.append("Removed code, since there is no PID for it anymore: [{}]".format(code))
+                        obj.history = json.dumps(lst_history)
+                        obj.code = ""
+                        obj.status = "del"
+                        obj.save()
     except:
         msg = oErr.get_error_message()
         oErr.DoError("tsgsync")
@@ -475,11 +557,12 @@ class TsgHandleListView(ListView):
     paginate_by = paginateEntries
     entrycount = 0
     qs = None
-    order_cols = ['code', 'url', 'created']
+    order_cols = ['code', 'url', 'status', 'created']
     order_heads = [
         {'name': 'Handle',  'order': 'o=1', 'type': 'str'}, 
         {'name': 'URL',     'order': 'o=2', 'type': 'str'}, 
-        {'name': 'Date',    'order': 'o=3', 'type': 'str'}]
+        {'name': 'Status',  'order': 'o=3', 'type': 'str'}, 
+        {'name': 'Date',    'order': 'o=4', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
 
@@ -547,6 +630,63 @@ class TsgHandleListView(ListView):
         return qs
 
 
+class TsgHandleList(BasicList):
+    """Paginated view of TsgHandle instances"""
+
+    model = TsgHandle
+    listform = TsgHandleForm
+    has_select2 = True
+    prefix = "tsg"
+    basic_name = "tsg"
+    new_button = True       # It is possible to add a new TsgHandle
+    order_cols = ['code', 'url', 'status', 'created']
+    # order_default = order_cols
+    order_default = ['-status', 'url', 'code']
+    order_heads = [
+        {'name': 'Handle',  'order': 'o=1', 'type': 'str',  'custom': 'code'}, 
+        {'name': 'URL',     'order': 'o=2', 'type': 'str',  'custom': 'url'}, 
+        {'name': 'Status',  'order': 'o=3', 'type': 'str',  'custom': 'status', 'linkdetails': True}, 
+        {'name': 'Date',    'order': 'o=4', 'type': 'str',  'custom': 'date',   'linkdetails': True}]
+    filters = []
+    searches = []
+
+    def add_to_context(self, context, initial):
+        oErr = ErrHandle()
+        try:
+            # Add some information
+            context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+            if not context['is_app_editor']:
+                context['is_app_editor'] = context['is_in_tsg']
+
+            # Add a basic introduction
+            context['basic_intro'] = render_to_string("tsg/tsglist_intro.html", context, self.request)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgHandleList/add_to_context")
+        return context
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        oErr = ErrHandle()
+        try:
+            if custom == "code":
+                sTitle = instance.full_handle()
+                url = instance.full_handle()
+                sBack = '<span class="badge signature ot"><a href="{}" target="_blank">{}</a></span>'.format(url, instance.code)
+            elif custom == "url":
+                url = instance.url
+                sBack = '<span class="badge signature gr"><a href="{}" target="_blank">{}</a></span>'.format(url, instance.url)
+            elif custom == "status":
+                sBack = instance.get_status()
+            elif custom == "date":
+                sBack = instance.get_created()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgHandleList/get_field_value")
+        return sBack, sTitle
+
+
 class TsgHandleEdit(BasicDetails):
     model = TsgHandle
     mForm = TsgHandleForm
@@ -595,6 +735,13 @@ class TsgHandleEdit(BasicDetails):
             #    oItem = dict(type="safe", label="", value=sHandle)
             #    context['mainitems'].append(oItem)
 
+            # The DELETE button can be shown, if that is appropriate
+            if instance.status != "ini" and instance.code != "":
+                # Add the delete button
+                context['permission'] = "write"
+                sHtml = render_to_string("tsg/tsghandle_buttons.html", context, self.request)
+                context['mainitems'].append(dict(type="safe", value=sHtml))
+
 
         # Return the total context
         return context
@@ -629,7 +776,7 @@ class TsgHandleEdit(BasicDetails):
                     if status == "ok":
                         # There already is a code - Do we already have a TsgHandle with it?
                         handle = TsgHandle.objects.filter(url=instance.url).first()
-                        if handle is None:
+                        if handle is None or handle.id == obj.id:
                             # Now adapt the form's values
                             form.instance.code = oBack['code']       # Code of the handle
                             form.instance.info = oBack['info']       # This already is a string
@@ -720,4 +867,56 @@ class TsgHandleEdit(BasicDetails):
 class TsgHandleDetails(TsgHandleEdit):
     rtype = "html"
 
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # First do the regular contact addition
+        context = super(TsgHandleDetails, self).add_to_context(context, instance)
+
+        if context['is_in_tsg']:
+            context['permission'] = "write"
+
+        # Now optionally add the delete handle button
+        context['after_details'] = render_to_string("tsg/tsghandle_del.html", context, self.request)
+
+        # Return the total context
+        return context
+
+
+class TsgHandleDelete(BasicPart):
+    """Delete the PID Handle (not the TsgHandle) of the object"""
+
+    MainModel = TsgHandle
+
+    def add_to_context(self, context):
+        """Perform the actual deletion"""
+
+        oErr = ErrHandle()
+        try:
+            if not self.obj is None:
+                # Make sure the redirectpage is set
+                self.redirectpage = reverse("tsg_details", kwargs={'pk': self.obj.id})
+
+                # Get the parameter: the CODE = handle
+                handle_code = self.obj.code
+                if not handle_code is None and handle_code != "":
+                    # Try to delete the handle
+                    oResult = handle_delete(self.request, handle_code)
+
+                    # Are we successful?
+                    if oResult.get("status") == "ok":
+                        history = json.loads(self.obj.history)
+                        history.append("Deleted the Handle CODE on {}".format(get_crpp_date(timezone.now())))
+                        # Then adapt the object
+                        self.obj.code = ""
+                        self.obj.status = "del"
+                        self.obj.history = json.dumps(history)
+                        self.obj.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgHandleDelete/add_to_context")
+
+        # Return the adapted context
+        return context
 

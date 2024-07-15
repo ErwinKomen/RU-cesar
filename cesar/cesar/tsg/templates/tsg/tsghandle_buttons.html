@@ -1,0 +1,8 @@
+    {% if is_app_editor  and permission == "write" %}
+      <!-- Put the delete button completely to the right-->
+      <a role="button" class="view-mode btn btn-xs jumbo-3"
+         title="Delete this handle entirely"
+         data-toggle="collapse" data-target=".tsghandle-delete-confirm">
+        Delete handle
+      </a>
+    {% endif %}
