@@ -60,6 +60,18 @@ class TsgInfo(models.Model):
         return infoval
 
 
+class TsgStatus(models.Model):
+    """Status of a TsgHandle"""
+
+    # [1] The 'abbr' is the three letter abbreviation
+    abbr = models.CharField("Abbreviation", max_length=MAXPARAMLEN)
+    # [1] The 'name' is the full name of the status
+    name = models.CharField("Full name", max_length=MAXPARAMLEN)
+
+    def __str__(self) -> str:
+        return self.abbr
+
+
 class TsgHandle(models.Model):
     """One handle links to one url"""
 
@@ -79,6 +91,8 @@ class TsgHandle(models.Model):
     notes = models.TextField("Notes", blank=True, null=True)
     # [1] Status of this handle: ini, set, chg
     status = models.CharField("Status", max_length= MAXPARAMLEN, default="ini")
+    # [0-1] The status of this handle
+    tsgstatus = models.ForeignKey(TsgStatus, on_delete=models.SET_NULL, related_name="statushandles", blank=True, null=True)
 
     # Status dictionary
     dic_status = {'ini': 'Initialized', 'set': 'Handle set', 'chg': 'URL changed', 'del': 'Deleted'}

@@ -549,85 +549,85 @@ def tsgsync(request):
     return redirect('tsg_list')
 
 
-class TsgHandleListView(ListView):
-    """Paginated view of TsgHandle instances"""
+#class TsgHandleListView(ListView):
+#    """Paginated view of TsgHandle instances"""
 
-    model = TsgHandle
-    template_name = 'tsg/tsghandle_list.html'
-    paginate_by = paginateEntries
-    entrycount = 0
-    qs = None
-    order_cols = ['code', 'url', 'status', 'created']
-    order_heads = [
-        {'name': 'Handle',  'order': 'o=1', 'type': 'str'}, 
-        {'name': 'URL',     'order': 'o=2', 'type': 'str'}, 
-        {'name': 'Status',  'order': 'o=3', 'type': 'str'}, 
-        {'name': 'Date',    'order': 'o=4', 'type': 'str'}]
+#    model = TsgHandle
+#    template_name = 'tsg/tsghandle_list.html'
+#    paginate_by = paginateEntries
+#    entrycount = 0
+#    qs = None
+#    order_cols = ['code', 'url', 'status', 'created']
+#    order_heads = [
+#        {'name': 'Handle',  'order': 'o=1', 'type': 'str'}, 
+#        {'name': 'URL',     'order': 'o=2', 'type': 'str'}, 
+#        {'name': 'Status',  'order': 'o=3', 'type': 'str'}, 
+#        {'name': 'Date',    'order': 'o=4', 'type': 'str'}]
 
-    def render_to_response(self, context, **response_kwargs):
+#    def render_to_response(self, context, **response_kwargs):
 
-        if not self.request.user.is_authenticated:
-            # Do not allow to get a good response
-            return nlogin(self.request)
-        # Make sure the correct URL is being displayed
-        return super(TsgHandleListView, self).render_to_response(context, **response_kwargs)
+#        if not self.request.user.is_authenticated:
+#            # Do not allow to get a good response
+#            return nlogin(self.request)
+#        # Make sure the correct URL is being displayed
+#        return super(TsgHandleListView, self).render_to_response(context, **response_kwargs)
 
-    def get_context_data(self, **kwargs):
-        # Get the initial context
-        context = super(TsgHandleListView, self).get_context_data(**kwargs)
+#    def get_context_data(self, **kwargs):
+#        # Get the initial context
+#        context = super(TsgHandleListView, self).get_context_data(**kwargs)
 
-        # Who am I?
-        currentuser = self.request.user
+#        # Who am I?
+#        currentuser = self.request.user
 
-        # Add some information
-        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
-        context['authenticated'] = currentuser.is_authenticated
+#        # Add some information
+#        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+#        context['authenticated'] = currentuser.is_authenticated
 
-        # Add to the context
-        context['order_heads'] = self.order_heads
-        # context['msg_lst'] = msg_lst
-        context['intro_breadcrumb'] = "TSG Handle list"
-        context['title'] = "TSG Handle list"
+#        # Add to the context
+#        context['order_heads'] = self.order_heads
+#        # context['msg_lst'] = msg_lst
+#        context['intro_breadcrumb'] = "TSG Handle list"
+#        context['title'] = "TSG Handle list"
 
-        # Determine the count 
-        context['entrycount'] = self.entrycount #  self.get_queryset().count()
+#        # Determine the count 
+#        context['entrycount'] = self.entrycount #  self.get_queryset().count()
 
-        # Return the total context
-        return context
+#        # Return the total context
+#        return context
 
-    def get_queryset(self):
-        # We now have all the handles, provide the list of them
-        qs = TsgHandle.objects.all()
-        # Perform the sorting
-        order = [Lower('url')]
-        initial = self.request.GET
-        bAscending = True
-        sType = 'str'
-        if 'o' in initial:
-            order = []
-            iOrderCol = int(initial['o'])
-            bAscending = (iOrderCol>0)
-            iOrderCol = abs(iOrderCol)
-            order.append(Lower( self.order_cols[iOrderCol-1]))
-            sType = self.order_heads[iOrderCol-1]['type']
-            if bAscending:
-                self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
-            else:
-                # order = "-" + order
-                self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
-        if sType == 'str':
-            qs = qs.order_by(*order)
-        else:
-            qs = qs.order_by(*order)
-        # Possibly reverse the order
-        if not bAscending:
-            qs = qs.reverse()
+#    def get_queryset(self):
+#        # We now have all the handles, provide the list of them
+#        qs = TsgHandle.objects.all()
+#        # Perform the sorting
+#        order = [Lower('url')]
+#        initial = self.request.GET
+#        bAscending = True
+#        sType = 'str'
+#        if 'o' in initial:
+#            order = []
+#            iOrderCol = int(initial['o'])
+#            bAscending = (iOrderCol>0)
+#            iOrderCol = abs(iOrderCol)
+#            order.append(Lower( self.order_cols[iOrderCol-1]))
+#            sType = self.order_heads[iOrderCol-1]['type']
+#            if bAscending:
+#                self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
+#            else:
+#                # order = "-" + order
+#                self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
+#        if sType == 'str':
+#            qs = qs.order_by(*order)
+#        else:
+#            qs = qs.order_by(*order)
+#        # Possibly reverse the order
+#        if not bAscending:
+#            qs = qs.reverse()
 
-        # Set the entry count
-        self.entrycount = len(qs)
+#        # Set the entry count
+#        self.entrycount = len(qs)
 
-        # Return what we found
-        return qs
+#        # Return what we found
+#        return qs
 
 
 class TsgHandleList(BasicList):
@@ -647,8 +647,19 @@ class TsgHandleList(BasicList):
         {'name': 'URL',     'order': 'o=2', 'type': 'str',  'custom': 'url'}, 
         {'name': 'Status',  'order': 'o=3', 'type': 'str',  'custom': 'status', 'linkdetails': True}, 
         {'name': 'Date',    'order': 'o=4', 'type': 'str',  'custom': 'date',   'linkdetails': True}]
-    filters = []
-    searches = []
+    filters = [ 
+        {"name": "Handle",  "id": "filter_handle",  "enabled": False},
+        {"name": "URL",     "id": "filter_url",     "enabled": False},
+        {"name": "Status",  "id": "filter_status",  "enabled": False},
+        ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'handle',    'dbfield': 'handle',    'keyS': 'handle_ta',        'keyList': 'handlelist' },
+            {'filter': 'url',       'dbfield': 'url',       'keyS': 'url_ta'                            },
+            {'filter': 'status',    'fkfield': 'status',    'keyList': 'statuslist',    'infield': 'id' },
+            ]
+         }
+        ]
 
     def add_to_context(self, context, initial):
         oErr = ErrHandle()
