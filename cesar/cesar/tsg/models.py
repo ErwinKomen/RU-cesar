@@ -59,6 +59,66 @@ class TsgInfo(models.Model):
             oErr.DoError("TsgInfo/get_value")
         return infoval
 
+    def history_add(self, msg):
+        """Add a line to the history"""
+
+        oErr = ErrHandle()
+        bResult = True
+        try:
+            history = json.loads(self.history)
+            history.append(msg)
+            self.history = json.dumps(history)
+            self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgInfo/history_add")
+            bResult = False
+        return bResult
+
+    def history_clear(self):
+        """Clear the history"""
+
+        self.history = []
+        self.save()
+
+    def history_get(self):
+        sBack = ""
+        if not self.history is None:
+            sBack = self.history
+        return sBack
+
+    def history_set(self, lst_this):
+        """Set the history"""
+
+        oErr = ErrHandle()
+        bResult = True
+        try:
+            # Double check
+            if isinstance(lst_this, list):
+                self.history = json.dumps(lst_this)
+                self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgInfo/history_set")
+            bResult = False
+        return bResult
+
+    def set_value(key, value):
+        """Look up the key and set the value"""
+
+        oErr = ErrHandle()
+        try:
+            obj = TsgInfo.objects.filter(infokey__iexact=key).first()
+            if obj is None:
+                obj = TsgInfo.objects.create(infokey=key)
+            # Now set the value
+            obj.infoval = value
+            obj.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgInfo/set_value")
+        return obj
+
 
 class TsgStatus(models.Model):
     """Status of a TsgHandle"""
@@ -68,8 +128,17 @@ class TsgStatus(models.Model):
     # [1] The 'name' is the full name of the status
     name = models.CharField("Full name", max_length=MAXPARAMLEN)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.abbr
+
+    def get_status(abbr):
+        """Get the status not as abbreviation but as actual name"""
+
+        sBack = ""
+        obj = TsgStatus.objects.filter(abbr=abbr).first()
+        if not obj is None:
+            sBack = obj.name
+        return sBack
 
 
 class TsgHandle(models.Model):
@@ -275,10 +344,19 @@ class TsgHandle(models.Model):
         return sBack
 
     def get_status(self):
+        """Get the status not as abbreviation but as actual name"""
+
         sBack = ""
-        status = self.status
-        if not status is None and self.status != "":
-            sBack = TsgHandle.dic_status.get(status, "???")
+        if not self.tsgstatus is None:
+            sBack = self.tsgstatus.name
+        return sBack
+
+    def get_statusabbr(self):
+        """Get the status abbreviation"""
+
+        sBack = ""
+        if not self.tsgstatus is None:
+            sBack = self.tsgstatus.abbr
         return sBack
 
     def get_url(self, plain=True):

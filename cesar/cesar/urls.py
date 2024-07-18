@@ -160,7 +160,7 @@ urlpatterns = [
     url(r'^api/import/twitter/$', cesar.doc.views.import_twitter_excel, name='import_twitter'),
     url(r'^api/import/twitada/$', cesar.doc.views.import_twitada_excel, name='import_twitada'),
 
-    url(r'^tsg/handle/sync', cesar.tsg.views.tsgsync, name='tsg_sync'),
+    url(r'^tsg/handle/sync/$', cesar.tsg.views.tsgsync, name='tsg_sync'),
     url(r'^tsg/handle/list/$', TsgHandleList.as_view(), name='tsg_list'),
     url(r'^tsg/handle/details(?:/(?P<pk>\d+))?/$', TsgHandleDetails.as_view(), name='tsg_details'),
     url(r'^tsg/handle/edit(?:/(?P<pk>\d+))?/$', TsgHandleEdit.as_view(), name='tsg_edit'),

@@ -30,7 +30,7 @@ from cesar.basic.views import BasicDetails, BasicList, BasicPart
 from cesar.browser.models import Status
 from cesar.browser.views import nlogin, user_is_authenticated, user_is_ingroup
 from cesar.seeker.views import csv_to_excel
-from cesar.tsg.models import TsgInfo, TsgHandle, get_crpp_date
+from cesar.tsg.models import TsgInfo, TsgHandle, TsgStatus, get_crpp_date
 from cesar.tsg.forms import TsgHandleForm
 
 
@@ -436,198 +436,208 @@ def tsgsync(request):
 
     oErr = ErrHandle()
     handle_lst = []
+    response = None
+    infoval = None
+    data = None
     try:
         # Make sure this is a HttpRequest
         assert isinstance(request, HttpRequest)
     
         # Basic authentication
-        if not user_is_authenticated(request):
+        if not user_is_authenticated(request) or request.method.lower() != "post":
             return nlogin(request)
+
+        ## Set default response
+        #response = redirect('tsg_list')
 
         # Check which groups this person belongs to
         if user_is_ingroup(request, "radboud-tsg"):
-            # Get Handle credentials
-            handle_user = TsgInfo.get_value("handle_user")
-            handle_pw = TsgInfo.get_value("handle_pw")
-            handle_url = TsgInfo.get_value("handle_url")
 
-            msg_lst = []
-            # Validate
-            if handle_pw == None or handle_pw == "":
-                msg_lst.append( "Password is not defined")
-            if handle_url == None or handle_url == "":
-                msg_lst.append("Handle URL is not defined")
-            if handle_user == None or handle_user == "":
-                msg_lst.append("Handle User is not defined")
-            if len(msg_lst) ==0:
-                # Try to get all defined handles
-                oHandles = get_handle_info(handle_url, handle_user, handle_pw)
-                if oHandles['status'] == "error":
-                    msg_lst.append("Request returns code {} for handle-list".format(oHandles['code']))
-                else:
-                    handle_lst = oHandles['contents']
-                    # Compare this list with the handles we already have
-                    for handle_code in handle_lst:
-                        oBack = get_handle_info(handle_url, handle_user, handle_pw, handle_code)
-                        if oBack['status'] == "ok":
-                            # Get the information from the handle
-                            info = oBack['contents']
-                            url = ""
-                            date_obj = None
-                            for item in info:
-                                if item['type'].lower() == "url":
-                                    url = item['parsed_data'] 
-                                    timestamp = item['timestamp']   # E.G: 2017-10-25T07:38:26Z
-                                    date_obj = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-                                    date_obj = pytz.timezone("UTC").localize(date_obj)
-                                    break
-                            if url == "":
-                                oErr.Status("tsgsync cannot find URL for handle: {}".format(handle_code))
-                                msg_lst.append("Cannot find URL for code {}".format(handle_code))
-                            else:
-                                # Try to get the handle from the database
-                                obj = TsgHandle.objects.filter(code=handle_code).first()
-                                if obj == None:
-                                    oErr.Status("tsgsync add handle: {}, {}".format(handle_code, url))
-                                    # Add the handle
-                                    TsgHandle.add_handle(handle_code, url, info=info)
-                                else:
-                                    oErr.Status("tsgsync existing handle: {}, {}".format(handle_code, url))
-                                    bNeedSaving = False
-                                    # Check and possibly update the handle
-                                    if obj.url != url:
-                                        # The URL has changed
-                                        obj.url = url
-                                        obj.info = json.dumps(info)
-                                        bNeedSaving = True
-                                    elif obj.info == None or obj.info == "" or obj.info == "[]":
-                                        obj.info = json.dumps(info)
-                                        bNeedSaving = True
-                                    # At any rate: check the date
-                                    if obj.created != date_obj:
-                                        history = obj.history
-                                        if history == None or history == "": history = []
-                                        if isinstance(history, str):
-                                            history = json.loads(history)
-                                        if date_obj == None:
-                                            # First creation
-                                            history.append("Created at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user))
-                                        else:
-                                            # Change
-                                            history.append("Changed at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user))
-                                        obj.history = json.dumps(history)
-                                        obj.created = date_obj
-                                        bNeedSaving = True
-                            
-                                    # Save if needed
-                                    if bNeedSaving:
-                                        obj.save()
+            # Get the mode
+            qd = request.POST
+            mode = qd.get("mode")
 
+            # Get the infoval
+            infoval = TsgInfo.get_value("tsgsync")
+            if not infoval is None:
+                if infoval == "busy" and mode == "start":
+                    # Provide message that we are busy
+                    data = dict(status="error", msg="Synchronization is busy")
+                    response = JsonResponse(data)
+
+                    # FOR NOW: just reset the status to 'ok'
+                    infoval = "ok"
+                elif infoval == "reset":
+                    TsgInfo.set_value("tsgsync", "ok")
+                    # Provide message that we are busy
+                    data = dict(status="error", msg="Reset done")
+                    response = JsonResponse(data)
+
+            # We can only continue if the infovalue is okay
+            if infoval is None or infoval in ["ok", "busy", "reset"]:
+
+                # Get Handle credentials
+                handle_user = TsgInfo.get_value("handle_user")
+                handle_pw = TsgInfo.get_value("handle_pw")
+                handle_url = TsgInfo.get_value("handle_url")
+
+                del_status = TsgStatus.objects.filter(abbr="del").first()
+
+                # Mode: can be 'start', 'update', 'finish'
+                if mode == "start":
+
+                    msg_lst = []
+                    bReset = False
+                    # Validate
+                    if handle_pw == None or handle_pw == "":
+                        msg_lst.append( "Password is not defined")
+                    if handle_url == None or handle_url == "":
+                        msg_lst.append("Handle URL is not defined")
+                    if handle_user == None or handle_user == "":
+                        msg_lst.append("Handle User is not defined")
+                    if len(msg_lst) ==0:
+                        # Try to get all defined handles
+                        oHandles = get_handle_info(handle_url, handle_user, handle_pw)
+                        if oHandles['status'] == "error":
+                            msg_lst.append("Request returns code {} for handle-list".format(oHandles['code']))
                         else:
-                            oErr.Status("tsgsync error handle: {}, {}".format(handle_code, oBack['code']))
-                            msg_lst.append("Request returns code {} for handle {}".format(oBack['code'], handle_code))
+                            handle_lst = oHandles['contents']
 
-            # Is there a list of handles?
-            if len(handle_lst) > 0:
-                # Then we walk all the TsgHandle object to see if there are handles not in this list
-                for obj in TsgHandle.objects.all():
-                    code = obj.code
-                    if not code in handle_lst:
-                        oErr.Status("Removing code, since there is no PID for it anymore: [{}] tsghandle={}".format(code, obj.id))
-                        # There is a code that should be deleted from the TsgHandle
-                        lst_history = json.loads(obj.history)
-                        lst_history.append("Removed code, since there is no PID for it anymore: [{}]".format(code))
-                        obj.history = json.dumps(lst_history)
-                        obj.code = ""
-                        obj.status = "del"
-                        obj.save()
+                            # Set the infoval to 'busy'
+                            obj_status = TsgInfo.set_value("tsgsync", "busy")
+                            obj_status.history_clear()
+
+                            # Compare this list with the handles we already have
+                            for handle_code in handle_lst:
+                                # Always first check for a possible reset
+                                infoval = TsgInfo.get_value("tsgsync")
+                                if infoval == "reset":
+                                    TsgInfo.set_value("tsgsync", "ok")
+                                    # Provide message that we are busy
+                                    data = dict(status="error", msg="Reset done")
+                                    response = JsonResponse(data)
+                                    bReset = True
+                                    obj_status.history_add("Reset by user")
+                                    # Get out of the loop
+                                    break
+
+                                oBack = get_handle_info(handle_url, handle_user, handle_pw, handle_code)
+                                if oBack['status'] == "ok":
+                                    # Get the information from the handle
+                                    info = oBack['contents']
+                                    url = ""
+                                    date_obj = None
+                                    for item in info:
+                                        if item['type'].lower() == "url":
+                                            url = item['parsed_data'] 
+                                            timestamp = item['timestamp']   # E.G: 2017-10-25T07:38:26Z
+                                            date_obj = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                                            date_obj = pytz.timezone("UTC").localize(date_obj)
+                                            break
+                                    if url == "":
+                                        msg = "Cannot find URL for code {}".format(handle_code)
+                                        oErr.Status("tsgsync cannot find URL for handle: {}".format(handle_code))
+                                        msg_lst.append(msg)
+                                        obj_status.history_add(msg)
+                                    else:
+                                        # Try to get the handle from the database
+                                        obj = TsgHandle.objects.filter(code=handle_code).first()
+                                        if obj == None:
+                                            msg = "tsgsync add handle: {}, {}".format(handle_code, url)
+                                            oErr.Status(msg)
+                                            # Add the handle
+                                            TsgHandle.add_handle(handle_code, url, info=info)
+                                            # Keep track of where we are
+                                            obj_status.history_add(msg)
+                                        else:
+                                            msg = "tsgsync existing handle: {}, {}".format(handle_code, url)
+                                            oErr.Status(msg)
+                                            obj_status.history_add(msg)
+
+                                            bNeedSaving = False
+                                            # Check and possibly update the handle
+                                            if obj.url != url:
+                                                # The URL has changed
+                                                obj.url = url
+                                                obj.info = json.dumps(info)
+                                                bNeedSaving = True
+                                            elif obj.info == None or obj.info == "" or obj.info == "[]":
+                                                obj.info = json.dumps(info)
+                                                bNeedSaving = True
+                                            # At any rate: check the date
+                                            if obj.created != date_obj:
+                                                history = obj.history
+                                                if history == None or history == "": history = []
+                                                if isinstance(history, str):
+                                                    history = json.loads(history)
+                                                if date_obj == None:
+                                                    # First creation
+                                                    msg = "Created at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user)
+                                                else:
+                                                    # Change
+                                                    msg = "Changed at {} by {}".format(get_crpp_date(get_current_datetime()), handle_user)
+                                                history.append(msg)
+                                                obj.history = json.dumps(history)
+                                                obj.created = date_obj
+                                                bNeedSaving = True
+
+                                                obj_status.history_add(msg)
+                            
+                                            # Save if needed
+                                            if bNeedSaving:
+                                                obj.save()
+
+                                else:
+                                    oErr.Status("tsgsync error handle: {}, {}".format(handle_code, oBack['code']))
+                                    msg_lst.append("Request returns code {} for handle {}".format(oBack['code'], handle_code))
+                                    obj_status.history_set(msg_lst)
+
+                    # Is there a list of handles?
+                    if not bReset and len(handle_lst) > 0:
+                        # Then we walk all the TsgHandle object to see if there are handles not in this list
+                        #  (unless they already have the status "del")
+                        for obj in TsgHandle.objects.exclude(tsgstatus__abbr="del"):
+                            code = obj.code
+                            if not code in handle_lst:
+                                oErr.Status("Removing code, since there is no PID for it anymore: [{}] tsghandle={}".format(code, obj.id))
+                                # There is a code that should be deleted from the TsgHandle
+                                lst_history = json.loads(obj.history)
+                                msg = "Removed code, since there is no PID for it anymore: [{}]".format(code)
+                                lst_history.append(msg)
+                                obj.history = json.dumps(lst_history)
+                                obj.code = ""
+                                obj.tsgstatus = del_status
+                                # obj.status = "del"
+                                obj.save()
+
+                                # Add to history
+                                obj_status.history_add(msg)
+
+                    # Once we are ready, we should give the message that we are
+                    obj_status.set_value("tsgsync", "ready")
+                    data['status'] = "ready"
+
+                    # Response JSON with the data
+                    response = JsonResponse(data)
+
+                elif mode == "update":
+                    # This is a status update request
+                    data = dict(status="ok", msg="")
+                    # Get the total histyr
+                    data['msg'] = obj_status.history_get()
+
+                    # Response JSON with the data
+                    response = JsonResponse(data)
+
+        else:
+            data = dict(status="error", msg="User not in radboud-tsg group")
+            response = JsonResponse(data)
     except:
         msg = oErr.get_error_message()
         oErr.DoError("tsgsync")
 
     # Return by rendering the listview of TsgHandle
-    return redirect('tsg_list')
-
-
-#class TsgHandleListView(ListView):
-#    """Paginated view of TsgHandle instances"""
-
-#    model = TsgHandle
-#    template_name = 'tsg/tsghandle_list.html'
-#    paginate_by = paginateEntries
-#    entrycount = 0
-#    qs = None
-#    order_cols = ['code', 'url', 'status', 'created']
-#    order_heads = [
-#        {'name': 'Handle',  'order': 'o=1', 'type': 'str'}, 
-#        {'name': 'URL',     'order': 'o=2', 'type': 'str'}, 
-#        {'name': 'Status',  'order': 'o=3', 'type': 'str'}, 
-#        {'name': 'Date',    'order': 'o=4', 'type': 'str'}]
-
-#    def render_to_response(self, context, **response_kwargs):
-
-#        if not self.request.user.is_authenticated:
-#            # Do not allow to get a good response
-#            return nlogin(self.request)
-#        # Make sure the correct URL is being displayed
-#        return super(TsgHandleListView, self).render_to_response(context, **response_kwargs)
-
-#    def get_context_data(self, **kwargs):
-#        # Get the initial context
-#        context = super(TsgHandleListView, self).get_context_data(**kwargs)
-
-#        # Who am I?
-#        currentuser = self.request.user
-
-#        # Add some information
-#        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
-#        context['authenticated'] = currentuser.is_authenticated
-
-#        # Add to the context
-#        context['order_heads'] = self.order_heads
-#        # context['msg_lst'] = msg_lst
-#        context['intro_breadcrumb'] = "TSG Handle list"
-#        context['title'] = "TSG Handle list"
-
-#        # Determine the count 
-#        context['entrycount'] = self.entrycount #  self.get_queryset().count()
-
-#        # Return the total context
-#        return context
-
-#    def get_queryset(self):
-#        # We now have all the handles, provide the list of them
-#        qs = TsgHandle.objects.all()
-#        # Perform the sorting
-#        order = [Lower('url')]
-#        initial = self.request.GET
-#        bAscending = True
-#        sType = 'str'
-#        if 'o' in initial:
-#            order = []
-#            iOrderCol = int(initial['o'])
-#            bAscending = (iOrderCol>0)
-#            iOrderCol = abs(iOrderCol)
-#            order.append(Lower( self.order_cols[iOrderCol-1]))
-#            sType = self.order_heads[iOrderCol-1]['type']
-#            if bAscending:
-#                self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
-#            else:
-#                # order = "-" + order
-#                self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
-#        if sType == 'str':
-#            qs = qs.order_by(*order)
-#        else:
-#            qs = qs.order_by(*order)
-#        # Possibly reverse the order
-#        if not bAscending:
-#            qs = qs.reverse()
-
-#        # Set the entry count
-#        self.entrycount = len(qs)
-
-#        # Return what we found
-#        return qs
+    return response
 
 
 class TsgHandleList(BasicList):
@@ -639,9 +649,9 @@ class TsgHandleList(BasicList):
     prefix = "tsg"
     basic_name = "tsg"
     new_button = True       # It is possible to add a new TsgHandle
-    order_cols = ['code', 'url', 'status', 'created']
+    order_cols = ['code', 'url', 'tsgstatus', 'created']
     # order_default = order_cols
-    order_default = ['-status', 'url', 'code']
+    order_default = ['-tsgstatus__name', 'url', 'code']
     order_heads = [
         {'name': 'Handle',  'order': 'o=1', 'type': 'str',  'custom': 'code'}, 
         {'name': 'URL',     'order': 'o=2', 'type': 'str',  'custom': 'url'}, 
@@ -654,9 +664,9 @@ class TsgHandleList(BasicList):
         ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'handle',    'dbfield': 'handle',    'keyS': 'handle_ta',        'keyList': 'handlelist' },
+            {'filter': 'handle',    'dbfield': 'code',      'keyS': 'handle_ta',    'keyList': 'handlelist', 'infield': 'id' },
             {'filter': 'url',       'dbfield': 'url',       'keyS': 'url_ta'                            },
-            {'filter': 'status',    'fkfield': 'status',    'keyList': 'statuslist',    'infield': 'id' },
+            {'filter': 'status',    'fkfield': 'tsgstatus', 'keyList': 'statuslist','infield': 'id' },
             ]
          }
         ]
@@ -747,7 +757,7 @@ class TsgHandleEdit(BasicDetails):
             #    context['mainitems'].append(oItem)
 
             # The DELETE button can be shown, if that is appropriate
-            if instance.status != "ini" and instance.code != "":
+            if instance.get_statusabbr() != "ini" and instance.code != "":
                 # Add the delete button
                 context['permission'] = "write"
                 sHtml = render_to_string("tsg/tsghandle_buttons.html", context, self.request)
@@ -760,7 +770,7 @@ class TsgHandleEdit(BasicDetails):
     def before_save(self, form, instance):
         """Check if anything changed and then what needs to be done
         
-        Depends on instance.status
+        Depends on instance.tsgstatus (abbr)
         - ini   If there is a valid URL, then create a link
         - chg   Change the existing link
         """
@@ -780,7 +790,8 @@ class TsgHandleEdit(BasicDetails):
                 obj = self.model.objects.filter(id=instance.id).first()
 
                 # Is this the creation of a link or the changing?
-                if instance.status == "ini":
+                status_abbr = instance.get_statusabbr()
+                if status_abbr == "ini":
                     # First check if the link is not there yet
                     oBack = get_handle_code(self.request, instance.url)
                     status = oBack.get("status")
@@ -930,4 +941,86 @@ class TsgHandleDelete(BasicPart):
 
         # Return the adapted context
         return context
+
+
+#class TsgHandleListView(ListView):
+#    """Paginated view of TsgHandle instances"""
+
+#    model = TsgHandle
+#    template_name = 'tsg/tsghandle_list.html'
+#    paginate_by = paginateEntries
+#    entrycount = 0
+#    qs = None
+#    order_cols = ['code', 'url', 'status', 'created']
+#    order_heads = [
+#        {'name': 'Handle',  'order': 'o=1', 'type': 'str'}, 
+#        {'name': 'URL',     'order': 'o=2', 'type': 'str'}, 
+#        {'name': 'Status',  'order': 'o=3', 'type': 'str'}, 
+#        {'name': 'Date',    'order': 'o=4', 'type': 'str'}]
+
+#    def render_to_response(self, context, **response_kwargs):
+
+#        if not self.request.user.is_authenticated:
+#            # Do not allow to get a good response
+#            return nlogin(self.request)
+#        # Make sure the correct URL is being displayed
+#        return super(TsgHandleListView, self).render_to_response(context, **response_kwargs)
+
+#    def get_context_data(self, **kwargs):
+#        # Get the initial context
+#        context = super(TsgHandleListView, self).get_context_data(**kwargs)
+
+#        # Who am I?
+#        currentuser = self.request.user
+
+#        # Add some information
+#        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
+#        context['authenticated'] = currentuser.is_authenticated
+
+#        # Add to the context
+#        context['order_heads'] = self.order_heads
+#        # context['msg_lst'] = msg_lst
+#        context['intro_breadcrumb'] = "TSG Handle list"
+#        context['title'] = "TSG Handle list"
+
+#        # Determine the count 
+#        context['entrycount'] = self.entrycount #  self.get_queryset().count()
+
+#        # Return the total context
+#        return context
+
+#    def get_queryset(self):
+#        # We now have all the handles, provide the list of them
+#        qs = TsgHandle.objects.all()
+#        # Perform the sorting
+#        order = [Lower('url')]
+#        initial = self.request.GET
+#        bAscending = True
+#        sType = 'str'
+#        if 'o' in initial:
+#            order = []
+#            iOrderCol = int(initial['o'])
+#            bAscending = (iOrderCol>0)
+#            iOrderCol = abs(iOrderCol)
+#            order.append(Lower( self.order_cols[iOrderCol-1]))
+#            sType = self.order_heads[iOrderCol-1]['type']
+#            if bAscending:
+#                self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
+#            else:
+#                # order = "-" + order
+#                self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
+#        if sType == 'str':
+#            qs = qs.order_by(*order)
+#        else:
+#            qs = qs.order_by(*order)
+#        # Possibly reverse the order
+#        if not bAscending:
+#            qs = qs.reverse()
+
+#        # Set the entry count
+#        self.entrycount = len(qs)
+
+#        # Return what we found
+#        return qs
+
 

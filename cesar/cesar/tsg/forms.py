@@ -14,7 +14,6 @@ from cesar.tsg.models import *
 from cesar.basic.forms import BasicForm
 from cesar.browser.models import build_choice_list, get_help
 
-STATUS_TYPE = [('', 'All'), ('spe', 'Author defined'), ('non', 'No author defined')]
 
 
 # ================================== Widgets ======================================================
@@ -36,6 +35,18 @@ class TsgHandleWidget(ModelSelect2MultipleWidget):
         return qs
 
 
+class TsgStatusWidget(ModelSelect2MultipleWidget):
+    model = TsgStatus
+    search_fields = [ 'abbr__icontains', 'name__icontains']
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        qs = TsgStatus.objects.all().order_by('name')
+        return qs
+
+
 # ================================== Forms ========================================================
 
 
@@ -51,8 +62,9 @@ class TsgHandleForm(BasicForm):
     handlelist  = ModelMultipleChoiceField(queryset=None, required=False, 
                     widget=TsgHandleWidget(attrs={'data-minimum-input-length': 0, 'data-placeholder': 'Select multiple handles...', 
                                                 'style': 'width: 100%;'}))
-    statuslist  = forms.ChoiceField(label=_("Author type"), required=False, 
-                widget=forms.Select(attrs={'class': 'input-sm', 'placeholder': 'Type of Author...',  'style': 'width: 100%;', 'tdstyle': 'width: 150px;'}))    
+    statuslist  = ModelMultipleChoiceField(queryset=None, required=False, 
+                    widget=TsgStatusWidget(attrs={'data-minimum-input-length': 0, 'data-placeholder': 'Select multiple statuses...', 
+                                                'style': 'width: 100%;'}))
 
     class Meta:
         model = TsgHandle
@@ -68,7 +80,7 @@ class TsgHandleForm(BasicForm):
         try:
             # Set the querysets
             self.fields['handlelist'].queryset = TsgHandle.objects.exclude(status='ini').order_by('code', 'url')
-            self.fields['statuslist'].queryset = TsgHandle.objects.exclude(status='ini').order_by('code', 'url')
+            self.fields['statuslist'].queryset = TsgStatus.objects.all().order_by('name')
         except:
             msg = oErr.get_error_message()
             oErr.DoError("TsgHandleForm-init")
