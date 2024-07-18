@@ -246,16 +246,17 @@ ModelManifest.xml
 
 # Python stuff
 *.pyc
-/cesar/cesar/basic/migrations
-/cesar/cesar/brief/migrations
-/cesar/cesar/browser/migrations
-/cesar/cesar/doc/migrations
-/cesar/cesar/ds2/migrations
-/cesar/cesar/lingo/migrations
-/cesar/cesar/seeker/migrations
-/cesar/cesar/tsg/migrations
-/cesar/cesar/viewer/migrations
-/cesar/cesar/woord/migrations
+
+#/cesar/cesar/basic/migrations
+#/cesar/cesar/brief/migrations
+#/cesar/cesar/browser/migrations
+#/cesar/cesar/doc/migrations
+#/cesar/cesar/ds2/migrations
+#/cesar/cesar/lingo/migrations
+#/cesar/cesar/seeker/migrations
+#/cesar/cesar/tsg/migrations
+#/cesar/cesar/viewer/migrations
+#/cesar/cesar/woord/migrations
 
 /cesar/cesar/viewer/migrations/__init__.py
 /cesar/cesar/viewer/migrations/0001_initial.py
