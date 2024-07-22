@@ -657,6 +657,7 @@ class TsgHandleList(BasicList):
     has_select2 = True
     prefix = "tsg"
     basic_name = "tsg"
+    sg_name = "Tsg Handle"
     new_button = True       # It is possible to add a new TsgHandle
     order_cols = ['code', 'url', 'tsgstatus', 'created']
     # order_default = order_cols
