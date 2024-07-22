@@ -13,7 +13,7 @@
   <div class="col-sm-4 right">
     <!-- Synchronization -->
     <span class="pull-right">
-      <a role="button" class="btn btn-xs jumbo-3" 
+      <a role="button" class="btn btn-sm jumbo-3" 
          targeturl="{% url 'tsg_sync' %}"
          targetid="tsgsyncstatus"
          onclick="ru.tsg.tsgsyncupdate(this, 'start');">Re-calculate</a>
@@ -28,6 +28,6 @@
 <div class="row">
   <div class="col-offset-sm-6">
     &nbsp;
-    <div id="tsgsyncstatus"></div>
+    <div id="tsgsyncstatus" style="max-height: 200px; overflow: auto;"></div>
   </div>
 </div>

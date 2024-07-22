@@ -45,6 +45,44 @@ class TsgInfo(models.Model):
     def __str__(self):
         return self.infokey
 
+    def get_item(key):
+        """Given a key, provide the object, or NONE if it does not exist"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            obj = TsgInfo.objects.filter(infokey__iexact=key).first()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgInfo/get_item")
+        return obj
+
+    def get_history_html(self, sAdditional = ""):
+        """Get the history in a nice HTML view"""
+
+        oErr = ErrHandle()
+        sBack = ""
+        try:
+            # Get the total history
+            sHistory = self.history or ""
+            if sHistory != "":
+                lHistory = json.loads(sHistory)
+                # Reverse the list, so that latest is on top
+                lHistory.reverse()
+                lBack = []
+                for idx, item in enumerate(lHistory):
+                    line = len(lHistory) - idx
+                    lBack.append("<p><b>{}</b>: {}</p>".format(line, item))
+                sHistory = "\n".join(lBack)
+                # If there is an additional message, then prepend it
+                if sAdditional != "":
+                    sHistory = "<code>{}</code>\n{}".format(sAdditional, sHistory)
+            sBack = sHistory
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TsgInfo/get_history_html")
+        return sBack
+
     def get_value(key):
         """Given a key, provide its value, or NONE if it does not exist"""
 
@@ -78,7 +116,7 @@ class TsgInfo(models.Model):
     def history_clear(self):
         """Clear the history"""
 
-        self.history = []
+        self.history = "[]"
         self.save()
 
     def history_get(self):

@@ -110,6 +110,10 @@ var ru = (function ($, ru) {
                     break;
                   case "ready":
                   case "finished":
+                    if (response.msg || "" !== "") {
+                      // Just show the response
+                      $(targetid).html(response.msg);
+                    }
                     // Just close the waiting symbol area
                     ru.tsg.main_show_hide({ 'recalculate': false })
                     break;
@@ -124,6 +128,8 @@ var ru = (function ($, ru) {
               data.push({ 'name': 'mode', 'value': 'update' });
               // Continue calling the syncing
               $.post(targeturl, data, function (response) {
+                var lst_msg = null;
+
                 switch (response.status) {
                   case "ok":
                     // Just show the response

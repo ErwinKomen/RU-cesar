@@ -447,9 +447,6 @@ def tsgsync(request):
         if not user_is_authenticated(request) or request.method.lower() != "post":
             return nlogin(request)
 
-        ## Set default response
-        #response = redirect('tsg_list')
-
         # Check which groups this person belongs to
         if user_is_ingroup(request, "radboud-tsg"):
 
@@ -474,7 +471,7 @@ def tsgsync(request):
                     response = JsonResponse(data)
 
             # We can only continue if the infovalue is okay
-            if infoval is None or infoval in ["ok", "busy", "reset"]:
+            if infoval is None or infoval in ["ok", "busy", "reset", "ready"]:
 
                 # Get Handle credentials
                 handle_user = TsgInfo.get_value("handle_user")
@@ -489,13 +486,13 @@ def tsgsync(request):
                     msg_lst = []
                     bReset = False
                     # Validate
-                    if handle_pw == None or handle_pw == "":
+                    if handle_pw is None or handle_pw == "":
                         msg_lst.append( "Password is not defined")
-                    if handle_url == None or handle_url == "":
+                    if handle_url is None or handle_url == "":
                         msg_lst.append("Handle URL is not defined")
-                    if handle_user == None or handle_user == "":
+                    if handle_user is None or handle_user == "":
                         msg_lst.append("Handle User is not defined")
-                    if len(msg_lst) ==0:
+                    if len(msg_lst) == 0:
                         # Try to get all defined handles
                         oHandles = get_handle_info(handle_url, handle_user, handle_pw)
                         if oHandles['status'] == "error":
@@ -614,8 +611,11 @@ def tsgsync(request):
                                 obj_status.history_add(msg)
 
                     # Once we are ready, we should give the message that we are
-                    obj_status.set_value("tsgsync", "ready")
-                    data['status'] = "ready"
+                    TsgInfo.set_value("tsgsync", "ready")
+                    # Get the total history
+                    obj_status = TsgInfo.get_item("tsgsync")
+                    sHistory = obj_status.get_history_html("Successfully finished synchronization")
+                    data = dict(status="ready", msg=sHistory)
 
                     # Response JSON with the data
                     response = JsonResponse(data)
@@ -623,8 +623,17 @@ def tsgsync(request):
                 elif mode == "update":
                     # This is a status update request
                     data = dict(status="ok", msg="")
-                    # Get the total histyr
-                    data['msg'] = obj_status.history_get()
+
+                    # Get the status object
+                    obj_status = TsgInfo.get_item("tsgsync")
+                    infoval = obj_status.infoval
+                    if infoval != "busy":
+                        data['status'] = infoval
+
+                    # Get the total history
+                    sHistory = obj_status.get_history_html()
+
+                    data['msg'] = sHistory
 
                     # Response JSON with the data
                     response = JsonResponse(data)
@@ -942,85 +951,5 @@ class TsgHandleDelete(BasicPart):
         # Return the adapted context
         return context
 
-
-#class TsgHandleListView(ListView):
-#    """Paginated view of TsgHandle instances"""
-
-#    model = TsgHandle
-#    template_name = 'tsg/tsghandle_list.html'
-#    paginate_by = paginateEntries
-#    entrycount = 0
-#    qs = None
-#    order_cols = ['code', 'url', 'status', 'created']
-#    order_heads = [
-#        {'name': 'Handle',  'order': 'o=1', 'type': 'str'}, 
-#        {'name': 'URL',     'order': 'o=2', 'type': 'str'}, 
-#        {'name': 'Status',  'order': 'o=3', 'type': 'str'}, 
-#        {'name': 'Date',    'order': 'o=4', 'type': 'str'}]
-
-#    def render_to_response(self, context, **response_kwargs):
-
-#        if not self.request.user.is_authenticated:
-#            # Do not allow to get a good response
-#            return nlogin(self.request)
-#        # Make sure the correct URL is being displayed
-#        return super(TsgHandleListView, self).render_to_response(context, **response_kwargs)
-
-#    def get_context_data(self, **kwargs):
-#        # Get the initial context
-#        context = super(TsgHandleListView, self).get_context_data(**kwargs)
-
-#        # Who am I?
-#        currentuser = self.request.user
-
-#        # Add some information
-#        context['is_in_tsg'] = user_is_ingroup(self.request, "radboud-tsg")
-#        context['authenticated'] = currentuser.is_authenticated
-
-#        # Add to the context
-#        context['order_heads'] = self.order_heads
-#        # context['msg_lst'] = msg_lst
-#        context['intro_breadcrumb'] = "TSG Handle list"
-#        context['title'] = "TSG Handle list"
-
-#        # Determine the count 
-#        context['entrycount'] = self.entrycount #  self.get_queryset().count()
-
-#        # Return the total context
-#        return context
-
-#    def get_queryset(self):
-#        # We now have all the handles, provide the list of them
-#        qs = TsgHandle.objects.all()
-#        # Perform the sorting
-#        order = [Lower('url')]
-#        initial = self.request.GET
-#        bAscending = True
-#        sType = 'str'
-#        if 'o' in initial:
-#            order = []
-#            iOrderCol = int(initial['o'])
-#            bAscending = (iOrderCol>0)
-#            iOrderCol = abs(iOrderCol)
-#            order.append(Lower( self.order_cols[iOrderCol-1]))
-#            sType = self.order_heads[iOrderCol-1]['type']
-#            if bAscending:
-#                self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
-#            else:
-#                # order = "-" + order
-#                self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
-#        if sType == 'str':
-#            qs = qs.order_by(*order)
-#        else:
-#            qs = qs.order_by(*order)
-#        # Possibly reverse the order
-#        if not bAscending:
-#            qs = qs.reverse()
-
-#        # Set the entry count
-#        self.entrycount = len(qs)
-
-#        # Return what we found
-#        return qs
 
 
