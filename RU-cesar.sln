@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "cesar", "cesar\cesar.pyproj", "{797AEBA2-6308-4BC8-9676-E0A2F3B20DD2}"
 EndProject
@@ -12,6 +12,11 @@ EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "htreeconv", "htreeconv\htreeconv.pyproj", "{5944FFAA-6A7E-48B5-85E5-E9EA5E5F45A0}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "mdutch", "mdutch\mdutch.pyproj", "{574DE5A7-29A0-45AD-8416-2924CE63D0CB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DB486677-1B7F-4844-96C8-562656AC0871}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,5 +39,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {399E66A0-E3E1-4B04-8136-4165C74587BC}
 	EndGlobalSection
 EndGlobal

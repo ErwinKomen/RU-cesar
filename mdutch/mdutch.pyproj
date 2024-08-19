@@ -12,8 +12,7 @@
     <OutputPath>.</OutputPath>
     <Name>mdutch</Name>
     <RootNamespace>mdutch</RootNamespace>
-    <InterpreterId>{c2cbaf4b-80ba-4cb2-96a8-c5974c6d68ef}</InterpreterId>
-    <InterpreterVersion>3.5</InterpreterVersion>
+    <InterpreterId>MSBuild|{c2cbaf4b-80ba-4cb2-96a8-c5974c6d68ef}|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,7 +28,6 @@
   <ItemGroup>
     <Interpreter Include="..\..\..\..\..\env\mdutch\">
       <Id>{c2cbaf4b-80ba-4cb2-96a8-c5974c6d68ef}</Id>
-      <BaseInterpreter>{9a7a9026-48c1-4688-9d5d-e5699d47d074}</BaseInterpreter>
       <Version>3.5</Version>
       <Description>mdutch (Python 64-bit 3.5)</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
@@ -41,10 +39,7 @@
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
   </PropertyGroup>
-  <Import Condition="Exists($(PtvsTargetsFile))" Project="$(PtvsTargetsFile)" />
-  <Import Condition="!Exists($(PtvsTargetsFile))" Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
        Visual Studio and specify your pre- and post-build commands in
        the BeforeBuild and AfterBuild targets below. -->
@@ -53,4 +48,5 @@
   </Target>
   <Target Name="AfterBuild">
   </Target>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>
