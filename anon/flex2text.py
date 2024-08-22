@@ -3,6 +3,11 @@ Purpose: extract free text lines as paragraphs into text file
 
 Original created by by Erwin R. Komen 
 Date: 10/may/2021
+
+DEBUG:
+    -l ce -i "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\09_gheenash.flextext" 
+          -o "D:\Data Files\Cache\Books\ChildhoodDreams\Interlinear\09_gheenash.doc"
+
 """
 
 # import lxml.etree as et
