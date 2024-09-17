@@ -243,21 +243,47 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/cesar/cesar/browser/migrations
+
+# Python stuff
+*.pyc
+
+#/cesar/cesar/basic/migrations
+#/cesar/cesar/brief/migrations
+#/cesar/cesar/browser/migrations
+#/cesar/cesar/doc/migrations
+#/cesar/cesar/ds2/migrations
+#/cesar/cesar/lingo/migrations
+#/cesar/cesar/seeker/migrations
+#/cesar/cesar/tsg/migrations
+#/cesar/cesar/viewer/migrations
+#/cesar/cesar/woord/migrations
+
+# /cesar/cesar/viewer/migrations/__init__.py
+# /cesar/cesar/viewer/migrations/0001_initial.py
+# /cesar/cesar/viewer/migrations/__pycache__
+
+# /cesar/cesar/seeker/migrations/__init__.py
+# /cesar/cesar/seeker/migrations/0001_initial.py
+# /cesar/cesar/seeker/migrations/0003_auto_20170628_1335.py
+# /cesar/cesar/seeker/migrations/0002_auto_20170628_1203.py
+# /cesar/cesar/seeker/migrations/0004_auto_20170629_1031.py
+# /cesar/cesar/seeker/migrations/0005_research_targettype.py
+# /cesar/cesar/seeker/migrations/0003_auto_20170630_1533.py
+# /cesar/cesar/seeker/migrations/0002_auto_20170630_1203.py
+# /cesar/cesar/seeker/migrations/0004_auto_20170701_1732.py
+# /cesar/cesar/seeker/migrations/0003_auto_20170630_1341.py
+# /cesar/cesar/seeker/migrations/0005_auto_20170703_1125.py
+# /cesar/cesar/seeker/migrations/0004_auto_20170703_0651.py
+# /cesar/cesar/seeker/migrations/0005_auto_20170703_1417.py
+# /cesar/cesar/seeker/migrations/0007_auto_20170705_1422.py
+# /cesar/cesar/seeker/migrations/0006_auto_20170705_1414.py
+
 /cesar/cesar/browser/__pycache__
 /cesar/cesar/__pycache__
 /cesardata.db
 /cesardata.py
-/cesar/cesar/viewer/migrations/__init__.py
 /cesar/cesar/viewer/__init__.py
 /cesar/cesar/browser/static/browser/scripts/_references.js
-/cesar/cesar/seeker/migrations/__init__.py
-/cesar/cesar/seeker/migrations/0001_initial.py
-/cesar/cesar/viewer/migrations/__pycache__/0001_initial.cpython-35.pyc
-/cesar/cesar/viewer/migrations/__pycache__/__init__.cpython-35.pyc
-/cesar/cesar/viewer/migrations/0001_initial.py
-/cesar/cesar/seeker/migrations/__pycache__/0001_initial.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/__init__.cpython-35.pyc
 /cesar/cesar/seeker/__pycache__/__init__.cpython-35.pyc
 /cesar/cesar/seeker/__pycache__/models.cpython-35.pyc
 /cesar/cesar/seeker/__pycache__/admin.cpython-35.pyc
@@ -266,51 +292,19 @@ ModelManifest.xml
 /cesar/cesar/seeker/__pycache__/views.cpython-35.pyc
 /cesar/cesar/seeker/__pycache__/forms.cpython-35.pyc
 /cesar/cesar/viewer/__pycache__/__init__.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/0003_auto_20170628_1335.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/0002_auto_20170628_1203.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0003_auto_20170628_1335.py
-/cesar/cesar/seeker/migrations/0002_auto_20170628_1203.py
-/cesar/cesar/seeker/migrations/__pycache__/0004_auto_20170629_1031.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0004_auto_20170629_1031.py
-/cesar/cesar/seeker/migrations/__pycache__/0005_research_targettype.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0005_research_targettype.py
-/cesar/cesar/seeker/migrations/__pycache__/0003_auto_20170630_1533.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/0002_auto_20170630_1203.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0003_auto_20170630_1533.py
-/cesar/cesar/seeker/migrations/0002_auto_20170630_1203.py
-/cesar/cesar/seeker/migrations/__pycache__/0004_auto_20170701_1732.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/0003_auto_20170630_1341.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0004_auto_20170701_1732.py
-/cesar/cesar/seeker/migrations/0003_auto_20170630_1341.py
-/cesar/cesar/seeker/migrations/__pycache__/0006_auto_20170703_0846.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/0005_auto_20170703_1125.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/0004_auto_20170703_0651.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0005_auto_20170703_1125.py
-/cesar/cesar/seeker/migrations/0004_auto_20170703_0651.py
-/cesar/cesar/seeker/migrations/__pycache__/0005_auto_20170703_1417.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0005_auto_20170703_1417.py
-/cesar/cesar/seeker/migrations/__pycache__/0007_auto_20170705_1422.cpython-35.pyc
-/cesar/cesar/seeker/migrations/__pycache__/0006_auto_20170705_1414.cpython-35.pyc
-/cesar/cesar/seeker/migrations/0007_auto_20170705_1422.py
-/cesar/cesar/seeker/migrations/0006_auto_20170705_1414.py
+/cesar/cesar/viewer/__pycache__
+
 /cesar/cesar/seeker/__pycache__/widgets.cpython-35.pyc
-/cesar/cesar/seeker/migrations
 /cesar/static
 /cesar/cesar/seeker/__pycache__
-/cesar/cesar/viewer/migrations/__pycache__
-/cesar/cesar/viewer/migrations
-/cesar/cesar/viewer/__pycache__
 /anon/processor/__pycache__
 /anon/processor/entity_mapping/__init__.py
 /anon/processor/__init__.py
 /cesar/cesar/browser/static/browser/content/CesarManual.pdf
 /anon/__pycache__
-/cesar/cesar/doc/migrations
 /cesar/cesar/doc/__pycache__
-/cesar/cesar/tsg/migrations/__pycache__
-/cesar/cesar/tsg/migrations
+# /cesar/cesar/tsg/migrations/__pycache__
 /cesar/cesar/tsg/__pycache__
-/cesar/cesar/lingo/migrations
 /cesar/cesar/lingo/static/lingo/content/bootstrap.min.css
 /cesar/cesar/lingo/static/lingo/scripts/respond.js
 /cesar/cesar/lingo/static/lingo/scripts/modernizr-2.6.2.js
@@ -320,29 +314,25 @@ ModelManifest.xml
 /cesar/cesar.lingo.js
 /hebot/__pycache__
 /htreeconv/__pycache__
-/cesar/cesar/ds2/migrations
 /cesar/cesar/ds2/__pycache__
-/cesar/cesar/basic/migrations
 /cesar/cesar/basic/__pycache__
-/cesar/cesar/brief/migrations/__pycache__
-/cesar/cesar/brief/migrations/0006_auto_20201222_0758.py
-/cesar/cesar/brief/migrations/0005_auto_20201222_0643.py
-/cesar/cesar/brief/migrations/0004_auto_20201221_0830.py
-/cesar/cesar/brief/migrations/0003_auto_20201218_1217.py
-/cesar/cesar/brief/migrations/0002_auto_20201218_1216.py
-/cesar/cesar/brief/migrations/0001_initial.py
+# /cesar/cesar/brief/migrations/__pycache__
+# /cesar/cesar/brief/migrations/0006_auto_20201222_0758.py
+# /cesar/cesar/brief/migrations/0005_auto_20201222_0643.py
+# /cesar/cesar/brief/migrations/0004_auto_20201221_0830.py
+# /cesar/cesar/brief/migrations/0003_auto_20201218_1217.py
+# /cesar/cesar/brief/migrations/0002_auto_20201218_1216.py
+# /cesar/cesar/brief/migrations/0001_initial.py
 /cesar/cesar/brief/__pycache__
-/cesar/cesar/brief/migrations/__init__.py
+# /cesar/cesar/brief/migrations/__init__.py
 /pb_master_org.html
-/cesar/cesar/brief/migrations
 /anon/brief
-/cesar/cesar/woord/migrations
 /cesar/cesar/woord/__pycache__
 /woordbeoordelingen/results
 /woordbeoordelingen/stimuli
 /woordbeoordelingen
-/cesar/cesar/trans/migrations/__pycache__
-/cesar/cesar/trans/migrations/__init__.py
+# /cesar/cesar/trans/migrations/__pycache__
+# /cesar/cesar/trans/migrations/__init__.py
 /cesar/cesar/trans/__pycache__
 /cesar/cesar/seeker/templatetags/__pycache__
 /cesar/wordlist/TABLET_rightscores.xlsx

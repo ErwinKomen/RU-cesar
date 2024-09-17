@@ -84,7 +84,7 @@ def user_is_ingroup(request, sGroup):
 
         # Only needed for debugging
         if bDebug:
-            ErrHandle().Status("User [{}] is in groups: {}".format(user, glist))
+            ErrHandle().Status("basic: User [{}] is in groups: {}".format(user, glist))
     # Evaluate the list
     bIsInGroup = (sGroup in glist)
     return bIsInGroup
@@ -1112,6 +1112,8 @@ class BasicDetails(DetailView):
     permission = "write"    # Permission can be: (nothing), "read" and "write"
     new_button = False
     do_not_save = False
+    listview = None
+    listviewtitle = None
     has_select2 = False
     newRedirect = False     # Redirect the page name to a correct one after creating
     use_team_group = False
@@ -1392,11 +1394,14 @@ class BasicDetails(DetailView):
             else:
                 self.basic_name = "{}{}".format(self.basic_name_prefix, self.prefix)
         basic_name = self.basic_name
-        listviewname = "{}_list".format(basic_name)
-        try:
-            context['listview'] = reverse(listviewname)
-        except:
-            context['listview'] = reverse('home')
+        if self.listview != None:
+            context['listview'] = self.listview
+        else:
+            listviewname = "{}_list".format(basic_name)
+            try:
+                context['listview'] = reverse(listviewname)
+            except:
+                context['listview'] = reverse('home')
 
         if self.basic_add:
             basic_add = reverse(self.basic_add)
@@ -1563,7 +1568,10 @@ class BasicDetails(DetailView):
                 prevpage = context['listview']
                 context['prevpage'] = prevpage
                 crumbs = []
-                crumbs.append([title, prevpage])
+                if self.listviewtitle == None:
+                    crumbs.append([title + " list", prevpage])
+                else:
+                    crumbs.append([ self.listviewtitle, prevpage])
                 current_name = title if instance else "{} (new)".format(title)
                 context['breadcrumbs'] = get_breadcrumbs(self.request, current_name, True, crumbs)
 

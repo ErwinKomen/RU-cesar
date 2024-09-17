@@ -99,7 +99,7 @@ def user_is_ingroup(request, sGroup):
 
         # Only needed for debugging
         if bDebug:
-            ErrHandle().Status("User [{}] is in groups: {}".format(user, glist))
+            ErrHandle().Status("lingo: User [{}] is in groups: {}".format(user, glist))
     # Evaluate the list
     bIsInGroup = (sGroup in glist)
     return bIsInGroup

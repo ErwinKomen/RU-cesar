@@ -1,4 +1,4 @@
-﻿{% extends "layout.html" %}
+{% extends "layout.html" %}
 {% load i18n %}
 
 {% block breadcrumbs %}
@@ -22,10 +22,24 @@
         </span>
       </div>
       <div class="col-sm-4 right">
-        <!-- Adding a handle-->
-        <span id="add_tsg_handle">
-          <a class="btn btn-xs jumbo-1" role="button"><span class="glyphicon glyphicon-plus"></span>Add a handle</a>
-        </span>
+        {% if authenticated and is_in_tsg %}
+          <!-- Adding a handle-->
+          <span id="add_tsg_handle">
+            <a class="btn btn-xs jumbo-1" role="button"
+               onclick="document.getElementById('create_new_tsghandle').submit();">
+              <span class="glyphicon glyphicon-plus"></span>Add a handle
+            </a>
+          </span>
+
+            <!-- Room to have the form-link to create a new list-item -->
+            <div class="hidden" >
+              <form action="{% url 'tsg_details' %}" method="post" id="create_new_tsghandle">
+                {% csrf_token %}
+              </form>
+            </div>
+
+
+        {% endif %}
 
         <!-- Synchronization -->
         <span class="pull-right">
@@ -82,6 +96,7 @@
                 <tr>
                   <td valign="top" title="{{item.full_handle}}" class="tdnowrap"><a href="{{item.full_handle}}" target="_blank">{{item.code}}</a></td>
                   <td valign="top" style="width: 100%;" class="clickable"><a href="{{item.url}}" target="_blank">{{item.url}}</a></td>
+                  <td valign="top" class="tdnowrap">{{item.get_status}}</td>
                   <td valign="top" class="tdnowrap" align="right">{{item.created|date:"j/b/o G:i"}}</td>
                   <!-- Room for action buttons -->
                   <td>

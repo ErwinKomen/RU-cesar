@@ -12,12 +12,12 @@
     <OutputPath>.</OutputPath>
     <Name>hebot</Name>
     <RootNamespace>hebot</RootNamespace>
-    <InterpreterId>{6aeba200-0ed5-4c9c-aac7-e438dcb09881}</InterpreterId>
-    <InterpreterVersion>3.5</InterpreterVersion>
+    <InterpreterId>MSBuild|{6aeba200-0ed5-4c9c-aac7-e438dcb09881}|$(MSBuildProjectFullPath)</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <CommandLineArguments>-i "c:/etc/database/bhs4.sqlite3" -o "d:/data files/corpora/bible/heb_ot/htree" -b EXO -s "d:/data files/corpora/bible/heb_ot/surface" -d 4 -l "d.13.p.21.s.1"</CommandLineArguments>
     <CommandLineArguments>-i "d:/data files/corpora/bible/heb_ot/etcbc_2017/bhs4.sqlite3" -o "d:/data files/corpora/bible/heb_ot/test2/htree" -b EST -f</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <InterpreterVersion>3.5</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,7 +37,6 @@
   <ItemGroup>
     <Interpreter Include="..\..\..\..\..\env\hebot\">
       <Id>{6aeba200-0ed5-4c9c-aac7-e438dcb09881}</Id>
-      <BaseInterpreter>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</BaseInterpreter>
       <Version>3.5</Version>
       <Description>hebot (Python 3.5)</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
@@ -49,10 +48,7 @@
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
   </PropertyGroup>
-  <Import Condition="Exists($(PtvsTargetsFile))" Project="$(PtvsTargetsFile)" />
-  <Import Condition="!Exists($(PtvsTargetsFile))" Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
        Visual Studio and specify your pre- and post-build commands in
        the BeforeBuild and AfterBuild targets below. -->
@@ -61,4 +57,5 @@
   </Target>
   <Target Name="AfterBuild">
   </Target>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

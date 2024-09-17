@@ -37,6 +37,7 @@ paginateEntries = 20
 paginateSentences = 30
 paginateValues = (1000, 500, 250, 100, 50, 40, 30, 20, 10, )
 bDebug = True
+lst_UserGroupShowed = []
 
 # ============================= LOCAL CLASSES ======================================
 errHandle = ErrHandle()
@@ -162,8 +163,9 @@ def user_is_ingroup(request, sGroup):
         glist = [x.name for x in user.groups.all()]
 
         # Only needed for debugging
-        if bDebug:
-            ErrHandle().Status("User [{}] is in groups: {}".format(user, glist))
+        if bDebug and not username in lst_UserGroupShowed:
+            ErrHandle().Status("browser: User [{}] is in groups: {}".format(user, glist))
+            lst_UserGroupShowed.append(username)
     # Evaluate the list
     bIsInGroup = (sGroup in glist)
     return bIsInGroup
