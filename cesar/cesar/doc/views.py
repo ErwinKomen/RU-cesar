@@ -3200,9 +3200,10 @@ class NexisListView(BasicList):
             # Make sure only batches are shown for which this user is the owner
             username = self.request.user.username
             owner = User.objects.filter(username = username).first()
-            ndocs = NexisDocs.objects.filter(owner=owner)
-            if ndocs != None:
-                fields['ndocs'] = ndocs
+            ndocs = NexisDocs.objects.filter(owner=owner).first()
+            # if ndocs != None:
+            #    fields['ndocs'] = ndocs
+            fields['ndocs'] = Q(ndocs__owner__username=username)
 
         # Return standard
         return fields, lstExclude, qAlternative

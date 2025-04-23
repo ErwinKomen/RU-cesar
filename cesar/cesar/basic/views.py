@@ -281,10 +281,13 @@ def make_search_list(filters, oFields, search_list, qd):
                     elif has_obj_value(fkfield, oFields):
                         val = oFields[fkfield]
                         enable_filter(filter_type, head_id)
-                        s_q = Q(**{fkfield: val})
-                        external = get_value(search_item, "external")
-                        if has_string_value(external, oFields):
-                            qd[external] = getattr(val, "name")
+                        if isinstance(val, Q):
+                            s_q = val
+                        else:
+                            s_q = Q(**{fkfield: val})
+                            external = get_value(search_item, "external")
+                            if has_string_value(external, oFields):
+                                qd[external] = getattr(val, "name")
                 elif dbfield:
                     # We are dealing with a plain direct field for the model
                     # OR: it is also possible we are dealing with a m2m field -- that gets the same treatment
@@ -1026,7 +1029,7 @@ class BasicList(ListView):
                     # Just show everything
                     qs = self.model.objects.all().distinct()
 
-
+                    # x = self.model.objects.filter(filter).count()
                 # Do the ordering of the results
                 order = self.order_default
                 qs, self.order_heads, colnum = make_ordering(qs, self.qd, order, self.order_cols, self.order_heads)
