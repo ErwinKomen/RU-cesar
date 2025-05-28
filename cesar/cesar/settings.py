@@ -107,7 +107,6 @@ INSTALLED_APPS = [
     'cesar.trans',
     'cesar.tsg',
     'cesar.lingo',
-    'cesar.brief',
     'cesar.woord'
 ]
 

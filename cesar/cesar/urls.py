@@ -19,8 +19,6 @@ from cesar.doc.views import *
 from cesar.tsg.views import *
 # The CesarLingo application
 from cesar.lingo.views import *
-# The brief application
-from cesar.brief.views import *
 # The WOORD application
 from cesar.woord.views import *
 # The Transliterate application
@@ -73,21 +71,6 @@ urlpatterns = [
     url(r'^trans/$', cesar.trans.views.home, name='trans_home'),
     url(r'^trans/convert/$', cesar.trans.views.convert, name='trans_convert'),
     url(r'^trans/download/$', cesar.trans.views.download, name='trans_download'),
-
-    # Cesar brief:
-    url(r'^brief/$', cesar.brief.views.home, name='brief_home'),
-    url(r'^brief/about', cesar.brief.views.about, name='brief_about'),
-    url(r'^brief/update', cesar.brief.views.brief_load, name='brief_update'),
-    url(r'^brief/project/list', ProjectListView.as_view(), name='project_list'),
-    url(r'^brief/project/details(?:/(?P<pk>\d+))?/$', ProjectDetails.as_view(), name='project_details'),
-    url(r'^brief/project/edit(?:/(?P<pk>\d+))?/$', ProjectEdit.as_view(), name='project_edit'),
-    url(r'^brief/project/location/$', cesar.brief.views.set_section, name='project_location'),
-    url(r'^brief/edit(?:/(?P<pk>\d+))?/$', BriefEdit.as_view(), name='brief_edit'),
-    url(r'^brief/master(?:/(?P<pk>\d+))?/$', BriefMaster.as_view(), name='brief_master'),
-    url(r'^brief/report(?:/(?P<pk>\d+))?/$', BriefReport.as_view(), name='brief_report'),
-    url(r'^brief/product/details(?:/(?P<pk>\d+))?/$', BriefProductDetails.as_view(), name='briefproduct_details'),
-    url(r'^brief/product/edit(?:/(?P<pk>\d+))?/$', BriefProductEdit.as_view(), name='briefproduct_edit'),
-    url(r'^brief/product/list', BriefProductList.as_view(), name='briefproduct_list'),
 
     # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),
