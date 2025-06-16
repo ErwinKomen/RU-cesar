@@ -824,6 +824,9 @@ class FrogLink(models.Model, Custom):
                         oBack['msg'] = get_error_view("Post-CLAM", statusmsg, errormsg, sText, sMsg)
                         return oBack
                     # Now we are ready
+                    bHasXml = False
+                    sErrorLog = ""
+                    sFrogOut = ""
                     for outputfile in result.output:
                         name = str(outputfile)
                         if ".xml"  in name:
@@ -836,6 +839,7 @@ class FrogLink(models.Model, Custom):
                             # Note where it is
                             self.fullname = fout
                             self.save()
+                            bHasXml = True
 
                             # Bugfix because of new libfolia version
                             # self.folia_annotation_reduction()
@@ -852,8 +856,30 @@ class FrogLink(models.Model, Custom):
                             fout = fout.replace(".basis", ".folia")
                             outputfile.copy(fout)
                             iCount += 1
+                            # Possibly get error log
+                            if "error.log" in name:
+                                # Get the error log
+                                with open(fout, "r", encoding="utf-8") as f:
+                                    sErrorLog = f.read()
+                            elif ".frog.out" in name:
+                                # Get the frog output
+                                with open(fout, "r", encoding="utf-8") as f:
+                                    sFrogOut = f.read()
+
                     # Delete project again
                     clamclient.delete(project)
+                    # Double check if an XML has been produced
+                    if not bHasXml:
+                        # No XML has been produced - provide error
+                        oBack['status'] = "error"
+                        # Handle errors
+                        statusmsg = "For some reason it was not possible to produce an XML"
+                        errormsg = statusmsg
+                        # Find the error log
+                        sText = sErrorLog if sErrorLog else get_error_log(result)
+                        sMsg = sFrogOut
+                        oBack['msg'] = get_error_view("Post-CLAM", statusmsg, errormsg, sText, sMsg)
+                        return oBack
   
                 else:
                     # Don't know this location type
