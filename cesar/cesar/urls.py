@@ -71,6 +71,7 @@ urlpatterns = [
     url(r'^trans/$', cesar.trans.views.home, name='trans_home'),
     url(r'^trans/convert/$', cesar.trans.views.convert, name='trans_convert'),
     url(r'^trans/download/$', cesar.trans.views.download, name='trans_download'),
+    url(r'^trans/action/$', cesar.trans.views.action, name='trans_action'),
 
     # Cesar proper:
     url(r'^$', cesar.browser.views.home, name='home'),

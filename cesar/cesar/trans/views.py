@@ -24,6 +24,7 @@ from datetime import datetime
 from docx import Document
 from htmldocx import HtmlToDocx
 
+from cesar.lingo.views import csrf_exempt
 from cesar.settings import APP_PREFIX, WRITABLE_DIR, STATIC_ROOT
 from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.trans.translit import TranslitChe
@@ -144,6 +145,43 @@ def convert(request):
     # Return this response
     return JsonResponse(data)
 
+@csrf_exempt
+def action(request):
+    """Process action logging"""
+
+    oErr = ErrHandle()
+    data = {'status': 'ok'}
+    response = home(request)
+    try:
+        oErr.Status("trans/action: post request")
+        # Must be a post request
+        if request.method.lower() == "post":
+            qd = request.POST
+            body = request.body.decode('utf-8')
+            oErr.Status("action body = {}".format(body))
+            if body and body[0] == "{":
+                oBody = json.loads(body)
+                # Get all the parameters
+                app = oBody.get("app")
+                user = oBody.get("user")
+                comp = oBody.get("comp")
+                ftype = oBody.get("type")
+                fname = oBody.get("crp")
+                # Testing for now
+                oErr.Status("action: [{}, {}, {}, {}, {}]".format(app, user, comp, ftype, fname))
+
+                if not app is None and app != "":
+                    data['msg'] = "received"
+                    response = JsonResponse(data)
+
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("trans/action")
+        data['status'] = "error"
+        data['msg'] = msg
+        response = JsonResponse(data)
+    return response
+
 def download(request):
     """Download a transliteration as document"""
 
@@ -167,7 +205,7 @@ def download(request):
             buffer.seek(0)          # Rewind the stream
 
         # Determine a file name
-        sBase = self.object.name
+        sBase = "mytransliteration.docx" # self.object.name
         sFileName = "trans_{}{}".format(sBase, dext)
 
         if dtype == "docx":
