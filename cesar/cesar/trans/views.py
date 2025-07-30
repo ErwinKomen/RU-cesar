@@ -30,6 +30,7 @@ from cesar.basic.views import BasicList, BasicDetails, BasicPart
 from cesar.trans.translit import TranslitChe
 from cesar.trans.forms import TransForm
 from cesar.utils import ErrHandle
+from cesar.trans.models import Action
 
 app_user = "trans_user"
 bDebug = False
@@ -147,7 +148,7 @@ def convert(request):
 
 @csrf_exempt
 def action(request):
-    """Process action logging"""
+    """Process action logging for individual applications"""
 
     oErr = ErrHandle()
     data = {'status': 'ok'}
@@ -162,16 +163,23 @@ def action(request):
             if body and body[0] == "{":
                 oBody = json.loads(body)
                 # Get all the parameters
-                app = oBody.get("app")
-                user = oBody.get("user")
-                comp = oBody.get("comp")
-                ftype = oBody.get("type")
-                fname = oBody.get("crp")
+                app = oBody.get("app")      # application name
+                user = oBody.get("user")    # user within that application
+                comp = oBody.get("comp")    # computer name
+                ftype = oBody.get("type")   # type of project, file etc
+                fname = oBody.get("crp")    # research project or file name
                 # Testing for now
                 oErr.Status("action: [{}, {}, {}, {}, {}]".format(app, user, comp, ftype, fname))
 
                 if not app is None and app != "":
-                    data['msg'] = "received"
+                    # Add into database
+                    obj = Action.objects.create(appname=app, username=user,
+                                                computer=comp, ftype=ftype, fname=fname)
+                    objid = "-" if obj is None else obj.id
+
+                    # Signal all is well
+                    data['msg'] = "received as {}".format(objid)
+                    oErr.Status("action processed id={}".format(objid))
                     response = JsonResponse(data)
 
     except:

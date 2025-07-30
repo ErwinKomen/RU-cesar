@@ -408,3 +408,4 @@ class TsgHandle(models.Model):
                 sBack = '<span class="badge signature cl"><a href="{}">{}</a></span>'.format(self.url, self.url)
         return sBack
 
+
