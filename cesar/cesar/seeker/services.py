@@ -146,7 +146,7 @@ def crpp_status(sUser, sJobId):
 
 def crpp_dbinfo(sUser, sCrpName, iQcNum, iStart, iCount, sPart='', filter=None, sort=None):
     """Ask the /crpp/dbinfo service for the count it has for the result combination"""
-
+    
     # Construct the object we pass along
     oToCrpp = { 'userid': sUser,
                 'name':   "{}_QC{}_Dbase".format(sCrpName, iQcNum),
