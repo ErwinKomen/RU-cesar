@@ -15,7 +15,8 @@ import posixpath
 import socket
 from django.contrib import admin
 
-hst = socket.gethostbyname(socket.gethostname())
+hst_name = socket.gethostname()
+hst = socket.gethostbyname(hst_name)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,6 +25,11 @@ WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../writable/database/"
 if "RU-cesar\\writable" in WRITABLE_DIR:
     # Need another string
     WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../../writable/database/"))
+
+# Containerized Radboud Environment
+if "/var/writable" in WRITABLE_DIR:
+    WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../writable/database/"))
+    PROJECT_NAME = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 
 # Set the MEDIA_URL, which depends on the writable
 MEDIA_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../media/"))
@@ -44,8 +50,17 @@ if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     # Ponyland: use through 8080-8080 SSH tunnel
     CRPP_HOME = 'http://localhost:8080/CrppS'
     PROJECT_DIR = '/var/www/tomcat8/live/tomcat8/crpp/project'
+elif hst_name == "cesar":
+    # Configuration within the new containerized Radboud University environment
+    APP_PREFIX = ""
+    # admin.site.site_url = '/'
+    ADMIN_SITE_URL = "/"
+    # Ponyland-internal:
+    CRPP_HOME = 'http://localhost:8080/CrppS'
+    PROJECT_DIR = '/data/www-data/crpp/project'
+    USE_REDIS = True    
 elif "131.174" in hst:
-    # Configuration within the Radboud University environment
+    # Configuration within the old Radboud University environment
     APP_PREFIX = ""
     # admin.site.site_url = '/'
     ADMIN_SITE_URL = "/"
@@ -83,7 +98,7 @@ if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
 #   an HTTP redirect is issued to the same URL with a slash appended.
 APPEND_SLASH = True
 
-ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl']
+ALLOWED_HOSTS = ['localhost', 'cesar.science.ru.nl', 'dev.cesar.science.ru.nl']
 BLOCKED_IPS = []
 
 # Application definition
