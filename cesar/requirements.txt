@@ -36,3 +36,6 @@ Markdown==3.3.4
 openpyxl==2.6.2
 PyNLPl==1.2.9
 pypdf
+
+# Use uwsgi from virtualenv
+uwsgi
