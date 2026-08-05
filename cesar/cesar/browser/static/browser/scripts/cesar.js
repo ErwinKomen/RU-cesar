@@ -20,19 +20,21 @@ var $ = jQuery;
 
 // var $ = django.jQuery.noConflict();
 
-function html(strings, ...values) {
-  // strings = array van vaste delen
-  // values  = array van ingevoegde waarden
+// ===== Not safe for CSP ====================
+//function html(strings, ...values) {
+//  // strings = array van vaste delen
+//  // values  = array van ingevoegde waarden
 
-  let result = "";
-  strings.forEach((str, i) => {
-    result += str + (values[i] ?? "");
-  });
+//  let result = "";
+//  strings.forEach((str, i) => {
+//    result += str + (values[i] ?? "");
+//  });
 
-  const template = document.createElement("template");
-  template.innerHTML = result.trim();
-  return template.content.firstElementChild;
-}
+//  const template = document.createElement("template");
+//  template.innerHTML = result.trim();
+//  return template.content.firstElementChild;
+//}
+// ============================================
 
 var ru = (function ($, ru) {
   "use strict";

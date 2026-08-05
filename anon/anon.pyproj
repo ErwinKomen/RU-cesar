@@ -93,6 +93,10 @@
     <Folder Include="letter\ruhosting\software\" />
     <Folder Include="letter\ruhosting\software\Cesax\" />
     <Folder Include="letter\ruhosting\software\CorpusStudio\" />
+    <Folder Include="letter\staff\che\crp\" />
+    <Folder Include="letter\staff\lbe\" />
+    <Folder Include="letter\staff\che\" />
+    <Folder Include="letter\staff\lbe\crp\" />
     <Folder Include="letter\staff\software\" />
     <Folder Include="letter\staff\software\Cesax\" />
     <Folder Include="letter\staff\software\CorpusStudio\" />
@@ -139,6 +143,9 @@
     <Content Include="letter\gheenash\gheenash.json" />
     <Content Include="letter\gheenash\spare.html" />
     <Content Include="letter\js\tallam.js" />
+    <Content Include="letter\staff\lbe\crp\index.html" />
+    <Content Include="letter\staff\lbe\crp\psdxviewer.xsl" />
+    <Content Include="letter\staff\lbe\crp\show_pcmlbe.php" />
     <Content Include="letter\staff\software\Cesax\index.html" />
     <Content Include="letter\staff\software\Cesax\privacy_en.html" />
     <Content Include="letter\staff\software\Cesax\publish.htm" />

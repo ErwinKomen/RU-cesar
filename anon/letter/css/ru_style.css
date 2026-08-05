@@ -1,0 +1,157 @@
+body {
+	font-family: Ubuntu, "Lucida Grande",Calibri, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+}
+A:link    { color: #FF0000;
+	    text-decoration: none;
+          }
+A:visited { color: #FF1100; /* #02325A; */
+            text-decoration: none;
+          }
+
+table.shadow { 
+  align: center
+}	
+
+td.shadow-top { 
+  height: 16px;  
+  background-image: url(/staff/ekomen/css/top.gif)
+}
+
+td.shadow-topRight { 
+  width: 16px;
+  height: 16px;
+  background-image: url(/staff/ekomen/css/topRight.gif)
+}
+
+td.shadow-right { 
+  width: 16px; 
+  background-image: url(/staff/ekomen/css/right.gif)
+}
+
+td.shadow-bottomRight { 
+  width: 16px; 
+  height: 16px; 
+  background-image: url(/staff/ekomen/css/bottomRight.gif)
+} 
+
+td.shadow-bottom { 
+  height: 16px;
+  background-image: url(/staff/ekomen/css/bottom.gif)
+}
+
+td.shadow-bottomLeft { width: 16px;
+  height: 16px;
+  background-image: url(/staff/ekomen/css/bottomLeft.gif)
+} 
+
+td.shadow-left { width: 16px;
+  background-image: url(/staff/ekomen/css/left.gif)
+}
+
+td.shadow-topLeft { 
+  width: 16px; 
+  height: 16px; 
+  background-image: url(/staff/ekomen/css/topLeft.gif)
+}      
+
+td.shadow-center { 
+  background-color: white  
+}
+
+
+/** NEW STYLES (Maarten van Gompel) */
+/** Adapted by Erwin R. Komen       */
+
+div#header {
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    height: 64px;
+    background: url(/staff/ekomen/css/ru_header_m.png) repeat-x;
+    margin-bottom: 15px;
+    color: black;
+}
+div#header .left {
+    width: 640px;
+    height: 64px;
+    margin: 0px;
+    padding: 0px;
+    background: url(/staff/ekomen/css/ru_header_l.png) no-repeat;
+    float: left;
+}
+div#header .right {
+    width: 280px;
+    height: 64px;
+    margin: 0px;
+    padding: 0px;
+    background: url(/staff/ekomen/css/ru_header_r.png) no-repeat;
+    float: right;
+    border: none;
+}
+div#menu {
+    background: #d4d4d4;
+    color: #1c4d76;/*black;*/
+    font-weight: bold;
+    clear: both;
+    min-height: 24px;
+    padding-top: 3px;
+    text-align: center;
+}
+div#menu > ul {
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    display: inline;
+    list-style-type: none;
+    font-size: 12px;
+}
+div#menu > ul > li {
+  list-style-type: none;
+  margin: 0px;
+  position: relative;
+  display: inline;
+  margin-left: 20px;
+  margin-right: 20px;
+  font-weight: bold;
+}
+div#menu > ul > li:hover > ul {
+  display: block;
+}
+div#menu ul ul {
+    background: repeat scroll #d9d9d9;
+    border:1px solid gray;
+    display:none;
+    left: 0;
+    list-style-type: none;
+    padding: 20px;
+    position:absolute;
+    width: 300px;
+    z-index:500;
+    text-align: left;
+    opacity: 0.75;
+}
+div#menu ul ul li {
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+div#menu li:hover {
+}
+div.bottom {
+    width: 100%;
+    height: 15px;
+    background: url(/staff/ekomen/css/ru_header_b.png) repeat-x;
+}
+div#menu a, div#menu a:visited {
+    color: #1c4d76;
+    text-decoration: none;
+}
+div#menu a:hover, div #menu a:active {
+    text-decoration: underline;
+}
+div#menu ul ul a, div#menu ul ul a:visited {
+	color: black;
+}
+div#menu img {
+ border: 1px solid white;
+}
